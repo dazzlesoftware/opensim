@@ -1,0 +1,5 @@
+// Generated from the original SQLite AuthStore.migrations resource.
+#pragma once
+namespace opensim::services {
+inline constexpr char AuthStoreMigration[] = R"OSIMSQL(@AUTH_MIGRATION_SQL@)OSIMSQL";
+}

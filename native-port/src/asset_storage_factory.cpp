@@ -1,0 +1,20 @@
+// Copyright (c) Contributors, http://opensimulator.org/
+// BSD license: native-port/LICENSE.txt.
+#include "opensim/services/asset_storage_factory.hpp"
+#include "opensim/framework/sha1.hpp"
+#include "opensim/framework/culture_prefix.hpp"
+namespace opensim::services {
+namespace {template<class T>T& required(const std::shared_ptr<T>& value){if(!value)throw std::invalid_argument("Null asset service configuration reference");return *value;}std::shared_ptr<AssetStorageState> process_state(){static auto state=std::make_shared<AssetStorageState>();return state;}}
+std::string AssetStorageBackend::hash(const framework::AssetBytes& data){return framework::sha1_hex(required(data));}
+ConfiguredAssetService::ConfiguredAssetService(std::shared_ptr<InitializableAssetStore> data,std::shared_ptr<DefaultAssetLoader> defaults,std::optional<std::string> section,std::shared_ptr<AssetStorageBackend> backend):StoredAssetService(data,{[backend](const auto& message){backend->warn(message);},[backend](const auto& message,const auto& error){backend->error(message,error);}}),database(std::move(data)),loader(std::move(defaults)),config_name(std::move(section)){}
+AssetStorageFactory::AssetStorageFactory(std::shared_ptr<AssetStorageBackend> backend,std::shared_ptr<AssetStorageState> state):backend_(std::move(backend)),state_(state?std::move(state):process_state()){required(backend_);}
+std::shared_ptr<ConfiguredAssetService> AssetStorageFactory::create(const server::IniConfig* config,const std::optional<std::string>& name){
+ if(!config)throw std::invalid_argument("Null asset service configuration");auto section=name&&name->empty()?std::optional<std::string>("AssetService"):name;bool asset_section=section&&config->has_section(*section);std::string module,connection;if(asset_section){module=config->get(*section,"StorageProvider",module);connection=config->get(*section,"ConnectionString",connection);}if(config->has_section("DatabaseService")){if(module.empty())module=config->get("DatabaseService","StorageProvider","");if(connection.empty())connection=config->get("DatabaseService","ConnectionString","");}
+ if(module.empty())throw std::runtime_error("No StorageProvider configured");auto data=backend_->load_store(module);if(!data)throw std::runtime_error("Could not find a storage interface in the module "+module);data->initialise(connection);
+ // Original AssetServiceBase reads assetConfig here without a null guard,
+ // including when the provider came from DatabaseService.
+ if(!asset_section)throw std::invalid_argument("Null asset service section after database initialization");auto loader_name=config->get(*section,"DefaultAssetLoader","");std::shared_ptr<DefaultAssetLoader> loader;if(!loader_name.empty()){loader=backend_->load_loader(loader_name);if(!loader)throw std::runtime_error("Asset loader could not be loaded from "+loader_name);}
+ auto service=std::make_shared<ConfiguredAssetService>(data,loader,section,backend_);if(!state_->root.load()){state_->root=service;if(loader){if(!config->has_section(*section))throw std::runtime_error("No "+*section+" configuration");auto arguments=config->get(*section,"AssetLoaderArgs","");auto enabled_text=config->get(*section,"AssetLoaderEnabled","true");bool enabled;if(framework::invariant_equals_ignore_case(enabled_text,"true"))enabled=true;else if(framework::invariant_equals_ignore_case(enabled_text,"false"))enabled=false;else throw std::invalid_argument("Alias value not found: "+enabled_text+". Add it to the Alias property.");if(enabled){backend_->debug("[ASSET SERVICE]: Loading default asset set from "+arguments);auto backend=backend_;loader->for_each(arguments,[service,backend](AssetService::Asset asset){auto existing=service->get_asset(required(asset).id());bool update=!existing;if(existing){auto old_hash=backend->hash(existing->data);auto new_hash=backend->hash(asset->data);update=old_hash!=new_hash;}if(update)service->database->store(asset);});}backend_->debug("[ASSET SERVICE]: Local asset service enabled");}}
+ return service;
+}
+}

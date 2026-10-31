@@ -1,0 +1,5 @@
+// Generated from the original SQLite Avatar.migrations resource.
+#pragma once
+namespace opensim::services {
+inline constexpr char AvatarStoreMigration[] = R"OSIMSQL(@AVATAR_MIGRATION_SQL@)OSIMSQL";
+}

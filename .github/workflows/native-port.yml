@@ -1,0 +1,286 @@
+name: Native C++ compatibility
+
+on:
+  push:
+    paths:
+      - 'native-port/**'
+      - 'OpenSim/Framework/**'
+      - 'OpenSim/Capabilities/**'
+      - 'OpenSim/Region/ClientStack/Linden/Caps/**'
+      - 'OpenSim/Region/Framework/Interfaces/IEntityTransferModule.cs'
+      - 'OpenSim/Region/Framework/Interfaces/IEventQueue.cs'
+      - 'OpenSim/Region/Framework/Interfaces/ISimulatorFeaturesModule.cs'
+      - 'OpenSim/Region/Framework/Scenes/**'
+      - 'OpenSim/Region/CoreModules/Framework/Caps/**'
+      - 'OpenSim/Region/CoreModules/Agent/Xfer/**'
+      - 'OpenSim/Region/ScriptEngine/YEngine/**'
+      - 'OpenSim/Region/ClientStack/Linden/UDP/**'
+      - 'OpenSim/Server/Handlers/Login/**'
+      - 'OpenSim/Server/Handlers/Authentication/**'
+      - 'OpenSim/Server/Handlers/Grid/**'
+      - 'OpenSim/Server/Handlers/Presence/**'
+      - 'OpenSim/Server/Handlers/GridUser/**'
+      - 'OpenSim/Server/Handlers/UserAccounts/**'
+      - 'OpenSim/Server/Handlers/Avatar/**'
+      - 'OpenSim/Server/Base/ServerUtils.cs'
+      - 'OpenSim/Server/Base/ProtocolVersions.cs'
+      - 'OpenSim/Services/LLLoginService/**'
+      - 'OpenSim/Services/InventoryService/**'
+      - 'OpenSim/Services/PresenceService/**'
+      - 'OpenSim/Services/GridService/**'
+      - 'OpenSim/Services/Interfaces/IGridService.cs'
+      - 'OpenSim/Data/IRegionData.cs'
+      - 'OpenSim/Data/Null/NullRegionData.cs'
+      - 'OpenSim/Services/UserAccountService/**'
+      - 'OpenSim/Services/Interfaces/IUserAccountService.cs'
+      - 'OpenSim/Services/Interfaces/IAuthenticationService.cs'
+      - 'OpenSim/Services/Interfaces/IAvatarService.cs'
+      - 'OpenSim/Services/Interfaces/IAssetService.cs'
+      - 'OpenSim/Region/CoreModules/ServiceConnectorsOut/Asset/**'
+      - 'OpenSim/Services/Interfaces/ILoginService.cs'
+      - 'OpenSim/Services/Interfaces/IFriendsService.cs'
+      - 'OpenSim/Services/AvatarService/**'
+      - 'OpenSim/Services/Connectors/Simulation/**'
+      - 'OpenSim/Data/IAvatarData.cs'
+      - 'OpenSim/Data/IAssetData.cs'
+      - 'OpenSim/Data/AssetDataBase.cs'
+      - 'OpenSim/Data/Migration.cs'
+      - 'OpenSim/Services/AssetService/**'
+      - 'OpenSim/Data/IUserAccountData.cs'
+      - 'OpenSim/Data/IAuthenticationData.cs'
+      - 'bin/System.Data.SQLite.dll'
+      - 'bin/lib64/*sqlite3*'
+      - 'OpenSim/Services/Interfaces/IGridUserService.cs'
+      - 'OpenSim/Data/IGridUserData.cs'
+      - 'OpenSim/Data/PGSQL/Resources/GridUserStore.migrations'
+      - 'OpenSim/Data/PGSQL/Resources/GridStore.migrations'
+      - 'OpenSim/Data/PGSQL/PGSQLRegionData.cs'
+      - 'OpenSim/Services/Interfaces/IPresenceService.cs'
+      - 'OpenSim/Data/IPresenceData.cs'
+      - 'OpenSim/Data/Null/NullPresenceData.cs'
+      - 'OpenSim/Data/IXInventoryData.cs'
+      - 'bin/inventory/**'
+      - 'bin/assets/**'
+      - 'bin/OpenMetaverse*.dll'
+      - 'bin/Nini.dll'
+      - 'OpenSim/Services/AuthenticationService/**'
+      - 'OpenSim/Services/Connectors/Authentication/**'
+      - 'OpenSim/Services/Connectors/BaseServiceConnector.cs'
+      - 'OpenSim/Data/SQLite/**'
+      - '.github/workflows/native-port.yml'
+  pull_request:
+    paths:
+      - 'native-port/**'
+      - 'OpenSim/Framework/**'
+      - 'OpenSim/Capabilities/**'
+      - 'OpenSim/Region/ClientStack/Linden/Caps/**'
+      - 'OpenSim/Region/Framework/Interfaces/IEntityTransferModule.cs'
+      - 'OpenSim/Region/Framework/Interfaces/IEventQueue.cs'
+      - 'OpenSim/Region/Framework/Interfaces/ISimulatorFeaturesModule.cs'
+      - 'OpenSim/Region/Framework/Scenes/**'
+      - 'OpenSim/Region/CoreModules/Framework/Caps/**'
+      - 'OpenSim/Region/CoreModules/Agent/Xfer/**'
+      - 'OpenSim/Region/ScriptEngine/YEngine/**'
+      - 'OpenSim/Region/ClientStack/Linden/UDP/**'
+      - 'OpenSim/Server/Handlers/Login/**'
+      - 'OpenSim/Server/Handlers/Authentication/**'
+      - 'OpenSim/Server/Handlers/Grid/**'
+      - 'OpenSim/Server/Handlers/Presence/**'
+      - 'OpenSim/Server/Handlers/GridUser/**'
+      - 'OpenSim/Server/Handlers/UserAccounts/**'
+      - 'OpenSim/Server/Handlers/Avatar/**'
+      - 'OpenSim/Server/Base/ServerUtils.cs'
+      - 'OpenSim/Server/Base/ProtocolVersions.cs'
+      - 'OpenSim/Services/LLLoginService/**'
+      - 'OpenSim/Services/InventoryService/**'
+      - 'OpenSim/Services/PresenceService/**'
+      - 'OpenSim/Services/GridService/**'
+      - 'OpenSim/Services/Interfaces/IGridService.cs'
+      - 'OpenSim/Data/IRegionData.cs'
+      - 'OpenSim/Data/Null/NullRegionData.cs'
+      - 'OpenSim/Services/UserAccountService/**'
+      - 'OpenSim/Services/Interfaces/IUserAccountService.cs'
+      - 'OpenSim/Services/Interfaces/IAuthenticationService.cs'
+      - 'OpenSim/Services/Interfaces/IAvatarService.cs'
+      - 'OpenSim/Services/Interfaces/IAssetService.cs'
+      - 'OpenSim/Region/CoreModules/ServiceConnectorsOut/Asset/**'
+      - 'OpenSim/Services/Interfaces/ILoginService.cs'
+      - 'OpenSim/Services/Interfaces/IFriendsService.cs'
+      - 'OpenSim/Services/AvatarService/**'
+      - 'OpenSim/Services/Connectors/Simulation/**'
+      - 'OpenSim/Data/IAvatarData.cs'
+      - 'OpenSim/Data/IAssetData.cs'
+      - 'OpenSim/Data/AssetDataBase.cs'
+      - 'OpenSim/Data/Migration.cs'
+      - 'OpenSim/Services/AssetService/**'
+      - 'OpenSim/Data/IUserAccountData.cs'
+      - 'OpenSim/Data/IAuthenticationData.cs'
+      - 'bin/System.Data.SQLite.dll'
+      - 'bin/lib64/*sqlite3*'
+      - 'OpenSim/Services/Interfaces/IGridUserService.cs'
+      - 'OpenSim/Data/IGridUserData.cs'
+      - 'OpenSim/Data/PGSQL/Resources/GridUserStore.migrations'
+      - 'OpenSim/Data/PGSQL/Resources/GridStore.migrations'
+      - 'OpenSim/Data/PGSQL/PGSQLRegionData.cs'
+      - 'OpenSim/Services/Interfaces/IPresenceService.cs'
+      - 'OpenSim/Data/IPresenceData.cs'
+      - 'OpenSim/Data/Null/NullPresenceData.cs'
+      - 'OpenSim/Data/IXInventoryData.cs'
+      - 'bin/inventory/**'
+      - 'bin/assets/**'
+      - 'bin/OpenMetaverse*.dll'
+      - 'bin/Nini.dll'
+      - 'OpenSim/Services/AuthenticationService/**'
+      - 'OpenSim/Services/Connectors/Authentication/**'
+      - 'OpenSim/Services/Connectors/BaseServiceConnector.cs'
+      - 'OpenSim/Data/SQLite/**'
+      - '.github/workflows/native-port.yml'
+  workflow_dispatch:
+
+jobs:
+  compatibility:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Configure C++ and reference comparison
+        run: cmake -S native-port -B native-port/build -DCMAKE_BUILD_TYPE=Release -DOPENSIM_DIFFERENTIAL_TESTS=ON
+      - name: Build C++
+        run: cmake --build native-port/build --config Release --parallel
+      - name: Test native behavior and compare original C#
+        run: ctest --test-dir native-port/build -C Release --output-on-failure
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-parity-${{ matrix.os }}
+          path: |
+            native-port/build/reference/parity-results.json
+            native-port/build/login-reference/login-parity-results.json
+            native-port/build/udp-reference/lludp-parity-results.json
+            native-port/build/inventory-reference/inventory-parity-results.json
+            native-port/build/library-reference/library-parity-results.json
+            native-port/build/presence-reference/presence-parity-results.json
+            native-port/build/presence-endpoint-reference/presence-endpoint-parity-results.json
+            native-port/build/grid-user-endpoint-reference/grid-user-endpoint-parity-results.json
+            native-port/build/grid-user-reference/grid-user-parity-results.json
+            native-port/build/grid-reference/grid-parity-results.json
+            native-port/build/grid-endpoint-reference/grid-endpoint-parity-results.json
+            native-port/build/region-uri-reference/region-uri-parity-results.json
+            native-port/build/http-uri-reference/http-uri-parity-results.json
+            native-port/build/grid-identity-reference/grid-identity-parity-results.json
+            native-port/build/login-destination-reference/login-destination-parity-results.json
+            native-port/build/login-orchestration-reference/login-orchestration-parity-results.json
+            native-port/build/agent-launch-reference/agent-launch-parity-results.json
+            native-port/build/avatar-wearable-reference/avatar-wearable-parity-results.json
+            native-port/build/appearance-models-reference/appearance-models-parity-results.json
+            native-port/build/avatar-appearance-reference/avatar-appearance-parity-results.json
+            native-port/build/agent-circuit-reference/agent-circuit-parity-results.json
+            native-port/build/login-factory-reference/login-factory-parity-results.json
+            native-port/build/account-urls-reference/account-urls-parity-results.json
+            native-port/build/user-account-reference/user-account-parity-results.json
+            native-port/build/account-record-reference/account-record-parity-results.json
+            native-port/build/account-endpoint-reference/account-endpoint-parity-results.json
+            native-port/build/account-provisioner-reference/account-provisioner-parity-results.json
+            native-port/build/appearance-provisioner-reference/appearance-provisioner-parity-results.json
+            native-port/build/avatar-data-reference/avatar-data-parity-results.json
+            native-port/build/avatar-service-reference/avatar-service-parity-results.json
+            native-port/build/avatar-endpoint-reference/avatar-endpoint-parity-results.json
+            native-port/build/osd-json-reference/osd-json-parity-results.json
+            native-port/build/simulation-lifecycle-reference/simulation-lifecycle-parity-results.json
+            native-port/build/simulation-lifecycle-network/simulation-lifecycle-network-results.json
+            native-port/build/simulation-position-reference/simulation-position-parity-results.json
+            native-port/build/simulation-position-network/simulation-position-network-results.json
+            native-port/build/capabilities-module-reference/capabilities-module-results.json
+            native-port/build/capabilities-module-network/capabilities-module-network-results.json
+            native-port/build/gzip-compress-reference/gzip-compress-results.json
+            native-port/build/viewer-name-reference/viewer-name-results.json
+            native-port/build/presence-state-reference/presence-state-results.json
+            native-port/build/scene-admission-reference/scene-admission-results.json
+            native-port/build/scene-admission-network/scene-admission-network-results.json
+            native-port/build/scene-access-reference/scene-access-results.json
+            native-port/build/scene-access-network/scene-access-network-results.json
+            native-port/build/simulation-object-reference/simulation-object-results.json
+            native-port/build/simulation-object-network/simulation-object-network-results.json
+            native-port/build/object-handler-reference/object-handler-parity-results.json
+            native-port/build/object-handler-network/object-handler-network-results.json
+            native-port/build/local-simulation-reference/local-simulation-parity-results.json
+            native-port/build/local-simulation-network/local-simulation-network-results.json
+            native-port/build/agent-data-reference/agent-data-parity-results.json
+            native-port/build/agent-put-reference/agent-put-parity-results.json
+            native-port/build/simulation-agent-data-reference/simulation-agent-data-results.json
+            native-port/build/agent-put-network/agent-put-network-results.json
+            native-port/build/agent-update-records-reference/agent-update-records-results.json
+            native-port/build/agent-position-reference/agent-position-parity-results.json
+            native-port/build/agent-delete-query-reference/agent-delete-query-results.json
+            native-port/build/agent-delete-network/agent-delete-network-results.json
+            native-port/build/agent-delete-reference/agent-delete-parity-results.json
+            native-port/build/agent-post-reference/agent-post-parity-results.json
+            native-port/build/simulation-body-reference/simulation-body-parity-results.json
+            native-port/build/agent-post-network/agent-post-network-results.json
+            native-port/build/agent-access-reference/agent-access-parity-results.json
+            native-port/build/agent-access-network/agent-access-network-results.json
+            native-port/build/friends-connector-reference/friends-connector-parity-results.json
+            native-port/build/friends-connector-network/friends-connector-network-results.json
+            native-port/build/service-xml-reference/service-xml-parity-results.json
+            native-port/build/friends-reference/friends-parity-results.json
+            native-port/build/friends-sqlite-reference/friends-sqlite-parity-results.json
+            native-port/build/friends-endpoint-reference/friends-endpoint-parity-results.json
+            native-port/build/time-zone-reference/report.json
+            native-port/build/login-response-reference/login-response-parity-results.json
+            native-port/build/host-resolver-reference/host-resolver-parity-results.json
+            native-port/build/simulation-connector-reference/simulation-connector-parity-results.json
+            native-port/build/simulation-transport-network/simulation-transport-network-results.json
+            native-port/build/asset-model-reference/asset-model-parity-results.json
+            native-port/build/wearable-cache-reference/wearable-cache-parity-results.json
+            native-port/build/texture-face-reference/texture-face-parity-results.json
+            native-port/build/texture-entry-reference/texture-entry-parity-results.json
+            native-port/build/osd-numeric-reference/osd-numeric-parity-results.json
+            native-port/build/login-orchestration-network/login-orchestration-network-results.json
+            native-port/build/network-tests/network-results.json
+            native-port/build/Testing/Temporary/LastTest.log
+
+  sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - run: cmake -S native-port -B native-port/build -DCMAKE_BUILD_TYPE=Debug -DOPENSIM_SANITIZERS=ON -DOPENSIM_DIFFERENTIAL_TESTS=ON -DOPENSIM_REQUIRE_TLS=ON
+      - run: cmake --build native-port/build --parallel
+      - run: ctest --test-dir native-port/build --output-on-failure
+
+  windows-https:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Configure TLS and gzip through pinned vcpkg manifest
+        shell: pwsh
+        run: cmake -S native-port -B native-port/build -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DOPENSIM_REQUIRE_TLS=ON -DOPENSIM_DIFFERENTIAL_TESTS=ON
+      - run: cmake --build native-port/build --config Release --parallel
+      - run: ctest --test-dir native-port/build -C Release --output-on-failure
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-windows-https
+          path: |
+            native-port/build/network-tests/network-results.json
+            native-port/build/Testing/Temporary/LastTest.log

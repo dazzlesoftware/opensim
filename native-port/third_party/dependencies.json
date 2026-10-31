@@ -1,0 +1,419 @@
+{
+  "schemaVersion": 1,
+  "dependencies": [
+    {
+      "name": "yhirose/cpp-httplib",
+      "version": "v0.63.0",
+      "revision": "5bcfea7b90575c80a3e54a6967b11b39afa60d5c",
+      "files": [
+        {
+          "path": "httplib/httplib.h",
+          "sha256": "e896d51fbfe1f8cb9c4ce21878b5b77db17163cff20333995e9e5773721ee6f4",
+          "url": "https://raw.githubusercontent.com/yhirose/cpp-httplib/5bcfea7b90575c80a3e54a6967b11b39afa60d5c/httplib.h",
+          "upstreamSha256": "9021001a719768893a8a6e4051c56107690e8b8e49b41e5f903534fa19ae9afb"
+        },
+        {
+          "path": "httplib/LICENSE",
+          "sha256": "4b45cbe16d7b71b89ae6127e26e0d90a029198ca5e958ad8e3d0b8bbed364d8b",
+          "url": "https://raw.githubusercontent.com/yhirose/cpp-httplib/5bcfea7b90575c80a3e54a6967b11b39afa60d5c/LICENSE"
+        }
+      ],
+      "localPatches": [
+        {
+          "path": "httplib/opensim-raw-requests.patch",
+          "sha256": "361f33ad5fa26fa12f0d22e577ae455a3e5223ba16d82bf99eca3c4089e876bc",
+          "scope": "Adds default-on request decompression toggle; scene protocol hosts can retain raw gzip bytes for source handler decoding. Existing default behavior is unchanged."
+        },
+        {
+          "path": "httplib/opensim-async-response.patch",
+          "sha256": "bb2ccc593b1a8825f20335a50008e6c22dffd4c6f6463ba9173398dfaf5da747",
+          "scope": "Opt-in native response deferral hook after complete body parsing, weak per-request transport context and protected response serializer. Existing synchronous behavior remains the default; native host owns socket/stream lifetime."
+        },
+        {
+          "path": "httplib/opensim-deferred-ranges.patch",
+          "sha256": "8f75be27cabd7a1c6710b93f78504ffadbdfa19b1b2fd403c8142790ae992990",
+          "scope": "Opt-in deferred hosts retain raw Range headers for original OpenSim handler parsing. Synchronous cpp-httplib range validation remains unchanged."
+        },
+        {
+          "path": "httplib/opensim-response-headers.patch",
+          "sha256": "a6947c704b3d2ff718c02637a91ddc1e696022e81bcef96bc50ff50e6c96d4e2",
+          "scope": "Opt-in client response-header policy before framing/body reads. The requester can project source first Content-Length behavior and abandon bodies at headers; default client/server validation is unchanged. Opt-in request-header suppression prevents automatic Accept/Accept-Encoding/User-Agent injection for original requester semantics; defaults remain unchanged. Opt-in source redirects strip Authorization at every hop and convert POST on300/301/302, retaining remaining request headers and dropping content headers on GET. Source mode follows only300/301/302/303/307/308 with Location; default redirect status behavior remains unchanged."
+        }
+      ]
+    },
+    {
+      "name": "zeux/pugixml",
+      "version": "v1.16",
+      "revision": "c8033ce9d039e7f9d134877c363397b3cfe20816",
+      "files": [
+        {
+          "path": "pugixml/pugixml.cpp",
+          "sha256": "bd94cd9ec6ac67c0723422640bb243eab4a7c2d9fd5584dab77305a50fa31ef4",
+          "url": "https://raw.githubusercontent.com/zeux/pugixml/c8033ce9d039e7f9d134877c363397b3cfe20816/src/pugixml.cpp"
+        },
+        {
+          "path": "pugixml/pugixml.hpp",
+          "sha256": "0b7c94701df3d50981ffafe57f177c77b940e347c6e5d01073e4161f61299212",
+          "url": "https://raw.githubusercontent.com/zeux/pugixml/c8033ce9d039e7f9d134877c363397b3cfe20816/src/pugixml.hpp"
+        },
+        {
+          "path": "pugixml/pugiconfig.hpp",
+          "sha256": "e6c51fbc9a765608bd214ea47d229d3bbd6b650036cdffc94b96b498c202495c",
+          "url": "https://raw.githubusercontent.com/zeux/pugixml/c8033ce9d039e7f9d134877c363397b3cfe20816/src/pugiconfig.hpp"
+        },
+        {
+          "path": "pugixml/LICENSE.md",
+          "sha256": "90974fbb120e966b452654eaae3ba6ee55f3647db3b28918a7649733ee99da97",
+          "url": "https://raw.githubusercontent.com/zeux/pugixml/c8033ce9d039e7f9d134877c363397b3cfe20816/LICENSE.md"
+        }
+      ]
+    },
+    {
+      "name": "SQLite",
+      "version": "3.54.1",
+      "url": "https://www.sqlite.org/2026/sqlite-amalgamation-3540100.zip",
+      "archiveSha3_256": "92281c86e2957f9b9305890f9ac04204caa7b677cc868dc326d942689df28e30",
+      "files": [
+        {
+          "path": "sqlite/sqlite3.c",
+          "sha256": "0c657666d819f261cc4007526ad57e1669de9949df7a8ea847aa284a2bf0ee52"
+        },
+        {
+          "path": "sqlite/sqlite3.h",
+          "sha256": "d6c84557261893439b341d2e6c35187ae3ea24fbfd843ad94616f72d89242b8c"
+        }
+      ]
+    },
+    {
+      "name": "zlib inflate and portable deflate fallback",
+      "version": "1.3.2",
+      "revision": "zlib-1.3.2",
+      "archiveUrl": "https://zlib.net/fossils/zlib-1.3.2.tar.gz",
+      "archiveSha256": "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16",
+      "scope": "Unmodified upstream inflate/checksum sources and deflate fallback compiled with Z_PREFIX. Windows x86/x64 sender uses separately isolated dotnet-zlib-intel; Unix sender uses system zlib to follow the .NET runtime profile.",
+      "files": [
+        {
+          "path": "zlib/adler32.c",
+          "sha256": "9cd1443a24ff2a3053961695bd432035c58347386a420d3388232376ebabe211",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/crc32.c",
+          "sha256": "da37f3483e77c20f64c28cf55d62d7bed9d62af33eb401be906835d84539b9c9",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/crc32.h",
+          "sha256": "9a2223575183ac2ee8a247f20bf3ac066e8bd0140369556bdbdffc777435749e",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/inffast.c",
+          "sha256": "f96787a11bb7131ffd2221fb40db27f6a5a1dfb12f59c0bc388807010749c34a",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/inffast.h",
+          "sha256": "05cc5dc9ff1da7b8b52a4bd8bda0d8a5c236a2f39efe84b941516ea13857e6c5",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/inffixed.h",
+          "sha256": "fd7c4b1dbdacb283421d0675744aaecda44e840e183b5131448bac94564f6adb",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/inflate.c",
+          "sha256": "90221ea7d762e7044057f6ad5013e969086c6ba3d3051716b7aa786d7a6362ec",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/inflate.h",
+          "sha256": "e6a43bd0e24ab2cf5fa1dca630859e9a2f6a721f033f75faf179f5c0299e4fe2",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/inftrees.c",
+          "sha256": "f7ee9ce5925fc9d1579c76e574feed85f5ca4ccddc446a7795578854bbc65743",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/inftrees.h",
+          "sha256": "d3a7ea301d8ec514823d052a2e42af4636bc81a0cf07052f526030f208068fb8",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/zutil.c",
+          "sha256": "1279908a15580224a2c1f377555ffdd150327fed71801aa77fc35978dcb741c8",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/zutil.h",
+          "sha256": "a12243cc6d338ffad0c8e3500fbc05bc7fdcdc25a469393b1c2f7e5df307fff3",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/zlib.h",
+          "sha256": "818667d6ab6a37fe7469cb06a7f0cb2c2cb2f2c948a03e5accf1a4a74bf3020a",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/zconf.h",
+          "sha256": "cb7c2c84211473b4699223edd363d3207b43b9578e739b5bf638f42204ea6e0f",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/LICENSE",
+          "sha256": "e32ff4e00d9d94930537635291da39e7e612703334bf6fde8c7f1686fe8a45a2",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/gzguts.h",
+          "sha256": "db7690315cda93c0742701365d5218932ff0e2e6b8713c95019553502ada7d2b",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/deflate.c",
+          "sha256": "ea9ca4eb51b1a71aaf214b99f4a9fab177253d6268cae8e4c26d44d1812e52c2",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/deflate.h",
+          "sha256": "21f4ea0973dab272fb26e93305ccf8628c8dc07e6c5df09a9861825b1920ba5d",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/trees.c",
+          "sha256": "a16217d5ea6d8342ff08afe5207b1dab620f05610e121dda55b4f9aae9de4f68",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        },
+        {
+          "path": "zlib/trees.h",
+          "sha256": "bb0a9d3ca88ee00c81adb7c636e73b97085f6ef1b52d6d58edbe2b6dc3adeb4d",
+          "url": "https://zlib.net/fossils/zlib-1.3.2.tar.gz"
+        }
+      ]
+    },
+    {
+      "name": "dotnet-zlib-intel",
+      "version": "dotnet/runtime v8.0.31, intel/zlib v1.2.13_jtk (6160a8f20c3626aec2f8b0fda5bf2e65bfe31781)",
+      "license": "zlib; original notices retained",
+      "files": [
+        {
+          "path": "dotnet_zlib_intel/README.txt",
+          "sha256": "7a6459aa50a4bcbb0d85f29fd9be9d997e1d6f891bdb6faa8b89bb356cc52a6d",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/README.txt"
+        },
+        {
+          "path": "dotnet_zlib_intel/adler32.c",
+          "sha256": "fa6567d4fe4d799e6e032327d12fcb23b05b99e17905b60d5a478ef395ef04a4",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/adler32.c"
+        },
+        {
+          "path": "dotnet_zlib_intel/compress.c",
+          "sha256": "6d0f0d0784744acca2678ce325c8d7c4c030e86f057adb78adcee111d2248c0d",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/compress.c"
+        },
+        {
+          "path": "dotnet_zlib_intel/crc32.c",
+          "sha256": "6c557263fc73d55b2e5bade35bf351b4ece6a69c59b947cbf4173021bde61802",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/crc32.c"
+        },
+        {
+          "path": "dotnet_zlib_intel/crc32.h",
+          "sha256": "9a2223575183ac2ee8a247f20bf3ac066e8bd0140369556bdbdffc777435749e",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/crc32.h"
+        },
+        {
+          "path": "dotnet_zlib_intel/crc_folding.c",
+          "sha256": "590a913ff352af579fe4880788b8c016dabf0cbe875d0bb1a07a4cd9b1a76d65",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/crc_folding.c"
+        },
+        {
+          "path": "dotnet_zlib_intel/deflate.c",
+          "sha256": "c0185c5b0c059f018fd221a89831fa1145c024646c8a1eae86cec3f03e5b6909",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/deflate.c"
+        },
+        {
+          "path": "dotnet_zlib_intel/deflate.h",
+          "sha256": "0c7492383bf28ec06744aa307da3460873e3642294dc6ea54ea0abec5e73bde0",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/deflate.h"
+        },
+        {
+          "path": "dotnet_zlib_intel/deflate_medium.c",
+          "sha256": "4c80de21c2fe926b198fb6bedb34719a7ecdd5f54fae1ef2448f66eebd9bfd09",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/deflate_medium.c"
+        },
+        {
+          "path": "dotnet_zlib_intel/deflate_quick.c",
+          "sha256": "90bf3092e5913253252745e9a371ff7aebebc62b01ac640967469c615471e1ab",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/deflate_quick.c"
+        },
+        {
+          "path": "dotnet_zlib_intel/gzguts.h",
+          "sha256": "fa85c9dabe24e42ba95c702870416ff67ecc58906321f8e74b72a50dfd7df400",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/gzguts.h"
+        },
+        {
+          "path": "dotnet_zlib_intel/inffast.c",
+          "sha256": "b8f76d36ee650b095ed95e35fb5f8701bf3f8a837a66d00c3b074455589e59aa",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/inffast.c"
+        },
+        {
+          "path": "dotnet_zlib_intel/inffast.h",
+          "sha256": "7d8c1c873ce9bc346ad6005bb9d75cce5c6352aaf7395385be216a9452a34908",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/inffast.h"
+        },
+        {
+          "path": "dotnet_zlib_intel/inffixed.h",
+          "sha256": "237ba710f090e432b62ebf963bee8b302867e9691406b2d3f8ee89ee7bfef9b0",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/inffixed.h"
+        },
+        {
+          "path": "dotnet_zlib_intel/inflate.c",
+          "sha256": "0c2b83ef039636b4b38a6040473de9efb950803a5b2dc13309e252aeb227b526",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/inflate.c"
+        },
+        {
+          "path": "dotnet_zlib_intel/inflate.h",
+          "sha256": "c6db81c0f1fb46b20646a1a9f883323d75cc35bffc04857aa3307224538f9dd6",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/inflate.h"
+        },
+        {
+          "path": "dotnet_zlib_intel/inftrees.c",
+          "sha256": "b9db40bbb68b63dccbcdfa78d687751e33178af8669f1c1236309cfd5d2edc0e",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/inftrees.c"
+        },
+        {
+          "path": "dotnet_zlib_intel/inftrees.h",
+          "sha256": "44084a93673386db6282dcb61d739c84518e10dff66d1c6850715137c827464c",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/inftrees.h"
+        },
+        {
+          "path": "dotnet_zlib_intel/match.c",
+          "sha256": "845f14f6731a57186e9f9fa0c5e7ac459c9c85592f701956656357babab0bbd6",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/match.c"
+        },
+        {
+          "path": "dotnet_zlib_intel/slide_sse.c",
+          "sha256": "f262cd02ee40dd906567aa2947ae61a98aaa6fa5e640226feed5bb364e39b3bc",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/slide_sse.c"
+        },
+        {
+          "path": "dotnet_zlib_intel/trees.c",
+          "sha256": "5d055814c5eab1a12b0646ea10a162abc16db27408b314d92b7c5eada67ef560",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/trees.c"
+        },
+        {
+          "path": "dotnet_zlib_intel/trees.h",
+          "sha256": "3caf481ae2e335a76917e48cd75b8f0379f800951a6e7d8362c6fb6cb8d593b2",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/trees.h"
+        },
+        {
+          "path": "dotnet_zlib_intel/x86.c",
+          "sha256": "34d1e990437dfcbdbfe359955c6a347084cd44e55db6dbab6d38c066cb330f22",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/x86.c"
+        },
+        {
+          "path": "dotnet_zlib_intel/x86.h",
+          "sha256": "58265212264c0c04dc34f9aff080ae82c4f33439f928b6c70a65ec4d335935ac",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/x86.h"
+        },
+        {
+          "path": "dotnet_zlib_intel/zconf.h",
+          "sha256": "80e0a31a4c0e6f20d1bad0df99271b9d535aa9f7c4e62f1a54f643adb4c6dfa2",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/zconf.h"
+        },
+        {
+          "path": "dotnet_zlib_intel/zlib.h",
+          "sha256": "a980a0d104198a53cc220c51ab5856e5be901bec8a2d02e0ee79a8754219dfed",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/zlib.h"
+        },
+        {
+          "path": "dotnet_zlib_intel/zutil.c",
+          "sha256": "8108af451ad14271065844736ac7c436275b92826c319318070508d769371428",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/zutil.c"
+        },
+        {
+          "path": "dotnet_zlib_intel/zutil.h",
+          "sha256": "af589c30f76539f16c6bb39fbb72818b84c4cbe1162f272e8455c79393c05e70",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/external/zlib-intel/zutil.h"
+        }
+      ],
+      "nativeChanges": "Unmodified upstream files; opensim_prefix.h is force-included to isolate public/internal symbols. The native port supplies no .NET runtime dependency. The C++ wrapper initializes CPU feature dispatch with call_once and supplies zeroed calloc/free allocations; upstream source files are unchanged. The prefix header supplies a Clang target-specific CRC32 helper; the dispatched CRC-folding translation unit has local PCLMUL/SSSE3/SSE4 flags. No global CPU ISA requirement is added.",
+      "revision": "dotnet/runtime v8.0.31"
+    },
+    {
+      "name": "dotnet/runtime invariant-ignore-case collation tailoring",
+      "version": "v8.0.31",
+      "revision": "v8.0.31",
+      "files": [
+        {
+          "path": "dotnet_collation/ignore_case_tables.inc",
+          "sha256": "f84f2beffcc0d8444639090addcf1d670d052da9cddbf7730fd6ec707ffdd5b6"
+        },
+        {
+          "path": "dotnet_collation/LICENSE",
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/LICENSE.TXT"
+        }
+      ],
+      "sourceReferences": [
+        {
+          "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/libs/System.Globalization.Native/pal_collation.c",
+          "sha256": "f5dfcc47f48dca80ccaa487149317a5df8f652267ccb6f07b241db816b02ff76"
+        }
+      ],
+      "nativeChanges": "Unchanged width/kana data tables extracted into a C++ constexpr include. Native ICU loader reconstructs the IgnoreCase-only tailoring rules while retaining width/kana distinctions. No .NET runtime is linked or redistributed."
+    },
+    {
+      "name": "OpenSimulator bundled ubODE native runtime",
+      "version": "ODE_OPENSIM OS0.13.4 single precision",
+      "license": "BSD-3-Clause (original ODE notice)",
+      "files": [
+        {
+          "path": "../../bin/lib64/ubode.dll",
+          "sha256": "3195f99dddf5536b4ab199e62c5f0f2fa6221783781ff852285bd1b27ab177b4",
+          "origin": "Original tracked repository dependency; unchanged"
+        },
+        {
+          "path": "../../bin/lib64/libubode-x86_64.so",
+          "sha256": "3a3ce3c91a30035dc59c8f53f105718e101261c56dbc35f226c8fe15fcb44004",
+          "origin": "Original tracked repository dependency; unchanged"
+        },
+        {
+          "path": "../../bin/lib64/libubode-arm64.so",
+          "sha256": "c457a1eaf8e9696f0a33c3233daabc53648cb21878892c61aa0b3f589acbfdaa",
+          "origin": "Original tracked repository dependency; unchanged"
+        },
+        {
+          "path": "../../bin/lib64/libubode.dylib",
+          "sha256": "e69017e86cb09b39a5801b141c2722e1f1ac9bc2a28e6cc020bfedb883ffbdb3",
+          "origin": "Original tracked repository dependency; unchanged"
+        },
+        {
+          "path": "../../ThirdPartyLicenses/ODE.txt",
+          "sha256": "c5188b1a1e505a9e46bff34f971de468f03feba7abf72e83a4b7a597fe0d1aff",
+          "origin": "Original tracked repository dependency; unchanged"
+        }
+      ],
+      "nativeChanges": "No native engine bytes changed. C++ dynamic ABI adapter translates original ubOde/ODEApi.cs and validates64-bit little-endian single/OpenSim OS0.13.4 configuration. Original per-platform native library is loaded explicitly and installed with its ODE notice. Windows x64, Linux x64/ARM64 and universal macOS binaries are pinned; actual runtime testing currently Windows only."
+    }
+  ],
+  "systemRuntimeDependencies": [
+    {
+      "name": "OS ICU collation library",
+      "usedBy": [
+        "src/culture_prefix.cpp",
+        "src/time_zone.cpp"
+      ],
+      "loading": {
+        "Windows": "System32/icu.dll",
+        "Linux": "libicui18n.so with versioned symbol detection",
+        "macOS": "/usr/lib/libicucore.A.dylib"
+      },
+      "scope": "Cultural route-prefix matching uses invariant root collation. Printable ASCII uses equivalent byte prefix fast path; non-ASCII/control paths require ICU and fail explicitly if unavailable. Source-matched on current Windows/.NET8 profile; other ICU/OS/current-culture profiles remain unverified. Time-zone use remains identifier conversion only. Header name equality now additionally uses invariant ignore-case ICU tailoring reconstructed from pinned .NET8 width/kana tables, via ucol_getRules/ucol_openRules. Plain secondary-strength comparison is insufficient because source IgnoreCase retains width/kana distinctions. Source-backed Unicode header cases pass on Windows; other ICU/NLS/runtime/OS profiles remain pending.",
+      "redistribution": "System library, not copied into the repository or native package."
+    }
+  ]
+}

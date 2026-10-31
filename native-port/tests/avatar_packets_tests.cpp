@@ -1,0 +1,9 @@
+#include "opensim/scene/avatar_packets.hpp"
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+using namespace opensim;using namespace framework;using namespace scene;
+Uuid id(int n){std::ostringstream s;s<<"00000000-0000-0000-0000-"<<std::hex<<std::setw(12)<<std::setfill('0')<<n;return Uuid(s.str());}
+int main(int argc,char** argv){try{if(argc>1&&std::string(argv[1])=="--probe"){int seed,mode;while(std::cin>>seed>>mode){network::lludp::Packet p;if(mode==0){AvatarAppearance::Wearables wearables;for(int i=0;i<17;++i){auto w=std::make_shared<AvatarWearable>();for(int j=0;j<(seed+i)%4;++j)w->add(id(100+i*10+j),id(200+i*10+j));wearables.push_back(w);}p=avatar_wearables(id(1),id(2),wearables,seed-100);}else{std::vector<std::uint8_t> visual((seed*11)%256),texture((seed*17)%512);for(std::size_t i=0;i<visual.size();++i)visual[i]=static_cast<std::uint8_t>(i*7+seed);for(std::size_t i=0;i<texture.size();++i)texture[i]=static_cast<std::uint8_t>(i*13+seed);p=avatar_appearance(id(1),visual,texture,seed*.125f);}for(auto b:network::lludp::encode_datagram(p))std::cout<<std::hex<<std::setw(2)<<std::setfill('0')<<unsigned(b);std::cout<<'\n';}return 0;}
+ AvatarAppearance a;auto p=avatar_wearables(id(1),id(2),*a.wearables,a.serial);if(p.blocks.at("WearableData").size()!=6)throw std::runtime_error("Default wearables count");auto texture=a.texture->bakes_bytes();p=avatar_appearance(id(1),*a.visual_params,texture,0);auto decoded=network::lludp::decode_datagram(network::lludp::encode_datagram(p),65536,false);if(decoded.blocks.at("VisualParam").size()!=218||decoded.blocks.at("AppearanceHover").size()!=1||!decoded.blocks.at("AppearanceData").empty())throw std::runtime_error("Source appearance blocks");std::cout<<"PASS: native wearable/appearance packets\n";return 0;
+ }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/opensim/libopenmetaverse",
+  "revision": "f3ee229dc2a17e0dfd7256f8f634afe8e7610487",
+  "templateSha256": "b16be387261aae04eef367c5a8ddb72ab562fea723891ef36a8ab92e9e0fdb8f",
+  "protocolAssembly": "bin/OpenMetaverse.dll",
+  "protocolAssemblySha256": "63d013b9de64c7586992ac5c1e98de3e65b7a812776b52af475f3e754d0c0496",
+  "compiledPacketTypes": 387
+}

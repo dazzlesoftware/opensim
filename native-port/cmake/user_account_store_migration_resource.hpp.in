@@ -1,0 +1,5 @@
+// Generated from the original SQLite UserAccount.migrations resource.
+#pragma once
+namespace opensim::services {
+inline constexpr char UserAccountStoreMigration[] = R"OSIMSQL(@USER_ACCOUNT_MIGRATION_SQL@)OSIMSQL";
+}

@@ -1,0 +1,138 @@
+; Native service server. See native-region.ini.example for the experimental region.
+; Paths resolve relative to this file. SQLite providers migrate at startup.
+[Network]
+http_listener_port = 9000
+
+[NativeServer]
+ListenAddress = 127.0.0.1
+UserAccountDatabase = native.db
+AuthenticationDatabase = native.db
+; Remote uses AuthenticationService.AuthenticationServerURI and no local auth DB.
+AuthenticationProvider = SQLite
+HttpWorkers = 8
+HttpQueuedRequests = 64
+HttpTimeoutSeconds = 5
+MaximumRequestBytes = 1048576
+AllowWebLoginKeys = true
+EnablePresenceEndpoint = false
+EnableGridUserEndpoint = false
+EnableGridEndpoint = false
+EnableAccountEndpoint = false
+; Expose original POST /auth/plain authentication and permitted administration.
+EnableAuthenticationEndpoint = false
+EnableAvatarService = false
+; Persisted directional friendships populate successful login buddy lists.
+EnableFriendsService = false
+; Expose original POST /friends operations (also enables storage).
+EnableFriendsEndpoint = false
+FriendsDatabase = friends.db
+; Set Remote to use FriendsService.FriendsServerURI instead of local storage.
+FriendsProvider = SQLite
+; Expose the original grid-facing POST /avatar operations (implies avatar storage).
+EnableAvatarEndpoint = false
+AvatarDatabase = avatars.db
+; Connect post-auth inventory/presence/destination preparation.
+EnableLoginOrchestration = false
+; Opt in to admission on a reachable compatible remote simulator (also enables preparation).
+EnableRemoteSimulationConnector = false
+; Experimental scene path; mutually exclusive with the remote connector.
+; Uses NativeRegion settings; see native-region.ini.example for a complete setup.
+EnableLocalRegion = false
+InventoryDatabase = inventory.db
+; Set SQLite before --init-db for durable region registration.
+GridRegionProvider = Null
+GridRegionDatabase = regions.db
+GridUserDatabase = grid-user.db
+; TlsCertificate = server.crt
+; TlsPrivateKey = server.key
+
+[LoginService]
+RequireInventory = true
+MinLoginLevel = 0
+AllowRemoteSetLoginLevel = false
+
+[UserAccountService]
+AllowSetAccount = false
+; Enables source account/password provisioning and available home/inventory services.
+AllowCreateUser = false
+; With connected inventory, creates six default wearables and six outfit links.
+; EnableAvatarService connects appearance persistence and existing-model retrieval.
+CreateDefaultAvatarEntries = false
+
+AuthType = None
+AllowllHTTPRequestIn = false
+; AuthType = BasicHttpAuthentication
+; HttpAuthUsername = service
+; HttpAuthPassword = configure-a-password
+
+[AuthenticationService]
+Realm = auth
+; AuthenticationServerURI = http://127.0.0.1:8003
+AllowGetAuthInfo = false
+AllowSetAuthInfo = false
+AllowSetPassword = false
+AuthType = None
+AllowllHTTPRequestIn = false
+; AuthType = BasicHttpAuthentication
+; HttpAuthUsername = service
+; HttpAuthPassword = configure-a-password
+
+[AvatarService]
+Realm = Avatars
+AllowllHTTPRequestIn = false
+AuthType = None
+; AuthType = BasicHttpAuthentication
+; HttpAuthUsername = service
+; HttpAuthPassword = configure-a-password
+
+[PresenceService]
+AllowDuplicatePresences = false
+AllowllHTTPRequestIn = false
+AuthType = None
+; AuthType = BasicHttpAuthentication
+; HttpAuthUsername = service
+; HttpAuthPassword = configure-a-password
+
+[Messaging]
+; Optional shared key included in duplicate-session region kick requests.
+MessageKey =
+
+[GridInfoService]
+gridname = OpenSimulator Native Development
+gridnick = opensim-native
+platform = OpenSim
+; Set login to the externally advertised URI if binding all interfaces.
+login = http://127.0.0.1:9000/
+
+[GridUserService]
+Realm = GridUser
+AllowllHTTPRequestIn = false
+AuthType = None
+; AuthType = BasicHttpAuthentication
+; HttpAuthUsername = service
+; HttpAuthPassword = configure-a-password
+
+[GridService]
+; Native provider selection is in [NativeServer]; Realm selects its SQLite table.
+Realm = regions
+RegionsAutoRegistration = true
+DeleteOnUnregister = true
+AllowDuplicateNames = false
+AuthType = None
+AllowllHTTPRequestIn = false
+
+; Remote simulator admission is opt-in and also enables login orchestration.
+; Requires a registered, reachable compatible simulator and initialized inventory.
+; The native process does not yet host a simulator scene.
+; [NativeServer]
+; EnableRemoteSimulationConnector = false
+; [LibraryService]
+; DefaultLibrary = ../bin/inventory/Libraries.xml
+; LibraryName = OpenSim Library
+
+; Remote friends configuration (requires FriendsProvider=Remote and service enabled):
+; [FriendsService]
+; FriendsServerURI = http://127.0.0.1:8003
+; AuthType = BasicHttpAuthentication
+; HttpAuthUsername = grid-user
+; HttpAuthPassword = grid-password

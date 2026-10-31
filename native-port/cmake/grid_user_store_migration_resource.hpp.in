@@ -1,0 +1,5 @@
+// Generated from the original SQLite 001_GridUserStore.sql resource.
+#pragma once
+namespace opensim::services {
+inline constexpr char GridUserStoreMigrationHex[] = "@GRID_USER_MIGRATION_HEX@";
+}

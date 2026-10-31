@@ -1,0 +1,78 @@
+; Experimental connected native region. Full simulator parity remains unfinished.
+; Copy beside the databases as native-region.ini. Paths resolve relative to it.
+[NativeServer]
+ListenAddress = 127.0.0.1
+EnableLocalRegion = true
+EnableRegionAssets = true
+; Asset-enabled regions default to 16 MiB; upload handlers enforce their own limits.
+; MaximumRequestBytes = 16777216
+UserAccountDatabase = users.db
+AuthenticationDatabase = users.db
+InventoryDatabase = inventory.db
+GridUserDatabase = gridusers.db
+EnableAvatarService = true
+AvatarDatabase = avatars.db
+HttpTimeoutSeconds = 15
+
+[Network]
+http_listener_port = 9000
+
+[NativeRegion]
+ID = 11111111-1111-4111-8111-111111111111
+Name = Native Region
+LocationX = 1000
+LocationY = 1000
+UDPPort = 9000
+BindAddress = 127.0.0.1
+ExternalHost = 127.0.0.1
+OwnerID = 00000000-0000-0000-0000-000000000000
+; Optional authoritative single-avatar terrain physics using original native ubODE.
+Physics = ubODE
+; PhysicsLibrary = ../bin/lib64/ubode.dll
+; Omit PhysicsLibrary to discover the bundled library for this platform.
+; Default Physics=None supports protocol/object/script probes without movement.
+; Optional custom default script text; requires EnableRegionAssets.
+; Each new script stores its actual text under a new asset UUID.
+; DefaultScriptFile = ../bin/assets/ScriptsAssetSet/DefaultSayAndTouch.lsl
+
+[GridService]
+DefaultRegionFlags = +DefaultRegion +FallbackRegion
+
+[LoginService]
+RequireInventory = true
+WelcomeMessage = Experimental native OpenSim region
+
+; Asset service paths follow the original service's process working directory.
+; This checkout example assumes you launch from native-port/.
+[Modules]
+AssetServices = LocalAssetServicesConnector
+
+[AssetService]
+LocalServiceModule = OpenSim.Services.AssetService.dll:AssetService
+StorageProvider = OpenSim.Data.SQLite.dll
+ConnectionString = URI=file:assets.db;version=3;Pooling=false
+DefaultAssetLoader = OpenSim.Framework.AssetLoader.Filesystem.dll
+AssetLoaderArgs = ../bin/assets/AssetSets.xml
+
+[ClientStack.LindenCaps]
+Cap_GetTexture = localhost
+Cap_GetMesh = localhost
+Cap_GetMesh2 = localhost
+Cap_GetAsset = localhost
+Cap_FetchInventory2 = localhost
+Cap_FetchInventoryDescendents2 = localhost
+Cap_FetchLib2 = localhost
+Cap_FetchLibDescendents2 = localhost
+
+[LibraryService]
+DefaultLibrary = ../bin/inventory/Libraries.xml
+LibraryName = OpenSim Library
+
+; Optional original memory-only Flotsam cache and baked uploads:
+; Add AssetCaching=FlotsamAssetCache to the existing [Modules] section.
+; Add Cap_UploadBakedTexture=localhost to [ClientStack.LindenCaps].
+; Then add this section (file-backed Flotsam caching remains unimplemented):
+; [AssetCache]
+; FileCacheEnabled=false
+; MemoryCacheEnabled=true
+; MemoryCacheTimeout=0.25

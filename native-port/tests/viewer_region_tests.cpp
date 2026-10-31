@@ -1,0 +1,44 @@
+// Copyright (c) Contributors, http://opensimulator.org/
+// BSD license: native-port/LICENSE.txt.
+#include "opensim/scene/viewer_region.hpp"
+#include "opensim/network/udp_socket.hpp"
+#include <condition_variable>
+#include <algorithm>
+#include <atomic>
+#include <iostream>
+#include <thread>
+using namespace opensim;using namespace framework;using namespace network;using namespace scene;
+namespace {
+int failures=0;void check(bool ok,const char* name){if(!ok){++failures;std::cerr<<"FAIL: "<<name<<'\n';}}
+struct Fixture {
+ World world{Uuid::random()};AgentCircuitManager circuits;std::shared_ptr<AgentCircuitData> circuit=std::make_shared<AgentCircuitData>();
+ Fixture(){circuit->agent_id=Uuid::random();circuit->session_id=Uuid::random();circuit->circuit_code=42;circuit->start_position={128,128,70};circuits.add_new_circuit(circuit);world.terrain().clear_land();}
+ lludp::Packet packet(const char* name,std::uint32_t seq){auto p=lludp::make_packet(name);p.sequence=seq;if(p.blocks.contains("AgentData")){auto& d=p.block("AgentData");d["AgentID"]=circuit->agent_id;d["SessionID"]=circuit->session_id;}return p;}
+ lludp::Packet use(){auto p=packet("UseCircuitCode",1);auto& d=p.block("CircuitCode");d["ID"]=circuit->agent_id;d["SessionID"]=circuit->session_id;d["Code"]=std::uint64_t(42);return p;}
+};
+void admission_test(){Fixture f;std::vector<lludp::Packet> replies;ViewerRegion region(f.world,f.circuits,[&](const auto&,auto bytes){replies.push_back(lludp::decode_datagram(bytes));return true;},{});region.receive({"127.0.0.1",12345},lludp::encode_datagram(f.use()));check(replies.size()==1&&replies[0].spec->name=="PacketAck"&&!region.agent(f.circuit->agent_id),"registered credentials require actual scene admission");}
+void socket_test(){
+ Fixture f;std::atomic<int> entered=0,closed=0,logout=0;ViewerRegion* owner=nullptr;UdpSocket* socket=nullptr;std::mutex mutex;std::condition_variable changed;std::vector<lludp::Packet> replies;
+ UdpSocket server({"127.0.0.1",0},[&](const auto& from,auto bytes){owner->receive(from,bytes);});socket=&server;
+ ViewerRegionOptions options;options.name="Connected Region";options.owner=f.circuit->agent_id;options.unix_time=[]{return 1234567u;};
+ ViewerRegion region(f.world,f.circuits,[&](const auto& target,auto bytes){return socket->send_to(target,bytes);},[](const auto&,const auto&,const auto&){return true;},options);owner=&region;
+ region.callbacks({},[&](const auto&){++entered;changed.notify_all();},[&](const auto&){++logout;changed.notify_all();},[&](const auto&){++closed;changed.notify_all();});auto bound=server.start();
+ UdpSocket client({"127.0.0.1",0},[&](const auto&,auto bytes){std::lock_guard lock(mutex);replies.push_back(lludp::decode_datagram(bytes,65536,false));changed.notify_all();});client.start();
+ auto send=[&](const auto& p){client.send_to(bound,lludp::encode_datagram(p));};
+ auto wait=[&](const char* name)->lludp::Packet{std::unique_lock lock(mutex);bool got=changed.wait_for(lock,std::chrono::seconds(3),[&]{return std::any_of(replies.begin(),replies.end(),[&](auto& p){return p.spec->name==name;});});if(!got)throw std::runtime_error(std::string("Missing viewer packet: ")+name);for(auto& p:replies)if(p.spec->name==name)return p;throw std::runtime_error("packet");};
+ send(f.use());auto handshake=wait("RegionHandshake");check(std::get<Uuid>(handshake.block("RegionInfo2").at("RegionID"))==f.world.region_id(),"UDP handshake identifies actual world");check(std::get<bool>(handshake.block("RegionInfo").at("IsEstateManager")),"estate owner handshake policy");check(std::get<double>(handshake.block("RegionInfo").at("WaterHeight"))==20,"source water-height field");check(std::get<std::uint64_t>(handshake.block("RegionInfo4").at("RegionProtocols"))==(std::uint64_t(1)<<63),"source extended bake protocol bit");
+ auto hs=f.packet("RegionHandshakeReply",2);hs.block("RegionInfo")["Flags"]=std::uint64_t(7);send(hs);
+ auto movement=f.packet("CompleteAgentMovement",3);movement.block("AgentData")["CircuitCode"]=std::uint64_t(99);send(movement);
+ movement.sequence=4;movement.block("AgentData")["CircuitCode"]=std::uint64_t(42);send(movement);auto complete=wait("AgentMovementComplete");{std::unique_lock lock(mutex);check(changed.wait_for(lock,std::chrono::seconds(3),[&]{return entered==1;}),"scene enter callback completed");}check(std::get<std::vector<double>>(complete.block("Data").at("Position"))==std::vector<double>({128,128,70}),"movement completion preserves circuit start position");check(std::get<std::uint64_t>(complete.block("Data").at("Timestamp"))==1234567,"movement completion timestamp");check(std::get<std::uint64_t>(complete.block("Data").at("RegionHandle"))==((std::uint64_t(256000)<<32)|256000),"movement completion region handle");
+ auto state=region.agent(f.circuit->agent_id);check(state&&state->root&&state->handshake_reply&&state->viewer_flags==7&&entered==1,"UDP viewer lifecycle reaches root state once for correct circuit");check(state&&state->local_id==720001&&f.world.allocate_local_id()==720002,"avatars share actual world local-ID allocator");
+ auto stale=Uuid::random();auto before=region.agent(f.circuit->agent_id);
+ check(!region.update_physics(f.circuit->agent_id,stale,{1,2,3},{4,5,6},{},true),"stale physics session cannot update replacement viewer");
+ check(region.agent(f.circuit->agent_id)->position==before->position,"rejected physics work preserves viewer position");
+ check(!region.transport().enqueue_if_session(f.circuit->agent_id,stale,lludp::make_packet("StartPingCheck"),ThrottleOutPacketType::Task),"stale session cannot enqueue packets into current circuit");
+ check(region.update_physics(f.circuit->agent_id,f.circuit->session_id,{128,128,71},{1,0,0},{},false).has_value(),"current physics session updates viewer");
+ auto update=f.packet("AgentUpdate",5);auto& data=update.block("AgentData");data["BodyRotation"]=std::vector<double>{0,0,0,1};data["CameraAtAxis"]=std::vector<double>{0,1,0};data["ControlFlags"]=std::uint64_t(1);send(update);
+ auto log=f.packet("LogoutRequest",6);send(log);auto reply=wait("LogoutReply");{std::unique_lock lock(mutex);check(changed.wait_for(lock,std::chrono::seconds(3),[&]{return logout==1;}),"scene logout callback completed");}check(reply.blocks.at("InventoryData").size()==1&&std::get<Uuid>(reply.block("InventoryData").at("ItemID")).is_zero(),"source logout packet sentinel");state=region.agent(f.circuit->agent_id);check(state&&state->logout_requested&&state->controls==1&&state->look_at==Vector3{0,1,0}&&logout==1,"agent update and logout reach scene owner");
+ region.disconnect(f.circuit->agent_id);check(!region.agent(f.circuit->agent_id)&&!f.circuits.get_agent_circuit_data(f.circuit->agent_id)&&closed==1,"disconnect tears down viewer state and circuit");client.stop();server.stop();region.close();
+}
+}
+int main(){try{admission_test();socket_test();}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}if(failures)return 1;std::cout<<"Native viewer circuit/handshake/movement UDP lifecycle passed\n";}

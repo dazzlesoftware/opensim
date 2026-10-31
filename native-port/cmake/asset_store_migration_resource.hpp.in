@@ -1,0 +1,5 @@
+// Generated from the original SQLite AssetStore.migrations resource.
+#pragma once
+namespace opensim::services {
+inline constexpr char AssetStoreMigration[] = R"OSIMSQL(@ASSET_MIGRATION_SQL@)OSIMSQL";
+}

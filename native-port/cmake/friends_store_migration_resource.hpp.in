@@ -1,0 +1,5 @@
+// Generated from the original SQLite FriendsStore.migrations resource.
+#pragma once
+namespace opensim::services {
+inline constexpr char FriendsStoreMigration[] = R"OSIMSQL(@FRIENDS_MIGRATION_SQL@)OSIMSQL";
+}

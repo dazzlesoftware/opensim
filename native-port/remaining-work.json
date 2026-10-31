@@ -1,0 +1,563 @@
+{
+  "schemaVersion": 1,
+  "applicationParityVerified": false,
+  "scopes": [
+    {
+      "name": "Successful viewer login",
+      "status": "partial",
+      "required": [
+        "Inventory root/skeleton/library and gestures",
+        "Grid-user and presence state with rollback",
+        "Destination-selector integration into admission, home-info synthesis and launch retry lifecycle",
+        "Agent circuit creation and simulator admission",
+        "Linux/macOS timezone execution, remaining TimeZoneInfo/calendar edge cases and DNS/IDNA/socket compatibility; production response/capability integration and complete managed-model compatibility",
+        "Duplicate-presence recovery and region launch failure cleanup",
+        "Hypergrid/gatekeeper/user-agent routing",
+        "MakeAgent appearance cloning/defaults, capability path and account service-URL persistence"
+      ],
+      "implemented": [
+        "Native home/last/custom destination selector and default/fallback/online selection core",
+        "32 source-backed destination scenarios producing 800 region/float-bit/where/flag observations",
+        "Native integration test selects from SQLite region/grid-user state without prematurely marking the user online",
+        "Opt-in connected executable login preparation with inventory, grid-user, presence, home-info synthesis and failure rollback",
+        "512 extracted-source preparation/control-flow traces with instrumented dependency failures; native integration and 55 HTTP/persistence observations",
+        "Duplicate-session god-kick XML-RPC transport, Messaging.MessageKey and stale-state cleanup even when delivery fails",
+        "Agent launch/retry component with 160 original-method traces, access-context propagation, direct/HG fallback flags, circuit reuse, connector selection and SQLite scope/circuit-manager integration",
+        "AvatarWearable mutation/default/reference/OSD model with 1411 original-class comparisons",
+        "AvatarAttachment and EntityTransferContext fields/copy/pack/unpack with 2139 original-class comparisons",
+        "SDK scalar conversions and 64-bit LLSD binary encoding with 355 library comparisons; unsafe short binary reads excluded",
+        "Post-destination avatar service retrieval preserves nullable appearance references and source exception/presence cleanup; executable binds real SQLite avatar conversion, with remote corruption/reset and login recovery HTTP checks",
+        "Native simulation connector QueryAccess/CreateAgent with actual HTTP JSON, transfer version/feature negotiation, gzip/plain fallback and complete circuit/appearance packing; 1677 original-method profiles and socket fixtures. Production login connector binding and successful response construction still pending",
+        "Successful response default/public state and XML-RPC/LLSD conversion core, with buddy info/list reference identity, nullable fields, static texture state, epoch/integer boundaries and original mutation/failure behavior; 782 complete original-class fixture observations plus live-reference wire tests",
+        "Account/destination response constructor assembles inventory, library, gestures, circuit/account IDs, friends, home/look-at, endpoint, capability and DST policy in source order; 180 full-class constructor profiles (962 response observations total), plus actual SQLite/factory/bundled-library integration",
+        "Native response network binding resolves region simulator endpoints through shared Util-compatible DNS cache; actual localhost/system lookup, concurrent cached reads, shared address mutation, timer shutdown and SQLite/factory/library response integration verified on Windows",
+        "Native named/local OS timezone lookup and login-response daylight providers, with 12795 .NET runtime comparisons across installed Windows zones, IANA aliases, historical/future dates, DateTime range boundaries and detected 2025-2027 transitions; cache concurrency and deferred clock/exception semantics verified. Unix/macOS TZif backend remains unexecuted.",
+        "LoginCompletion integrates prepared state, agent launch/factory, LoggedIn, optional friends, welcome substitution, gestures and real response assembly. Opt-in executable remote simulation connector completes successful XML-RPC and typed LLSD HTTP responses using SQLite inventory/grid-user services and bundled library. 179 connected HTTP/persistence checks include matched admitted credentials and preserved 503 scene readiness; native integration covers rejection and post-admission dependency failures/cleanup/online-state retention. Actual viewer session, original-tail differential coverage and native scene admission remain pending.",
+        "Native SQLite friends service and opt-in /friends endpoint feed persisted UUID friendships and directional rights into XML-RPC/LLSD login. Preserves source string-overload empty-result bug, reciprocal flags, pending/invalid login filtering, foreign UUI normalization and Offered metadata. 384 complete service/model source observations, 390 bundled-driver SQLite observations, 278 original handler observations, concurrency tests and 179 executable HTTP/persistence checks. Legacy friendship migration, HG friends/connectors and native plugin lifecycle remain pending.",
+        "FriendsProvider=Remote retrieves friendships via authenticated native-to-native HTTP during actual successful login, preserving both rights and foreign UUI filtering without opening local friend storage.",
+        "Native EventQueueGetModule core, 1653 original-class scenarios,32 native checks and32 live network observations. Real native Caps/registry/poll manager/asynchronous transport; controlled producer. Event-producing helper methods, seed negotiation, full world and Unix execution remain pending.",
+        "All EventQueueGetHandlers producer methods now have native counterparts;6517 complete original core/producer method scenarios compare raw hex with real bundled SDK XML/UUID/CRC/UTF8 and controlled DTO/scene/Caps/RNG.66 connected HTTP checks exercise native producer families. World/seed admission, SDK pool/capacity/invalid-UTF16 and runtime/concurrent/platform verification remain pending.",
+        "Reusable native SceneCapabilities composes CapabilitiesModule, source register/deregister/client-closed events, concrete Caps/seed and EventQueue lifecycle.5852 original three-trigger/multicast delegate observations,20 selected-handler/backend lifetime checks and51 network checks cover actual seed activation/discovery/delivery, route replacement/reuse, module attach/detach, controlled HG verification rejection with native circuit/presence cleanup, and owner disposal. Remaining world admission, BunchOfCaps handlers, concurrency/CLR/SDK and Linux/macOS execution pending.",
+        "Native complete public/private method control flow for feature defaults/configuration, lifecycle and capability registration, feature/extra reference mutation APIs, SDK XML round-trip request copying, per-client TPBR/destination-guide transformation, by-ref callback replacement/null/exception continuation and process-wide ScriptSyntax cache/reader/handler.2041 whole original module observations compile actual Nini, Caps/CapsHandlers, Constants and bundled SDK with controlled scene/GridInfo/log/RNG/file edges; ten additional observations within that count use real UTF8/16/32 BOM streams, invalid/truncated encodings and empty files.64 actual HTTP observations compose native scene capability events, Caps/seed/registry and syntax filesystem reader with controlled world/grid/auth providers. Native GetFeatures intentionally returns empty map: original bundled SDK resolves new OSDMap(m_features) via implicit int to capacity constructor. Feature graph retains nullable slots, reference aliases, dictionary slot reuse and rawXML/OSDUTF8 serialization. One isolated generated cyclic graph triggers original SDK fatal StackOverflow; native bounded traversal differs and parity remains explicitly unverified for cycles. General graph concurrency/GC/lifetime/depth/invalid UTF16/culture/config-alias semantics, complete GridInfo/DNS/grid provider and world/module/platform integration remain pending.",
+        "Opt-in EnableLocalRegion now composes real native login/seed/Caps/presence/UDP scene admission, handshake/root-completion, exact terrain and avatar streams, wearable/appearance responses, plain zero-target primitive creation/owner edits, default native LSL state_entry and touch_start chat, logout/capability cleanup and fresh login. Network probes use production codecs, actual sockets and SQLite; no .NET production runtime. Full movement physics, actual viewer rendering and complete scene/language/module/platform parity remain pending."
+      ]
+    },
+    {
+      "name": "Viewer networking",
+      "status": "partial",
+      "implemented": [
+        "Hierarchical/adaptive bandwidth buckets",
+        "Throttle category defaults",
+        "All 387 baseline LLUDP packet schemas with 3096 differential codec/splitting cases",
+        "IPv4/IPv6 UDP socket lifecycle",
+        "Agent circuit manager and triple credential validation",
+        "Scene-gated UseCircuitCode admission core",
+        "Reliable ACK/resend, duplicate history, ping and disconnect core",
+        "Executor-based asynchronous admission with pending datagram replay and 60-second queue expiry",
+        "Category queues, viewer throttle settings, resend priority and ACK stall gate",
+        "Automatic ToBytesMultiple packet splitting and baseline override behavior",
+        "Host-executor update production, 20 ms/single-producer gating and shared region bandwidth parent",
+        "Native CapsHandlers container with 4608 complete-original source comparisons and real socket registration/removal checks using a controlled exact-path listener. Concrete Caps/seed HTTP endpoints and full BaseHttpServer routing remain pending.",
+        "Concrete native Caps activation/120000ms wait, handler/poll/external registration, URL/XML listings and explicit cleanup:11520 original-class comparisons with controlled event/listener and live socket blocking/wake/cleanup tests. Native admission uses real Caps with controlled listener. Full poll scheduler/seed/HTTP server integration and GC/concurrency/platform remain pending.",
+        "Native SeedCapRequest body with1386 original-method/SDK-reader comparisons and registered real HTTP seed route. Preserves content type/method, activation/Retry-After, authorization ordering, malformed/null SDK handling, all viewer flag subsets and region-size PBR/TPBR behavior, raw XML and partial flags. Real sockets bind seed route, callable advertised native capability, peer IP/port and cleanup with controlled listener/client check. Remaining BunchOfCaps and production scene/viewer/poll/HTTP integration plus general SDK XML/culture/model/platform parity remain pending.",
+        "Native Scene VerifyClient/CheckClient/WaitGetScenePresence with817 original-method/contract/DTO/circuit-manager comparisons and32 HTTP checks. Seed now uses actual native circuit lookup, HG module selection, optional verifier, presence-service logout and source partial cleanup order. Controlled HG verifier and actor/close callbacks remain; full production scene/module/client/platform integration pending. Native seed class is directly registrable as a simple handler; Caps flags use separate atomic reads/writes/value-copy snapshots (Caps comparisons now12288) without imposing atomic read-modify-write behavior absent from source.",
+        "Native HTTP route registry with437 comparisons of18 original BaseHttpServer methods, OS-ICU invariant prefix helper with4077 direct .NET comparisons, and19 socket dispatch checks. Includes root slots, duplicate retention, normal/generic/simple/poll registration/lookup/removal, UTF16 variable paths, longest cultural prefix, source precedence and slash trimming, explicit host callbacks for root RPC/poll execution. Seed fixture replaces its exact-path map with actual native registry, constructs Caps after binding, and follows the advertised absolute capability URL containing the real port. Full handler families, polling, transport/defaults/metrics/CLR/culture/concurrency and production world/platform integration remain pending.",
+        "Native polling request/event-args model and response execution: 318 complete unchanged original-class comparisons cover disposal, typed data, binary ownership, content-type/base64 selection, redirects, range integer wrap, counters, injected setter/send failures and 503 shutdown. Registry now increments poll received counters. Controlled response callbacks only: async HTTP transport, worker/retry scheduler, event queues, complete OSHttpResponse and platform/concurrency parity remain pending.",
+        "Native polling manager and actual standard-C++ dynamic worker/retry host: 455 whole original manager/request/args source observations plus native threaded retry/delivery/starvation/drop/timeout/503 shutdown/stop-from-callback/blocked-callback/idle worker restart/cancel/error checks. 64 pending polls leave ready work serviceable with two workers. Stop preserves source nonblocking callbacks; native lifetime joins occur at owner destruction. Nine focused tests pass with MSVC, ClangCL, ASan and optional OpenSSL/system-zlib; native runtime passes20 consecutive MSVC runs. Async HTTP response channel, event queues, original full job-engine differential coverage, exact watchdog/thread/CLR/concurrent semantics and Unix execution remain pending.",
+        "Native asynchronous response transport and PollHttpService bind actual registry/poll manager/response execution to TCP/TLS. A single request worker remains available with24 deferred requests; real sockets verify delayed delivery, source direct Request callback/received/handled/drop behavior, timeout502, text/binary/range/base64/protocol/reason/redirect/native header behavior, keepalive budget decrement, large output and slow-reader isolation, peer EOF/reset/close_notify, cancellation and shutdown503. Vendor opt-in deferral hooks retain stream buffers;58 dependency hashes and reverse-patch reconstruction prove the exact pinned cpp-httplib upstream. Remaining work includes full original response/parser/context/timeout/priority/pipelined receive queue/async send lifecycle differential coverage, event queues, production world and Unix execution. Verified86 generic/102 polling socket observations on MSVC, ClangCL and ASan; optional HTTPS adds87 generic/102 polling observations. Final MSVC full132 regression passed; ClangCL/ASan12 focused and OpenSSL14 focused passed. Source keepalive budget is decremented before dispatch (first header19, twentieth closes).",
+        "Native whole HttpResponse property/method state model plus RequestCookie/ResponseCookie/ResponseCookies and memory-body stream helper, with2765 actual original-class/SDK/BCL source comparisons. Native polling adapter now delegates to this model and drives staged SendNextAsync128KiB batches over real nonblocking response chunks. Header completion releases bytes; body promotion disposes streams; successful completion sets Sent; disconnect clears pending buffers without claiming delivery.111 connected HTTP/TLS polling checks include raw+body streams, cookies, setter quirks/clamps, actual request metadata, blocked send state and cleanup. Unicode header matching uses pinned MIT-licensed .NET8 ICU width/kana tailoring; existing cultural prefix regressions pass. All133 MSVC tests pass, ClangCL/ASan14 focused pass, OpenSSL16 focused pass. Full context priority/timeout/receive queue/exception/concurrent/SDK-pool/encoding/runtime parity, viewer event queues, world and Unix execution remain pending.",
+        "Opt-in EnableLocalRegion now composes real native login/seed/Caps/presence/UDP scene admission, handshake/root-completion, exact terrain and avatar streams, wearable/appearance responses, plain zero-target primitive creation/owner edits, default native LSL state_entry and touch_start chat, logout/capability cleanup and fresh login. Network probes use production codecs, actual sockets and SQLite; no .NET production runtime. Full movement physics, actual viewer rendering and complete scene/language/module/platform parity remain pending."
+      ],
+      "required": [
+        "Scene and viewer handler integration",
+        "Complete agent circuit serialization and appearance",
+        "Agent movement, appearance, object and terrain updates",
+        "Capabilities seed, event queues and asset/inventory transfer",
+        "Cross-platform execution evidence for UDP and viewer sessions"
+      ]
+    },
+    {
+      "name": "HTTP server parity",
+      "status": "partial",
+      "implemented": [
+        "Native threaded IPv4/IPv6 HTTP listener",
+        "Body limits and I/O deadlines",
+        "Exclusive binding and graceful shutdown",
+        "Optional OpenSSL TLS and zlib gzip",
+        "XML-RPC/LLSD XML login routing",
+        "Grid discovery"
+      ],
+      "required": [
+        "Original full handler registration and matching behavior",
+        "Trusted proxy/CIDR/XFF configuration",
+        "X-Content-Encoding alias",
+        "JSON-RPC and all LLSD representations",
+        "HTTP streaming/range/long-poll handlers and keep-alive parity",
+        "WebSockets",
+        "Grid statistics",
+        "TLS/gzip verification on all three platforms"
+      ]
+    },
+    {
+      "name": "Account and authentication parity",
+      "status": "partial",
+      "implemented": [
+        "Scoped name/email/principal-ID lookup and unscoped fallback",
+        "SQLite-compatible account/auth/token columns",
+        "Legacy salted password and viewer MD5 credential format",
+        "One-time web keys",
+        "Persistent tokens with verify/release",
+        "Login minimum level and remote administrator level gate",
+        "Complete UserAccount model constructors, nullable metadata and key/value transport conversion with 946 original-class observations",
+        "Full SQLite account record replacement and metadata loading, including original default resets, nullable email and optional country; 124 comparisons using original service/generic Store and bundled managed provider, plus native restart/factory/auth isolation integration",
+        "SQLite GetUsers search with source scope, wildcard, two-term OR and short-word filtering behavior",
+        "Opt-in /accounts executable binding for reads/search/full updates; source SQLite multi-ID result remains empty",
+        "Five account handler operations with 232 extracted-source callback observations, plus real HTTP authentication/update/restart checks",
+        "CreateUser orchestration with 8064 source-backed profiles and executable account/password/home/inventory callbacks",
+        "SetPassword insert/update, original salt/hash and metadata/web-key/token preservation; native SQLite tests and real HTTP creation/home/restart/login-intake checks",
+        "Default appearance inventory provisioning and model-selection/fallback orchestration: 6860 source comparisons, callbacks preserve item/folder aliases and by-value IDs, connected HTTP/SQLite verifies twelve items and partial failure persistence",
+        "Native existing-model wearable/attachment transfer, exactly scoped next-owner permission masks, folder repair and outfit links; source fixtures cover mutable aliases and partial failures, SQLite inventory integration verifies all sixteen destination records and metadata after reopening",
+        "AvatarData persistence model, ordered nullable fields, dictionary transport and appearance conversions with 2085 complete original-class observations; SQLite avatar storage/service binding now available",
+        "All seven avatar service methods with 1636 extracted-source storage/error/mutation profiles; SQLite current-schema store and live model appearance reads/writes in executable provisioning",
+        "Opt-in native POST /avatar implements all five source handler methods, configured service authentication and script-origin gates; 466 complete response/callback comparisons plus 128997 XML-name comparisons and live SQLite HTTP integration",
+        "Original UserAccount v1-v3 migrations and legacy users import now run in executable startup;102 whole original provider scenarios",
+        "Source-style generic account projection/search/store path with124 original service/record comparisons, configured realm support and262 executable network checks",
+        "OpenSSL HTTP-only suite independently passes260 checks while retaining the general HTTPS certificate failure"
+      ],
+      "required": [
+        "Password impersonation",
+        "Generic GetAuthInfo/SetAuthInfo and remaining authentication administration",
+        "Remaining account lookup/search/update APIs and complete service/console lifecycle",
+        "Original authentication migrations and remaining provider schema versions",
+        "MySQL/PostgreSQL/null and remote providers",
+        "Full .NET regex and Unicode behavior",
+        "Original plugin/config loading",
+        "Remaining avatar providers, original plugin/migration lifecycle and optional CreateUser services"
+      ]
+    },
+    {
+      "name": "Remaining simulator and grid services",
+      "status": "not_started",
+      "required": [
+        "Scene graph and lifecycle",
+        "Physics and terrain simulation",
+        "Assets, inventory, estates and land",
+        "LSL/OSSL compilation/runtime and persistence",
+        "Avatar animation, attachments, physics and appearance",
+        "Messaging, friends, groups, profiles and economy integrations",
+        "Teleport/crossing and multi-region operation",
+        "Region backups, archives, save/load and settings",
+        "Hypergrid federation",
+        "Native/module and existing managed plugin compatibility",
+        "All optional modules, tools and tests from the baseline"
+      ]
+    },
+    {
+      "name": "Inventory services",
+      "status": "partial",
+      "implemented": [
+        "SQLite folder storage with original table columns",
+        "Default folder creation/repair, root/type lookup and skeleton",
+        "Folder moves, source parent version increments and UTF-16 name truncation",
+        "All twenty item fields, CRUD/moves, unique-parent delete version increments, exact gesture flags and signed permission aggregation",
+        "Service contents/multiple fetches, invariant restoration, system folder protection, creator normalization, AllowDelete/link rules and recursive trash purge",
+        "68 differential service scenarios and original migration schema comparison",
+        "Original shipped library XML catalog: 19 folders and 123 items, process singleton, shared recursive folder tree and lookup behavior",
+        "Library and inventory login field construction, compared against original response methods",
+        "Eight library/tree reference scenarios plus four inventory login response scenarios",
+        "Real seed FetchInventory2, FetchInventoryDescendents2, FetchLib2 and FetchLibDescendents2 registration with actual SQLite/library providers and source worker/drop/lifecycle behavior.",
+        "Source item/folder/link/fullflags and separate library behavior:1344 item core,216 item HTTP,9306 folder,2592 library item,768 library HTTP and6688 library folder observations;490 expiry plus490 actual source timer traces.",
+        "Connected executable traverses actual shipped library123items, user folder links/filters, asset references and logout routes; no.NET production service.",
+        "Legacy FetchInventory/FetchInventoryDescendents now bind authenticated before-root UDP to real SQLite/library providers:2298 original packet outcomes and558 request/provider traces; manual grouping, source partial-batch failure, links/counts/version/library owner differences and new-request error restart preserved. Actual executable assets/physics/script/logout/relogin probe passes MSVC,ClangCL,MSVC-ASan and OpenSSL Windows configurations.",
+        "Actual stored user/library script rez, shared task-item registry, source CreateScriptInstance compile/error/counter ordering, native start/stop/reset controls, exact incoming FieldToString, persistent task-to-user move/copy and Trash-before-delete with real SQLite/system-folder selection and source UpdateCreateInventoryItem delivery. Windows connected probe verifies actual assets, full persisted masks/flags and Contents serial/cache changes across logout/relogin. Full application parity, complete LSL/YEngine, all permission/module consumers, archived script state and Linux/macOS runtime execution remain pending.",
+        "Real UpdateTaskInventory packet path now edits registry metadata/masks/flags, retains real asset references and ignores Key=1; source control flow73920 comparisons. User/library drops use source Group.AddInventoryItem and actual no-copy user deletion without automatically compiling scripts. Complete source CanDropInObjectInv predicate33868 comparisons is connected to owner profile. Connected UDP/SQLite/Contents/EventQueue checks cover all paths across logout/relogin; full permission aggregation, HG and UDP transaction modules remain pending.",
+        "Actual user inventory Update/Move/RemoveItem/RemoveFolder/RemoveObjects UDP paths now bind the real SQLite service and EQ bulk notifications. Source scene operations40854 full-method/model observations preserve export flags, landmark corrections, zero-next storage gate, protected provider fields, mutable move-list enumeration, service false/throw behavior and notification order. Connected test verifies real rows and events across relogin, including ignored rename, foreign-owner rejection, protected-folder failure with item removal and recursive Trash folder purge. Full optional UDP upload transaction/HG modules, remaining inventory operations, permissions and Linux/macOS execution remain pending.",
+        "Actual CopyInventoryItem UDP now creates persisted UUID copies through full source copy/CreateNewInventoryItem control flow and real AgentInventoryAdd/UpdateCreateInventoryItem callbacks.47498 source comparisons include animation-set permission helpers, library/user Copy differences, old-agent permission propagation, creator data and store/notification failures. Connected test checks original retention, Copy/Transfer denials with no store/reply, system-folder fallback, real library metadata/asset bytes, flags/masks/callbacks and type96 permission enforcement across relogin. Creation wizard core/live UDP is implemented in the later new-item milestone; full animation-set model and optional transaction/HG modules remain pending.",
+        "Complete InventoryAccessModule.CreateNewInventoryItem method and base GenerateLandmark now ported with 52245 original-source/real SDK observations. Real authenticated CreateInventoryItem UDP binds permission policy, actual SQLite folder/item service, optional transaction/environment hooks, actual presence and persisted landmark asset creation, source Scene.CreateNewInventoryItem normalization/storage and callback-matched reliable zero-coded updates. Preserves original requested folder ID through fallback validation, transaction bypass for Settings/Material, nullable presence branch, landmark inventory-type precedence, low-byte UTF16 encoding and invariant float/handle formatting, shipped script/notecard/material UUIDs, wearable subtype flags and full permission masks. Connected probe checks nine successful scenarios plus missing environment/undefined folder rejection across relogin, real orphan-folder source quirk and real asset bytes. Full HG override, installed transaction/environment modules, remaining inventory workflows, permission module parity and arbitrary invalid UTF16/concurrent schedules remain pending.",
+        "Complete private HandleLinkInventoryItem now has a native counterpart in InventoryCopyController::link, reusing source CreateNewInventoryItem/AgentInventoryAdd.1053 added link traces bring combined copy/create/link original-method/model/SDK comparisons to48551. Preserves create permission before presence before clock, missing presence logging, full link masks, null strings, ignored transaction/assetUpload bool, source type96 special case, no target lookup/type/folder/duplicate validation, and target item UUID in asset slot. Actual LinkInventoryItem UDP uses source FieldToString, current policy/presence, actual SQLite store and session-qualified callback replies. Connected probe repeats eleven cases through logout/relogin: duplicate/item/folder/missing/zero/chained links, arbitrary wire types, animation masks, zero-folder root fallback, orphan placement, exact legacy fetch replies, actual root-link move/bulk notification and exact folder-version increments. Remaining give/gift/upload/HG/permission modules, concurrent dispatch/invalid UTF16 and complete inventory features remain pending.",
+        "Full AnimationSet public model now ported to framework/animation_set with original no-parse constructor/ASCII console diagnostics, unchanged AnimationCount, getters/setters/null semantics, zero deletion and dictionary free-slot reuse, exact literal serialization header and low-byte UTF16 output, mutable shared ZeroCountBytesReply and validation callback/exception/mutation behavior.29070 comparisons compile the entire unchanged original class with real SDK and item models. Existing permission helpers now forward to the framework class, retaining48551 combined copy/create/link source observations and actual type96 copy/link permission checks through two connected sessions. This preserves original quirks; it does not add parsing absent from the source. Agent/task upload routes, complete asset edit controllers, runtime/playback, concurrency, arbitrary invalid CLR UTF16 and SDK buffer-cache lifetime remain pending.",
+        "Complete CapsUpdateInventoryItemAsset and UpdateInventoryItemAsset now have native controllers with99488 unchanged original-method/full original item/AnimationSet/real SDK comparisons. Source item/owner/type/policy gates, exact agent/general alerts, actual original unparsed animation validation and diagnostics, raw/null bytes, signed-byte asset type narrowing, asset ID assigned before Store, one retry, arbitrary nonempty nonzero store tokens, ignored UpdateItem bool, generic no-ID-assignment behavior, retained live-reference mutations and dependency exceptions are preserved. Real native SQLite inventory plus StoredAssetService/SqliteAssetStore checks exact stored bytes/creator metadata, original retention, failed-store memory versus DB state, actual successful second attempt, permission denial and persistence through two storage lifetimes. Native factory constructs real assets with new UUIDs and one zero byte for null data. Production HTTP/scene-owner/task routing, full permission/HG/transaction modules, factory RNG/error/metadata corner cases, arbitrary invalid UTF16 and concurrency remain pending.",
+        "Complete Scene.CapsUpdateItemAsset now has a native SceneInventoryAssetController with80116 unchanged original-method/full original task/item/AnimationSet/SDK comparisons. Preserves missing versus found-null presence, module lookup before client dereference and nullable client forwarding, part/group/deleted/item/permission ordering, task success alerts before Store, capitalized Gesture alert, no generic task script policy/recompile/removal, no task-owner shortcut, unparsed animation validation, nullable names/data, snapshot value arguments, live mutation/exception ordering, ignored task Store result/no retry and post-update asset UUID return. Real TaskInventoryRegistry/SqliteAssetStore/StoredAssetService and real avatar InventoryService/module dispatch checks serials/shared references, actor-created assets with exact raw bytes, injected lost task-store references, source null-description storage exception effects, retained script subset and actual module dispatch plus restart persistence. Agent and task permission switches now apply the original SDK signed-byte InventoryType narrowing.2016 new agent wrapped-type cases extend that controller comparison to101504, with a retained old binary/failed original-source comparison proving the former missing permission/alert branch. Full region scene-owner/HTTP upload binding, linkset/world state, permission/HG/transaction modules and concurrency/invalid UTF16 remain pending.",
+        "RegionRuntime now queues real generic inventory asset requests onto its scene owner with SceneInventoryAssetController plus actual avatar InventoryAssetUpdateController/InventoryService and task registry adapters. Result-returning asset-store hook is bound by opensim-native to RegionAssetRuntime.store, retaining actual retry/failure values rather than inventing success. Task and avatar asset factories/store callbacks, real presence/client lookup and session-qualified general/agent UDP alerts are bound. Owner-profile defaults require copy/modify for note/script inventory and represented object modify rights for task notecards; explicit full-policy hooks remain available while full permission modules are pending. Script and generic asset jobs share shutdown quiescing so HTTP stop cannot strand either queue. New actual UDP admission/root test verifies wrapped263 note edit/raw bytes in SQLite, success and permission-denial packet types/text, unknown actor rejection, genuine native script rez/active count, generic raw task asset update with no script editor policy/recompile/removal, reset chat from original compiled program, and16 concurrent cancellation/rejection outcomes plus post-quiesce rejection. Generic existing-item HTTP registration is now bound; complete permissions/groups/estate/HG/transaction and scene/linkset/world behavior remain pending.",
+        "Generic existing-item uploads now use native UpdateInventoryAssetCore/InventoryAssetUpload and RegionInventoryAssetRuntime. All source notecard, script-agent, gesture, settings and material aliases are registered, with the original animation-set wrapper advertised as a no-op. The core matches 2176 original handler/updater/base/binary/LLSD/SDK observations, including one-shot removal before IP validation, 30-second expiry, the 10,000,000-byte limit, exact error identifiers, raw bytes and source completion fields. Production HTTP dispatch queues actual scene-owner agent/task edits and uses actual SQLite inventory/assets; the live UDP/HTTP probe checks success and permission failures, retained metadata, asset downloads, task Contents/Xfer serial/cache mutation and logout/relogin. Asset-enabled local regions default to a 16 MiB HTTP body limit so each uploader can apply its original limit; explicit MaximumRequestBytes still overrides it. New-file/mesh/economy uploads, full permissions/groups/estate/HG, full script language/world behavior, concurrent schedule parity and Linux/macOS execution remain pending."
+      ],
+      "required": [
+        "Remaining native inventory transfer/update/upload/task/legacy UDP handlers and service endpoints",
+        "Original migration/import execution and alternate providers",
+        "Remaining item/model interfaces, parser notation/binary/encoding/culture coverage, nullable collection members and provider failure/lifecycle paths",
+        "Full inventory login/scene integration, permissions/assets/script/persistence lifecycle beyond scoped fetch paths",
+        "Complete shared Nini configuration behavior"
+      ]
+    },
+    {
+      "name": "Presence services",
+      "status": "partial",
+      "implemented": [
+        "Provider abstraction and original process-wide Null provider semantics",
+        "Duplicate presence policy, login/logout/report/query lifecycle and region logout",
+        "Shared reference caches, five-minute expiry, minute purge checks, stale-entry and timestamp-wrap behavior",
+        "16 differential scenarios using actual C# service, Null provider and ExpiringCacheOS",
+        "Executable POST /presence route with source remote-login refusal, form lists and XML results",
+        "Inbound Basic service auth and default script exclusion with original configuration precedence",
+        "152 handler/auth/XML comparisons, 27 form cases and real HTTP route/auth checks"
+      ],
+      "required": [
+        "Original MySQL/PostgreSQL providers and migrations",
+        "Presence remote connectors and complete service/module registration",
+        "Full presence model wire serialization and provider/config loading",
+        "Login rollback and simulator admission integration"
+      ]
+    },
+    {
+      "name": "Grid-user services",
+      "status": "partial",
+      "implemented": [
+        "SQLite dynamic-column get/prefix/REPLACE persistence and schema defaults",
+        "Home/last locations, online/login/logout state, most-recent Hypergrid prefix selection",
+        "Process-shared positive/negative cache and source short-ID behavior",
+        "16 service differential scenarios, 537 vector-text cases and PostgreSQL v1 column comparison",
+        "Executable optional POST /griduser route: loggedin, loggedout, sethome, setposition, getgriduserinfo and getgriduserinfos",
+        "Original invariant UTC date/model field serialization, empty batch root and auth policy",
+        "328 differential handler/auth/XML/post-request state comparisons and real HTTP persistence across restart",
+        "Original legacy SQLite 001_GridUserStore.sql found and embedded byte-for-byte; actual provider startup/initialization now runs migrations with source schema and version tracking",
+        "Native provider Get/GetAll/inherited generic methods and independent shared connection/init/query cache;109 original whole provider/DTO scenarios",
+        "Nullable UserID and shared ordered nullable-string Data references;192 connected-login HTTP checks include exact schema and migration metadata through restart"
+      ],
+      "required": [
+        "MySQL/PostgreSQL providers",
+        "Remote connectors, complete service registration and DateTime model parsing",
+        "Console/configuration registration and login/scene integration"
+      ]
+    },
+    {
+      "name": "Grid registry and region model",
+      "status": "partial",
+      "implemented": [
+        "Complete internal region flag constants and GridRegion wire field representation",
+        "Original dictionary/URI/copy/coordinate/handle behavior, including absent-sizeY constructor bug",
+        "Null region provider, mutable shared references, scope ignoring and insertion/free-slot ordering",
+        "Source overlap/range bug and singleton flags behavior, including !static alias/failure",
+        "Registration reservations/auth verification, movement locks, online/persistent deregistration and source false/throw provider handling",
+        "UUID/position/handle/range/neighbour lookups and default/HG-default/fallback/online/hyperlink lists",
+        "32 differential scenarios and 1824 observations using original models/provider plus 24 extracted registry methods; 92 model parsing cases",
+        "Native tests cover standalone singleton failure, registry invariants and injected database failures",
+        "Local/remote name and URI searches, source exact-match result-order/limit quirks and URI local-grid mutation",
+        "RegionURI parser/state port with 1618 reference comparisons, native IPv4/IPv6 resolver and injectable grid/DNS/linker boundaries",
+        "Optional native POST /grid with all sixteen method dispatches and original version/argument/XML/auth rules",
+        "464 comparisons against actual GridServerPostHandler, 21 extra-feature/alias source profiles and real socket registration/query/deregistration checks",
+        "Host grid service serializes its operations before accessing shared Null-provider records; live HTTP concurrent reads verified",
+        "Gatekeeper alias host/port/scheme normalization including source invalid-entry/trailing-comma behavior; actual source host parser in reference profiles",
+        "Native HTTP host model tests cover empty state, scheme-insensitive identity, constructor resolution and source ResolveDNS flag/IP asymmetry",
+        "Optional dedicated SQLite registry with canonical GridStore columns, scoped persistence, bound queries, provider-style name preservation and updates retaining unprovided fields",
+        "Native tests cover non-square bounds, scope conflicts, LIKE escaping, atomic failure, initialization refusal and database reopen",
+        "Real HTTP registration/query across process restart; Null and SQLite selection verified independently; canonical column names checked against original PostgreSQL GridStore definitions",
+        "Native GridInfo configuration/locality core: gatekeeper/home, aliases, names, service URLs, STUN lists and setters; 76 comparisons against complete original GridInfo",
+        "OSHTTPURI-style native URL/path/canonical state model with 149 original System.Uri comparisons",
+        "Default grid service recognizes configured local host URLs; HTTP integration and bad-configuration startup checks"
+      ],
+      "required": [
+        "Full System.Uri and Unicode/culture host semantics, DNS cache/host-name classification edge cases and actual outbound Hypergrid linking",
+        "Complete original grid routing/stream handling, remote connectors and login/scene integration",
+        "Original service/module/console/configuration loading, shared root semantics and complete Unicode host/culture normalization",
+        "Original MySQL/PostgreSQL region providers and GridStore migrations; full provider-specific types/failures and collation",
+        "Full .NET Unicode/culture name comparison and equal-distance sort ordering for large result sets",
+        "Full model constructors, endpoint resolution and generic object-valued provider compatibility",
+        "Concurrency and cross-platform execution verification"
+      ]
+    },
+    {
+      "name": "Avatar appearance and structured-data compatibility",
+      "status": "partial",
+      "implemented": [
+        "Wearable and attachment models; transfer-context model integrated into agent launch",
+        "SDK scalar conversions, UUID parsing and 64-bit binary LLSD representation",
+        "AssetBase/AssetMetadata and SLUtil conversion group with 1556 original-class observations",
+        "Complete WearableCacheItem methods and IAssetCache contract, with 2368 original-class/cache-callback observations",
+        "Shared binary buffer ownership, SDK unsigned/string/binary conversion and copyable atomic decode cache",
+        "Native SDK JSON serialization/deserialization for existing Value types with 65042 exact DLL comparisons, including every valid BMP scalar and supplementary samples, defaults, byte arrays, integer widths, real formatting and parser extensions/error boundaries"
+      ],
+      "required": [
+        "Complete AvatarAppearance, texture entries, visual parameters, wearable cache and baked texture behavior",
+        "Avatar persistence/providers and MakeAgent clone/default construction",
+        "Generic structured-data JSON/LLSD/date parsing and complete SDK conversions",
+        "Resolve/document source unsafe short-binary integer-read compatibility",
+        "Windows/Linux/macOS execution, including architecture-specific numeric boundaries",
+        "Asset NRBF decode, asset XML serialization and complete SLUtil notecard/attachment-name helpers",
+        "Native asset-cache backend/providers, asset persistence/services/loaders"
+      ]
+    },
+    {
+      "name": "Friends services",
+      "status": "partial",
+      "implemented": [
+        "FriendInfo/IFriendsData native models and UUID/string service operations",
+        "SQLite exact-key friendship storage with directional self-join flags and Offered metadata",
+        "All five original POST /friends methods with service auth/script gate and BOM-aware body parsing",
+        "Persisted friend data projected into both successful login formats with source filtering",
+        "384 service/model, 390 SQLite, 278 handler source observations and native concurrency/HTTP persistence evidence on Windows",
+        "Native virtual friends-service interface and all five remote connector operations with source URI, form, reply/error and Boolean-result behavior",
+        "1800 complete-original-connector comparisons, 150 original XML parser comparisons and 140 real socket observations",
+        "Remote-provider native login and endpoint proxy retrieve persisted friends from another native process; connected fixture has 179 checks",
+        "Native shared per-record connection startup with exact FriendsStore v1/v2 embedded resource, legacy userfriends import and version stamps;67 whole original constructor/shared state source cases",
+        "186 connected-login HTTP checks include migrated directional permissions and restart without duplicate migration stamps or reimport"
+      ],
+      "required": [
+        "FriendsServiceBase and server connector plugin/configuration lifecycle",
+        "HGFriendsService, simulator-side friends connectors and messaging interactions",
+        "General managed DTO/object/runtime semantics and generic storage API parity",
+        "Linux/macOS execution and actual viewer-session verification",
+        "Full remote transport redirect/compression/timeout/platform semantics and general XMLReader/form-helper edge compatibility"
+      ]
+    },
+    {
+      "name": "Inbound simulator agent handlers",
+      "status": "partial",
+      "implemented": [
+        "Native DoQueryAccess negotiation core with original parameter order, legacy/new versions, contexts, feature propagation, rejection reasons and keepalive decisions",
+        "Source GetParams path parser and separate throwing SDK Vector3.Parse semantics",
+        "4145 original method/path/SDK observations and 15 native socket checks with custom QUERYACCESS routing and real TCP reuse",
+        "Existing native simulation client accepts a native query response; fixture refuses create-agent rather than fabricating a scene",
+        "Native DoAgentPost destination/source/circuit/context assembly, service callback, original error boundaries, caller-IP echo, JSON omission and login/HG keepalive decisions; 5568 original-method/dependency observations",
+        "Native gzip/JSON body decoding matches 2208 original .NET GZipStream/SDK observations, with pinned prefixed zlib inflate subset and raw-body HTTP support",
+        "Controlled native receiver plus outgoing simulation client complete compressed-first creation, retained 150000-byte URL payload and real circuit-manager credential handoff; optional OpenSSL/system-zlib build also verified for focused socket/body paths",
+        "Complete native DoAgentDelete core with immediate release, dispatched close, nullable auth, exact response and exception boundaries: 1792 original-method observations plus queued callback/service lifetime test; both pass MSVC/Clang/ASan Windows",
+        "Outgoing SimulationConnector ReleaseAgent/CloseAgent now send original body-less 10-second DELETE calls and preserve pre-try URI construction, auth concatenation and always-true transport-failure behavior; 128 complete-original method comparisons and native socket transport/deadline checks",
+        "DELETE HTTP routing with raw-target auth lookup, actual native queued close/circuit removal and remote connector interop; 2688 combined original DoAgentDelete/ProcessRequest-DELETE/GetParams observations, 254051 actual URI/query lookup observations and controlled lifecycle socket checks",
+        "Native AgentPosition fields/Pack/Unpack/legacy CopyFrom and child-data fields with 11776 complete-original class/SDK observations, shared GodData/binary aliasing, ordered seeds and partial-failure state; scene binding remains pending",
+        "Outgoing position update queue/helper with newest-only reference coalescing, concurrent callbacks, actual fixed cooldown-cache semantics and compressed 10-second PUT transport: 548 original-method/actual SDK cache observations, native expiry/timer checks and 87 socket checks; scene motion remains pending",
+        "Native AgentGroupData, ControllerData and Animation transfer records with original constructors/pack/unpack, sparse updates, signed controller-mask packing, animation value equality/identity-hash semantics and string diagnostics; complete original class/SDK comparisons, scene binding still pending",
+        "AgentData/CompleteAgentData and polymorphic transfer interface: 3065 original whole-class/model/SDK observations, including scene callbacks, list mutation/replacement, legacy appearance, exact nested pack order and partial state",
+        "Inbound DoAgentPut/virtual update and outgoing 200-second AgentData worker: 1131 and 180 original-method comparisons plus 31 native PUT socket checks, actual circuit position handoff and full/position compressed client interop",
+        "LocalSimulationConnectorModule native lifecycle/registry and routing: 776 whole-original-module comparisons using actual Nini/DTOs and controlled scene/module/object interfaces; 18 HTTP checks cover selected/full versus broadcast/position routing, real circuit credentials, release/close and native clients. Concrete world scene implementation remains pending.",
+        "ObjectSimpleHandler complete native routing/control flow with 2232 whole original class/SDK observations and 14 HTTP checks through local scene service, object XML/extra/modified/script state and selected admission callbacks. Concrete world object serializer and admission remain pending.",
+        "Outgoing CreateObject and inventory overloads with 720 complete original method/SDK comparisons, 40000ms plain POST and 40 HTTP checks; native outgoing client interoperation extends object receiver checks to 16 including large payload and destination rejection. Concrete object serializer and world admission remain pending.",
+        "Scene QueryAccess/AuthorizeUser/CheckLandPositionAccess/TestLandRestrictions native control flow: 986 complete original method/SDK comparisons and 76 HTTP checks via actual local connector/circuit manager. Covers god/estate-manager bypasses, authorization errors, bans/private access/groups, capacity/NPC subtraction, parcel crossing/teleport relocation and telehub fallback. Permissions, estate/account/group/parcel/spawn backends remain controlled adapters; full Scene admission is pending.",
+        "NewUserConnection complete native flow/default require-presence and VerifyUserPresence with 960 original complete method/real DTO/circuit-manager/SDK comparisons and controlled scheduler. 26 HTTP checks compose native admission and SceneAccess, authenticatable circuits, rollback, bans/private estates/child bypass, clamping and caps partial failures. Concrete viewer utility/locale, scene actors, caps endpoints and service bindings remain pending.",
+        "Complete native ScenePresenceStateMachine enum/transition validation and diagnostic failure behavior with 3860 whole-original class comparisons. Shared admission state type and actual native machine in controlled child actor HTTP fixture preserve PreRemove-to-Running lease reuse, DoNotCloseAfterTeleport, caps and seed refresh; admission socket checks now total 31. Full ScenePresence/world and CLR concurrency/lifetime semantics remain pending.",
+        "Native complete GetViewerName and invariant-culture lowercase replace controlled admission utility defaults. 449 direct scenarios, all 65536 UTF16 classifications and all 1114112 code-point mappings/viewer inputs checked against original utility/actual circuit/runtime. 35 admission HTTP checks cover numeric viewer channel fallback and Greek/Deseret casing bans. Other cultures/Unicode runtime profiles and raw invalid UTF16 circuit storage remain partial.",
+        "Native outgoing gzip now compresses using source-compatible GZipStream defaults/write-finish and Windows x86/x64 .NET Intel zlib profile, with isolated symbols and once-only CPU dispatch; Unix selects system zlib. 84 exact Windows x64 compressed-byte comparisons, 252 bidirectional decoder checks, 16 concurrent first calls and 89 transport checks including actual large-circuit compression ratio. Other platforms/CPU/runtime profiles remain pending.",
+        "Native CapabilitiesModule lifecycle/core/seed aliasing and console behavior with 980 original whole-class method comparisons. 11 HTTP checks bind native module into admission/circuit/local routing for create/register/activate, same-path reuse, replacement cleanup, removal and registration failure. The HTTP admission fixture now uses native Caps; scene callbacks, listener endpoint registration and poll runtime remain controlled dependencies."
+      ],
+      "required": [
+        "Full AgentSimpleHandler ProcessRequest differential, remaining routing, host/auth/header/error semantics and stream disposal",
+        "Full ProcessRequest/HTTP/URI host semantics, full Util dispatch policy/metrics, old AgentPostHandler and HG variations",
+        "Native scene-backed QueryAccess and CreateAgent service binding",
+        "Agent updates, crossings, removal and actual viewer sessions",
+        "Full platform/runtime/culture/model coverage and Linux/macOS execution",
+        "Concrete object serializer/script restore/physics admission and actual inter-region object crossing; complete outgoing transport deadline/TLS/runtime/platform semantics",
+        "Concrete Caps integration with production listener/poll scheduler, GC finalization/concurrent disposal semantics, seed capability endpoint and all capability registrations; integrate with real scene/event/module/console lifecycles"
+      ]
+    },
+    {
+      "name": "Native asset persistence, migrations and connection compatibility",
+      "status": "partial",
+      "implemented": [
+        "Configured AssetService/SQLite/default-loader/local connector/worker/poll/Caps composition;82 HTTP and82 HTTPS checks include ranges, cache, binary persistence and process restart",
+        "Whole original Migration parser980 observations and real SQLite execution153 observations; exact embedded original asset v6 resource and metadata stamps",
+        "66 entire original SQLiteAssetData+Migration initialization cases including failed initialization/recovery and selected options",
+        "3636 actual bundled SQLite parser/URI/Boolean observations; shared native login and asset database-path parsing",
+        "Clang/ASan executable network tests verify comma filenames and semicolon options via account creation, login and persisted tokens",
+        "Friends provider now executes the same native Migration engine with its exact v1/v2 resource in actual server startup;67 whole original startup/shared connection cases and186 connected-login network checks"
+      ],
+      "required": [
+        "Remaining legacy asset codecs and hypergrid/remote asset providers; complete world/scene/service wiring",
+        "Other store resource migrations and original generic provider/static connection lifecycle",
+        "General ADO/custom provider lifecycle, resource IO, regex dialect/culture, arbitrary concurrency, GC and invalid UTF16 semantics",
+        "FullUri/open flags, pooling, remaining connection options, optional parser/environment settings and native plugin ABI/assembly compatibility",
+        "General HTTPS login network verification currently fails with observed AVG replacement certificate; preserve certificate verification",
+        "Actual Linux/macOS execution and complete application feature parity"
+      ]
+    },
+    {
+      "name": "Generic SQLite table APIs and avatar startup",
+      "status": "partial",
+      "implemented": [
+        "Native generic field/array/raw-WHERE Get, REPLACE Store, field/array Delete, named parameters, typed field bindings and persistent first-query column cache",
+        "1783 whole original generic/framework/friends scenarios exercise real SQLite declarations and named parameters, typed fields, materialization, schema mutation, virtual delete dispatch and failures",
+        "Friends production provider now uses the shared generic table path; avatar production provider now uses it with independent static connection/init/migration state and exact original v1 resource",
+        "50 whole original avatar/generic/framework/Migration startup/shared-state scenarios",
+        "188 connected-login HTTP/persistence checks include automatic independent avatar/friends version stamps, legacy friend import and preservation across process restart"
+      ],
+      "required": [
+        "Remaining providers integrated with shared generic handler and their source-compatible lifecycle",
+        "Arbitrary DTO/reflection and initialization/runtime exception behavior, declared DateTime/Decimal/GUID values, custom type/connection mappings and flags",
+        "Managed reader/GC/finalization and exact concurrent connection/command lock boundaries",
+        "Complete native assembly/plugin/configuration lifecycle and actual Linux/macOS execution"
+      ]
+    },
+    {
+      "name": "Grid-user provider startup and reference data model",
+      "status": "partial",
+      "implemented": [
+        "Native SQLiteGridUserData equivalent uses original exact Get and raw-LIKE prefix GetAll, inherited generic APIs and independent shared initialization/query-cache state",
+        "Actual server startup and empty-database initialization run original legacy 001_GridUserStore.sql bytes and preserve original nullable SQLite UserID primary-key schema",
+        "GridUserData now preserves nullable UserID and shared/replaceable/ordered nullable-string Data with original default allocation and alias/slot behavior",
+        "109 whole original provider/generic/framework/Migration/DTO scenarios use actual managed SQLite, include initialization failures/retries, schema/resource behavior, nulls/quotes/wildcards and data mutation",
+        "192 connected-login HTTP checks include independent GridUserStore metadata and exact initialization schema with preservation across process restart"
+      ],
+      "required": [
+        "Remaining service constructors/configuration, console and assembly/plugin lifecycle and alternate providers",
+        "Full GridUserInfo nullable/date/runtime projection and general managed DTO/concurrency/GC behavior",
+        "Other declared generic provider types and connection flags/options, full ADO reader lifetime/locking/concurrency",
+        "Actual Linux/macOS execution and complete simulator/world integration"
+      ]
+    },
+    {
+      "name": "User-account provider and executable bootstrap",
+      "status": "partial",
+      "implemented": [
+        "Native source UserAccountData record, generic field/query/store/delete APIs, literal-space search/short-word shift behavior and null GetUsersWhere",
+        "Exact original UserAccount v1-v3 migrations with legacy users import and active default; standalone source provider independent shared generic lifecycle",
+        "102 whole original provider/generic/framework/Migration cases and124 service/model/DAO comparisons in the native source-provider mode",
+        "Actual executable now migrates account databases and uses generic scoped lookup/search/REPLACE storage on its owned account/auth connection, with nonowning facade lifetime and configured account realm",
+        "268 native CLI/socket/persistence checks include alternate realm, legacy account authentication and restart that does not reimport changed users;194 connected-login checks include independent metadata"
+      ],
+      "required": [
+        "Complete original user-account service constructor/root/configuration/module/console lifecycle and native/managed plugin compatibility",
+        "Complete independent provider/static connection lifecycle; current executable account/auth bootstrap shares a scoped connection facade",
+        "Remaining database providers and full CLR/ADO reflection/value/locking/reader/GC/concurrency/provider-option behavior",
+        "Actual Linux/macOS execution and full world/simulator integration"
+      ]
+    },
+    {
+      "name": "SQLite authentication provider and executable integration",
+      "status": "partial",
+      "implemented": [
+        "Whole original provider/framework/migration/model comparison with actual bundled SQLite:85 scenarios, projected TickCount only",
+        "Exact AuthStore v1/v2 migrations, legacy credentials import, independent standalone generic initialization, source Get/Store/SetDataItem mutation and failure behavior",
+        "Token local-time expiry/refresh, signed 32-bit tick wrap and strict throttling; retained readers and explicit collection with pooled metadata",
+        "Executable provider facade implements configured realm, password replacement, web-key consumption before token issuance, token verify/release; shared and separate authentication file migrations",
+        "Host collection at completed calls bounds unreachable reader lifetime; socket tests retain concurrent web-key single consumption, separate native process login, legacy credentials and restart"
+      ],
+      "required": [
+        "Complete service constructor/root/configuration/assembly/plugin/console lifecycle",
+        "General CLR object/ADO date/GUID/decimal, exact diagnostic/exception text, reflection, reader/GC scheduling and concurrency parity",
+        "Alternate database providers, remaining authentication service variants and runtime integration",
+        "Actual Linux/macOS execution and full simulator/world integration"
+      ]
+    },
+    {
+      "name": "Authentication service administration and HTTP handlers",
+      "status": "partial",
+      "implemented": [
+        "AuthInfo model with original nullable/default/typed dictionary behavior; service GetAuthInfo/SetAuthInfo record conversion and provider binding",
+        "67 extracted original model/service cases and2985 original handler request/result traces with actual query/XML helper methods",
+        "Opt-in /auth/plain authenticate, verify, release, password replacement and auth-info Get/Set; original default-denied flags, lifetime cap/parse ordering, UUID and source XML behavior",
+        "55 actual native HTTP/SQLite checks cover Basic/script gates, custom realm, partial updates, password/web-key persistence, token lifecycle, missing auth-info and clean process restart"
+      ],
+      "required": [
+        "Complete dynamic connector/service/root/configuration/plugin lifecycle and generic substitutable service surface",
+        "Complete remote connector/runtime lifecycle, OpenID, authorization and remaining service variants/providers",
+        "Exact logging/counters/full stream/HTTP dispatch/runtime/concurrency behavior and actual Linux/macOS execution",
+        "Complete simulator/world integration and whole-application feature parity"
+      ]
+    },
+    {
+      "name": "Remote authentication connector and executable service selection",
+      "status": "partial",
+      "implemented": [
+        "Source-style connector Authenticate/Verify/Release, exact strict reply semantics, zero real-ID, inert remote SetPassword/GetAuthInfo/SetAuthInfo and URI/reinitialization behavior",
+        "32,130 whole original connector/base/helper comparisons with injected transport/auth/logger;308 actual HTTP transport observations including redirects/BOM/content length/sticky Basic credentials",
+        "AuthenticationProvider=Remote binds viewer/admin login, proxied auth endpoint and account provisioning; SQLite authentication path parsing/open/attachment/migration is skipped",
+        "62 two-native-process checks cover real backend tokens, correct/incorrect/prehashed credentials, administrator gate, frontend account-only storage and untouched local-auth sentinel, provisioning, backend failure/recovery and both process restarts"
+      ],
+      "required": [
+        "Complete original connector/service/plugin/root/configuration lifecycle and generic native polymorphic service interface",
+        "Full managed/global HTTP client configuration, adaptive timeout/cancellation, auth/logger/URI/stream/concurrency and error-text semantics",
+        "Remaining authentication variants, OpenID/authorization, other providers and full simulator/world integration",
+        "Actual Linux/macOS execution and whole application feature/behavior parity"
+      ]
+    },
+    {
+      "name": "REST form response headers and body lifetime",
+      "status": "partial",
+      "implemented": [
+        "Original header-only response policy before body reads: final HTTP errors throw and absent/zero/unparseable signed Int64 Content-Length returns empty without consuming body",
+        "Source first Content-Length semantics for duplicate and overflow values; transfer coding still controls framing when source chooses to read",
+        "Opt-in mutable response-header hook and caller-specific normalization preserve default client/server validation; pinned patch and upstream reconstruction hashes maintained",
+        "58 gated source/native/default-client observations across28 profiles execute the original MakeRequest POST method with actual .NET HttpClient and prove before-release completion, positive body waits, BOM decoding and truncation errors",
+        "Raw gzip/deflate response handling and no implicit Accept/Accept-Encoding/User-Agent; source300/301/302/303 GET conversion,307/308 POST retention, authorization stripping, no cookies and ten-hop redirect cap",
+        "62 gated observations across30 profiles plus36 actual .NET/native redirect observations across18 profiles, with strict header/body/method/credential assertions and default client behavior checks"
+      ],
+      "required": [
+        "Complete original global factory lifecycle, connect/header/body timeout separation, proxy/TLS/pool behavior and remaining settings",
+        "Original adaptive receive timeout/cancellation and streaming after ResponseHeadersRead rather than current fixed total deadline",
+        "Remaining requester verbs/overloads, exact logging/error text, full header/parser/runtime/concurrency semantics and actual Unix execution",
+        "Whole simulator/world/module feature parity",
+        "Audit manual send(Request) callers such as OSD/simulation for deadline origin and header/body timeout separation"
+      ]
+    },
+    {
+      "name": "Form requester compression and redirect defaults",
+      "status": "partial",
+      "implemented": [
+        "No automatic response decompression and no implicit negotiation/user-agent headers across build profiles; compressed bytes reach original-style StreamReader decoding",
+        "Source redirect statuses, ten-hop limit, POST-to-GET rules, content-header removal and retention of remaining headers, same/cross-origin authorization stripping and no automatic cookies",
+        "Reference actual requester/HttpClient with projected source handler defaults:62 gated observations and36 redirect observations; existing authentication fixture now asserts absent redirected Authorization"
+      ],
+      "required": [
+        "Complete global factory/client/pool/proxy/TLS lifecycle and settings, adaptive cancellation and remaining timeout/header/URI/parser/error semantics",
+        "Complete requester verbs/overloads and other transport users, general concurrency/runtime and actual Linux/macOS execution",
+        "Full simulator/world/module/provider feature and behavior parity"
+      ]
+    },
+    {
+      "name": "Connected native world and first script execution",
+      "status": "partial",
+      "implemented": [
+        "Owned thread-safe terrain and single-root world with shared avatar/object allocator; original terrain2438 observations and exact land compression180 streams/1138 packets/963460 bytes.",
+        "Active source avatar and plain prim packet methods match5632 packets each; outgoing wearables/appearance512 packets and chat200 packets compared. Complete rez placement32768 source position/backend traces.",
+        "Experimental executable public-account local region with existing source admission/capabilities, reliable UDP scene lifecycle and packet-driven primitive create/edit. Task new-script FolderID semantics, default asset identity, bounded native LSL parser/interpreter, actual touch detector IDs and source-compatible chat clipping/throttle/sleep.95 native engine checks and1296 original API traces.",
+        "POS physics compatibility core20480 exact source cases preserves old-position horizontal bug; it is not used to claim walking support.",
+        "Opt-in real ubODE single-avatar/terrain controller, original movement projection and animator;104400 original solver frames,24576 movement cases,315392 animator traces,48080 login-position cases and1387 catalog observations. Real UDP physical fixture verifies walking/turning/running/jumping/flying and full logout/relogin.",
+        "Native AvatarAnimation source packet framing/order/limits compared in760 cases, including185 safely instrumented source buffer failures; generic SDK255-entry packet remains independently verified.",
+        "Real executable local assets compose existing native SQLite/default loader/connector/GetAssetsModule; seed exposes four routes, shipped textures/scripts/ranges/concurrency and logout disposal checked. Large-body tests exposed immediate-close ordering gap; adapter now defers close as original context manager does and applies source NoDelay=true; expanded profile validation recorded separately.",
+        "Real task Contents metadata/cache and1024-byte Xfer file delivery:12078 original inventory-file observations and1580 original transfer/reply traces; session-qualified actual UDP and cache invalidation on additions/edits.",
+        "GetScriptRunning actual EventQueue delivery;4608 original controller/fallback observations. Idle/faulted retained instances preserve source Running semantics.",
+        "Two-stage task script editor aliases with actual asset store/retrieval, owner-thread update, ObjectProperties, supported native compilation, errors, stopped save and recovery.1584 source cap observations,10480 source transaction observations and2304 exact properties packets; actual30-second expiry and16 concurrent shutdown cancellations.",
+        "Windows checkpoint before editor integration passed229 full MSVC tests and15 focused checks in each ClangCL/ASan/OpenSSL configuration. Subsequent MSVC editor core, owner and connected save checks pass; other editor configurations are being verified.",
+        "Actual stored user/library script rez, shared task-item registry, source CreateScriptInstance compile/error/counter ordering, native start/stop/reset controls, exact incoming FieldToString, persistent task-to-user move/copy and Trash-before-delete with real SQLite/system-folder selection and source UpdateCreateInventoryItem delivery. Windows connected probe verifies actual assets, full persisted masks/flags and Contents serial/cache changes across logout/relogin. Full application parity, complete LSL/YEngine, all permission/module consumers, archived script state and Linux/macOS runtime execution remain pending.",
+        "Real UpdateTaskInventory packet path now edits registry metadata/masks/flags, retains real asset references and ignores Key=1; source control flow73920 comparisons. User/library drops use source Group.AddInventoryItem and actual no-copy user deletion without automatically compiling scripts. Complete source CanDropInObjectInv predicate33868 comparisons is connected to owner profile. Connected UDP/SQLite/Contents/EventQueue checks cover all paths across logout/relogin; full permission aggregation, HG and UDP transaction modules remain pending.",
+        "Actual user inventory Update/Move/RemoveItem/RemoveFolder/RemoveObjects UDP paths now bind the real SQLite service and EQ bulk notifications. Source scene operations40854 full-method/model observations preserve export flags, landmark corrections, zero-next storage gate, protected provider fields, mutable move-list enumeration, service false/throw behavior and notification order. Connected test verifies real rows and events across relogin, including ignored rename, foreign-owner rejection, protected-folder failure with item removal and recursive Trash folder purge. Full optional UDP upload transaction/HG modules, remaining inventory operations, permissions and Linux/macOS execution remain pending.",
+        "Actual CopyInventoryItem UDP now creates persisted UUID copies through full source copy/CreateNewInventoryItem control flow and real AgentInventoryAdd/UpdateCreateInventoryItem callbacks.47498 source comparisons include animation-set permission helpers, library/user Copy differences, old-agent permission propagation, creator data and store/notification failures. Connected test checks original retention, Copy/Transfer denials with no store/reply, system-folder fallback, real library metadata/asset bytes, flags/masks/callbacks and type96 permission enforcement across relogin. Creation wizard core/live UDP is implemented in the later new-item milestone; full animation-set model and optional transaction/HG modules remain pending.",
+        "Fixed event unregistration versus engine termination binding. Native part registry Set/Remove/aggregate matches15912 original source/SDK observations; actual declared event masks drive root flags/touch routing. Old executable reproduces lost GetScriptRunning after Type LSL/InvType Notecard removal. Actual new UDP flow retains the VM with missing task metadata, persists a real Trash copy, suppresses touch while unregistered, resets to real state_entry/touch without restoring inventory/serial/cache, and still terminates ordinary LSL inventory removal. Script and world mask unit checks verify explicit versus implicit handlers and local flags. Full root-group/physics/email/targets/linked behavior remains pending.",
+        "Complete InventoryAccessModule.CreateNewInventoryItem method and base GenerateLandmark now ported with 52245 original-source/real SDK observations. Real authenticated CreateInventoryItem UDP binds permission policy, actual SQLite folder/item service, optional transaction/environment hooks, actual presence and persisted landmark asset creation, source Scene.CreateNewInventoryItem normalization/storage and callback-matched reliable zero-coded updates. Preserves original requested folder ID through fallback validation, transaction bypass for Settings/Material, nullable presence branch, landmark inventory-type precedence, low-byte UTF16 encoding and invariant float/handle formatting, shipped script/notecard/material UUIDs, wearable subtype flags and full permission masks. Connected probe checks nine successful scenarios plus missing environment/undefined folder rejection across relogin, real orphan-folder source quirk and real asset bytes. Full HG override, installed transaction/environment modules, remaining inventory workflows, permission module parity and arbitrary invalid UTF16/concurrent schedules remain pending.",
+        "Complete private HandleLinkInventoryItem now has a native counterpart in InventoryCopyController::link, reusing source CreateNewInventoryItem/AgentInventoryAdd.1053 added link traces bring combined copy/create/link original-method/model/SDK comparisons to48551. Preserves create permission before presence before clock, missing presence logging, full link masks, null strings, ignored transaction/assetUpload bool, source type96 special case, no target lookup/type/folder/duplicate validation, and target item UUID in asset slot. Actual LinkInventoryItem UDP uses source FieldToString, current policy/presence, actual SQLite store and session-qualified callback replies. Connected probe repeats eleven cases through logout/relogin: duplicate/item/folder/missing/zero/chained links, arbitrary wire types, animation masks, zero-folder root fallback, orphan placement, exact legacy fetch replies, actual root-link move/bulk notification and exact folder-version increments. Remaining give/gift/upload/HG/permission modules, concurrent dispatch/invalid UTF16 and complete inventory features remain pending.",
+        "Full AnimationSet public model now ported to framework/animation_set with original no-parse constructor/ASCII console diagnostics, unchanged AnimationCount, getters/setters/null semantics, zero deletion and dictionary free-slot reuse, exact literal serialization header and low-byte UTF16 output, mutable shared ZeroCountBytesReply and validation callback/exception/mutation behavior.29070 comparisons compile the entire unchanged original class with real SDK and item models. Existing permission helpers now forward to the framework class, retaining48551 combined copy/create/link source observations and actual type96 copy/link permission checks through two connected sessions. This preserves original quirks; it does not add parsing absent from the source. Agent/task upload routes, complete asset edit controllers, runtime/playback, concurrency, arbitrary invalid CLR UTF16 and SDK buffer-cache lifetime remain pending.",
+        "Complete CapsUpdateInventoryItemAsset and UpdateInventoryItemAsset now have native controllers with99488 unchanged original-method/full original item/AnimationSet/real SDK comparisons. Source item/owner/type/policy gates, exact agent/general alerts, actual original unparsed animation validation and diagnostics, raw/null bytes, signed-byte asset type narrowing, asset ID assigned before Store, one retry, arbitrary nonempty nonzero store tokens, ignored UpdateItem bool, generic no-ID-assignment behavior, retained live-reference mutations and dependency exceptions are preserved. Real native SQLite inventory plus StoredAssetService/SqliteAssetStore checks exact stored bytes/creator metadata, original retention, failed-store memory versus DB state, actual successful second attempt, permission denial and persistence through two storage lifetimes. Native factory constructs real assets with new UUIDs and one zero byte for null data. Production HTTP/scene-owner/task routing, full permission/HG/transaction modules, factory RNG/error/metadata corner cases, arbitrary invalid UTF16 and concurrency remain pending.",
+        "Complete Scene.CapsUpdateItemAsset now has a native SceneInventoryAssetController with80116 unchanged original-method/full original task/item/AnimationSet/SDK comparisons. Preserves missing versus found-null presence, module lookup before client dereference and nullable client forwarding, part/group/deleted/item/permission ordering, task success alerts before Store, capitalized Gesture alert, no generic task script policy/recompile/removal, no task-owner shortcut, unparsed animation validation, nullable names/data, snapshot value arguments, live mutation/exception ordering, ignored task Store result/no retry and post-update asset UUID return. Real TaskInventoryRegistry/SqliteAssetStore/StoredAssetService and real avatar InventoryService/module dispatch checks serials/shared references, actor-created assets with exact raw bytes, injected lost task-store references, source null-description storage exception effects, retained script subset and actual module dispatch plus restart persistence. Agent and task permission switches now apply the original SDK signed-byte InventoryType narrowing.2016 new agent wrapped-type cases extend that controller comparison to101504, with a retained old binary/failed original-source comparison proving the former missing permission/alert branch. Full region scene-owner/HTTP upload binding, linkset/world state, permission/HG/transaction modules and concurrency/invalid UTF16 remain pending.",
+        "RegionRuntime now queues real generic inventory asset requests onto its scene owner with SceneInventoryAssetController plus actual avatar InventoryAssetUpdateController/InventoryService and task registry adapters. Result-returning asset-store hook is bound by opensim-native to RegionAssetRuntime.store, retaining actual retry/failure values rather than inventing success. Task and avatar asset factories/store callbacks, real presence/client lookup and session-qualified general/agent UDP alerts are bound. Owner-profile defaults require copy/modify for note/script inventory and represented object modify rights for task notecards; explicit full-policy hooks remain available while full permission modules are pending. Script and generic asset jobs share shutdown quiescing so HTTP stop cannot strand either queue. New actual UDP admission/root test verifies wrapped263 note edit/raw bytes in SQLite, success and permission-denial packet types/text, unknown actor rejection, genuine native script rez/active count, generic raw task asset update with no script editor policy/recompile/removal, reset chat from original compiled program, and16 concurrent cancellation/rejection outcomes plus post-quiesce rejection. Generic existing-item HTTP registration is now bound; complete permissions/groups/estate/HG/transaction and scene/linkset/world behavior remain pending.",
+        "Generic existing-item uploads now use native UpdateInventoryAssetCore/InventoryAssetUpload and RegionInventoryAssetRuntime. All source notecard, script-agent, gesture, settings and material aliases are registered, with the original animation-set wrapper advertised as a no-op. The core matches 2176 original handler/updater/base/binary/LLSD/SDK observations, including one-shot removal before IP validation, 30-second expiry, the 10,000,000-byte limit, exact error identifiers, raw bytes and source completion fields. Production HTTP dispatch queues actual scene-owner agent/task edits and uses actual SQLite inventory/assets; the live UDP/HTTP probe checks success and permission failures, retained metadata, asset downloads, task Contents/Xfer serial/cache mutation and logout/relogin. Asset-enabled local regions default to a 16 MiB HTTP body limit so each uploader can apply its original limit; explicit MaximumRequestBytes still overrides it. New-file/mesh/economy uploads, full permissions/groups/estate/HG, full script language/world behavior, concurrent schedule parity and Linux/macOS execution remain pending."
+      ],
+      "required": [
+        "Real viewer rendering/interaction verification and actual Windows/Linux/macOS platform execution; full authoritative physics including avatar/prim/mesh contacts, rays, hover/buoyancy and source scheduler/settings.",
+        "Complete scene/entity/linked-part/object properties, selection, packet handlers, geometry raycasts, permission/estate/parcel/group/preference modules, persistence and region lifecycle.",
+        "Complete task/user/library inventory, xfer/script uploads/editing/permissions, source-compatible YEngine lexer/parser/typed semantics/backend, all LSL APIs/events/detection/scheduler/state save/restart. Source-backed inventory item/folder cores are partial; runtime integration and full viewer browsing remain pending.",
+        "AvatarFactory baking/cache/save, full animation sets/overrides/events, wearables/appearance input handling, attachments/culling and complete client state.",
+        "Crossings/teleports/HG, optional modules/providers and complete migration parity; retain full original inventory until proven complete.",
+        "Full YEngine language/runtime and exact compiler diagnostics; source-backed start/stop/reset core still needs native engine/protocol binding. Complete task inventory mutation/types/permissions/persistence and property queue batching remain pending.",
+        "Complete root/linkset script-event physics aggregation, pass-touch/surface data, target and email modules/LSL events, full script-state transitions and concurrent CLR-equivalent scheduling. Current event registry is source-tested and bound to supported single-root/native LSL events; unavailable target/child-physics dependencies must be implemented before enabling those language/world features."
+      ]
+    },
+    {
+      "name": "Baked texture uploads and asset cache",
+      "status": "partial",
+      "required": [
+        "Complete cache initializer/configuration/console, protected-scene asset gathering and timed file cleanup/default-asset commands, file-backed production hosting and all module-manager/provider/platform behavior",
+        "Original shared upload module configuration, registration/removal and cache lifetime",
+        "Bind actual production HTTP uploads and asset retrieval without inventory/service persistence of local temporary bakes",
+        "Real30-second expiry, shutdown ownership, retained handlers, concurrent requests and all three platforms"
+      ],
+      "implemented": [
+        "Native baked-texture two-stage handler and uploader preserve unchanged UploadBakedTexture/BakedTextureUploader and actual SimpleBinaryHandler/LLSD/AssetBase/SDK behavior across2320 source observations. POST metadata accepts empty/malformed bodies; upload path ends-BK; binary limit is6,000,000 inclusive; timer Start30s, Stop/remove/Dispose ordering and expiry-only remove/Dispose are distinct. IP comparison includes address family and IPv6 scope; rejected uploads are consumed before401. Assets have source name Baked Texture, texture type, agent creator, raw bytes, Local/Temporary true and Normal flags; completion has zero inventory UUID and zero masks/flags. Cache/asset failures return400 while pre-cache timer/route failures return500, and cached handles preserve original post-expiry behavior. Native tests compare the cached asset UUID against actual response identity. Core source comparisons control cache and timer/HTTP dependencies; actual memory-cache and single-region production binding are now implemented and verified separately below. Full shared module lifecycle, file cache, GC/concurrent/platform behavior remain pending.",
+        "Actual executable memory-only Flotsam cache profile is now bound to LocalAssetConnector and baked-texture HTTP registration. Native FlotsamMemoryCache matches10332 unchanged original Flotsam method/full ExpiringCacheOS/ExpiringKey/real AssetBase/SDK observations with controlled clock/timer callbacks and forced GC boundaries. Preserves weak/shared identity and mutation, negative versus ordinary miss, GetCached/Check bypass and zero UUID differences, original weak-hit/request counters, periodic strict purge without lazy expiration, refresh, minimum checks, nonpositive lifetimes, seconds/milliseconds and Int32 conversion/wrap behavior. Real native worker expires released strong memory references. RegionAssetRuntime supports Modules.AssetCaching=FlotsamAssetCache with AssetCache.FileCacheEnabled=false, MemoryCacheEnabled/MemoryCacheTimeout and negative settings; enabled file caching explicitly fails until the original file format/behavior is ported. Real local asset-store connector retains local assets in this cache without SQL persistence, and actual restart proves those local assets are absent from SQLite. Baked host runtime registers only with a real cache, preserves local/external/whitespace selection, actual30-second expiry and child route independence from Caps deregistration, and retires children before asset shutdown. Live seed/HTTP/UDP/SQLite checks upload exact raw bake bytes through actual asset connector, IP-bound consumption, empty/oversized retention,6MB limit, zero inventory/masks/flags, no SQL asset or inventory insertion, and cache retention across logout/relogin. Full shared multi-region UploadBakedTextureModule field/subscription lifecycle, file cache serialization/read-write/cleanup, commands/scanning/default-asset cache population, general configuration culture/invalid UTF16, GC timing/concurrency and Linux/macOS execution remain pending.",
+        "Native AssetNrbfCodec now reads/writes current-schema AssetBase NRBF streams consumed by the actual original .NET BinaryFormatter, with5120 bidirectional/file/legacy comparisons over1024 original-class/SDK profiles. Preserves raw private ID and content type without getter/setter normalization, nullable metadata/text/data/SHA, distinct and shared byte arrays including CLR shared empty-array identity, signed types/flags/upload attempts, long Unicode strings/arrays and all DateTime kind bits including ambiguous local kind3. Original AssetBase.DecodeFromNRBF is separately retained: optional/malformed member behavior, ID/content-type setter order, omitted upload attempts/SHA1 and normalized kind3-to-local2 DateTime.Legacy truncation/mutation/record/primitive/decimal observations execute unchanged original reader/decoder with actual SDK; the exact count is retained in each generated report. Private graph parser covers original supported records, metadata reuse/references, null runs, bounded counts/depth and primitive validation without CLR instantiation. Native writer uses source-style deferred array records so real BinaryFormatter retains actual bytes. Failed pre-fix executables, actual source/before/after NRBF blobs and CLR observations are retained for inline-array field loss and empty-array identity. Native AssetDateTime now retains serialized kind bits separately from public Kind, and AssetMetadata exposes raw serialization fields. Full Flotsam file I/O/async writes/filetime/cleanup/scanning/commands/default-profile enablement, arbitrary BinaryFormatter type/assembly binding or malformed-file acceptance, CLR string reference identity/invalid UTF16 and Linux/macOS execution remain pending.",
+        "Reviewing and executing complete original Flotsam.Initialise with real Nini found the omitted negative-timeout seconds-to-milliseconds conversion. Native RegionAssetRuntime now applies the original unchecked Int32 multiplication, defaults to120000ms after initialization, and reuses actual CLR-compatible invariant real/integer parsers rather than narrow from_chars-only configuration parsing.408 original Initialise/Nini profiles verify exact double bits/int values for defaults, plus/signed/grouped/exponent/nonfinite/malformed inputs and overflow. A retained prior verified Clang server binary reproduces the HTTP bug: after five seconds it reads a newly inserted out-of-band SQL asset despite the original configured120-second negative cache; fixed live fixtures require continued404. General configuration syntax/culture, complete initializer/module/console behavior and file-profile work remain pending.",
+        "Native FlotsamFileStore now ports the original GetFileName, UpdateFileCache, ProcessWrites, WriteFileCache, GetFromFileCache and CheckFromFileCache transactions. 4160 unchanged original-method comparisons cover UTF16 tier/sanitization paths, queued/duplicate/enqueue-loss state, keep/replace/race behavior, write/read/disposal failures, temporary-file retention/deletion, logging and counters. Eleven real file profiles execute original BinaryFormatter/filesystem methods and native queued OS I/O in both directions, including keep and replacement rules. Actual native executor tests also cover empty files, corrupt-file removal, metadata/byte-array aliases and non-overwriting moves. Interoperability fixtures retain files in unique per-run directories to support consecutive reruns. This component is not yet bound to the production cache. File access-time tracking, full shared module/worker lifecycle, cache composition, scanning/default-asset population, cleanup/commands, arbitrary BinaryFormatter binding/malformed-file classification, filesystem/permission/race edge cases and Linux/macOS execution remain pending. The default file-backed server profile still fails explicitly; application parity remains false.",
+        "Native FlotsamFileAccess now ports unchanged CheckUpdateFileLastAccessTime and UpdateFileLastAccessTime policies plus the source string-key Add/Contains/Purge path of ExpiringKey. 15999 original-method/full original ExpiringKey observations cover null tracker differences, contains/set/add fault ordering, FileNotFoundException versus swallowed other exceptions, minimum/negative/overflow deadlines, 900000ms recording and 300000ms periodic strict purge, no lazy expiry and fractional double-precision clock boundaries. Twenty-four actual Windows filesystem cases compare source and native behavior for files, directories, missing paths/parents, read-only and Unicode names while preserving last-write timestamps. A real queued file-store integration verifies final-path recording, keep-existing throttling, strict-boundary retention, later expiry/touch/retracking, and unchanged last-write time. Before/after binaries and original observations retain the directory-open and integer-clock early-expiry defects and their corrections. The factory supplies an owner-shared tracker and real worker with orderly shutdown; backend hooks can now be attached to FlotsamFileStore. Production memory/file cache composition, full shared module/worker lifecycle, scene-reference scanning/default population, cleanup/commands, general ExpiringKey public API, filesystem/permission/concurrent/GC edge cases and Linux/macOS execution remain pending. The default file-backed server profile remains explicitly unavailable and application parity remains false.",
+        "FlotsamMemoryCache now composes the original weak, memory, negative and optional file data paths and implements the public IAssetCache/IAssetService data methods.31107 unchanged original-method traces use actual AssetBase/SDK and complete original ExpiringCacheOS/ExpiringKey with controlled file dependencies, double clocks/timers and forced GC boundaries. They compare exact traces, counters, disk snapshots and partial state through file/path/log/callback failures, source ID re-reads after file callbacks, negative/ordinary/zero misses, cached and memory-only getter differences, shared metadata/data mutation, Store UUID assignment, replace flags, callback/null/no-op behavior, UpdateContent failure behavior, Delete and Clear ordering. The real directory-clear adapter executes under controlled enumeration/removal faults; real native job queue, NRBF and filesystem tests cover disk fallback, replacement, expiry, root-file retention and ordinary-miss callback behavior. Original Clear deletes immediate subdirectories with per-directory swallowed failures while retaining files at the cache root. Memory and negative expiry now retain the original double-relative clock until the Int32 conversion point, preserve strict periodic expiry without lazy read purges, and reset origins on Clear. Existing memory-only/configuration/file/access-time/NRBF milestones remain covered by their dedicated unchanged-source comparisons and live fixtures. Native file-store transactions cover4160 source cases and11 actual bidirectional file profiles; access-time rules cover15999 observations and24 actual Windows filesystem cases; initialization timing projection covers408 real Nini cases. AssetNrbfCodec preserves current-schema original BinaryFormatter interoperability; arbitrary CLR binding and all malformed-file error classifications remain pending. Production RegionAssetRuntime still selects the memory-only Flotsam profile with FileCacheEnabled=false and binds it to LocalAssetConnector and actual baked-texture upload/retrieval. The composed file data path is implemented but the default file-backed server profile remains explicitly unavailable. Complete module configuration/registration/shared lifecycle, worker lifetime, default population, protected scene-reference scanning, timed cleanup and commands, all general expiration-container APIs, arbitrary CLR strings/null interfaces, filesystem/permission/concurrent/GC schedules and Linux/macOS execution remain pending. Application parity remains false.",
+        "Native FlotsamCacheModule now ports unchanged Name/ReplaceableInterface/PostInitialise/Close/AddRegion/RemoveRegion/RegionLoaded methods.29268 source traces compare two module instances sharing the writer/default IDs, duplicate/reference-based region registration/removal, disabled empty-module close, retained and null asset-service selection, null scenes, timer gates and partial construction/start/stop/close failures, shared worker creation/disposal faults, first-region UUID equality, repeated default loading, loader/cache failures and post-cache ID mutation. Actual AssetBase/SDK and the installed .NET8 timer constructor validate source bounds; native tick-to-millisecond conversion includes the original TimeSpan clamp. Native one-shot timer, callback exception handling and Close/restart are exercised, and actual shared worker/NRBF file default loading and restart/shutdown are tested. Dynamic file backends resolve the shared writer at every availability/enqueue step and retain shared state weakly to avoid executor ownership cycles. RegionAssetRuntime now registers/unregisters its supported memory cache through this lifecycle, passes the actual region UUID, preserves default-loader whitespace selection and uses the real FilesystemAssetLoader to cache defaults at RegionLoaded even when AssetLoaderEnabled=false disables SQL service default loading. Real configured tests require cache bytes with no SQL row. A retained previously verified server reproduces missing default cache population over HTTP after the SQL row is removed before first retrieval; fixed live fixtures require the cached bytes and continued SQL absence. A retained default-loader callback now owns the cache data and ID set after region removal/close; forced original GC and native weak-owner observations verify late caching/publication and release when the callback is discarded. Before/after executables retain the deterministic failed ownership guard without invoking a dangling callback. Full initializer/config/console, protected scene gathering/timed cleanup, default-asset console operations, file-backed production hosting, all module-manager/concurrent/GC schedules and Linux/macOS execution remain pending. The default file-backed profile still fails explicitly and application parity remains false."
+      ]
+    }
+  ]
+}

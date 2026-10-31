@@ -1,0 +1,31 @@
+"""Whole original authentication connector, original base config and query/XML helpers."""
+import argparse,hashlib,itertools,json,re,subprocess,xml.etree.ElementTree as ET
+from pathlib import Path
+from compare_presence_endpoint import ROOT,extract
+def main():
+ p=argparse.ArgumentParser();p.add_argument('--native',required=True);p.add_argument('--dotnet',required=True);p.add_argument('--work',type=Path,required=True);a=p.parse_args();w=a.work.resolve();w.mkdir(parents=True,exist_ok=True)
+ source=(ROOT/'OpenSim/Server/Base/ServerUtils.cs').read_text(encoding='utf-8-sig');parts=[extract(source,r'private static Dictionary<string, object> ScanXmlResponse\('),extract(source,r'public static Dictionary<string, object> ParseXmlResponse\(string'),extract(source,r'public static string BuildQueryString\(')]
+ for name in ['ParseXmlStringResponseXmlReaderSettings','ParseXmlResponseXmlParserContext']:parts.append(re.search(r'private static readonly [^;]+ '+name+r' = [\s\S]+?;',source).group())
+ wrapper=w/'ServerUtils.cs';wrapper.write_text('using System;using System.Text;using System.IO;using System.Xml;using System.Collections.Generic;using OpenMetaverse;using OpenSim.Framework;using SWH=System.Web.HttpUtility;namespace OpenSim.Server.Base{public static class ServerUtils{static log4net.ILog m_log=log4net.LogManager.GetLogger(typeof(ServerUtils));'+''.join(parts)+'}}',encoding='utf-8')
+ util=w/'Util.cs';util.write_text('using System;using Nini.Config;namespace OpenSim.Framework{public static partial class Util{'+extract((ROOT/'OpenSim/Framework/Util.cs').read_text(encoding='utf-8-sig'),r'public static T GetConfigVarFromSections<T>\(IConfigSource config, string varname, string\[\] sections, object val\)')+'}}',encoding='utf-8')
+ files=['OpenSim/Services/Connectors/Authentication/AuthenticationServicesConnector.cs','OpenSim/Services/Connectors/BaseServiceConnector.cs','OpenSim/Services/Interfaces/IAuthenticationService.cs','native-port/tests/authentication_connector_reference.cs'];project=ET.Element('Project',Sdk='Microsoft.NET.Sdk');props=ET.SubElement(project,'PropertyGroup')
+ for k,v in dict(TargetFramework='net8.0',OutputType='Exe',EnableDefaultCompileItems='false').items():ET.SubElement(props,k).text=v
+ group=ET.SubElement(project,'ItemGroup')
+ for f in [wrapper,util,*[ROOT/f for f in files]]:ET.SubElement(group,'Compile',Include=str(f))
+ for name in ['OpenMetaverseTypes','OpenMetaverse','OpenMetaverse.StructuredData','Nini']:
+  ref=ET.SubElement(group,'Reference',Include=name);ET.SubElement(ref,'HintPath').text=str(ROOT/'bin'/f'{name}.dll')
+ cs=w/'AuthenticationConnector.csproj';ET.ElementTree(project).write(cs,encoding='utf-8',xml_declaration=True);r=subprocess.run([a.dotnet,'build',str(cs),'-c','Release','-o',str(w/'app'),'--nologo','-v','quiet'],capture_output=True,text=True);assert r.returncode==0,r.stdout+r.stderr
+ def t(s):return '-' if s is None else s.encode().hex() or '.'
+ seven='00000000-0000-0000-0000-000000000007';replies=[None,'','#throw','bad','<ServerResponse/>','<ServerResponse><Result>Failure</Result></ServerResponse>','<ServerResponse><Result>Success</Result><Token>token&amp;試験</Token></ServerResponse>','<ServerResponse><Result>Success</Result><Token/></ServerResponse>','<ServerResponse><Result>Success</Result></ServerResponse>','<ServerResponse><Result>success</Result><Token>x</Token></ServerResponse>','<ServerResponse><Result> Success </Result><Token>x</Token></ServerResponse>','<ServerResponse><result>Success</result><Token>x</Token></ServerResponse>','<ServerResponse><Result type="List"><a>Success</a></Result><Token>x</Token></ServerResponse>','<ServerResponse><Result>Success</Result><Token type="List"><a>x</a></Token></ServerResponse>','<ServerResponse><Result>Failure</Result><Result>Success</Result><Token>x</Token><Token>last</Token></ServerResponse>','<ServerResponse><Result>Success</Result><Token>&#0;</Token></ServerResponse>','<ServerResponse><Result>Success</Result><Token>x</Token></ServerResponse><broken>']
+ commands=[f'{mode} {lifetime} {t(principal)} {t(value)} {t(reply)}' for mode,lifetime,principal,value,reply in itertools.product(range(7),[-2147483648,-1,0,30,2147483647],[None,seven],[None,'','password & 試験 😃'],replies)];rows=[];differences=[];count=0
+ configurations={'valid':'[AuthenticationService]\nAuthenticationServerURI=http://auth.invalid/base///\n','missing':'[Other]\n','empty':'[AuthenticationService]\n','space':'[AuthenticationService]\nAuthenticationServerURI=" "\n'}
+ for name,text in configurations.items():(w/(name+'.ini')).write_text(text,encoding='utf-8')
+ profiles=[['uri'],['default'],['null'],*(['config',str(w/(name+'.ini'))] for name in configurations),['config',str(w/'valid.ini'),str(w/'space.ini')],['config',str(w/'valid.ini'),str(w/'empty.ini')]]
+ for profile in profiles:
+  rows=[]
+  for command in [[a.dotnet,str(w/'app/AuthenticationConnector.dll'),*profile],[a.native,*profile]]:
+   r=subprocess.run(command,input='\n'.join(commands)+'\n',capture_output=True,text=True,encoding='utf-8',timeout=120);assert r.returncode==0,r.stdout[-1000:]+r.stderr;rows.append(r.stdout.splitlines())
+  assert len(rows[0])==len(rows[1])==len(commands),(profile,len(rows[0]),len(rows[1]));differences += [dict(profile=profile,input=c,source=s,native=n) for c,s,n in zip(commands,*rows) if s!=n];count+=len(commands)
+ report=dict(passed=not differences,observations=count,sourceHashes={f:hashlib.sha256((ROOT/f).read_bytes()).hexdigest() for f in [*files[:3],'OpenSim/Server/Base/ServerUtils.cs','OpenSim/Framework/Util.cs']},scope='Whole original AuthenticationServicesConnector and BaseServiceConnector with exact query/XML/config helper methods. Transport, BasicHttpAuthentication object and logger are controlled. URI constructors/reinitialization, ordered form bytes, strict Result/Token parsing, failure propagation, zero real-ID and no-request remote administration. Full HTTP/global-client/runtime/auth/logging/concurrency and Unix execution remain pending.',differences=differences[:5]);(w/'authentication-connector-results.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8');assert not differences,json.dumps(differences[:2],indent=2)
+ print(f'PASS: {count} original authentication connector observations')
+if __name__=='__main__':main()
