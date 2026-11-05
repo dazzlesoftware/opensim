@@ -1,0 +1,43 @@
+using System;using System.Collections.Generic;using System.Globalization;using System.Reflection;using System.Reflection.Emit;using System.Text;using System.Text.RegularExpressions;
+class Program{
+ delegate bool Categories(string set,UnicodeCategory[] output,out int count,out bool negated);
+ delegate bool Single(string set,out char low,out char high);
+ delegate bool DoubleRange(string set,out (char,char) first,out (char,char) second);
+ delegate bool AsciiChars(string set,out char[] result);
+ static string Dec(string s){if(s=="-")return null;if(s==".")return "";var c=new char[s.Length/4];for(int i=0;i<c.Length;i++)c[i]=(char)Convert.ToUInt16(s.Substring(i*4,4),16);return new string(c);}
+ static string Hex(string s){if(s==null)return "-";if(s.Length==0)return ".";var b=new StringBuilder();foreach(char c in s)b.Append(((int)c).ToString("x4"));return b.ToString();}
+ static string Capture(Func<string> action){try{return action();}catch(Exception e){if(e is TargetInvocationException&&e.InnerException!=null)e=e.InnerException;return "E:"+e.GetType().FullName+":"+unchecked((uint)e.HResult).ToString("x8")+":"+Hex(e.Message);}}
+ static Delegate SpanShim(MethodInfo target,Type delegateType,bool readOnly,bool prefix=false,bool suffix=false){var invoke=delegateType.GetMethod("Invoke");var p=Array.ConvertAll(invoke.GetParameters(),v=>v.ParameterType);var method=new DynamicMethod("SpanCall",invoke.ReturnType,p,typeof(Program).Module,true);var il=method.GetILGenerator();if(prefix)il.Emit(OpCodes.Ldarg_0);il.Emit(prefix?OpCodes.Ldarg_1:OpCodes.Ldarg_0);var span=target.GetParameters()[prefix?1:0].ParameterType;il.Emit(OpCodes.Newobj,span.GetConstructor(new[]{p[prefix?1:0]}));if(suffix){il.Emit(OpCodes.Ldarg_2);il.Emit(OpCodes.Ldarg_3);}il.Emit(OpCodes.Call,target);il.Emit(OpCodes.Ret);return method.CreateDelegate(delegateType);}
+ static void Main(string[] args){CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;var type=typeof(Regex).Assembly.GetType("System.Text.RegularExpressions.RegexCharClass");var flags=BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Static;
+ MethodInfo Method(string name,params Type[] p)=>type.GetMethod(name,flags,null,p,null);
+ if(args.Length>0&&args[0]=="--classes"){
+ var parser=typeof(Regex).Assembly.GetType("System.Text.RegularExpressions.RegexParser");var parse=(Func<string,RegexOptions,CultureInfo,object>)parser.GetMethod("Parse",flags,null,new[]{typeof(string),typeof(RegexOptions),typeof(CultureInfo)},null).CreateDelegate(typeof(Func<string,RegexOptions,CultureInfo,object>));var sets=new HashSet<string>();
+ void Visit(object n){var t=n.GetType();if(t.GetProperty("Kind").GetValue(n).ToString().StartsWith("Set"))sets.Add(Hex((string)t.GetProperty("Str").GetValue(n)));for(int i=0,count=(int)t.GetMethod("ChildCount").Invoke(n,null);i<count;i++)Visit(t.GetMethod("Child").Invoke(n,new object[]{i}));}
+ var patterns=new List<string>{@"[a-z]",@"[a-z-[aeiou]]",@"[^a-z-[A-Z]]",@"\w",@"\W",@"\d",@"\D",@"\s",@"\S",@"[\p{Lu}\p{Ll}]",@"[\p{L}-[A-Z]]",@"[^\p{L}-[\p{N}]]",@"[\p{IsBasicLatin}\p{IsGreek}]",@"[\uD800-\uDFFF]",@"[\x00-\uffff]",@"[a-z-[d-f-[e]]]",@"[^\p{M}\p{Zs}]"};foreach(System.Collections.DictionaryEntry item in (System.Collections.IDictionary)type.GetField("s_definedCategories",flags).GetValue(null))if((string)item.Key!="__InternalRegexIgnoreCase__")patterns.Add(@"\p{"+(string)item.Key+"}");foreach(string p in patterns)foreach(int option in new[]{0,1,256,257}){var tree=parse(p,(RegexOptions)option,CultureInfo.InvariantCulture);Visit(tree.GetType().GetField("Root").GetValue(tree));}Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(sets));return;}
+ var categories=(Categories)SpanShim(Method("TryGetOnlyCategories",typeof(string),typeof(Span<UnicodeCategory>),typeof(int).MakeByRefType(),typeof(bool).MakeByRefType()),typeof(Categories),false,true,true);
+ var getChars=(Func<string,char[],int>)SpanShim(Method("GetSetChars",typeof(string),typeof(Span<char>)),typeof(Func<string,char[],int>),false,true);
+ var toClass=(Func<char[],string>)SpanShim(Method("CharsToStringClass",typeof(ReadOnlySpan<char>)),typeof(Func<char[],string>),true);
+ var participates=(Func<char[],bool>)SpanShim(Method("ParticipatesInCaseConversion",typeof(ReadOnlySpan<char>)),typeof(Func<char[],bool>),true);
+ var ascii=(Func<char[],bool>)SpanShim(Method("IsAscii",typeof(ReadOnlySpan<char>)),typeof(Func<char[],bool>),true);
+ var ranges=(Func<char[],List<(char,char)>>)SpanShim(Method("ComputeRanges",typeof(ReadOnlySpan<char>)),typeof(Func<char[],List<(char,char)>>),true);
+ var single=(Single)Method("TryGetSingleRange",typeof(string),typeof(char).MakeByRefType(),typeof(char).MakeByRefType()).CreateDelegate(typeof(Single));var doubleRange=(DoubleRange)Method("TryGetDoubleRange",typeof(string),typeof(ValueTuple<char,char>).MakeByRefType(),typeof(ValueTuple<char,char>).MakeByRefType()).CreateDelegate(typeof(DoubleRange));var getAscii=(AsciiChars)Method("TryGetAsciiSetChars",typeof(string),typeof(char[]).MakeByRefType()).CreateDelegate(typeof(AsciiChars));var caseInt=(Func<int,bool>)Method("ParticipatesInCaseConversion",typeof(int)).CreateDelegate(typeof(Func<int,bool>));
+ string B(bool v)=>v?"1":"0";string CallBool(string method,string s)=>B((bool)Method(method,typeof(string)).Invoke(null,new object[]{s}));
+ string row;while((row=Console.ReadLine())!=null){var f=row.Split(' ');string s=f[0]!="W"&&f[0]!="J"&&f[0]!="D"?Dec(f[1]):null;var output=new List<string>();
+ switch(f[0]){
+ case "A":foreach(string name in new[]{"IsMergeable","IsEmpty","IsSingleton","IsSingletonInverse","IsNegated","IsSubtraction"})output.Add(Capture(()=>CallBool(name,s)));output.Add(Capture(()=>((int)(char)Method("SingletonChar",typeof(string)).Invoke(null,new object[]{s})).ToString()));
+ output.Add(Capture(()=>{object value=Method("Analyze",typeof(string)).Invoke(null,new object[]{s});var fields=value.GetType();string Bool(string name)=>B((bool)fields.GetField(name).GetValue(value));return string.Join(",",Bool("OnlyRanges"),Bool("ContainsOnlyAscii"),Bool("ContainsNoAscii"),Bool("AllAsciiContained"),Bool("AllNonAsciiContained"),fields.GetField("LowerBoundInclusiveIfOnlyRanges").GetValue(value),fields.GetField("UpperBoundExclusiveIfOnlyRanges").GetValue(value));}));
+ char lo='\uaaaa',hi='\ubbbb';output.Add(Capture(()=>B(single(s,out lo,out hi)))+":"+(int)lo+","+(int)hi);(char,char) r0=('\u1111','\u2222'),r1=('\u3333','\u4444');output.Add(Capture(()=>B(doubleRange(s,out r0,out r1)))+":"+(int)r0.Item1+","+(int)r0.Item2+","+(int)r1.Item1+","+(int)r1.Item2);break;
+ case "K":var buffer=new UnicodeCategory[int.Parse(f[2])];Array.Fill(buffer,(UnicodeCategory)0x76543210);int count=-7;bool neg=true;output.Add(Capture(()=>B(categories(s,buffer,out count,out neg)))+":"+count+":"+B(neg)+":"+string.Join(",",Array.ConvertAll(buffer,v=>(int)v)));break;
+ case "T":var chars=new char[int.Parse(f[2])];Array.Fill(chars,'\ua55a');output.Add(Capture(()=>getChars(s,chars).ToString())+":"+Hex(new string(chars)));break;
+ case "F":char[] result={'\u9999'};output.Add(Capture(()=>B(getAscii(s,out result)))+":"+Hex(result==null?null:new string(result)));break;
+ case "O":output.Add(Capture(()=>B((bool)Method("MayOverlap",typeof(string),typeof(string)).Invoke(null,new object[]{s,Dec(f[2])}))));break;
+ case "N":output.Add(Capture(()=>B((bool)Method("IsNegated",typeof(string),typeof(int)).Invoke(null,new object[]{s,int.Parse(f[2])}))));break;
+ case "H":var input=s?.ToCharArray();string first=null,second=null;output.Add(Capture(()=>{first=toClass(input);second=toClass(input);return Hex(first)+":"+B(ReferenceEquals(first,second))+":"+B(participates(input))+":"+B(ascii(input));}));if(input?.Length==1)output.Add(Capture(()=>B(ReferenceEquals(first,(string)Method("OneToStringClass",typeof(char)).Invoke(null,new object[]{input[0]})))));break;
+ case "I":output.Add(Capture(()=>B(ReferenceEquals(toClass(s?.ToCharArray()),toClass(Dec(f[2])?.ToCharArray())))));break;
+ case "R":output.Add(Capture(()=>{var list=ranges(s?.ToCharArray());return list==null?"-":string.Join(",",list.ConvertAll(v=>(int)v.Item1+":"+(int)v.Item2));}));break;
+ case "J":output.Add(Capture(()=>B(caseInt(int.Parse(f[1])))));break;
+ case "D":int mask=-1;object[] parameters={(char)int.Parse(f[1]),(char)int.Parse(f[2]),mask};bool ok=(bool)Method("DifferByOneBit",typeof(char),typeof(char),typeof(int).MakeByRefType()).Invoke(null,parameters);output.Add(B(ok)+":"+parameters[2]);break;
+ case "W":var flagsText=new StringBuilder();for(int i=0;i<65536;i++)flagsText.Append((caseInt(i)?1:0)|(participates(new[]{(char)i})?2:0)|(ascii(new[]{(char)i})?4:0));output.Add(flagsText.ToString());break;
+ }Console.WriteLine(string.Join("|",output));}
+ }
+}

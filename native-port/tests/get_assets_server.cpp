@@ -7,40 +7,277 @@
 #include "opensim/services/scene_capabilities.hpp"
 #include "opensim/server/poll_http_service.hpp"
 #include <iostream>
-using namespace opensim;using namespace services;using namespace server;using namespace network;
+using namespace opensim;
+using namespace services;
+using namespace server;
+using namespace network;
 // The service and SQLite storage are native; only cache/user/scene inputs are controlled.
-struct Service:AssetService {
- std::shared_ptr<ConfiguredAssetService> inner;std::atomic<int> calls=0;std::atomic<bool> foreign_ok=true;
- explicit Service(std::shared_ptr<ConfiguredAssetService> service):inner(std::move(service)){}
- Asset get_asset(const std::string& id)override{++calls;return inner->get_asset(id);}
- bool get_async(const std::string& id,std::any sender,Retrieved done)override{++calls;if(sender.has_value())foreign_ok=false;return inner->get_async(id,std::move(sender),std::move(done));}
- void get(const std::string& id,const std::optional<std::string>& foreign,bool local,Complete callback)override{inner->get(id,foreign,local,std::move(callback));}
- Asset get_foreign(const std::string& id,const std::optional<std::string>& foreign,bool local)override{return inner->get_foreign(id,foreign,local);}Asset get_cached(const std::string& id)override{return inner->get_cached(id);}
- std::shared_ptr<framework::AssetMetadata> get_metadata(const std::string& id)override{return inner->get_metadata(id);}framework::AssetBytes get_data(const std::string& id)override{return inner->get_data(id);}
- std::vector<bool> assets_exist(const std::vector<std::string>& ids)override{return inner->assets_exist(ids);}std::optional<std::string> store(Asset asset)override{return inner->store(std::move(asset));}
- bool update_content(const std::string& id,framework::AssetBytes data)override{return inner->update_content(id,std::move(data));}bool erase(const std::string& id)override{return inner->erase(id);}
+struct Service : AssetService {
+    std::shared_ptr<ConfiguredAssetService> inner;
+    std::atomic<int> calls = 0;
+    std::atomic<bool> foreign_ok = true;
+    explicit Service(std::shared_ptr<ConfiguredAssetService> service) : inner(std::move(service)) {}
+    Asset get_asset(const std::string &id) override {
+        ++calls;
+        return inner->get_asset(id);
+    }
+    bool get_async(const std::string &id, std::any sender, Retrieved done) override {
+        ++calls;
+        if (sender.has_value())
+            foreign_ok = false;
+        return inner->get_async(id, std::move(sender), std::move(done));
+    }
+    void get(const std::string &id, const std::optional<std::string> &foreign, bool local,
+             Complete callback) override {
+        inner->get(id, foreign, local, std::move(callback));
+    }
+    Asset get_foreign(const std::string &id, const std::optional<std::string> &foreign, bool local) override {
+        return inner->get_foreign(id, foreign, local);
+    }
+    Asset get_cached(const std::string &id) override {
+        return inner->get_cached(id);
+    }
+    std::shared_ptr<framework::AssetMetadata> get_metadata(const std::string &id) override {
+        return inner->get_metadata(id);
+    }
+    framework::AssetBytes get_data(const std::string &id) override {
+        return inner->get_data(id);
+    }
+    std::vector<bool> assets_exist(const std::vector<std::string> &ids) override {
+        return inner->assets_exist(ids);
+    }
+    std::optional<std::string> store(Asset asset) override {
+        return inner->store(std::move(asset));
+    }
+    bool update_content(const std::string &id, framework::AssetBytes data) override {
+        return inner->update_content(id, std::move(data));
+    }
+    bool erase(const std::string &id) override {
+        return inner->erase(id);
+    }
 };
-struct Cache:framework::IAssetCache {
- std::mutex mutex;std::unordered_map<std::string,AssetService::Asset> values;std::unordered_set<std::string> negative;
- void cache(const AssetService::Asset& asset,bool)override{std::lock_guard lock(mutex);values[asset->id()]=asset;negative.erase(asset->id());}
- void cache_negative(const std::string& id)override{std::lock_guard lock(mutex);negative.insert(id);}
- bool get(const std::string& id,AssetService::Asset& asset)override{std::lock_guard lock(mutex);auto found=values.find(id);asset=found==values.end()?nullptr:found->second;return !negative.contains(id);}
- bool get_from_memory(const std::string& id,AssetService::Asset& asset)override{return get(id,asset);}
- AssetService::Asset get_cached(const std::string& id)override{AssetService::Asset asset;get(id,asset);return asset;}bool check(const std::string& id)override{return bool(get_cached(id));}
- void expire(const std::string& id)override{std::lock_guard lock(mutex);values.erase(id);negative.erase(id);}void clear()override{std::lock_guard lock(mutex);values.clear();negative.clear();}
+struct Cache : framework::IAssetCache {
+    std::mutex mutex;
+    std::unordered_map<std::string, AssetService::Asset> values;
+    std::unordered_set<std::string> negative;
+    void cache(const AssetService::Asset &asset, bool) override {
+        std::lock_guard lock(mutex);
+        values[asset->id()] = asset;
+        negative.erase(asset->id());
+    }
+    void cache_negative(const std::string &id) override {
+        std::lock_guard lock(mutex);
+        negative.insert(id);
+    }
+    bool get(const std::string &id, AssetService::Asset &asset) override {
+        std::lock_guard lock(mutex);
+        auto found = values.find(id);
+        asset = found == values.end() ? nullptr : found->second;
+        return !negative.contains(id);
+    }
+    bool get_from_memory(const std::string &id, AssetService::Asset &asset) override {
+        return get(id, asset);
+    }
+    AssetService::Asset get_cached(const std::string &id) override {
+        AssetService::Asset asset;
+        get(id, asset);
+        return asset;
+    }
+    bool check(const std::string &id) override {
+        return bool(get_cached(id));
+    }
+    void expire(const std::string &id) override {
+        std::lock_guard lock(mutex);
+        values.erase(id);
+        negative.erase(id);
+    }
+    void clear() override {
+        std::lock_guard lock(mutex);
+        values.clear();
+        negative.clear();
+    }
 };
-struct Backend:SceneCapabilityBackend,AssetsModuleBackend,AssetConnectorBackend {
- std::shared_ptr<Service> service;framework::ObjectJobEngine callbacks{[](std::any value){std::any_cast<std::function<void()>>(value)();},"AssetConnectorCallbacks",1000,3};
- std::shared_ptr<std::atomic<int>> storage_errors=std::make_shared<std::atomic<int>>(0);std::shared_ptr<AssetStorageState> asset_state=std::make_shared<AssetStorageState>();
- std::shared_ptr<AssetService> load_service(const std::string& name,const IniConfig* config)override{if(name!="OpenSim.Services.AssetService.dll:AssetService")throw std::runtime_error("Wrong provider");auto count=storage_errors;auto storage=std::make_shared<NativeAssetStorageBackend>([count](const auto& level,const auto&){if(level=="error")++*count;});AssetStorageFactory factory(storage,asset_state);service=std::make_shared<Service>(factory.create(config));return service;}void info(const std::string&)override{}void post(std::function<void()> callback,const std::string&)override{callbacks.enqueue(std::move(callback));}
- std::shared_ptr<RegistryCapabilityListener> registry;std::atomic<int> warnings=0,errors=0;explicit Backend(std::shared_ptr<RegistryCapabilityListener> r):registry(std::move(r)){}
- std::string scene_name()const override{return "Scene";}std::optional<std::string> region_name()const override{return "Region";}std::optional<std::string> external_host()const override{return "127.0.0.1";}std::shared_ptr<CapabilityRuntimeListener> listener()const override{return registry;}bool check_client(framework::Uuid,const HttpRequest&)override{return true;}
- framework::Uuid random_uuid()override{return framework::Uuid::random();}void debug(const std::string&)override{}void warn(const std::string&)override{++warnings;}void error(const std::string&)override{++errors;}void job_error(const std::string&,const std::exception&)override{++errors;}void console(const std::string&)override{}void add_command(CapabilityCommand)override{}
+struct Backend : SceneCapabilityBackend, AssetsModuleBackend, AssetConnectorBackend {
+    std::shared_ptr<Service> service;
+    framework::ObjectJobEngine callbacks{
+        [](std::any value) { std::any_cast<std::function<void()>>(value)(); }, "AssetConnectorCallbacks",
+        1000, 3};
+    std::shared_ptr<std::atomic<int>> storage_errors = std::make_shared<std::atomic<int>>(0);
+    std::shared_ptr<AssetStorageState> asset_state = std::make_shared<AssetStorageState>();
+    std::shared_ptr<AssetService> load_service(const std::string &name, const IniConfig *config) override {
+        if (name != "OpenSim.Services.AssetService.dll:AssetService")
+            throw std::runtime_error("Wrong provider");
+        auto count = storage_errors;
+        auto storage = std::make_shared<NativeAssetStorageBackend>([count](const auto &level, const auto &) {
+            if (level == "error")
+                ++*count;
+        });
+        AssetStorageFactory factory(storage, asset_state);
+        service = std::make_shared<Service>(factory.create(config));
+        return service;
+    }
+    void info(const std::string &) override {}
+    void post(std::function<void()> callback, const std::string &) override {
+        callbacks.enqueue(std::move(callback));
+    }
+    std::shared_ptr<RegistryCapabilityListener> registry;
+    std::atomic<int> warnings = 0, errors = 0;
+    explicit Backend(std::shared_ptr<RegistryCapabilityListener> r) : registry(std::move(r)) {}
+    std::string scene_name() const override {
+        return "Scene";
+    }
+    std::optional<std::string> region_name() const override {
+        return "Region";
+    }
+    std::optional<std::string> external_host() const override {
+        return "127.0.0.1";
+    }
+    std::shared_ptr<CapabilityRuntimeListener> listener() const override {
+        return registry;
+    }
+    bool check_client(framework::Uuid, const HttpRequest &) override {
+        return true;
+    }
+    framework::Uuid random_uuid() override {
+        return framework::Uuid::random();
+    }
+    void debug(const std::string &) override {}
+    void warn(const std::string &) override {
+        ++warnings;
+    }
+    void error(const std::string &) override {
+        ++errors;
+    }
+    void job_error(const std::string &, const std::exception &) override {
+        ++errors;
+    }
+    void console(const std::string &) override {}
+    void add_command(CapabilityCommand) override {}
 };
-struct Users:AssetsUserManagement {std::optional<std::string> user_server_url(framework::Uuid,const std::string& key)override{if(key!="AssetServerURI")throw std::runtime_error("Wrong server key");return "https://foreign.invalid/assets";}};
-struct Scene:AssetsModuleScene,AssetConnectorScene {
- std::shared_ptr<AssetService> registered;std::shared_ptr<Cache> cache=std::make_shared<Cache>();void register_service(std::shared_ptr<AssetService> value)override{registered=std::move(value);}AssetConnectorCache asset_cache()override{return {cache,true};}std::optional<std::string> region_name()override{return "Region";}std::shared_ptr<SceneCapabilityEvents> source;std::shared_ptr<Service> service;std::atomic<bool> stopping=false;explicit Scene(std::shared_ptr<SceneCapabilityEvents> events):source(std::move(events)){}SceneCapabilityEvents& events()override{return *source;}bool shutting_down()const override{return stopping;}std::shared_ptr<AssetRetrievalService> asset_service()override{return registered;}std::shared_ptr<AssetsUserManagement> user_management()override{return std::make_shared<Users>();}std::shared_ptr<AssetsExternalCaps> external_caps()override{return {};}};
-int main(int argc,char**argv){try{auto config=IniConfig::load("assets.ini");std::shared_ptr<RegistryCapabilityListener> registry;std::shared_ptr<Backend> backend;std::unique_ptr<SceneCapabilities> runtime;std::shared_ptr<GetAssetsModule> module;std::shared_ptr<LocalAssetConnector> connector;std::shared_ptr<Scene> scene;PollHttpService polls(2);HttpServerOptions options;options.port=0;options.workers=2;if(argc==3){options.certificate=argv[1];options.private_key=argv[2];}
- AsyncHttpServer http(options,[&](const HttpRequest& request,std::shared_ptr<HttpResponseChannel> channel){polls.dispatch(*registry,request,channel,[&](const HttpRequest& r){HttpResponse response;if(r.path=="/state")response.body=std::to_string(scene->service->calls.load())+"|"+(scene->service->foreign_ok?"1":"0")+"|"+std::to_string(backend->errors.load()+backend->storage_errors->load());else if(r.path=="/store"){auto asset=std::make_shared<framework::AssetBase>();asset->id("00000000-0000-0000-0000-000000000004");asset->type(0);asset->data=std::make_shared<std::vector<uint8_t>>(r.body.begin(),r.body.end());response.body=connector->store(asset).value_or("");}else if(r.path=="/expire")scene->cache->expire(r.body);else if(r.path=="/dispose")runtime->capabilities().remove_caps(framework::Uuid("00000000-0000-0000-0000-000000000007"),123);else if(r.path=="/ready"){response.status=503;response.body="Native world runtime incomplete";}else response.status=404;return response;});});
- polls.start();http.start([&](int port){registry=std::make_shared<RegistryCapabilityListener>(CapabilityListenerInfo{argc==3,uint32_t(port),uint32_t(port),std::string("localhost")});backend=std::make_shared<Backend>(registry);runtime=std::make_unique<SceneCapabilities>(backend);scene=std::make_shared<Scene>(runtime->shared_events());connector=std::make_shared<LocalAssetConnector>(backend);connector->initialise(&config);scene->service=backend->service;connector->add_region(scene);connector->region_loaded(scene);module=std::make_shared<GetAssetsModule>(std::static_pointer_cast<AssetsModuleBackend>(backend),std::make_shared<AssetsModuleState>());module->initialise(&config);module->add_region(scene);module->region_loaded(scene);auto circuit=std::make_shared<framework::AgentCircuitData>();circuit->agent_id=framework::Uuid("00000000-0000-0000-0000-000000000007");circuit->circuit_code=123;circuit->caps_path="assets";runtime->capabilities().set_agent_caps_seeds(circuit);runtime->capabilities().create_caps(circuit->agent_id,123);runtime->capabilities().activate_caps(123);std::cout<<"LISTENING "<<port<<std::endl;});std::string line;std::getline(std::cin,line);polls.stop();http.stop();module->remove_region(scene);module->close();connector->remove_region(scene);connector->close();backend->callbacks.dispose();runtime->shutdown();if(!registry->routes.simple_keys().empty()||!registry->routes.poll_keys().empty())throw std::runtime_error("Asset routes retained");return 0;
- }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+struct Users : AssetsUserManagement {
+    std::optional<std::string> user_server_url(framework::Uuid, const std::string &key) override {
+        if (key != "AssetServerURI")
+            throw std::runtime_error("Wrong server key");
+        return "https://foreign.invalid/assets";
+    }
+};
+struct Scene : AssetsModuleScene, AssetConnectorScene {
+    std::shared_ptr<AssetService> registered;
+    std::shared_ptr<Cache> cache = std::make_shared<Cache>();
+    void register_service(std::shared_ptr<AssetService> value) override {
+        registered = std::move(value);
+    }
+    AssetConnectorCache asset_cache() override {
+        return {cache, true};
+    }
+    std::optional<std::string> region_name() override {
+        return "Region";
+    }
+    std::shared_ptr<SceneCapabilityEvents> source;
+    std::shared_ptr<Service> service;
+    std::atomic<bool> stopping = false;
+    explicit Scene(std::shared_ptr<SceneCapabilityEvents> events) : source(std::move(events)) {}
+    SceneCapabilityEvents &events() override {
+        return *source;
+    }
+    bool shutting_down() const override {
+        return stopping;
+    }
+    std::shared_ptr<AssetRetrievalService> asset_service() override {
+        return registered;
+    }
+    std::shared_ptr<AssetsUserManagement> user_management() override {
+        return std::make_shared<Users>();
+    }
+    std::shared_ptr<AssetsExternalCaps> external_caps() override {
+        return {};
+    }
+};
+int main(int argc, char **argv) {
+    try {
+        auto config = IniConfig::load("assets.ini");
+        std::shared_ptr<RegistryCapabilityListener> registry;
+        std::shared_ptr<Backend> backend;
+        std::unique_ptr<SceneCapabilities> runtime;
+        std::shared_ptr<GetAssetsModule> module;
+        std::shared_ptr<LocalAssetConnector> connector;
+        std::shared_ptr<Scene> scene;
+        PollHttpService polls(2);
+        HttpServerOptions options;
+        options.port = 0;
+        options.workers = 2;
+        if (argc == 3) {
+            options.certificate = argv[1];
+            options.private_key = argv[2];
+        }
+        AsyncHttpServer http(options, [&](const HttpRequest &request,
+                                          std::shared_ptr<HttpResponseChannel> channel) {
+            polls.dispatch(*registry, request, channel, [&](const HttpRequest &r) {
+                HttpResponse response;
+                if (r.path == "/state")
+                    response.body = std::to_string(scene->service->calls.load()) + "|" +
+                                    (scene->service->foreign_ok ? "1" : "0") + "|" +
+                                    std::to_string(backend->errors.load() + backend->storage_errors->load());
+                else if (r.path == "/store") {
+                    auto asset = std::make_shared<framework::AssetBase>();
+                    asset->id("00000000-0000-0000-0000-000000000004");
+                    asset->type(0);
+                    asset->data = std::make_shared<std::vector<uint8_t>>(r.body.begin(), r.body.end());
+                    response.body = connector->store(asset).value_or("");
+                } else if (r.path == "/expire")
+                    scene->cache->expire(r.body);
+                else if (r.path == "/dispose")
+                    runtime->capabilities().remove_caps(
+                        framework::Uuid("00000000-0000-0000-0000-000000000007"), 123);
+                else if (r.path == "/ready") {
+                    response.status = 503;
+                    response.body = "Native world runtime incomplete";
+                } else
+                    response.status = 404;
+                return response;
+            });
+        });
+        polls.start();
+        http.start([&](int port) {
+            registry = std::make_shared<RegistryCapabilityListener>(
+                CapabilityListenerInfo{argc == 3, uint32_t(port), uint32_t(port), std::string("localhost")});
+            backend = std::make_shared<Backend>(registry);
+            runtime = std::make_unique<SceneCapabilities>(backend);
+            scene = std::make_shared<Scene>(runtime->shared_events());
+            connector = std::make_shared<LocalAssetConnector>(backend);
+            connector->initialise(&config);
+            scene->service = backend->service;
+            connector->add_region(scene);
+            connector->region_loaded(scene);
+            module = std::make_shared<GetAssetsModule>(std::static_pointer_cast<AssetsModuleBackend>(backend),
+                                                       std::make_shared<AssetsModuleState>());
+            module->initialise(&config);
+            module->add_region(scene);
+            module->region_loaded(scene);
+            auto circuit = std::make_shared<framework::AgentCircuitData>();
+            circuit->agent_id = framework::Uuid("00000000-0000-0000-0000-000000000007");
+            circuit->circuit_code = 123;
+            circuit->caps_path = "assets";
+            runtime->capabilities().set_agent_caps_seeds(circuit);
+            runtime->capabilities().create_caps(circuit->agent_id, 123);
+            runtime->capabilities().activate_caps(123);
+            std::cout << "LISTENING " << port << std::endl;
+        });
+        std::string line;
+        std::getline(std::cin, line);
+        polls.stop();
+        http.stop();
+        module->remove_region(scene);
+        module->close();
+        connector->remove_region(scene);
+        connector->close();
+        backend->callbacks.dispose();
+        runtime->shutdown();
+        if (!registry->routes.simple_keys().empty() || !registry->routes.poll_keys().empty())
+            throw std::runtime_error("Asset routes retained");
+        return 0;
+    } catch (const std::exception &e) {
+        std::cerr << e.what() << '\n';
+        return 1;
+    }
+}

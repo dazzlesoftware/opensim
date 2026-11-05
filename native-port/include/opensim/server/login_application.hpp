@@ -27,6 +27,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 #include "opensim/network/http_server.hpp"
+#include "opensim/server/json_rpc.hpp"
 #include "opensim/services/login_service.hpp"
 #include "opensim/server/presence_endpoint.hpp"
 #include "opensim/server/grid_user_endpoint.hpp"
@@ -35,28 +36,76 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/server/authentication_endpoint.hpp"
 #include "opensim/server/avatar_endpoint.hpp"
 #include "opensim/server/friends_endpoint.hpp"
+#include "opensim/server/offline_im_endpoint.hpp"
 namespace opensim::server {
 class LoginApplication {
-public:
-    LoginApplication(services::ILoginService& login,const IniConfig& config);
-    network::HttpResponse handle(const network::HttpRequest& request);
+  public:
+    LoginApplication(services::ILoginService& login, const IniConfig& config);
+    network::HttpResponse handle(const network::HttpRequest& request, bool allow_gatekeeper = true);
+    network::HttpResponse handle_gatekeeper(const network::HttpRequest& request);
     void set_default_login_uri(const std::string& uri);
-    void set_presence_endpoint(PresenceEndpoint* endpoint){presence_=endpoint;}
-    void set_grid_user_endpoint(GridUserEndpoint* endpoint){grid_user_=endpoint;}
-    void set_grid_endpoint(GridEndpoint* endpoint){grid_=endpoint;}
-    void set_friends_endpoint(FriendsEndpoint* endpoint){friends_=endpoint;}
-    void set_avatar_endpoint(AvatarEndpoint* endpoint){avatar_=endpoint;}
-    void set_account_endpoint(AccountEndpoint* endpoint){accounts_=endpoint;}
-    void set_authentication_endpoint(AuthenticationEndpoint* endpoint){authentication_=endpoint;}
-private:
+    void set_presence_endpoint(PresenceEndpoint* endpoint) {
+        presence_ = endpoint;
+    }
+    void set_grid_user_endpoint(GridUserEndpoint* endpoint) {
+        grid_user_ = endpoint;
+    }
+    void set_grid_endpoint(GridEndpoint* endpoint) {
+        grid_ = endpoint;
+    }
+    void set_friends_endpoint(FriendsEndpoint* endpoint) {
+        friends_ = endpoint;
+    }
+    void set_offline_im_endpoint(OfflineImEndpoint* endpoint) {
+        offline_im_ = endpoint;
+    }
+    void set_avatar_endpoint(AvatarEndpoint* endpoint) {
+        avatar_ = endpoint;
+    }
+    void set_account_endpoint(AccountEndpoint* endpoint) {
+        accounts_ = endpoint;
+    }
+    void set_authentication_endpoint(AuthenticationEndpoint* endpoint) {
+        authentication_ = endpoint;
+    }
+    JsonRpcDispatcher& json_rpc() {
+        return json_rpc_;
+    }
+    void set_grid_message_handler(std::function<bool(const network::Value&)> handler) {
+        grid_message_ = std::move(handler);
+    }
+    void
+    set_gatekeeper_handler(std::function<network::Value(std::string_view, const network::Value&)> handler) {
+        gatekeeper_ = std::move(handler);
+    }
+    void set_home_agent_verifier(std::function<bool(std::string_view, const network::Value&)> verifier) {
+        home_agent_verifier_ = std::move(verifier);
+    }
+    void set_home_region_lookup(std::function<network::Value(const network::Value&)> lookup) {
+        home_region_lookup_ = std::move(lookup);
+    }
+    void set_home_user_lookup(
+        std::function<network::Value(std::string_view, const network::Value&, std::string_view)> lookup) {
+        home_user_lookup_ = std::move(lookup);
+    }
+
+  private:
+    JsonRpcDispatcher json_rpc_;
+    std::function<bool(const network::Value&)> grid_message_;
+    std::function<network::Value(std::string_view, const network::Value&)> gatekeeper_;
+    std::function<bool(std::string_view, const network::Value&)> home_agent_verifier_;
+    std::function<network::Value(const network::Value&)> home_region_lookup_;
+    std::function<network::Value(std::string_view, const network::Value&, std::string_view)>
+        home_user_lookup_;
     services::LoginHandlers handlers_;
-    std::map<std::string,std::string> grid_info_;
-    PresenceEndpoint* presence_=nullptr;
-    GridUserEndpoint* grid_user_=nullptr;
-    GridEndpoint* grid_=nullptr;
-    AccountEndpoint* accounts_=nullptr;
-    AuthenticationEndpoint* authentication_=nullptr;
-    AvatarEndpoint* avatar_=nullptr;
-    FriendsEndpoint* friends_=nullptr;
+    std::map<std::string, std::string> grid_info_;
+    PresenceEndpoint* presence_ = nullptr;
+    GridUserEndpoint* grid_user_ = nullptr;
+    GridEndpoint* grid_ = nullptr;
+    AccountEndpoint* accounts_ = nullptr;
+    AuthenticationEndpoint* authentication_ = nullptr;
+    AvatarEndpoint* avatar_ = nullptr;
+    FriendsEndpoint* friends_ = nullptr;
+    OfflineImEndpoint* offline_im_ = nullptr;
 };
 }

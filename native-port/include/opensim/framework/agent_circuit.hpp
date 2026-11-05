@@ -48,13 +48,20 @@ struct AgentCircuitData {
     using ChildrenSeeds=OrderedDictionary<std::uint64_t,std::optional<std::string>>;
     std::shared_ptr<ChildrenSeeds> children_cap_seeds;
     bool child=false;
+    // Set by the receiving server after home-grid verification, never unpacked from the wire.
+    bool verified_foreign_login=false;
     std::uint32_t circuit_code=0,teleport_flags=0;
     std::optional<std::string> first_name,last_name,ip_address,channel,mac,id0;
     Vector3 start_position;
     float start_far=-1;
+    std::optional<Vector3> transfer_look_at;
+    std::optional<bool> transfer_viewer_god_mode;
+    Uuid active_group_id;
     using ServiceUrls=OrderedDictionary<std::string,std::any>;
     std::shared_ptr<ServiceUrls> service_urls;
-    void viewer(std::optional<std::string> value){viewer_=std::move(value);}
+    void viewer(std::optional<std::string> value) {
+        viewer_ = std::move(value);
+    }
     std::optional<std::string> viewer()const;
     std::string name()const;
     network::Value pack(EntityTransferContext* context=nullptr);
@@ -87,6 +94,7 @@ public:
     void remove_circuit(std::uint32_t code);
     void remove_circuit(const Uuid& agent);
     void remove_circuit(const Circuit& data);
+    bool remove_current_circuit(const Circuit& data);
     Circuit get_agent_circuit_data(std::uint32_t code)const;
     Circuit get_agent_circuit_data(const Uuid& agent)const;
     AgentIndex get_agent_circuits()const;

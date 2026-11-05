@@ -1,0 +1,6 @@
+{
+  "url": "https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/native/libs/System.Native/pal_io.c",
+  "pal_io_sha256": "f36306da7c4f0f699922ae457f43aa21ab0188e885208d2fa0ea3de2d1d471d8",
+  "body_sha256": "54f2a81d2a9a921a5cb0131ecbd67595bf92c9225994180bb0a9a352f133e340",
+  "license": "../third_party/dotnet_collation/LICENSE"
+}

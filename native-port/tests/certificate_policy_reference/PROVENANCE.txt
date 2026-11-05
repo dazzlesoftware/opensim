@@ -1,0 +1,19 @@
+Reference-only fixture; not linked into any native application.
+
+CertificatePolicy.cs is the unchanged .NET Foundation MIT-licensed source:
+https://raw.githubusercontent.com/dotnet/runtime/v8.0.31/src/libraries/System.Security.Cryptography/src/System/Security/Cryptography/X509Certificates/CertificatePolicy.cs
+
+PolicyInformationAsn.cs, PolicyConstraintsAsn.cs and CertificatePolicyMappingAsn.cs
+contain the decoded methods from the actual Linux runtime8.0.31 assembly.
+Their generated source lives in the same pinned runtime tree under
+X509Certificates/Asn1/*.xml.cs. The .NET Foundation MIT license is included at
+native-port/third_party/dotnet_collation/LICENSE.
+
+Adapters.cs supplies scripted certificate PolicyData and a public AsnReader
+bridge for the unchanged policy and ASN.1 bodies. Program.cs --runtime instead
+invokes the actual Linux runtime CertificatePolicyChain against real generated
+certificate DER/actual PAL extension extraction. The two reference paths are
+checked against the native processor using identical input payloads. Tests
+compare booleans and outer exception type/HResult/message. They do not establish
+chain/path trust, revocation or inner-exception parity. The default runtime's
+128-bit OID-subidentifier limit is selected; AllowAnySizeOid is not enabled.

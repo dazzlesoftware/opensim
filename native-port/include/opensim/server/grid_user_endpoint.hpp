@@ -30,10 +30,12 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/services/grid_user_service.hpp"
 namespace opensim::server {
 class GridUserEndpoint {
-public:
-    GridUserEndpoint(services::GridUserService& service,const IniConfig& config):service_(service),auth_(config,"GridUserService"){}
+  public:
+    GridUserEndpoint(services::GridUserService& service, const IniConfig& config)
+        : service_(service), auth_(config, "GridUserService") {}
     network::HttpResponse handle(const network::HttpRequest& request);
-private:
+
+  private:
     services::GridUserService& service_;
     network::ServiceAuth auth_;
 };

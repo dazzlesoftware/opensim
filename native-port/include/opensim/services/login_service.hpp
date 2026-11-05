@@ -31,48 +31,64 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/services/account_store.hpp"
 #include <atomic>
 #include <optional>
-#include <regex>
+#include <memory>
 namespace opensim::services {
 class LoginOrchestrator;
 class LoginCompletion;
 struct LoginRequest {
-    std::string first,last,password,start,scope,version,channel,mac,id0,remote_ip;
-    bool llsd=false;
+    std::string first, last, password, start, scope, version, channel, mac, id0, remote_ip;
+    bool llsd = false;
 };
 network::Value login_failure(std::string_view name);
 class ILoginService {
-public:
-    virtual ~ILoginService()=default;
-    virtual network::Value login(const LoginRequest& request)=0;
-    virtual network::Value set_level(std::string_view first,std::string_view last,std::string_view password,int level)=0;
+  public:
+    virtual ~ILoginService() = default;
+    virtual network::Value login(const LoginRequest& request) = 0;
+    virtual network::Value set_level(std::string_view first, std::string_view last, std::string_view password,
+                                     int level) = 0;
 };
 class LoginService final : public ILoginService {
-public:
-    LoginService(AccountStore& store,const server::IniConfig& config);
+  public:
+    LoginService(AccountStore& store, const server::IniConfig& config);
     // Startup-only binding; services must outlive the HTTP listener.
-    void set_orchestrator(LoginOrchestrator* value){orchestrator_=value;}
-    void set_completion(LoginCompletion* value){completion_=value;}
-    using Authenticator=std::function<AuthenticationResult(std::string_view,std::string_view,int,bool)>;
-    void set_authenticator(Authenticator value){authenticate_=std::move(value);}
+    void set_orchestrator(LoginOrchestrator* value) {
+        orchestrator_ = value;
+    }
+    void set_completion(LoginCompletion* value);
+    std::optional<std::string> console_command(const std::vector<std::string>& command);
+    int minimum_login_level() const {
+        return minimum_level_.load();
+    }
+    using Authenticator = std::function<AuthenticationResult(std::string_view, std::string_view, int, bool)>;
+    void set_authenticator(Authenticator value) {
+        authenticate_ = std::move(value);
+    }
+    static std::function<bool(const std::string&)> compile_client_pattern(const std::string& expression);
     network::Value login(const LoginRequest& request) override;
-    network::Value set_level(std::string_view first,std::string_view last,std::string_view password,int level) override;
-private:
+    network::Value set_level(std::string_view first, std::string_view last, std::string_view password,
+                             int level) override;
+
+  private:
     AccountStore& store_;
+    server::IniConfig login_config_;
+    std::optional<std::string> welcome_override_;
     Authenticator authenticate_;
-    LoginOrchestrator* orchestrator_=nullptr;
-    LoginCompletion* completion_=nullptr;
+    LoginOrchestrator* orchestrator_ = nullptr;
+    LoginCompletion* completion_ = nullptr;
     std::atomic<int> minimum_level_;
-    bool allow_remote_set_level_,allow_web_keys_,require_inventory_;
-    std::string denied_macs_,denied_id0s_;
-    std::optional<std::regex> allowed_clients_,denied_clients_;
+    bool allow_remote_set_level_, allow_web_keys_, require_inventory_;
+    std::string denied_macs_, denied_id0s_;
+    struct ClientPattern;
+    std::shared_ptr<ClientPattern> allowed_clients_, denied_clients_;
 };
 class LoginHandlers {
-public:
-    explicit LoginHandlers(ILoginService& service):service_(service){}
-    network::Value xml_rpc_login(const network::Value& data,const std::string& remote_ip);
-    network::Value llsd_login(const network::Value& data,const std::string& remote_ip);
+  public:
+    explicit LoginHandlers(ILoginService& service) : service_(service) {}
+    network::Value xml_rpc_login(const network::Value& data, const std::string& remote_ip);
+    network::Value llsd_login(const network::Value& data, const std::string& remote_ip);
     network::Value set_level(const network::Value& data);
-private:
+
+  private:
     ILoginService& service_;
 };
 }

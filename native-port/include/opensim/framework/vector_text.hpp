@@ -31,5 +31,6 @@ namespace opensim::framework {
 std::string vector3_string(const Vector3& value);
 bool parse_invariant_float(std::string_view text,float& value);
 bool parse_vector3(std::string_view text,Vector3& value);
+bool try_parse_sdk_vector3(std::u16string_view text,Vector3& value);
 Vector3 parse_sdk_vector3(std::string_view text);
 }

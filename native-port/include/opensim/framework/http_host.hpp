@@ -29,16 +29,30 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/framework/region_uri.hpp"
 namespace opensim::framework {
 struct HttpHost {
-    enum Flags : unsigned char {None=0,ValidHost=1,Resolved=2,Empty=4,ValidResolved=3};
-    explicit HttpHost(const std::optional<std::string>& url,bool resolve=false,const RegionUri::Resolver& resolver={});
-    bool resolve_dns(const RegionUri::Resolver& resolver={});
-    bool valid()const{return (flags&ValidHost)!=0;}
-    bool resolved()const{return (flags&Resolved)!=0;}
-    bool valid_and_resolved(std::string& error)const;
-    std::string uri_slash()const{return flags==None?"":uri+"/";}
-    std::string host_port()const{return flags==None?"":host+":"+std::to_string(port);}
-    bool equals(const HttpHost& other)const{return port==other.port&&((flags&other.flags)&ValidHost)!=0&&host==other.host;}
-    int compare(const HttpHost& other)const;
-    unsigned char flags=Empty;int port=80;std::optional<std::string> ip;std::string host,uri;
+    enum Flags : unsigned char { None = 0, ValidHost = 1, Resolved = 2, Empty = 4, ValidResolved = 3 };
+    explicit HttpHost(const std::optional<std::string>& url, bool resolve = false,
+                      const RegionUri::Resolver& resolver = {});
+    bool resolve_dns(const RegionUri::Resolver& resolver = {});
+    bool valid() const {
+        return (flags & ValidHost) != 0;
+    }
+    bool resolved() const {
+        return (flags & Resolved) != 0;
+    }
+    bool valid_and_resolved(std::string& error) const;
+    std::string uri_slash() const {
+        return flags == None ? "" : uri + "/";
+    }
+    std::string host_port() const {
+        return flags == None ? "" : host + ":" + std::to_string(port);
+    }
+    bool equals(const HttpHost& other) const {
+        return port == other.port && ((flags & other.flags) & ValidHost) != 0 && host == other.host;
+    }
+    int compare(const HttpHost& other) const;
+    unsigned char flags = Empty;
+    int port = 80;
+    std::optional<std::string> ip;
+    std::string host, uri;
 };
 }

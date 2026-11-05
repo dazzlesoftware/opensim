@@ -10,22 +10,394 @@
 #include <deque>
 #include <chrono>
 #include <thread>
-using namespace opensim;using namespace services;using Path=std::filesystem::path;
+using namespace opensim;
+using namespace services;
+using Path = std::filesystem::path;
 namespace {
-std::string hex(std::span<const std::uint8_t> data){std::string out;for(auto b:data){out+="0123456789abcdef"[b>>4];out+="0123456789abcdef"[b&15];}return out;}
-std::string hex(const std::string& data){return hex(std::span(reinterpret_cast<const std::uint8_t*>(data.data()),data.size()));}
-std::string hex16(const std::u16string& s){std::vector<std::uint8_t>b;for(auto c:s){b.push_back(static_cast<std::uint8_t>(c));b.push_back(static_cast<std::uint8_t>(c>>8));}return hex(b);}
-std::vector<std::uint8_t> unhex(const std::string& s){if(s.size()%2)throw std::runtime_error("hex");std::vector<std::uint8_t> out;for(std::size_t i=0;i<s.size();i+=2){unsigned v=0;std::istringstream in(s.substr(i,2));in>>std::hex>>v;if(!in||v>255)throw std::runtime_error("hex");out.push_back(static_cast<std::uint8_t>(v));}return out;}
-std::string decode(const std::string& s){auto b=unhex(s);return {b.begin(),b.end()};}
-struct Fixture {
- int mode=0,point=0,kind=0,available=0;std::string trace,target,temp;bool directory=false;std::deque<std::function<void()>> jobs;std::shared_ptr<FlotsamFileBackend> backend=std::make_shared<FlotsamFileBackend>();
- void add(const std::string& s){trace+="|"+s;}void fail(int p){if(point!=p)return;const FlotsamFileFailure kinds[]={FlotsamFileFailure::Io,FlotsamFileFailure::Unauthorized,FlotsamFileFailure::Serialization,FlotsamFileFailure::Other,FlotsamFileFailure::MissingFile,FlotsamFileFailure::MissingDirectory};throw FlotsamFileError(kinds[kind],"failure");}
- Fixture(int m,int p,int k):mode(m),point(p),kind(k),target(m&1?"old":""),directory((m&8)!=0){auto& b=*backend;b.worker_available=[this]{return !(mode&32)&&(!(mode&128)||++available==1);};b.enqueue=[this](auto job){add("Q");fail(13);jobs.push_back(std::move(job));};b.file_exists=[this](auto){add("E");fail(1);return !target.empty();};b.directory_exists=[this](auto){add("D");fail(3);return directory;};b.random_file_name=[this]{add("P");fail(2);return Path("temp.tmp");};b.create_directory=[this](auto){add("C");fail(4);directory=true;};b.remove_file=[this](const Path& path){bool temporary=path.filename()==Path("temp.tmp");add(temporary?"r":"R");fail(temporary?12:10);if(temporary)temp.clear();else target.clear();};b.move_file=[this](auto,auto){add("M");fail(11);if(temp.empty()||!target.empty())throw FlotsamFileError(FlotsamFileFailure::Io,"move");target=temp;temp.clear();};b.write_asset=[this](auto,auto){add("O");fail(5);temp="empty";std::exception_ptr error;try{add("S");fail(6);temp="new";if(mode&256)target="race";add("F");fail(7);}catch(...){error=std::current_exception();}try{add("X");fail(8);}catch(...){error=std::current_exception();}if(error)std::rethrow_exception(error);};b.open_read=[this](auto){add("O");fail(5);FlotsamFileReader r;r.length=[this]{add("H");fail(14);return std::uint64_t(mode&512?0:1);};r.deserialize=[this]{add("B");fail(15);return mode&1024?std::shared_ptr<framework::AssetBase>{}:std::make_shared<framework::AssetBase>(std::optional<std::string>("asset"),"name",std::int8_t(0),"creator");};r.close=[this]{add("X");fail(8);};return r;};b.touch_access=[this](auto){add("T");fail(16);};if(mode&16)b.note_access=[this](auto,int n){add("N"+std::to_string(n));fail(9);};b.warn=[this](auto message){add("L:"+hex(message));fail(17);};}
-};
-std::string probe(int op,int mode,int point,int kind,int short_id){Fixture f(mode,point,kind);auto state=std::make_shared<FlotsamFileState>();FlotsamFileStore store({Path("cache"),1,3,bool(mode&4)},f.backend,state);auto id=short_id?std::string("x"):std::string("abcdefghijklmnop");std::string result="done";try{if(mode&64)state->writing.insert(store.file_name(id).u16string());if(op==0||op==3){auto a=std::make_shared<framework::AssetBase>(std::optional<std::string>("asset"),"name",std::int8_t(0),"creator");store.cache(id,a,(mode&2)!=0);if(op==3){auto value=store.get(id);result=value?value->id():"-";}else while(!f.jobs.empty()){auto job=std::move(f.jobs.front());f.jobs.pop_front();job();}}else if(op==1){auto value=store.get(id);result=value?value->id():"-";}else if(op==2)result=store.check(id)?"1":"0";}catch(...){result="EX";}return result+f.trace+"|state:"+std::to_string(state->writing.size())+","+std::to_string(f.jobs.size())+","+(f.directory?"1":"0")+","+f.target+","+f.temp+","+std::to_string(state->requests_in_progress)+","+std::to_string(state->disk_hits);}
-void wait(FlotsamFileStore& store,const std::string& id){auto until=std::chrono::steady_clock::now()+std::chrono::seconds(5);while(store.writing(id)&&std::chrono::steady_clock::now()<until)std::this_thread::sleep_for(std::chrono::milliseconds(5));if(store.writing(id))throw std::runtime_error("File job did not finish");}
-std::shared_ptr<framework::ObjectJobEngine> executor(){return std::make_shared<framework::ObjectJobEngine>([](std::any job){std::any_cast<std::function<void()>>(job)();},"FloatsamCacheWriter",1000,1);}
-void real_tests(){auto root=std::filesystem::temp_directory_path()/("opensim-file-store-"+framework::Uuid::random().str());std::filesystem::create_directory(root);struct Cleanup {Path root;~Cleanup(){std::error_code ec;std::filesystem::remove_all(root,ec);}} cleanup{root};auto jobs=executor();auto backend=native_flotsam_file_backend(jobs);FlotsamFileStore store({root,2,3,false},backend,std::make_shared<FlotsamFileState>());auto a=std::make_shared<framework::AssetBase>(framework::Uuid::random(),"Actual cached asset",std::int8_t(7),"creator");a->data=std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{0,255,1});a->metadata()->sha1=a->data;a->metadata()->creation_date=framework::AssetDateTime::from_serialized(0xc000000000000123ull);a->upload_attempts=17;auto id=a->id();store.cache(id,a);wait(store,id);auto b=store.get(id);if(!b||*b->data!=*a->data||b->data!=b->metadata()->sha1||b->metadata()->creation_date.serialized_data()!=a->metadata()->creation_date.serialized_data()||b->upload_attempts!=17)throw std::runtime_error("Real native file queue/read metadata");a->data=std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{9,8});store.cache(id,a);wait(store,id);if(store.get(id)->data->at(0)!=0)throw std::runtime_error("Existing-file keep rule");store.cache(id,a,true);wait(store,id);if(*store.get(id)->data!=*a->data)throw std::runtime_error("Actual replacement");auto empty=framework::Uuid::random().str(),bad=framework::Uuid::random().str();for(auto name:{empty,bad}){auto path=store.file_name(name);std::filesystem::create_directories(path.parent_path());std::ofstream out(path,std::ios::binary);if(name==bad)out<<"corrupt";}if(store.get(empty)||!std::filesystem::exists(store.file_name(empty)))throw std::runtime_error("Empty cache file retained");if(store.get(bad)||std::filesystem::exists(store.file_name(bad)))throw std::runtime_error("Invalid serialization removed");auto source=root/"move-source",target=root/"move-target";{std::ofstream out(source);out<<"source";}{std::ofstream out(target);out<<"target";}bool failed=false;try{backend->move_file(source,target);}catch(...){failed=true;}std::ifstream in(target);std::string value;in>>value;if(!failed||value!="target"||!std::filesystem::exists(source))throw std::runtime_error("Move must not overwrite competitor");jobs->dispose();while(jobs->active_threads())std::this_thread::sleep_for(std::chrono::milliseconds(1));}
-void interop(){std::string line;while(std::getline(std::cin,line)){try{std::istringstream input(line);std::string op,dirhex,idhex,blob;int replace=0;input>>op>>dirhex>>idhex;auto root=framework::utf8_path(decode(dirhex));auto id=decode(idhex);auto queue=executor();auto backend=native_flotsam_file_backend(queue);FlotsamFileStore store({root,1,3,false},backend,std::make_shared<FlotsamFileState>());if(op=="put"){input>>blob>>replace;std::shared_ptr<framework::AssetBase> asset;if(!framework::AssetNrbfCodec::decode_file(unhex(blob),asset))throw std::runtime_error("input");store.cache(id,asset,replace!=0);wait(store,id);std::cout<<(store.check(id)?"OK":"ERR")<<'\n';}else{auto asset=store.get(id);std::cout<<(asset?hex(framework::AssetNrbfCodec::encode(*asset)):"NULL")<<'\n';}queue->dispose();while(queue->active_threads())std::this_thread::sleep_for(std::chrono::milliseconds(1));}catch(...){std::cout<<"ERR\n";}}}
+std::string hex(std::span<const std::uint8_t> data) {
+    std::string out;
+    for (auto b : data) {
+        out += "0123456789abcdef"[b >> 4];
+        out += "0123456789abcdef"[b & 15];
+    }
+    return out;
 }
-int main(int argc,char**argv){try{if(argc>1&&std::string_view(argv[1])=="--interop"){interop();return 0;}if(argc>1&&std::string_view(argv[1])=="--probe"){std::string line;while(std::getline(std::cin,line)){std::istringstream input(line);std::string op;input>>op;try{if(op=="path"){int tiers,len;std::string id;input>>tiers>>len>>id;Fixture f(0,0,0);FlotsamFileStore store({Path("cache"),tiers,len,false},f.backend,std::make_shared<FlotsamFileState>());std::cout<<hex16(store.file_name_text(decode(id)))<<'\n';}else{int action,mode,point,kind,short_id;input>>action>>mode>>point>>kind>>short_id;std::cout<<probe(action,mode,point,kind,short_id)<<'\n';}}catch(...){std::cout<<"EX\n";}}return 0;}real_tests();std::cout<<"PASS: actual queued NRBF file writes/read/replace/empty/corrupt/noreplace behavior\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+std::string hex(const std::string& data) {
+    return hex(std::span(reinterpret_cast<const std::uint8_t*>(data.data()), data.size()));
+}
+std::string hex16(const std::u16string& s) {
+    std::vector<std::uint8_t> b;
+    for (auto c : s) {
+        b.push_back(static_cast<std::uint8_t>(c));
+        b.push_back(static_cast<std::uint8_t>(c >> 8));
+    }
+    return hex(b);
+}
+std::vector<std::uint8_t> unhex(const std::string& s) {
+    if (s.size() % 2)
+        throw std::runtime_error("hex");
+    std::vector<std::uint8_t> out;
+    for (std::size_t i = 0; i < s.size(); i += 2) {
+        unsigned v = 0;
+        std::istringstream in(s.substr(i, 2));
+        in >> std::hex >> v;
+        if (!in || v > 255)
+            throw std::runtime_error("hex");
+        out.push_back(static_cast<std::uint8_t>(v));
+    }
+    return out;
+}
+std::string decode(const std::string& s) {
+    auto b = unhex(s);
+    return {b.begin(), b.end()};
+}
+struct Fixture {
+    int mode = 0, point = 0, kind = 0, available = 0;
+    std::string trace, target, temp;
+    bool directory = false;
+    std::deque<std::function<void()>> jobs;
+    std::shared_ptr<FlotsamFileBackend> backend = std::make_shared<FlotsamFileBackend>();
+    void add(const std::string& s) {
+        trace += "|" + s;
+    }
+    void fail(int p) {
+        if (point != p)
+            return;
+        const FlotsamFileFailure kinds[] = {FlotsamFileFailure::Io,
+                                            FlotsamFileFailure::Unauthorized,
+                                            FlotsamFileFailure::Serialization,
+                                            FlotsamFileFailure::Other,
+                                            FlotsamFileFailure::MissingFile,
+                                            FlotsamFileFailure::MissingDirectory};
+        throw FlotsamFileError(kinds[kind], "failure");
+    }
+    Fixture(int m, int p, int k)
+        : mode(m), point(p), kind(k), target(m & 1 ? "old" : ""), directory((m & 8) != 0) {
+        auto& b = *backend;
+        b.worker_available = [this] { return !(mode & 32) && (!(mode & 128) || ++available == 1); };
+        b.enqueue = [this](auto job) {
+            add("Q");
+            fail(13);
+            jobs.push_back(std::move(job));
+        };
+        b.file_exists = [this](auto) {
+            add("E");
+            fail(1);
+            return !target.empty();
+        };
+        b.directory_exists = [this](auto) {
+            add("D");
+            fail(3);
+            return directory;
+        };
+        b.random_file_name = [this] {
+            add("P");
+            fail(2);
+            return Path("temp.tmp");
+        };
+        b.create_directory = [this](auto) {
+            add("C");
+            fail(4);
+            directory = true;
+        };
+        b.remove_file = [this](const Path& path) {
+            bool temporary = path.filename() == Path("temp.tmp");
+            add(temporary ? "r" : "R");
+            fail(temporary ? 12 : 10);
+            if (temporary)
+                temp.clear();
+            else
+                target.clear();
+        };
+        b.move_file = [this](auto, auto) {
+            add("M");
+            fail(11);
+            if (temp.empty() || !target.empty())
+                throw FlotsamFileError(FlotsamFileFailure::Io, "move");
+            target = temp;
+            temp.clear();
+        };
+        b.write_asset = [this](auto, auto) {
+            add("O");
+            fail(5);
+            temp = "empty";
+            std::exception_ptr error;
+            try {
+                add("S");
+                fail(6);
+                temp = "new";
+                if (mode & 256)
+                    target = "race";
+                add("F");
+                fail(7);
+            } catch (...) {
+                error = std::current_exception();
+            }
+            try {
+                add("X");
+                fail(8);
+            } catch (...) {
+                error = std::current_exception();
+            }
+            if (error)
+                std::rethrow_exception(error);
+        };
+        b.open_read = [this](auto) {
+            add("O");
+            fail(5);
+            FlotsamFileReader r;
+            r.length = [this] {
+                add("H");
+                fail(14);
+                return std::uint64_t(mode & 512 ? 0 : 1);
+            };
+            r.deserialize = [this] {
+                add("B");
+                fail(15);
+                return mode & 1024
+                           ? std::shared_ptr<framework::AssetBase>{}
+                           : std::make_shared<framework::AssetBase>(std::optional<std::string>("asset"),
+                                                                    "name", std::int8_t(0), "creator");
+            };
+            r.close = [this] {
+                add("X");
+                fail(8);
+            };
+            return r;
+        };
+        b.touch_access = [this](auto) {
+            add("T");
+            fail(16);
+        };
+        if (mode & 16)
+            b.note_access = [this](auto, int n) {
+                add("N" + std::to_string(n));
+                fail(9);
+            };
+        b.warn = [this](auto message) {
+            add("L:" + hex(message));
+            fail(17);
+        };
+    }
+};
+std::string probe(int op, int mode, int point, int kind, int short_id) {
+    Fixture f(mode, point, kind);
+    auto state = std::make_shared<FlotsamFileState>();
+    FlotsamFileStore store({Path("cache"), 1, 3, bool(mode & 4)}, f.backend, state);
+    auto id = short_id ? std::string("x") : std::string("abcdefghijklmnop");
+    std::string result = "done";
+    try {
+        if (mode & 64)
+            state->writing.insert(store.file_name(id).u16string());
+        if (op == 0 || op == 3) {
+            auto a = std::make_shared<framework::AssetBase>(std::optional<std::string>("asset"), "name",
+                                                            std::int8_t(0), "creator");
+            store.cache(id, a, (mode & 2) != 0);
+            if (op == 3) {
+                auto value = store.get(id);
+                result = value ? value->id() : "-";
+            } else
+                while (!f.jobs.empty()) {
+                    auto job = std::move(f.jobs.front());
+                    f.jobs.pop_front();
+                    job();
+                }
+        } else if (op == 1) {
+            auto value = store.get(id);
+            result = value ? value->id() : "-";
+        } else if (op == 2)
+            result = store.check(id) ? "1" : "0";
+    } catch (...) {
+        result = "EX";
+    }
+    return result + f.trace + "|state:" + std::to_string(state->writing.size()) + "," +
+           std::to_string(f.jobs.size()) + "," + (f.directory ? "1" : "0") + "," + f.target + "," + f.temp +
+           "," + std::to_string(store.statistics().requests_in_progress) + "," +
+           std::to_string(store.statistics().disk_hits);
+}
+void wait(FlotsamFileStore& store, const std::string& id) {
+    auto until = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    while (store.writing(id) && std::chrono::steady_clock::now() < until)
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    if (store.writing(id))
+        throw std::runtime_error("File job did not finish");
+}
+std::shared_ptr<framework::ObjectJobEngine> executor() {
+    return std::make_shared<framework::ObjectJobEngine>(
+        [](std::any job) { std::any_cast<std::function<void()>>(job)(); }, "FloatsamCacheWriter", 1000, 1);
+}
+void shared_guard_statistics() {
+    Fixture io(0, 0, 0);
+    auto guard = std::make_shared<FlotsamFileState>();
+    FlotsamFileStore first({Path("cache"), 1, 3, false}, io.backend, guard),
+        second({Path("cache"), 1, 3, false}, io.backend, guard);
+    const std::string id = "abcdefghijklmnop";
+    if (!first.get(id) || first.statistics().disk_hits != 1 || second.statistics().disk_hits != 0)
+        throw std::runtime_error("Independent stores must not share disk-hit counters");
+    auto asset = std::make_shared<framework::AssetBase>(std::optional<std::string>("asset"), "name",
+                                                        std::int8_t(0), "creator");
+    first.cache(id, asset);
+    second.cache(id, asset);
+    if (io.jobs.size() != 1 || !first.writing(id) || !second.writing(id))
+        throw std::runtime_error("Independent stores must still share pending-write exclusion");
+    if (second.get(id) || second.get(id) || first.get(id))
+        throw std::runtime_error("A shared pending write must block reads from both stores");
+    if (first.statistics().requests_in_progress != 1 || second.statistics().requests_in_progress != 2)
+        throw std::runtime_error("Pending-write overlap counters must remain per-store");
+    auto job = std::move(io.jobs.front());
+    io.jobs.pop_front();
+    job();
+    if (first.writing(id) || second.writing(id) || !second.get(id))
+        throw std::runtime_error("Completing a shared write must unblock both stores");
+    if (first.statistics().disk_hits != 1 || second.statistics().disk_hits != 1 ||
+        first.statistics().requests_in_progress != 1 || second.statistics().requests_in_progress != 2)
+        throw std::runtime_error("Shared writing guard contaminated per-store statistics");
+}
+void real_tests() {
+    auto root =
+        std::filesystem::temp_directory_path() / ("opensim-file-store-" + framework::Uuid::random().str());
+    std::filesystem::create_directory(root);
+    struct Cleanup {
+        Path root;
+        ~Cleanup() {
+            std::error_code ec;
+            std::filesystem::remove_all(root, ec);
+        }
+    } cleanup{root};
+    auto jobs = executor();
+    auto backend = native_flotsam_file_backend(jobs);
+    FlotsamFileStore store({root, 2, 3, false}, backend, std::make_shared<FlotsamFileState>());
+    auto a = std::make_shared<framework::AssetBase>(framework::Uuid::random(), "Actual cached asset",
+                                                    std::int8_t(7), "creator");
+    a->data = std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{0, 255, 1});
+    a->metadata()->sha1 = a->data;
+    a->metadata()->creation_date = framework::AssetDateTime::from_serialized(0xc000000000000123ull);
+    a->upload_attempts = 17;
+    auto id = a->id();
+    store.cache(id, a);
+    wait(store, id);
+    auto b = store.get(id);
+    if (!b || *b->data != *a->data || b->data != b->metadata()->sha1 ||
+        b->metadata()->creation_date.serialized_data() != a->metadata()->creation_date.serialized_data() ||
+        b->upload_attempts != 17)
+        throw std::runtime_error("Real native file queue/read metadata");
+    a->data = std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{9, 8});
+    store.cache(id, a);
+    wait(store, id);
+    if (store.get(id)->data->at(0) != 0)
+        throw std::runtime_error("Existing-file keep rule");
+    store.cache(id, a, true);
+    wait(store, id);
+    if (*store.get(id)->data != *a->data)
+        throw std::runtime_error("Actual replacement");
+    auto empty = framework::Uuid::random().str(), bad = framework::Uuid::random().str();
+    for (auto name : {empty, bad}) {
+        auto path = store.file_name(name);
+        std::filesystem::create_directories(path.parent_path());
+        std::ofstream out(path, std::ios::binary);
+        if (name == bad)
+            out << "corrupt";
+    }
+    if (store.get(empty) || !std::filesystem::exists(store.file_name(empty)))
+        throw std::runtime_error("Empty cache file retained");
+    if (store.get(bad) || std::filesystem::exists(store.file_name(bad)))
+        throw std::runtime_error("Invalid serialization removed");
+    auto source = root / "move-source", target = root / "move-target";
+    {
+        std::ofstream out(source);
+        out << "source";
+    }
+    {
+        std::ofstream out(target);
+        out << "target";
+    }
+    bool failed = false;
+    try {
+        backend->move_file(source, target);
+    } catch (...) {
+        failed = true;
+    }
+    std::ifstream in(target);
+    std::string value;
+    in >> value;
+    if (!failed || value != "target" || !std::filesystem::exists(source))
+        throw std::runtime_error("Move must not overwrite competitor");
+    jobs->dispose();
+    while (jobs->active_threads())
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+}
+void interop() {
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        try {
+            std::istringstream input(line);
+            std::string op, dirhex, idhex, blob;
+            int replace = 0;
+            input >> op >> dirhex >> idhex;
+            auto root = framework::utf8_path(decode(dirhex));
+            auto id = decode(idhex);
+            auto queue = executor();
+            auto backend = native_flotsam_file_backend(queue);
+            FlotsamFileStore store({root, 1, 3, false}, backend, std::make_shared<FlotsamFileState>());
+            if (op == "put") {
+                input >> blob >> replace;
+                std::shared_ptr<framework::AssetBase> asset;
+                if (!framework::AssetNrbfCodec::decode_file(unhex(blob), asset))
+                    throw std::runtime_error("input");
+                store.cache(id, asset, replace != 0);
+                wait(store, id);
+                std::cout << (store.check(id) ? "OK" : "ERR") << '\n';
+            } else {
+                auto asset = store.get(id);
+                std::cout << (asset ? hex(framework::AssetNrbfCodec::encode(*asset)) : "NULL") << '\n';
+            }
+            queue->dispose();
+            while (queue->active_threads())
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        } catch (...) {
+            std::cout << "ERR\n";
+        }
+    }
+}
+}
+int main(int argc, char** argv) {
+    try {
+        if (argc > 1 && std::string_view(argv[1]) == "--interop") {
+            interop();
+            return 0;
+        }
+        if (argc > 1 && std::string_view(argv[1]) == "--probe") {
+            std::string line;
+            while (std::getline(std::cin, line)) {
+                std::istringstream input(line);
+                std::string op;
+                input >> op;
+                try {
+                    if (op == "path") {
+                        int tiers, len;
+                        std::string id;
+                        input >> tiers >> len >> id;
+                        Fixture f(0, 0, 0);
+                        FlotsamFileStore store({Path("cache"), tiers, len, false}, f.backend,
+                                               std::make_shared<FlotsamFileState>());
+                        std::cout << hex16(store.file_name_text(decode(id))) << '\n';
+                    } else {
+                        int action, mode, point, kind, short_id;
+                        input >> action >> mode >> point >> kind >> short_id;
+                        std::cout << probe(action, mode, point, kind, short_id) << '\n';
+                    }
+                } catch (...) {
+                    std::cout << "EX\n";
+                }
+            }
+            return 0;
+        }
+        shared_guard_statistics();
+        real_tests();
+        std::cout << "PASS: actual queued NRBF file writes/read/replace/empty/corrupt/noreplace behavior\n";
+        return 0;
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        return 1;
+    }
+}

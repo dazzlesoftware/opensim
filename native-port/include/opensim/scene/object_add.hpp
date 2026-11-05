@@ -13,4 +13,5 @@ struct ObjectAddRequest {
 };
 // LLClientView.GetShapeFromAddPacket and HandleObjectAdd projection.
 ObjectAddRequest object_add_request(const network::lludp::Packet& packet);
+void read_prim_shape_fields(PrimShape& shape, const network::lludp::Block& fields);
 }

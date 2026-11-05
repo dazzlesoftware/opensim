@@ -1,0 +1,5 @@
+#pragma once
+
+namespace opensim::services {
+inline constexpr char RegionMigration[] = R"OSIMSQL(@REGION_MIGRATION_SQL@)OSIMSQL";
+}

@@ -1,0 +1,5 @@
+// Generated from the original SQLite MuteListStore.migrations resource.
+#pragma once
+namespace opensim::services {
+inline constexpr char MuteListMigration[] = R"OSIMSQL(@MUTE_LIST_MIGRATION_SQL@)OSIMSQL";
+}

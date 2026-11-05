@@ -3,17 +3,172 @@
 #include "opensim/scene/inventory_new.hpp"
 #include <bit>
 #include <iostream>
-using namespace opensim;using namespace scene;
+using namespace opensim;
+using namespace scene;
 namespace {
-framework::Uuid id(int n){auto s=std::to_string(n);return framework::Uuid("11223344-5566-7788-99aa-"+std::string(12-s.size(),'0')+s);}
-std::string hex(const std::optional<std::string>& s){if(!s)return "NULL";std::string out;for(unsigned char c:*s){out+="0123456789abcdef"[c>>4];out+="0123456789abcdef"[c&15];}return out;}
-std::string request(const InventoryNewRequest& r){return r.transaction.str()+":"+r.folder.str()+":"+std::to_string(r.callback)+":"+hex(r.description)+":"+hex(r.name)+":"+std::to_string(r.inventory_type)+":"+std::to_string(r.asset_type)+":"+std::to_string(r.subtype)+":"+std::to_string(r.next_permissions);}
-std::string probe(int mode,int it,int at,int sub,int next,int failure){auto bit=[&](int n){return(mode&n)!=0;};std::string trace;auto step=[&](int n,std::string value){trace+='|'+value;if(n==failure)throw std::runtime_error("injected");};InventoryNewBackend b;
- b.debug=[&](auto s){step(1,s);};b.error=[&](auto s){step(14,s);};b.can_create=[&](auto i,auto a){step(2,"CAN:"+std::to_string(i)+":"+a.str());return !bit(1);};b.folder=[&](auto a,auto key)->std::optional<services::InventoryFolder>{step(3,"FOLDER:"+a.str()+":"+key.str());if(bit(2))return {};services::InventoryFolder f;f.owner=id(bit(4)?9:1);return f;};b.folder_type=[&](auto a,auto type)->std::optional<services::InventoryFolder>{step(4,"TYPE:"+a.str()+":"+std::to_string(type));if(bit(8))return {};services::InventoryFolder f;f.owner=id(bit(16)?9:1);return f;};
- b.transactions=[&]()->std::optional<std::function<bool(const InventoryNewRequest&)>>{step(5,"TRANSACTIONS");if(bit(64))return {};return [&](const auto&r){step(6,"HANDLE:"+request(r));return bit(128);};};b.presence=[&](auto a){step(7,"PRESENCE:"+a.str());return InventoryNewPresence{!bit(256),!bit(512)};};b.landmark=[&](auto a){step(8,"LANDMARK:"+a.str());return InventoryNewLandmark{bit(32768)?std::optional<std::string>{}:bit(16384)?"é 脚 😃":"Landmark data\n",bit(131072)?std::optional<std::string>{}:"HG ",bit(131072)?std::optional<std::string>{}:" @ home"};};
- b.create_asset=[&](const auto&r,auto data)->std::shared_ptr<framework::AssetBase>{std::string text(data.begin(),data.end());step(9,"ASSET:"+hex(r.name)+":"+hex(r.description)+":"+std::to_string(r.asset_type)+":"+hex(text)+":"+r.agent.str());if(bit(4096))return {};return std::make_shared<framework::AssetBase>(id(7),r.name,r.asset_type,r.agent.str());};b.store_asset=[&](auto a){step(10,"STORE:"+(a?a->full_id().str()+":"+std::to_string(a->type()):"NULL"));if(a&&bit(8192)){a->full_id(id(9));a->type(13);}};
- b.environment=[&]()->std::optional<std::function<framework::Uuid(std::uint8_t)>>{step(11,"ENVIRONMENT");if(bit(1024))return {};return [&](auto sub){step(12,"DEFAULT:"+std::to_string(sub));return bit(2048)?framework::Uuid{}:id(8);};};b.create=[&](const auto&r,auto asset,auto flags,auto everyone,auto group){step(13,"CREATE:"+request(r)+":"+asset.str()+":"+std::to_string(flags)+":"+std::to_string(everyone)+":"+std::to_string(group)+":"+std::to_string(r.creation_date)+":"+r.agent.str()+"::647168:647168");};
- InventoryNewRequest r;r.agent=id(1);r.transaction=bit(32)?framework::Uuid{}:id(2);r.folder=id(3);r.callback=99;r.name=bit(65536)?std::optional<std::string>{}:bit(16384)?"脚本 😃":"New item";r.description=bit(65536)?std::optional<std::string>{}:"Description";r.inventory_type=std::bit_cast<std::int8_t>(static_cast<std::uint8_t>(it));r.asset_type=std::bit_cast<std::int8_t>(static_cast<std::uint8_t>(at));r.subtype=static_cast<std::uint8_t>(sub);r.next_permissions=static_cast<std::uint32_t>(next);r.creation_date=-222;std::string result="OK";try{InventoryNewController(std::move(b)).create(r);}catch(...){result="THROW";}return result+trace;
+framework::Uuid id(int n) {
+    auto s = std::to_string(n);
+    return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - s.size(), '0') + s);
+}
+std::string hex(const std::optional<std::string> &s) {
+    if (!s)
+        return "NULL";
+    std::string out;
+    for (unsigned char c : *s) {
+        out += "0123456789abcdef"[c >> 4];
+        out += "0123456789abcdef"[c & 15];
+    }
+    return out;
+}
+std::string request(const InventoryNewRequest &r) {
+    return r.transaction.str() + ":" + r.folder.str() + ":" + std::to_string(r.callback) + ":" +
+           hex(r.description) + ":" + hex(r.name) + ":" + std::to_string(r.inventory_type) + ":" +
+           std::to_string(r.asset_type) + ":" + std::to_string(r.subtype) + ":" +
+           std::to_string(r.next_permissions);
+}
+std::string probe(int mode, int it, int at, int sub, int next, int failure) {
+    auto bit = [&](int n) { return (mode & n) != 0; };
+    std::string trace;
+    auto step = [&](int n, std::string value) {
+        trace += '|' + value;
+        if (n == failure)
+            throw std::runtime_error("injected");
+    };
+    InventoryNewBackend b;
+    b.debug = [&](auto s) { step(1, s); };
+    b.error = [&](auto s) { step(14, s); };
+    b.can_create = [&](auto i, auto a) {
+        step(2, "CAN:" + std::to_string(i) + ":" + a.str());
+        return !bit(1);
+    };
+    b.folder = [&](auto a, auto key) -> std::optional<services::InventoryFolder> {
+        step(3, "FOLDER:" + a.str() + ":" + key.str());
+        if (bit(2))
+            return {};
+        services::InventoryFolder f;
+        f.owner = id(bit(4) ? 9 : 1);
+        return f;
+    };
+    b.folder_type = [&](auto a, auto type) -> std::optional<services::InventoryFolder> {
+        step(4, "TYPE:" + a.str() + ":" + std::to_string(type));
+        if (bit(8))
+            return {};
+        services::InventoryFolder f;
+        f.owner = id(bit(16) ? 9 : 1);
+        return f;
+    };
+    b.transactions = [&]() -> std::optional<std::function<bool(const InventoryNewRequest &)>> {
+        step(5, "TRANSACTIONS");
+        if (bit(64))
+            return {};
+        return [&](const auto &r) {
+            step(6, "HANDLE:" + request(r));
+            return bit(128);
+        };
+    };
+    b.presence = [&](auto a) {
+        step(7, "PRESENCE:" + a.str());
+        return InventoryNewPresence{!bit(256), !bit(512)};
+    };
+    b.landmark = [&](auto a) {
+        step(8, "LANDMARK:" + a.str());
+        return InventoryNewLandmark{bit(32768)   ? std::optional<std::string>{}
+                                    : bit(16384) ? "é 脚 😃"
+                                                 : "Landmark data\n",
+                                    bit(131072) ? std::optional<std::string>{} : "HG ",
+                                    bit(131072) ? std::optional<std::string>{} : " @ home"};
+    };
+    b.create_asset = [&](const auto &r, auto data) -> std::shared_ptr<framework::AssetBase> {
+        std::string text(data.begin(), data.end());
+        step(9, "ASSET:" + hex(r.name) + ":" + hex(r.description) + ":" + std::to_string(r.asset_type) + ":" +
+                    hex(text) + ":" + r.agent.str());
+        if (bit(4096))
+            return {};
+        return std::make_shared<framework::AssetBase>(id(7), r.name, r.asset_type, r.agent.str());
+    };
+    b.store_asset = [&](auto a) {
+        step(10, "STORE:" + (a ? a->full_id().str() + ":" + std::to_string(a->type()) : "NULL"));
+        if (a && bit(8192)) {
+            a->full_id(id(9));
+            a->type(13);
+        }
+    };
+    b.environment = [&]() -> std::optional<std::function<framework::Uuid(std::uint8_t)>> {
+        step(11, "ENVIRONMENT");
+        if (bit(1024))
+            return {};
+        return [&](auto sub) {
+            step(12, "DEFAULT:" + std::to_string(sub));
+            return bit(2048) ? framework::Uuid{} : id(8);
+        };
+    };
+    b.create = [&](const auto &r, auto asset, auto flags, auto everyone, auto group) {
+        step(13, "CREATE:" + request(r) + ":" + asset.str() + ":" + std::to_string(flags) + ":" +
+                     std::to_string(everyone) + ":" + std::to_string(group) + ":" +
+                     std::to_string(r.creation_date) + ":" + r.agent.str() + "::647168:647168");
+    };
+    InventoryNewRequest r;
+    r.agent = id(1);
+    r.transaction = bit(32) ? framework::Uuid{} : id(2);
+    r.folder = id(3);
+    r.callback = 99;
+    r.name = bit(65536) ? std::optional<std::string>{} : bit(16384) ? "脚本 😃" : "New item";
+    r.description = bit(65536) ? std::optional<std::string>{} : "Description";
+    r.inventory_type = std::bit_cast<std::int8_t>(static_cast<std::uint8_t>(it));
+    r.asset_type = std::bit_cast<std::int8_t>(static_cast<std::uint8_t>(at));
+    r.subtype = static_cast<std::uint8_t>(sub);
+    r.next_permissions = static_cast<std::uint32_t>(next);
+    r.creation_date = -222;
+    std::string result = "OK";
+    try {
+        InventoryNewController(std::move(b)).create(r);
+    } catch (...) {
+        result = "THROW";
+    }
+    return result + trace;
 }
 }
-int main(int argc,char**argv){try{if(argc>1&&std::string_view(argv[1])=="--probe"){std::string token;while(std::cin>>token){if(token=="L"){std::uint32_t x,y,z;std::uint64_t handle;std::cin>>x>>y>>z>>handle;auto value=generate_inventory_landmark(id(4),{std::bit_cast<float>(x),std::bit_cast<float>(y),std::bit_cast<float>(z)},handle);std::cout<<hex(value.text)<<":"<<hex(value.prefix)<<":"<<hex(value.suffix)<<'\n';}else{int i,a,s,n,f;std::cin>>i>>a>>s>>n>>f;std::cout<<probe(std::stoi(token),i,a,s,n,f)<<'\n';}}return 0;}int checks=0;auto check=[&](bool b,const char*s){++checks;if(!b)throw std::runtime_error(s);};check(probe(1,10,10,0,0,0)=="OK|REQUEST|CAN:10:"+id(1).str(),"permission before service");check(probe(0,3,10,0,-1,0).find("|ASSET:")!=std::string::npos,"landmark inventory type takes precedence");check(probe(0,10,56,255,0,0).find("|TRANSACTIONS")==std::string::npos,"settings bypass transaction module");check(probe(0,10,10,0,0,0).find("2074003b-8d5f-40e5-8b20-581c1c50aedb")!=std::string::npos,"actual default script id");check(!InventoryNewController::defined_folder(27)&&InventoryNewController::defined_folder(26),"enum endpoints do not imply range");std::cout<<"PASS: "<<checks<<" inventory creation checks\n";return 0;}catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(int argc, char **argv) {
+    try {
+        if (argc > 1 && std::string_view(argv[1]) == "--probe") {
+            std::string token;
+            while (std::cin >> token) {
+                if (token == "L") {
+                    std::uint32_t x, y, z;
+                    std::uint64_t handle;
+                    std::cin >> x >> y >> z >> handle;
+                    auto value = generate_inventory_landmark(
+                        id(4), {std::bit_cast<float>(x), std::bit_cast<float>(y), std::bit_cast<float>(z)},
+                        handle);
+                    std::cout << hex(value.text) << ":" << hex(value.prefix) << ":" << hex(value.suffix)
+                              << '\n';
+                } else {
+                    int i, a, s, n, f;
+                    std::cin >> i >> a >> s >> n >> f;
+                    std::cout << probe(std::stoi(token), i, a, s, n, f) << '\n';
+                }
+            }
+            return 0;
+        }
+        int checks = 0;
+        auto check = [&](bool b, const char *s) {
+            ++checks;
+            if (!b)
+                throw std::runtime_error(s);
+        };
+        check(probe(1, 10, 10, 0, 0, 0) == "OK|REQUEST|CAN:10:" + id(1).str(), "permission before service");
+        check(probe(0, 3, 10, 0, -1, 0).find("|ASSET:") != std::string::npos,
+              "landmark inventory type takes precedence");
+        check(probe(0, 10, 56, 255, 0, 0).find("|TRANSACTIONS") == std::string::npos,
+              "settings bypass transaction module");
+        check(probe(0, 10, 10, 0, 0, 0).find("2074003b-8d5f-40e5-8b20-581c1c50aedb") != std::string::npos,
+              "actual default script id");
+        check(!InventoryNewController::defined_folder(27) && InventoryNewController::defined_folder(26),
+              "enum endpoints do not imply range");
+        std::cout << "PASS: " << checks << " inventory creation checks\n";
+        return 0;
+    } catch (const std::exception &e) {
+        std::cerr << e.what() << '\n';
+        return 1;
+    }
+}

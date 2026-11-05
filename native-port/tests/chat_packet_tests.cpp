@@ -1,5 +1,46 @@
 #include "opensim/scene/chat_packet.hpp"
 #include <iostream>
 #include <iomanip>
-using namespace opensim;using namespace scene;
-int main(int argc,char** argv){try{if(argc>1&&std::string(argv[1])=="--probe"){int seed,mode;while(std::cin>>seed>>mode){ChatMessage m;m.source=framework::Uuid("00112233-4455-6677-8899-aabbccddeeff");m.owner=framework::Uuid("11223344-5566-7788-99aa-bbccddeeff00");m.position={seed*.25f,-seed*.125f,23};m.type=static_cast<std::uint8_t>(mode);m.source_type=2;m.audible=1;std::string token=mode%2==0?"a":"\xe9\x9b\xaa";for(int i=0;i<seed;++i){m.message+=token;if(i<300)m.from_name+=token;}if(mode&4){m.message.insert((seed/2)*token.size(),1,0);m.from_name.insert((std::min(seed,300)/2)*token.size(),1,0);}for(auto b:network::lludp::encode_datagram(chat_packet(m)))std::cout<<std::hex<<std::setw(2)<<std::setfill('0')<<unsigned(b);std::cout<<'\n';}return 0;}ChatMessage m;m.message="Script running";m.from_name="Object";auto p=network::lludp::decode_datagram(network::lludp::encode_datagram(chat_packet(m)));if(p.spec->name!="ChatFromSimulator"||!p.reliable||p.zerocoded)throw std::runtime_error("Source chat header");std::cout<<"PASS: native chat packet\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+using namespace opensim;
+using namespace scene;
+int main(int argc, char** argv) {
+    try {
+        if (argc > 1 && std::string(argv[1]) == "--probe") {
+            int seed, mode;
+            while (std::cin >> seed >> mode) {
+                ChatMessage m;
+                m.source = framework::Uuid("00112233-4455-6677-8899-aabbccddeeff");
+                m.owner = framework::Uuid("11223344-5566-7788-99aa-bbccddeeff00");
+                m.position = {seed * .25f, -seed * .125f, 23};
+                m.type = static_cast<std::uint8_t>(mode);
+                m.source_type = 2;
+                m.audible = 1;
+                std::string token = mode % 2 == 0 ? "a" : "\xe9\x9b\xaa";
+                for (int i = 0; i < seed; ++i) {
+                    m.message += token;
+                    if (i < 300)
+                        m.from_name += token;
+                }
+                if (mode & 4) {
+                    m.message.insert((seed / 2) * token.size(), 1, 0);
+                    m.from_name.insert((std::min(seed, 300) / 2) * token.size(), 1, 0);
+                }
+                for (auto b : network::lludp::encode_datagram(chat_packet(m)))
+                    std::cout << std::hex << std::setw(2) << std::setfill('0') << unsigned(b);
+                std::cout << '\n';
+            }
+            return 0;
+        }
+        ChatMessage m;
+        m.message = "Script running";
+        m.from_name = "Object";
+        auto p = network::lludp::decode_datagram(network::lludp::encode_datagram(chat_packet(m)));
+        if (p.spec->name != "ChatFromSimulator" || !p.reliable || p.zerocoded)
+            throw std::runtime_error("Source chat header");
+        std::cout << "PASS: native chat packet\n";
+        return 0;
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        return 1;
+    }
+}

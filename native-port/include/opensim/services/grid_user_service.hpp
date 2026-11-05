@@ -64,6 +64,8 @@ private:
     struct State;
     std::unique_ptr<State> state_;
 };
+std::unique_ptr<GridUserStore> mysql_grid_user_store(const std::string& connection, const std::string& realm);
+std::unique_ptr<GridUserStore> postgres_grid_user_store(const std::string& connection, const std::string& realm);
 class GridUserCache {
 public:
     using Clock=std::function<double()>;

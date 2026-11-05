@@ -5,19 +5,286 @@
 #include <sstream>
 #include <limits>
 #include <bit>
-using namespace opensim;using namespace services;
+using namespace opensim;
+using namespace services;
 namespace {
-framework::Uuid id(int n){std::string tail=std::to_string(n);return framework::Uuid("00000000-0000-0000-0000-"+std::string(12-tail.size(),'0')+tail);}
-InventoryItem sample(int seed,framework::Uuid key){InventoryItem item;item.id=key;item.parent=seed%2?id(900):framework::Uuid{};item.asset_id=id(500+seed);item.owner=id(42);item.group_id=seed%2?id(43):framework::Uuid{};item.creator_id=seed%3==0?"invalid":id(44).str()+";https://example.test;Creator";item.current_permissions=seed%2?-1:0;item.base_permissions=123;item.group_permissions=seed*71;item.everyone_permissions=-seed;item.next_permissions=std::numeric_limits<int>::min()+seed;item.flags=-1-seed;item.group_owned=seed%2;item.asset_type=seed-5;item.inventory_type=seed%3;item.sale_price=seed%3?seed*9:0;item.sale_type=seed%4;item.name=seed%4==0?"":"name <&>\"' é";item.description=seed%3?"description\n\t<&>\"' 雪":"";if(seed%7==0)item.description="\xe2\x80\x83\t";item.creation_date=seed%2?-seed:0;return item;}
-std::string hex(std::string_view value){static const char digits[]="0123456789abcdef";std::string out;for(unsigned char c:value){out+=digits[c>>4];out+=digits[c&15];}return out;}
-std::string probe(int seed,int count,int mode){int calls=0;std::string trace;std::int32_t clock=0;InventoryBadRequests bad([&]{return clock;});if(mode&1)bad.add(id(2));
- FetchInventory2Core core(id(42),[&](auto owner,const auto& ids)->std::optional<FetchInventory2Core::Items>{++calls;trace=owner.str();for(auto key:ids)trace+=","+key.str();if(mode&4)throw std::runtime_error("provider");if(mode&8)return {};FetchInventory2Core::Items out;for(std::size_t i=0;i<ids.size();++i)out.push_back(ids[i].is_zero()||i%3==2?std::nullopt:std::optional{sample(seed,ids[i])});return out;});
- network::Value request=network::Value::object({});network::Value array;array.kind=network::Value::Kind::Array;for(int i=0;i<count;++i){auto entry=network::Value::object({});if(!(mode&64)){network::Value uuid;uuid.kind=network::Value::Kind::Uuid;uuid.text=id(i+1).str();entry.set("item_id",uuid);}if(mode&32)entry=network::Value("wrong");array.array.push_back(entry);}if(mode&16)array=network::Value("wrong");request.set("items",array);
- std::string result;try{auto response=core.handle(request,mode&2?nullptr:&bad);result=std::to_string(response.status)+":"+hex(response.body);}catch(const std::exception&){result="CAST";}return result+"|"+std::to_string(calls)+"|"+trace;
+framework::Uuid id(int n) {
+    std::string tail = std::to_string(n);
+    return framework::Uuid("00000000-0000-0000-0000-" + std::string(12 - tail.size(), '0') + tail);
 }
-std::string unhex(const std::string& value){if(value=="-")return {};std::string out;for(std::size_t i=0;i<value.size();i+=2)out+=static_cast<char>(std::stoi(value.substr(i,2),nullptr,16));return out;}
-std::string http_probe(const std::string& method,const std::string& content,const std::string& body){int calls=0;std::string trace;auto core=std::make_shared<FetchInventory2Core>(id(42),[&](auto owner,const auto& ids)->std::optional<FetchInventory2Core::Items>{++calls;trace=owner.str();for(auto key:ids)trace+=","+key.str();FetchInventory2Core::Items out;for(std::size_t i=0;i<ids.size();++i)out.push_back(ids[i].is_zero()||i%3==2?std::nullopt:std::optional{sample(0,ids[i])});return out;});auto bad=std::make_shared<InventoryBadRequests>([]{return 0;});FetchInventory2Route route("/inventory",core,bad);network::HttpRequest request;request.method=method;request.content_type=content;request.body=body;auto response=route.handle(request);return std::to_string(response.status)+":"+hex(response.body)+"|"+std::to_string(route.requests_received.load())+"|"+std::to_string(route.requests_handled.load())+"|"+std::to_string(calls)+"|"+trace;}
-int checks=0;void check(bool value,const char* label){++checks;if(!value)throw std::runtime_error(label);}
-void run(){{int32_t clock=0;std::string trace;{InventoryBadRequests bad([&]{return clock;},[&](auto event,int32_t delay){trace+=(event==InventoryBadRequests::TimerEvent::Arm?"A":event==InventoryBadRequests::TimerEvent::Rearm?"R":"D");check(delay==(event==InventoryBadRequests::TimerEvent::Disarm?0:30000),"source timer delay");});check(trace.empty(),"cache constructor does not arm timer");bad.add(id(1));bad.add(id(1));check(trace=="A","first Add arms once");clock=30000;bad.purge();check(trace=="AR","equality retains entry and rearms timer");clock=30001;bad.purge();check(trace=="ARD","empty purge disarms timer");bad.add(id(2),0);check(trace=="ARDA","new Add after empty creates new timer");}check(trace=="ARDAD","cache destruction disposes active timer");}{auto core=std::make_shared<FetchInventory2Core>(id(42),[](auto,const auto&)->std::optional<FetchInventory2Core::Items>{return FetchInventory2Core::Items{};});int decoded=0;FetchInventory2Route route("/chosen",core,nullptr,[&](auto){++decoded;return network::Value::object({});});network::HttpRequest request;request.method="POST";auto response=route.handle(request);check(route.path()=="/chosen","injected capability route path");check(response.status==404&&response.content_type=="text/html;charset=UTF-8","source response default type and null-cache404");check(decoded==1&&route.requests_handled==1,"injected parser and source handled counter");request.method="GET";route.handle(request);check(decoded==1&&route.requests_received==2&&route.requests_handled==1,"wrong method never invokes parser");}check(http_probe("GET","application/json","{}")=="404:|1|0|0|","wrong HTTP method404");check(http_probe("POST","text/plain","[]")=="400:|1|0|0|","nonmap body400");check(http_probe("POST","text/plain","{}")=="500:|1|1|0|","malformed map handler500");check(http_probe("POST","application/xml","{\"items\":[]}").starts_with("200:"),"source ignores contenttype for JSON sniff");check(probe(0,0,0).starts_with("200:"),"empty items source response");check(probe(1,3,2)=="404:|0|","missing negative-cache404 before parsing");check(probe(1,3,16)=="CAST|0|","wrong items cast before provider");check(probe(1,3,32)=="CAST|0|","wrong item cast before provider");check(probe(1,3,1).ends_with(",00000000-0000-0000-0000-000000000000"),"filtered slot preserved as zero tail");check(probe(1,3,4).starts_with("200:"),"provider exception swallowed");std::int32_t clock=0;InventoryBadRequests bad([&]{return clock;});bad.add(id(1));clock=30001;check(bad.contains(id(1)),"expiry membership unchanged before timer");bad.purge();check(!bad.contains(id(1)),"strict timer expiry");clock=0;bad.add(id(1));clock=30000;bad.purge();check(bad.contains(id(1)),"expiry equality retained");bad.add(id(2),0);clock=100000;bad.purge();check(bad.contains(id(2)),"nonpositive expiry permanent");auto xml=inventory_item_llsd(sample(1,id(1)),255);check(xml.find("<key>base_mask</key><integer>-1</integer>")!=xml.npos,"base mask uses current permissions");check(xml.find("<key>flags</key><integer>254</integer>")!=xml.npos,"item flags masked to low byte");}
+InventoryItem sample(int seed, framework::Uuid key) {
+    InventoryItem item;
+    item.id = key;
+    item.parent = seed % 2 ? id(900) : framework::Uuid{};
+    item.asset_id = id(500 + seed);
+    item.owner = id(42);
+    item.group_id = seed % 2 ? id(43) : framework::Uuid{};
+    item.creator_id = seed % 3 == 0 ? "invalid" : id(44).str() + ";https://example.test;Creator";
+    item.current_permissions = seed % 2 ? -1 : 0;
+    item.base_permissions = 123;
+    item.group_permissions = seed * 71;
+    item.everyone_permissions = -seed;
+    item.next_permissions = std::numeric_limits<int>::min() + seed;
+    item.flags = -1 - seed;
+    item.group_owned = seed % 2;
+    item.asset_type = seed - 5;
+    item.inventory_type = seed % 3;
+    item.sale_price = seed % 3 ? seed * 9 : 0;
+    item.sale_type = seed % 4;
+    item.name = seed % 4 == 0 ? "" : "name <&>\"' é";
+    item.description = seed % 3 ? "description\n\t<&>\"' 雪" : "";
+    if (seed % 7 == 0)
+        item.description = "\xe2\x80\x83\t";
+    item.creation_date = seed % 2 ? -seed : 0;
+    return item;
 }
-int main(int argc,char**argv){try{if(argc==2&&std::string_view(argv[1])=="--timer"){std::int32_t at,expire,after;int purge;while(std::cin>>at>>expire>>after>>purge){std::int32_t clock=0;std::string trace,result;{InventoryBadRequests bad([&]{return clock;},[&](auto event,int32_t delay){trace+=(event==InventoryBadRequests::TimerEvent::Arm?"A:":event==InventoryBadRequests::TimerEvent::Rearm?"R:":"D:")+std::to_string(delay)+":"+std::to_string(clock)+";";});clock=at;bad.add(id(1),expire);bad.add(id(1),expire);clock=after;if(purge)bad.purge();clock=std::bit_cast<int32_t>(static_cast<uint32_t>(after)+1u);bad.add(id(2),0);bad.purge();result=std::string(bad.contains(id(1))?"1":"0")+(bad.contains(id(2))?"1":"0");}std::cout<<result<<'|'<<trace<<'\n';}return 0;}if(argc==2&&std::string_view(argv[1])=="--http"){std::string method,content,body;while(std::cin>>method>>content>>body)std::cout<<http_probe(method,content,unhex(body))<<'\n';return 0;}if(argc==2&&std::string_view(argv[1])=="--cache"){std::int32_t at,expire,after;int purge;while(std::cin>>at>>expire>>after>>purge){std::int32_t clock=at;InventoryBadRequests bad([&]{return clock;});bad.add(id(1),expire);clock=after;if(purge)bad.purge();std::cout<<(bad.contains(id(1))?"1":"0")<<'\n';}return 0;}if(argc==2&&std::string_view(argv[1])=="--probe"){int seed,count,mode;while(std::cin>>seed>>count>>mode)std::cout<<probe(seed,count,mode)<<'\n';return 0;}run();std::cout<<"PASS: "<<checks<<" inventory capability checks\n";return 0;}catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}}
+std::string hex(std::string_view value) {
+    static const char digits[] = "0123456789abcdef";
+    std::string out;
+    for (unsigned char c : value) {
+        out += digits[c >> 4];
+        out += digits[c & 15];
+    }
+    return out;
+}
+std::string probe(int seed, int count, int mode) {
+    int calls = 0;
+    std::string trace;
+    std::int32_t clock = 0;
+    InventoryBadRequests bad([&] { return clock; });
+    if (mode & 1)
+        bad.add(id(2));
+    FetchInventory2Core core(
+        id(42), [&](auto owner, const auto &ids) -> std::optional<FetchInventory2Core::Items> {
+            ++calls;
+            trace = owner.str();
+            for (auto key : ids)
+                trace += "," + key.str();
+            if (mode & 4)
+                throw std::runtime_error("provider");
+            if (mode & 8)
+                return {};
+            FetchInventory2Core::Items out;
+            for (std::size_t i = 0; i < ids.size(); ++i)
+                out.push_back(ids[i].is_zero() || i % 3 == 2 ? std::nullopt
+                                                             : std::optional{sample(seed, ids[i])});
+            return out;
+        });
+    network::Value request = network::Value::object({});
+    network::Value array;
+    array.kind = network::Value::Kind::Array;
+    for (int i = 0; i < count; ++i) {
+        auto entry = network::Value::object({});
+        if (!(mode & 64)) {
+            network::Value uuid;
+            uuid.kind = network::Value::Kind::Uuid;
+            uuid.text = id(i + 1).str();
+            entry.set("item_id", uuid);
+        }
+        if (mode & 32)
+            entry = network::Value("wrong");
+        array.array.push_back(entry);
+    }
+    if (mode & 16)
+        array = network::Value("wrong");
+    request.set("items", array);
+    std::string result;
+    try {
+        auto response = core.handle(request, mode & 2 ? nullptr : &bad);
+        result = std::to_string(response.status) + ":" + hex(response.body);
+    } catch (const std::exception &) {
+        result = "CAST";
+    }
+    return result + "|" + std::to_string(calls) + "|" + trace;
+}
+std::string unhex(const std::string &value) {
+    if (value == "-")
+        return {};
+    std::string out;
+    for (std::size_t i = 0; i < value.size(); i += 2)
+        out += static_cast<char>(std::stoi(value.substr(i, 2), nullptr, 16));
+    return out;
+}
+std::string http_probe(const std::string &method, const std::string &content, const std::string &body) {
+    int calls = 0;
+    std::string trace;
+    auto core = std::make_shared<FetchInventory2Core>(
+        id(42), [&](auto owner, const auto &ids) -> std::optional<FetchInventory2Core::Items> {
+            ++calls;
+            trace = owner.str();
+            for (auto key : ids)
+                trace += "," + key.str();
+            FetchInventory2Core::Items out;
+            for (std::size_t i = 0; i < ids.size(); ++i)
+                out.push_back(ids[i].is_zero() || i % 3 == 2 ? std::nullopt
+                                                             : std::optional{sample(0, ids[i])});
+            return out;
+        });
+    auto bad = std::make_shared<InventoryBadRequests>([] { return 0; });
+    FetchInventory2Route route("/inventory", core, bad);
+    network::HttpRequest request;
+    request.method = method;
+    request.content_type = content;
+    request.body = body;
+    auto response = route.handle(request);
+    return std::to_string(response.status) + ":" + hex(response.body) + "|" +
+           std::to_string(route.requests_received.load()) + "|" +
+           std::to_string(route.requests_handled.load()) + "|" + std::to_string(calls) + "|" + trace;
+}
+int checks = 0;
+void check(bool value, const char *label) {
+    ++checks;
+    if (!value)
+        throw std::runtime_error(label);
+}
+void run() {
+    {
+        int32_t clock = 0;
+        std::string trace;
+        {
+            InventoryBadRequests bad(
+                [&] { return clock; },
+                [&](auto event, int32_t delay) {
+                    trace += (event == InventoryBadRequests::TimerEvent::Arm     ? "A"
+                              : event == InventoryBadRequests::TimerEvent::Rearm ? "R"
+                                                                                 : "D");
+                    check(delay == (event == InventoryBadRequests::TimerEvent::Disarm ? 0 : 30000),
+                          "source timer delay");
+                });
+            check(trace.empty(), "cache constructor does not arm timer");
+            bad.add(id(1));
+            bad.add(id(1));
+            check(trace == "A", "first Add arms once");
+            clock = 30000;
+            bad.purge();
+            check(trace == "AR", "equality retains entry and rearms timer");
+            clock = 30001;
+            bad.purge();
+            check(trace == "ARD", "empty purge disarms timer");
+            bad.add(id(2), 0);
+            check(trace == "ARDA", "new Add after empty creates new timer");
+        }
+        check(trace == "ARDAD", "cache destruction disposes active timer");
+    }
+    {
+        auto core = std::make_shared<FetchInventory2Core>(
+            id(42), [](auto, const auto &) -> std::optional<FetchInventory2Core::Items> {
+                return FetchInventory2Core::Items{};
+            });
+        int decoded = 0;
+        FetchInventory2Route route("/chosen", core, nullptr, [&](auto) {
+            ++decoded;
+            return network::Value::object({});
+        });
+        network::HttpRequest request;
+        request.method = "POST";
+        auto response = route.handle(request);
+        check(route.path() == "/chosen", "injected capability route path");
+        check(response.status == 404 && response.content_type == "text/html;charset=UTF-8",
+              "source response default type and null-cache404");
+        check(decoded == 1 && route.requests_handled == 1, "injected parser and source handled counter");
+        request.method = "GET";
+        route.handle(request);
+        check(decoded == 1 && route.requests_received == 2 && route.requests_handled == 1,
+              "wrong method never invokes parser");
+    }
+    check(http_probe("GET", "application/json", "{}") == "404:|1|0|0|", "wrong HTTP method404");
+    check(http_probe("POST", "text/plain", "[]") == "400:|1|0|0|", "nonmap body400");
+    check(http_probe("POST", "text/plain", "{}") == "500:|1|1|0|", "malformed map handler500");
+    check(http_probe("POST", "application/xml", "{\"items\":[]}").starts_with("200:"),
+          "source ignores contenttype for JSON sniff");
+    check(probe(0, 0, 0).starts_with("200:"), "empty items source response");
+    check(probe(1, 3, 2) == "404:|0|", "missing negative-cache404 before parsing");
+    check(probe(1, 3, 16) == "CAST|0|", "wrong items cast before provider");
+    check(probe(1, 3, 32) == "CAST|0|", "wrong item cast before provider");
+    check(probe(1, 3, 1).ends_with(",00000000-0000-0000-0000-000000000000"),
+          "filtered slot preserved as zero tail");
+    check(probe(1, 3, 4).starts_with("200:"), "provider exception swallowed");
+    std::int32_t clock = 0;
+    InventoryBadRequests bad([&] { return clock; });
+    bad.add(id(1));
+    clock = 30001;
+    check(bad.contains(id(1)), "expiry membership unchanged before timer");
+    bad.purge();
+    check(!bad.contains(id(1)), "strict timer expiry");
+    clock = 0;
+    bad.add(id(1));
+    clock = 30000;
+    bad.purge();
+    check(bad.contains(id(1)), "expiry equality retained");
+    bad.add(id(2), 0);
+    clock = 100000;
+    bad.purge();
+    check(bad.contains(id(2)), "nonpositive expiry permanent");
+    auto xml = inventory_item_llsd(sample(1, id(1)), 255);
+    check(xml.find("<key>base_mask</key><integer>-1</integer>") != xml.npos,
+          "base mask uses current permissions");
+    check(xml.find("<key>flags</key><integer>254</integer>") != xml.npos, "item flags masked to low byte");
+}
+}
+int main(int argc, char **argv) {
+    try {
+        if (argc == 2 && std::string_view(argv[1]) == "--timer") {
+            std::int32_t at, expire, after;
+            int purge;
+            while (std::cin >> at >> expire >> after >> purge) {
+                std::int32_t clock = 0;
+                std::string trace, result;
+                {
+                    InventoryBadRequests bad(
+                        [&] { return clock; },
+                        [&](auto event, int32_t delay) {
+                            trace += (event == InventoryBadRequests::TimerEvent::Arm     ? "A:"
+                                      : event == InventoryBadRequests::TimerEvent::Rearm ? "R:"
+                                                                                         : "D:") +
+                                     std::to_string(delay) + ":" + std::to_string(clock) + ";";
+                        });
+                    clock = at;
+                    bad.add(id(1), expire);
+                    bad.add(id(1), expire);
+                    clock = after;
+                    if (purge)
+                        bad.purge();
+                    clock = std::bit_cast<int32_t>(static_cast<uint32_t>(after) + 1u);
+                    bad.add(id(2), 0);
+                    bad.purge();
+                    result = std::string(bad.contains(id(1)) ? "1" : "0") + (bad.contains(id(2)) ? "1" : "0");
+                }
+                std::cout << result << '|' << trace << '\n';
+            }
+            return 0;
+        }
+        if (argc == 2 && std::string_view(argv[1]) == "--http") {
+            std::string method, content, body;
+            while (std::cin >> method >> content >> body)
+                std::cout << http_probe(method, content, unhex(body)) << '\n';
+            return 0;
+        }
+        if (argc == 2 && std::string_view(argv[1]) == "--cache") {
+            std::int32_t at, expire, after;
+            int purge;
+            while (std::cin >> at >> expire >> after >> purge) {
+                std::int32_t clock = at;
+                InventoryBadRequests bad([&] { return clock; });
+                bad.add(id(1), expire);
+                clock = after;
+                if (purge)
+                    bad.purge();
+                std::cout << (bad.contains(id(1)) ? "1" : "0") << '\n';
+            }
+            return 0;
+        }
+        if (argc == 2 && std::string_view(argv[1]) == "--probe") {
+            int seed, count, mode;
+            while (std::cin >> seed >> count >> mode)
+                std::cout << probe(seed, count, mode) << '\n';
+            return 0;
+        }
+        run();
+        std::cout << "PASS: " << checks << " inventory capability checks\n";
+        return 0;
+    } catch (const std::exception &error) {
+        std::cerr << error.what() << '\n';
+        return 1;
+    }
+}

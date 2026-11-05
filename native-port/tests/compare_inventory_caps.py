@@ -17,7 +17,7 @@ def main():
  generated=w/'ExtractedInventoryCaps.cs';generated.write_text('using System;using System.Net;using OpenMetaverse;using OpenMetaverse.StructuredData;using OpenSim.Framework;\npartial class InventoryCapsReference {\n'+method+'\n}\npartial class InventoryItemBase {\npublic osUTF8 UTF8Description;\n'+description+'\n'+serializer+'\n}\npartial class Wrapper {\n'+wrapper+'\n}\n')
  expiry=ROOT/'OpenSim/Framework/ExpiringKey.cs';expiry_copy=w/'ExtractedExpiringKey.cs';expiry_copy.write_text(expiry.read_text().replace('using Timer = System.Threading.Timer ;','using Timer = global::ControlledTimer;'))
  project=ET.Element('Project',Sdk='Microsoft.NET.Sdk');props=ET.SubElement(project,'PropertyGroup')
- for k,v in dict(TargetFramework='net8.0',OutputType='Exe',EnableDefaultCompileItems='false').items():ET.SubElement(props,k).text=v
+ for k,v in dict(TargetFramework='net8.0',OutputType='Exe',EnableDefaultCompileItems='false',RuntimeFrameworkVersion='8.0.31',RollForward='Disable').items():ET.SubElement(props,k).text=v
  group=ET.SubElement(project,'ItemGroup')
  for f in [generated,expiry_copy,ROOT/'native-port/tests/inventory_caps_reference.cs']:ET.SubElement(group,'Compile',Include=str(f))
  for name in ['OpenMetaverse','OpenMetaverseTypes','OpenMetaverse.StructuredData']:
@@ -40,7 +40,27 @@ def main():
  timer_diffs=[dict(command=c,source=s,native=n) for c,s,n in zip(cache_commands,*timer_rows) if s!=n]
  assert not timer_diffs,timer_diffs[:2]
  http_bodies=['', '{}', '[]', 'null', 'bad', '{"items":[]}', ' {"items":[]} ', '{"items":[{}]}', '{"items":[1]}', '{"items":"bad"}', '<llsd><map><key>items</key><array /></map></llsd>', ' <llsd><map><key>items</key><array /></map></llsd>', '<?xml version="1.0"?><llsd><map><key>items</key><array /></map></llsd>', '<llsd><array /></llsd>', '<llsd><map>', '<LLSD><map /></LLSD>', '\ufeff{"items":[]}', '<? llsd/xml ?><llsd><map><key>items</key><array /></map></llsd>']
- http_commands=[f"{method} {content} {body.encode('utf-8').hex() or '-'}" for method in ['POST','post','GET','PUT'] for content in ['application/json','application/llsd+xml','text/plain'] for body in http_bodies]
+ import struct
+ def n(i):return struct.pack('>i',i)
+ def key(s):return b'k'+n(len(s))+s
+ binary=[b'!',b'0',b'1',b'{'+n(0)+b'}',b'['+n(0)+b']',b'{'+n(1)+key(b'items')+b'['+n(0)+b']}']
+ for binary_item in [b'{'+n(0)+b'}',b'{'+n(1)+key(b'item_id')+b'u'+bytes(16)+b'}',b'!',b'1',b's'+n(1)+b'x']:
+  binary.append(b'{'+n(1)+key(b'items')+b'['+n(1)+binary_item+b']}')
+ raw_bodies=[body.encode('utf-8') for body in http_bodies]
+ for body in binary:
+  raw_bodies.append(b'<? llsd/binary ?>\n'+body)
+  raw_bodies.extend(b'<? llsd/binary ?>\n'+body[:i] for i in range(len(body)))
+ raw_bodies.extend(body.encode() for body in ['<llsd><map><key>items</key><array/></map><string bad="&unknown;">','<llsd><map><key>items</key><array><foo></foo></array></map></llsd>'])
+ notation=["!","{}","[]","{'items':[]}","{'items':[{}]}","{'items':[{'item_id':u00000000-0000-0000-0000-000000000000}]}","{'items':[!]}","{'items':[i1]}","{'items':[l\"relative\"]}","{'items':!}","{'items':i1}"]
+ for body in notation:
+  raw_bodies.append(('<? llsd/notation ?>'+body+'\0\0\0').encode())
+  raw_bodies.extend(('<? llsd/notation ?>'+body[:i]+'\0\0\0').encode() for i in range(len(body)))
+ for body in ['{}','{"items":[]}','{"items":[{}]}','{"items":[{"item_id":"00000000-0000-0000-0000-000000000000"}]}','{"items":"\\ud800"}']:
+  for encoding,bom in [('utf-8',b'\xef\xbb\xbf'),('utf-16-le',b'\xff\xfe'),('utf-16-be',b'\xfe\xff'),('utf-32-le',b'\xff\xfe\x00\x00'),('utf-32-be',b'\x00\x00\xfe\xff')]:
+   encoded=bom+body.encode(encoding);raw_bodies.append(encoded)
+   raw_bodies.extend(encoded[:i] for i in range(len(encoded)))
+ http_commands=[f"{method} {content} {body.hex() or '-'}" for method in ['POST','post','GET','PUT'] for content in ['application/json','application/llsd+xml','text/plain'] for body in raw_bodies]
+
  http_rows=[]
  for cmd in [[a.dotnet,str(w/'app/InventoryCapsReference.dll'),'--http'],[a.native,'--http']]:
   r=subprocess.run(cmd,input='\n'.join(http_commands)+'\n',capture_output=True,text=True,timeout=60);assert r.returncode==0,r.stderr;http_rows.append(r.stdout.splitlines())
@@ -50,5 +70,5 @@ def main():
  cache_diffs=[dict(command=c,source=s,native=n) for c,s,n in zip(cache_commands,*cache_rows) if s!=n]
  assert not cache_diffs,cache_diffs[:2]
  diffs=[dict(command=c,source=s,native=n) for c,s,n in zip(commands,*rows) if s!=n]
- report=dict(passed=not diffs,cases=len(commands),expiryCases=len(cache_commands),timerCases=len(cache_commands),httpCases=len(http_commands),sourceHashes={str(f.relative_to(ROOT)):hashlib.sha256(f.read_bytes()).hexdigest() for f in [handler,item,expiry,wrapper_source,ROOT/'bin/OpenMetaverse.StructuredData.dll',ROOT/'bin/OpenMetaverse.dll',ROOT/'bin/OpenMetaverseTypes.dll']},scope='Actual source handler and item serializer extracted unchanged; actual SDK OSD/LLSD writer. Controlled inventory service, bad-key membership and normalized cast exceptions. Whole original ExpiringKey class with controlled clock/timer purge callbacks compared; Actual SimpleOSDMapHandler.Handle with SDK stream parser compared for XML/JSON, method/parse/handler failure counts. LLSD notation/binary and alternate encodings require injected decoder; library/descendents and whole provider/culture/invalid UTF8 remain separate.',differences=diffs[:2]);(w/'inventory-caps-results.json').write_text(json.dumps(report,indent=2)+'\n');assert not diffs,json.dumps(diffs[:1]);print(f'PASS: {len(commands)} original inventory item capability results + {len(cache_commands)} expiry observations + {len(cache_commands)} timer traces + {len(http_commands)} HTTP cases')
+ report=dict(passed=not diffs,cases=len(commands),expiryCases=len(cache_commands),timerCases=len(cache_commands),httpCases=len(http_commands),sourceHashes={str(f.relative_to(ROOT)):hashlib.sha256(f.read_bytes()).hexdigest() for f in [handler,item,expiry,wrapper_source,ROOT/'bin/OpenMetaverse.StructuredData.dll',ROOT/'bin/OpenMetaverse.dll',ROOT/'bin/OpenMetaverseTypes.dll']},scope='Actual source handler and item serializer extracted unchanged; actual SDK OSD/LLSD writer. Controlled inventory service, bad-key membership and normalized cast exceptions. Whole original ExpiringKey class with controlled clock/timer purge callbacks compared; Actual SimpleOSDMapHandler.Handle with SDK stream parser compared for XML/JSON, method/parse/handler failure counts. LLSD binary is native; notation is native with explicit quoted EOF termination difference; alternate JSON stream encodings require further implementation; library/descendents and whole provider/culture/invalid UTF8 remain separate.',differences=diffs[:2]);(w/'inventory-caps-results.json').write_text(json.dumps(report,indent=2)+'\n');assert not diffs,json.dumps(diffs[:1]);print(f'PASS: {len(commands)} original inventory item capability results + {len(cache_commands)} expiry observations + {len(cache_commands)} timer traces + {len(http_commands)} HTTP cases')
 if __name__=='__main__':main()

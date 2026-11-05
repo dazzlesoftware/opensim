@@ -29,9 +29,43 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <stdexcept>
 using opensim::framework::HttpUri;
-void check(bool value,const char* message){if(!value)throw std::runtime_error(message);}
-int main(){try{
- HttpUri empty(std::nullopt);check(empty.flags==HttpUri::Empty&&empty.port==-1&&empty.uri_slash()=="/"&&empty.host_port()==":-1","empty URI state");HttpUri path("HTTPS://HOST:443/a/b/../c?q=a b#fragment");check(path.valid()&&path.port==443&&path.url=="https://host:443"&&path.path=="/a/c"&&path.uri=="https://host/a/c?q=a%20b#fragment","scheme, path, query and fragment canonicalization");
- check(HttpUri("http://host/%41%7e%2f%FF").path=="/A~%2f%FF","escaped unreserved normalization");check(HttpUri("http://host/a\\b").path=="/a/b","backslash path normalization");check(HttpUri("http://127.1/a").host=="127.0.0.1","numeric IPv4 normalization");check(HttpUri("http://[2001:0db8::1]:9000/a").host=="2001:db8::1","IPv6 literal normalization");check(!HttpUri("http://u@v@host/").valid()&&!HttpUri("http://host:-0/").valid(),"invalid authority and signed port rejected");check(HttpUri("http://_host/a").valid()&&HttpUri("http://-host/a").valid(),"URI host classifier differs from host-only parser");
- HttpUri left("http://host:443/a?x=1"),right("https://host/a?x=2");check(left.equals(right)&&left.compare(right)==0,"identity ignores scheme and query");check(!HttpUri("http://host/A").equals(HttpUri("http://host/a")),"path identity remains case-sensitive");HttpUri parsed("http://host/a");check(parsed.resolve_dns([](const auto&)->std::optional<std::string>{return "203.0.113.7";})&&parsed.resolved()&&!parsed.ip,"source ResolveDNS flag/IP asymmetry");HttpUri resolved("http://host/a",true,[](const auto&)->std::optional<std::string>{return "203.0.113.7";});check(resolved.resolved()&&resolved.ip=="203.0.113.7","constructor resolution assigns IP");std::cout<<"PASS: HTTP URI canonicalization and state\n";return 0;
-}catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}}
+void check(bool value, const char* message) {
+    if (!value)
+        throw std::runtime_error(message);
+}
+int main() {
+    try {
+        HttpUri empty(std::nullopt);
+        check(empty.flags == HttpUri::Empty && empty.port == -1 && empty.uri_slash() == "/" &&
+                  empty.host_port() == ":-1",
+              "empty URI state");
+        HttpUri path("HTTPS://HOST:443/a/b/../c?q=a b#fragment");
+        check(path.valid() && path.port == 443 && path.url == "https://host:443" && path.path == "/a/c" &&
+                  path.uri == "https://host/a/c?q=a%20b#fragment",
+              "scheme, path, query and fragment canonicalization");
+        check(HttpUri("http://host/%41%7e%2f%FF").path == "/A~%2f%FF", "escaped unreserved normalization");
+        check(HttpUri("http://host/a\\b").path == "/a/b", "backslash path normalization");
+        check(HttpUri("http://127.1/a").host == "127.0.0.1", "numeric IPv4 normalization");
+        check(HttpUri("http://[2001:0db8::1]:9000/a").host == "2001:db8::1", "IPv6 literal normalization");
+        check(!HttpUri("http://u@v@host/").valid() && !HttpUri("http://host:-0/").valid(),
+              "invalid authority and signed port rejected");
+        check(HttpUri("http://_host/a").valid() && HttpUri("http://-host/a").valid(),
+              "URI host classifier differs from host-only parser");
+        HttpUri left("http://host:443/a?x=1"), right("https://host/a?x=2");
+        check(left.equals(right) && left.compare(right) == 0, "identity ignores scheme and query");
+        check(!HttpUri("http://host/A").equals(HttpUri("http://host/a")),
+              "path identity remains case-sensitive");
+        HttpUri parsed("http://host/a");
+        check(parsed.resolve_dns([](const auto&) -> std::optional<std::string> { return "203.0.113.7"; }) &&
+                  parsed.resolved() && !parsed.ip,
+              "source ResolveDNS flag/IP asymmetry");
+        HttpUri resolved("http://host/a", true,
+                         [](const auto&) -> std::optional<std::string> { return "203.0.113.7"; });
+        check(resolved.resolved() && resolved.ip == "203.0.113.7", "constructor resolution assigns IP");
+        std::cout << "PASS: HTTP URI canonicalization and state\n";
+        return 0;
+    } catch (const std::exception& error) {
+        std::cerr << error.what() << '\n';
+        return 1;
+    }
+}

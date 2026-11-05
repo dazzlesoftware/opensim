@@ -4,13 +4,141 @@
 #include <sqlite3.h>
 #include <iostream>
 #include <sstream>
-using namespace opensim;using namespace services;
-std::string hex(std::string_view text){std::string result;for(unsigned char c:text){result+="0123456789abcdef"[c>>4];result+="0123456789abcdef"[c&15];}return result;}
-std::optional<std::string> text(const std::string& value){if(value=="N")return {};if(value==".")return "";std::string result;for(size_t i=0;i<value.size();i+=2)result+=char(std::stoi(value.substr(i,2),nullptr,16));return result;}
-std::string token(const std::optional<std::string>& value){return value?"s"+hex(*value):"N";}
-std::string bytes(const framework::AssetBytes& value){return value?hex(std::string(value->begin(),value->end())):"N";}
-std::string snapshot(const std::shared_ptr<framework::AssetMetadata>& m){if(!m)return "N";return m->full_id().str()+":"+token(m->id())+":"+token(m->name)+":"+token(m->description)+":"+std::to_string(m->type)+":"+std::to_string(m->flags)+":"+(m->local?"1":"0")+":"+(m->temporary?"1":"0")+":"+token(m->creator_id)+":"+bytes(m->sha1);}
-std::string snapshot(const AssetService::Asset& asset){return asset?snapshot(asset->metadata())+"/"+bytes(asset->data):"N";}
-framework::Uuid uuid(const std::string& token){auto value=text(token);framework::Uuid id;if(!value)throw std::invalid_argument("UUID");return framework::parse_sdk_uuid(*value);}
-int main(int argc,char** argv){try{if(argc!=2)return 2;std::string warnings;bool warn_failure=false;auto warn=[&](const auto& value){warnings+=value+";";if(warn_failure)throw std::runtime_error("warning");};auto store=std::make_shared<SqliteAssetStore>(argv[1],true,warn);AssetService::Asset asset=std::make_shared<framework::AssetBase>();std::string line;
- while(std::getline(std::cin,line)){std::istringstream in(line);std::string op,result="-";in>>op;warnings.clear();try{if(op=="n"){std::string id,name,desc,creator,data;int type,flags,local,temp;in>>id>>name>>desc>>type>>flags>>local>>temp>>creator>>data;asset=std::make_shared<framework::AssetBase>(text(id),text(name),static_cast<int8_t>(type),text(creator));asset->description(text(desc));asset->flags(flags);asset->local(local!=0);asset->temporary(temp!=0);auto value=text(data);asset->data=value?std::make_shared<std::vector<uint8_t>>(value->begin(),value->end()):nullptr;result=snapshot(asset);}else if(op=="s")result=store->store(asset)?"T":"F";else if(op=="g"){std::string value;in>>value;result=snapshot(store->get(uuid(value)));}else if(op=="e"){std::vector<framework::Uuid> ids;std::string id;while(in>>id)ids.push_back(uuid(id));result="";for(bool b:store->exists(ids))result+=b?'1':'0';}else if(op=="m"){int start,count;in>>start>>count;auto rows=store->metadata_set(start,count);result=std::to_string(rows.size());for(auto& row:rows)result+="|"+snapshot(row);}else if(op=="d"){std::string value;in>>value;result=store->erase(text(value).value_or(""))?"T":"F";}else if(op=="a"){std::string value;in>>value;result=store->erase_asset(uuid(value))?"T":"F";}else if(op=="c")store->dispose();else if(op=="o")store=std::make_shared<SqliteAssetStore>(argv[1],false,warn);else if(op=="f")warn_failure=!warn_failure;else if(op=="raw"){std::string value;in>>value;sqlite3* db=nullptr;if(sqlite3_open(argv[1],&db)!=SQLITE_OK)throw std::runtime_error("raw open");auto sql=text(value).value();int status=sqlite3_exec(db,sql.c_str(),nullptr,nullptr,nullptr);sqlite3_close(db);if(status!=SQLITE_OK)throw std::runtime_error("raw SQL");}else if(op=="asset")result=snapshot(asset);else throw std::invalid_argument("operation");}catch(...){result="EX";}std::cout<<result<<"#"<<hex(warnings)<<'\n';}return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+using namespace opensim;
+using namespace services;
+std::string hex(std::string_view text) {
+    std::string result;
+    for (unsigned char c : text) {
+        result += "0123456789abcdef"[c >> 4];
+        result += "0123456789abcdef"[c & 15];
+    }
+    return result;
+}
+std::optional<std::string> text(const std::string &value) {
+    if (value == "N")
+        return {};
+    if (value == ".")
+        return "";
+    std::string result;
+    for (size_t i = 0; i < value.size(); i += 2)
+        result += char(std::stoi(value.substr(i, 2), nullptr, 16));
+    return result;
+}
+std::string token(const std::optional<std::string> &value) {
+    return value ? "s" + hex(*value) : "N";
+}
+std::string bytes(const framework::AssetBytes &value) {
+    return value ? hex(std::string(value->begin(), value->end())) : "N";
+}
+std::string snapshot(const std::shared_ptr<framework::AssetMetadata> &m) {
+    if (!m)
+        return "N";
+    return m->full_id().str() + ":" + token(m->id()) + ":" + token(m->name) + ":" + token(m->description) +
+           ":" + std::to_string(m->type) + ":" + std::to_string(m->flags) + ":" + (m->local ? "1" : "0") +
+           ":" + (m->temporary ? "1" : "0") + ":" + token(m->creator_id) + ":" + bytes(m->sha1);
+}
+std::string snapshot(const AssetService::Asset &asset) {
+    return asset ? snapshot(asset->metadata()) + "/" + bytes(asset->data) : "N";
+}
+framework::Uuid uuid(const std::string &token) {
+    auto value = text(token);
+    framework::Uuid id;
+    if (!value)
+        throw std::invalid_argument("UUID");
+    return framework::parse_sdk_uuid(*value);
+}
+int main(int argc, char **argv) {
+    try {
+        if (argc != 2)
+            return 2;
+        std::string warnings;
+        bool warn_failure = false;
+        auto warn = [&](const auto &value) {
+            warnings += value + ";";
+            if (warn_failure)
+                throw std::runtime_error("warning");
+        };
+        auto store = std::make_shared<SqliteAssetStore>(argv[1], true, warn);
+        AssetService::Asset asset = std::make_shared<framework::AssetBase>();
+        std::string line;
+        while (std::getline(std::cin, line)) {
+            std::istringstream in(line);
+            std::string op, result = "-";
+            in >> op;
+            warnings.clear();
+            try {
+                if (op == "n") {
+                    std::string id, name, desc, creator, data;
+                    int type, flags, local, temp;
+                    in >> id >> name >> desc >> type >> flags >> local >> temp >> creator >> data;
+                    asset = std::make_shared<framework::AssetBase>(text(id), text(name),
+                                                                   static_cast<int8_t>(type), text(creator));
+                    asset->description(text(desc));
+                    asset->flags(flags);
+                    asset->local(local != 0);
+                    asset->temporary(temp != 0);
+                    auto value = text(data);
+                    asset->data = value ? std::make_shared<std::vector<uint8_t>>(value->begin(), value->end())
+                                        : nullptr;
+                    result = snapshot(asset);
+                } else if (op == "s")
+                    result = store->store(asset) ? "T" : "F";
+                else if (op == "g") {
+                    std::string value;
+                    in >> value;
+                    result = snapshot(store->get(uuid(value)));
+                } else if (op == "e") {
+                    std::vector<framework::Uuid> ids;
+                    std::string id;
+                    while (in >> id)
+                        ids.push_back(uuid(id));
+                    result = "";
+                    for (bool b : store->exists(ids))
+                        result += b ? '1' : '0';
+                } else if (op == "m") {
+                    int start, count;
+                    in >> start >> count;
+                    auto rows = store->metadata_set(start, count);
+                    result = std::to_string(rows.size());
+                    for (auto &row : rows)
+                        result += "|" + snapshot(row);
+                } else if (op == "d") {
+                    std::string value;
+                    in >> value;
+                    result = store->erase(text(value).value_or("")) ? "T" : "F";
+                } else if (op == "a") {
+                    std::string value;
+                    in >> value;
+                    result = store->erase_asset(uuid(value)) ? "T" : "F";
+                } else if (op == "c")
+                    store->dispose();
+                else if (op == "o")
+                    store = std::make_shared<SqliteAssetStore>(argv[1], false, warn);
+                else if (op == "f")
+                    warn_failure = !warn_failure;
+                else if (op == "raw") {
+                    std::string value;
+                    in >> value;
+                    sqlite3 *db = nullptr;
+                    if (sqlite3_open(argv[1], &db) != SQLITE_OK)
+                        throw std::runtime_error("raw open");
+                    auto sql = text(value).value();
+                    int status = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr);
+                    sqlite3_close(db);
+                    if (status != SQLITE_OK)
+                        throw std::runtime_error("raw SQL");
+                } else if (op == "asset")
+                    result = snapshot(asset);
+                else
+                    throw std::invalid_argument("operation");
+            } catch (...) {
+                result = "EX";
+            }
+            std::cout << result << "#" << hex(warnings) << '\n';
+        }
+        return 0;
+    } catch (const std::exception &e) {
+        std::cerr << e.what() << '\n';
+        return 1;
+    }
+}

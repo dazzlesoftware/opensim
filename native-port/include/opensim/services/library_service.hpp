@@ -31,43 +31,52 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <mutex>
 #include <unordered_map>
 namespace opensim::services {
-class InventoryFolderTree:public InventoryFolder,public std::enable_shared_from_this<InventoryFolderTree> {
-public:
-    InventoryFolderTree()=default;
-    explicit InventoryFolderTree(const InventoryFolder& folder):InventoryFolder(folder){}
-    std::shared_ptr<InventoryFolderTree> create_child(const framework::Uuid& id,const std::string& name,std::uint16_t type);
+class InventoryFolderTree : public InventoryFolder, public std::enable_shared_from_this<InventoryFolderTree> {
+  public:
+    InventoryFolderTree() = default;
+    explicit InventoryFolderTree(const InventoryFolder& folder) : InventoryFolder(folder) {}
+    std::shared_ptr<InventoryFolderTree> create_child(const framework::Uuid& id, const std::string& name,
+                                                      std::uint16_t type);
     void add_child(const std::shared_ptr<InventoryFolderTree>& folder);
-    bool contains_child(const framework::Uuid& id)const;
-    std::shared_ptr<InventoryFolderTree> child(const framework::Uuid& id)const;
+    bool contains_child(const framework::Uuid& id) const;
+    std::shared_ptr<InventoryFolderTree> child(const framework::Uuid& id) const;
     std::shared_ptr<InventoryFolderTree> remove_child(const framework::Uuid& id);
     void add_item(const std::shared_ptr<InventoryItem>& item);
     void purge();
-    std::shared_ptr<InventoryItem> find_item(const framework::Uuid& id)const;
-    std::shared_ptr<InventoryItem> find_asset(const framework::Uuid& id)const;
+    std::shared_ptr<InventoryItem> find_item(const framework::Uuid& id) const;
+    std::shared_ptr<InventoryItem> find_asset(const framework::Uuid& id) const;
     bool delete_item(const framework::Uuid& id);
     std::shared_ptr<InventoryFolderTree> find_folder(const framework::Uuid& id);
-    std::shared_ptr<InventoryFolderTree> find_type(int type)const;
+    std::shared_ptr<InventoryFolderTree> find_type(int type) const;
     std::shared_ptr<InventoryFolderTree> find_folder_path(std::string path);
-    std::shared_ptr<InventoryItem> find_item_path(const std::string& path)const;
-    std::vector<std::shared_ptr<InventoryItem>> items()const;
-    std::vector<std::shared_ptr<InventoryFolderTree>> children()const;
-    int total_count()const;
-private:
+    std::shared_ptr<InventoryItem> find_item_path(const std::string& path) const;
+    std::vector<std::shared_ptr<InventoryItem>> items() const;
+    std::vector<std::shared_ptr<InventoryFolderTree>> children() const;
+    int total_count() const;
+
+  private:
     mutable std::recursive_mutex mutex_;
     std::vector<std::shared_ptr<InventoryFolderTree>> children_;
     std::vector<std::shared_ptr<InventoryItem>> items_;
 };
 class LibraryService {
-public:
-    using Log=std::function<void(const std::string&)>;
-    explicit LibraryService(const std::string& control="inventory/Libraries.xml",const std::string& name="OpenSim Library",Log log={});
-    std::shared_ptr<InventoryFolderTree> root()const;
-    std::unordered_map<framework::Uuid,std::shared_ptr<InventoryFolderTree>,framework::UuidHash> all_folders()const;
-    std::vector<std::shared_ptr<InventoryFolderTree>> ordered_folders()const;
-    std::shared_ptr<InventoryItem> item(const framework::Uuid& id)const;
-    std::optional<std::vector<std::shared_ptr<InventoryItem>>> multiple_items(const std::vector<framework::Uuid>& ids)const;
-    std::shared_ptr<InventoryItem> create_item(const framework::Uuid& id,const framework::Uuid& asset,const std::string& name,const std::string& description,int asset_type,int inventory_type,const framework::Uuid& parent)const;
-private:
+  public:
+    using Log = std::function<void(const std::string&)>;
+    explicit LibraryService(const std::string& control = "inventory/Libraries.xml",
+                            const std::string& name = "OpenSim Library", Log log = {});
+    std::shared_ptr<InventoryFolderTree> root() const;
+    std::unordered_map<framework::Uuid, std::shared_ptr<InventoryFolderTree>, framework::UuidHash>
+    all_folders() const;
+    std::vector<std::shared_ptr<InventoryFolderTree>> ordered_folders() const;
+    std::shared_ptr<InventoryItem> item(const framework::Uuid& id) const;
+    std::optional<std::vector<std::shared_ptr<InventoryItem>>>
+    multiple_items(const std::vector<framework::Uuid>& ids) const;
+    std::shared_ptr<InventoryItem> create_item(const framework::Uuid& id, const framework::Uuid& asset,
+                                               const std::string& name, const std::string& description,
+                                               int asset_type, int inventory_type,
+                                               const framework::Uuid& parent) const;
+
+  private:
     struct State;
     std::shared_ptr<State> state_;
 };

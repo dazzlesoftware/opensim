@@ -56,6 +56,15 @@ AuthenticationDatabase=accounts.db
 http_listener_port=0
 [LoginService]
 RequireInventory=true
+DeniedMacs=
+DeniedID0s=
+AllowedClients=
+DeniedClients=
+[AccessControl]
+DeniedMacs=blocked-machine
+DeniedID0s=blocked-machine
+AllowedClients=^NeverMatches$
+DeniedClients=.*
 [UserAccountService]
 AllowCreateUser=true
 CreateDefaultAvatarEntries=true
@@ -127,9 +136,9 @@ HttpAuthPassword=service-password
                 check(status == 200, f"{path} HTTP status")
                 return ET.fromstring(data)
 
-            def login(start="home", password="connected-password"):
-                data = xmlrpc.client.dumps(({"first": "Connected", "last": "User", "passwd": password, "start": start},), methodname="login_to_simulator")
-                status, body = request("/", data.encode(), "text/xml")
+            def login(start="home", password="connected-password", headers=None):
+                data = xmlrpc.client.dumps(({"first": "Connected", "last": "User", "passwd": password, "start": start, "mac": "blocked-machine", "id0": "blocked-machine"},), methodname="login_to_simulator")
+                status, body = request("/", data.encode(), "text/xml", headers=headers)
                 check(status == 200, "XML-RPC login HTTP status")
                 return xmlrpc.client.loads(body)[0][0]
 
@@ -144,6 +153,7 @@ HttpAuthPassword=service-password
             legacy=service("/friends",METHOD="getfriends",PRINCIPALID=legacy_owner)
             check(len(legacy)==1 and legacy.findtext("friend0/Friend")==legacy_friend and legacy.findtext("friend0/MyFlags")=="5" and legacy.findtext("friend0/TheirFlags")=="9","HTTP friends retrieval serves migrated directional permissions")
             response = login()
+            check(response["reason"] == "key", "LoginService empty overrides replace shared MAC, ID0 and viewer restrictions through real startup and HTTP login")
             check(response["message"].startswith("Error connecting to the desired location"), "inventory exists and empty grid fails at destination selection")
             region = str(uuid.uuid4())
             registered = service("/grid", METHOD="register", VERSIONMIN="1", VERSIONMAX="1", uuid=region,
@@ -238,7 +248,7 @@ HttpAuthPassword=service-password
                     pass
                 def do_POST(self):
                     raw = self.rfile.read(int(self.headers["Content-Length"]))
-                    messages.put((self.path, xmlrpc.client.loads(raw)))
+                    messages.put((self.path, xmlrpc.client.loads(raw), self.headers))
                     if self.reply == "fault":
                         data = xmlrpc.client.dumps(xmlrpc.client.Fault(42, "fixture fault"))
                     elif self.reply == "malformed":
@@ -264,7 +274,12 @@ HttpAuthPassword=service-password
                         service("/griduser", METHOD="loggedin", UserID=principal)
                         response = login()
                         check(response["reason"] == "presence", f"duplicate login rejected after IM reply {reply}")
-                        path, (parameters, method) = messages.get(timeout=5)
+                        path, (parameters, method), headers = messages.get(timeout=5)
+                        check(headers.get("Connection", "").lower() == "keep-alive"
+                              and headers.get("Keep-Alive") == "timeout=30, max=10"
+                              and headers.get("Content-Type") == "text/xml"
+                              and headers.get("Expect") is None,
+                              "Duplicate-login kick uses original XML-RPC HTTP headers")
                         message = parameters[0]
                         check(path == "/kick?attempt=1/" and method == "grid_instant_message", "kick uses source-normalized region URL and XML-RPC method")
                         expected = {"from_agent_id": "6571e388-6218-4574-87db-f9379718315e", "from_agent_session": str(uuid.UUID(int=0)),
@@ -311,7 +326,14 @@ HttpAuthPassword=service-password
             def receive(self):
                 body=self.rfile.read(int(self.headers["Content-Length"]))
                 if self.headers.get("X-Content-Encoding")=="gzip":body=gzip.decompress(body)
-                self.requests.append((self.command,self.path,json.loads(body)))
+                try:
+                    decoded = json.loads(body)
+                except ValueError as error:
+                    self.requests.append((self.command, self.path, {"decode_error": str(error),
+                        "prefix": body[:32].hex(), "headers": dict(self.headers)}))
+                    self.send_error(400)
+                    return
+                self.requests.append((self.command,self.path,decoded))
                 data=json.dumps({"success":True,"reason":"","negotiated_inbound_version":0.4,"negotiated_outbound_version":0.4,"features":[]}).encode()
                 self.send_response(200);self.send_header("Content-Type","application/json");self.send_header("Content-Length",str(len(data)));self.end_headers();self.wfile.write(data)
             do_QUERYACCESS=receive
@@ -337,7 +359,7 @@ HttpAuthPassword=service-password
                 with contextlib.closing(sqlite3.connect(root/"accounts.db")) as db:
                     check(db.execute("SELECT name,version FROM migrations ORDER BY name").fetchall()==[("AuthStore",2),("UserAccount",3),("migrations",1)],"account restart preserves original migration versions without duplicate rows")
                 service("/grid",METHOD="register",VERSIONMIN="1",VERSIONMAX="1",uuid=region,regionName="Connected Region",locX="25600",locY="25600",sizeX="256",sizeY="256",serverPort="9000",serverIP="127.0.0.1",serverURI=f"http://127.0.0.1:{simulator.server_port}/")
-                success=login()
+                success=login(headers={"X-Forwarded-For":"203.0.113.42, 198.51.100.7"})
                 check(success.get("login")=="true","actual native server completes successful XML-RPC login through remote simulation connector")
                 check(success["agent_id"]==principal and success["message"]=="Hello Connected User" and success["sim_ip"]=="127.0.0.1" and success["sim_port"]==9000,"successful HTTP response preserves identity, configured welcome and simulator endpoint")
                 check({b["buddy_id"]:(b["buddy_rights_has"],b["buddy_rights_given"]) for b in success["buddy-list"]}==expected_buddies,"successful XML-RPC login loads persisted directional friend rights, normalizes foreign UUI and filters pending/invalid entries")
@@ -345,6 +367,7 @@ HttpAuthPassword=service-password
                 check(len(success["inventory-skeleton"])>0 and len(success["inventory-skel-lib"])==19,"successful HTTP login includes persisted inventory and complete bundled library skeleton")
                 check([r[0] for r in Simulator.requests]==["QUERYACCESS","POST"],"HTTP login queries access before create-agent")
                 circuit=Simulator.requests[1][2]
+                check(circuit["client_ip"]=="203.0.113.42","HTTP XML-RPC forwards original first XFF address into admitted circuit")
                 check(circuit["agent_id"]==principal and circuit["session_id"]==success["session_id"] and int(circuit["circuit_code"])==success["circuit_code"],"admitted HTTP circuit identity matches viewer response")
                 check(service("/griduser",METHOD="getgriduserinfo",UserID=principal).findtext("result/Online")=="True","successful admission persists online grid-user state")
                 check(request("/friends")[0]==405,"friends endpoint accepts POST only")
@@ -361,15 +384,58 @@ HttpAuthPassword=service-password
                 check(service("/friends",METHOD="deletefriend_string",PRINCIPALID="foreign-owner",FRIEND="foreign-friend").findtext("Result")=="Success","friends HTTP string delete preserves string identity")
                 failure=service("/friends",METHOD="unknown");check(failure.findtext("Result")=="Failure" and failure.find("Message") is not None,"friends HTTP failure preserves uppercase result and empty Message element")
 
+                def console_command(command,expected):
+                    process.stdin.write(command+"\n");process.stdin.flush()
+                    while True:
+                        line=output.get(timeout=20)
+                        if line.rstrip("\r\n")==expected:break
+                    check(True,"live login console output: "+expected)
+                console_command("help login level","Set the minimum user level to log in")
+                console_command("help USERS","login text <text> - Set the text users will see on login")
+                console_command("lo le 2147483647","Set minimum login level to 2147483647")
+                check(login()["reason"]=="presence","live console minimum level blocks an authenticated viewer")
+                console_command("login level invalid","ERROR: invalid is not a valid login level")
+                console_command("lo r","Reset min login level to 0")
+                console_command('lo t "Console <USERNAME>\\nNext"',"Login welcome message set to 'Console <USERNAME>\\nNext'")
                 check(request("/ready")[0]==503,"remote login does not claim a native simulator scene is ready")
                 service("/presence",METHOD="logout",SessionID=success["session_id"])
                 service("/griduser",METHOD="loggedout",UserID=principal,RegionID=region,Position="<128,128,30>",LookAt="<0,1,0>")
+                for rpc_request,expected in [
+                    ({'jsonrpc':'2.0','method':'missing','id':17},{'id':'17','jsonrpc':'2.0','error':{'code':-32600,'message':'No handler defined for missing'}}),
+                    ({'jsonrpc':'2.0','method':'missing'},{'jsonrpc':'2.0','error':{'code':-32600,'message':'No handler defined for missing'}}),
+                    ({'jsonrpc':'1.0','method':'missing','id':'abc'},{'id':'abc','error':{'code':-32600,'message':'Must be valid json-rpc 2.0 see: http://www.jsonrpc.org/specification'}})]:
+                    rpc_status,rpc_body=request('/native-json-rpc',json.dumps(rpc_request).encode(),'application/json-rpc')
+                    check(rpc_status==200 and json.loads(rpc_body)==expected,'Real JSON-RPC HTTP dispatcher preserves source envelope and errors')
+                for malformed,message in [('bad',"Invalid character 'b' in input string"),('true',"Invalid token 'True' in input string"),('{"x":}',"Invalid token '125' in input string"),('{"x":"\\q"}',"Invalid character 'q' in input string"),('\x00',"Invalid character '\x00' in input string"),('[1,]',"Invalid token '93' in input string")]:
+                    malformed_status,malformed_body=request('/native-json-rpc',malformed.encode(),'application/json-rpc')
+                    check(malformed_status==200 and json.loads(malformed_body)=={'error':{'code':-32604,'message':message}},'Real JSON-RPC malformed request preserves exact SDK diagnostic including NUL')
+                for invalid_rpc_map in ['[]','[9223372036854775808]']:
+                    invalid_map_status,_=request('/native-json-rpc',invalid_rpc_map.encode(),'application/json-rpc')
+                    check(invalid_map_status==500,'JSON-RPC preserves uncaught map/UInt64 cast failures as server errors')
+                rpc_connection=http.client.HTTPConnection('127.0.0.1',port,timeout=10)
+                try:
+                    rpc_socket=None
+                    for rpc_method in ['POST','GET']:
+                        rpc_connection.request(rpc_method,'/native-json-rpc',body=json.dumps({'jsonrpc':'2.0','method':'missing'}),headers={'Content-Type':'application/json-rpc'})
+                        rpc_reply=rpc_connection.getresponse();rpc_reply.read()
+                        check(rpc_reply.status==200 and rpc_reply.getheader('Content-Type')=='text/html;charset=UTF-8' and not rpc_reply.will_close,'JSON-RPC preserves original default content type and persistent connection')
+                        if rpc_socket is None:rpc_socket=rpc_connection.sock
+                        else:check(rpc_connection.sock is rpc_socket,'JSON-RPC POST and GET reuse the same socket')
+                finally:rpc_connection.close()
                 fields={"first":"Connected","last":"User","passwd":"connected-password","start":"home","version":"Native Viewer","channel":"Test"}
                 llsd_request=ET.Element("llsd");llsd_map=ET.SubElement(llsd_request,"map")
                 for key,value in fields.items():ET.SubElement(llsd_map,"key").text=key;ET.SubElement(llsd_map,"string").text=value
-                status,body=request("/",ET.tostring(llsd_request),"application/llsd+xml");llsd_root=ET.fromstring(body).find("map");nodes=list(llsd_root);values={nodes[i].text:nodes[i+1] for i in range(0,len(nodes),2)}
+                status,body=request("/",ET.tostring(llsd_request),"application/llsd+xml",headers={"X-Forwarded-For":"203.0.113.99"});llsd_root=ET.fromstring(body).find("map");nodes=list(llsd_root);values={nodes[i].text:nodes[i+1] for i in range(0,len(nodes),2)}
                 check(status==200 and values["login"].text=="true" and values["agent_id"].tag=="uuid" and values["agent_id"].text==principal,"actual HTTP LLSD handler produces typed successful viewer response")
-                check("http_port" not in values and values["message"].text=="Hello Connected User" and len(values["inventory-skel-lib"])==19,"HTTP LLSD success preserves protocol-specific fields and library skeleton")
+                check(Simulator.requests[-1][2]["client_ip"]=="127.0.0.1","HTTP LLSD admission retains socket peer despite forwarded header")
+                check("http_port" not in values and values["message"].text=="Console Connected User\nNext" and len(values["inventory-skel-lib"])==19,"HTTP LLSD success preserves protocol-specific fields and library skeleton")
+                bad_llsd=ET.Element("llsd");bad_map=ET.SubElement(bad_llsd,"map")
+                for key,value in fields.items():ET.SubElement(bad_map,"key").text=key;ET.SubElement(bad_map,"string").text="wrong-native-test-password" if key=="passwd" else value
+                for encoding,bom in [('utf-8',b'\xef\xbb\xbf'),('utf-16-le',b'\xff\xfe'),('utf-16-be',b'\xfe\xff'),('utf-32-le',b'\xff\xfe\x00\x00'),('utf-32-be',b'\x00\x00\xfe\xff')]:
+                    encoded=bom+ET.tostring(bad_llsd,encoding='unicode').encode(encoding)
+                    encoded_status,encoded_body=request("/",encoded,"application/llsd+xml")
+                    encoded_nodes=list(ET.fromstring(encoded_body).find('map'));encoded_values={encoded_nodes[i].text:encoded_nodes[i+1].text for i in range(0,len(encoded_nodes),2)}
+                    check(encoded_status==200 and encoded_values['login']=='false',"BOM "+encoding+" LLSD login decodes and reaches credential rejection")
                 buddy_maps=[]
                 for buddy in values["buddy-list"]:
                     entries=list(buddy);buddy_maps.append({entries[i].text:entries[i+1].text for i in range(0,len(entries),2)})
@@ -410,6 +476,56 @@ HttpAuthPassword=service-password
                 thread.join(timeout=5);simulator.shutdown();simulation_thread.join(timeout=5)
             check(process.returncode==0,"remote simulation login server shuts down cleanly")
             with contextlib.closing(sqlite3.connect(root/"friends.db")) as db:check(db.execute("SELECT Flags,Offered FROM Friends WHERE PrincipalID=? AND Friend=?",(principal,friend_id)).fetchone()==("3","123"),"login retrieval preserves friends data and Offered metadata across server shutdown")
+
+        Simulator.requests.clear()
+        with http.server.ThreadingHTTPServer(("127.0.0.1", 0), Simulator) as home:
+            home_thread = threading.Thread(target=home.serve_forever, daemon=True)
+            home_thread.start()
+            home_uri = f"http://127.0.0.1:{home.server_port}"
+            gatekeeper_port = 9001 if home.server_port != 9001 else 9002
+            config.write_text(remote_settings.replace(
+                "[LoginService]", "[LoginService]\nUserAgentService=OpenSim.Services.Connectors.dll:UserAgentServiceConnector"
+                + f"\nGatekeeperURI=http://127.0.0.1:{gatekeeper_port}")
+                + f"\n[Hypergrid]\nHomeURI={home_uri}\nGatekeeperURI={home_uri}\n", encoding="utf-8")
+            process = subprocess.Popen([executable, "--config", str(config), "--console"],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8")
+            output = queue.Queue()
+            thread = threading.Thread(target=read_output, daemon=True)
+            thread.start()
+            try:
+                while True:
+                    line = output.get(timeout=20)
+                    if line.startswith("LISTENING "):
+                        port = urllib.parse.urlsplit(line.split(" ", 1)[1]).port
+                        break
+                service("/grid", METHOD="register", VERSIONMIN="1", VERSIONMAX="1", uuid=region,
+                        regionName="Connected Region", locX="25600", locY="25600", sizeX="256", sizeY="256",
+                        serverPort="9000", serverIP="127.0.0.1", serverURI=home_uri+"/")
+                service("/griduser", METHOD="loggedout", UserID=principal, RegionID=region,
+                        Position="<128,128,30>", LookAt="<0,1,0>")
+                direct = login(start=f"uri:Connected Region@127.0.0.1:{home.server_port}&128&128&30")
+                check(direct.get("login") == "false" and not Simulator.requests,
+                      "Configured user agent preserves rejection of direct foreign login URIs")
+                result = login()
+                check(result.get("login") == "true", "Configured user-agent connector admits a viewer login: "
+                      + str(result.get("message")) + " " + str(Simulator.requests))
+                check([entry[0] for entry in Simulator.requests] == ["POST"], "User-agent launch sends a single create-agent request")
+                payload = Simulator.requests[0][2]
+                check(payload["agent_id"] == principal and payload["session_id"] == result["session_id"],
+                      "User-agent request carries the admitted viewer circuit")
+                check(payload["gatekeeper_host"] == "127.0.0.1" and int(payload["gatekeeper_port"]) == gatekeeper_port,
+                      "User-agent request uses LoginService gatekeeper override while contacting HomeURI")
+            finally:
+                if process.poll() is None:
+                    process.stdin.write("quit\n");process.stdin.flush()
+                try:
+                    process.wait(timeout=15)
+                except subprocess.TimeoutExpired:
+                    process.kill();process.wait(timeout=5)
+                thread.join(timeout=5)
+                home.shutdown()
+                home_thread.join(timeout=5)
+            check(process.returncode == 0, "Configured user-agent login server shuts down cleanly")
 
         # Preflight must reject an existing inventory destination before creating account files.
         config.write_text(settings.replace("accounts.db", "untouched.db"), encoding="utf-8")

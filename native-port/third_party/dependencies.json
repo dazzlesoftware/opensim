@@ -8,7 +8,7 @@
       "files": [
         {
           "path": "httplib/httplib.h",
-          "sha256": "e896d51fbfe1f8cb9c4ce21878b5b77db17163cff20333995e9e5773721ee6f4",
+          "sha256": "ac3284d8b7b21277cf8bc0636f1847d4e6c60ba74e1b0088cf0dc040067f3bbe",
           "url": "https://raw.githubusercontent.com/yhirose/cpp-httplib/5bcfea7b90575c80a3e54a6967b11b39afa60d5c/httplib.h",
           "upstreamSha256": "9021001a719768893a8a6e4051c56107690e8b8e49b41e5f903534fa19ae9afb"
         },
@@ -38,6 +38,11 @@
           "path": "httplib/opensim-response-headers.patch",
           "sha256": "a6947c704b3d2ff718c02637a91ddc1e696022e81bcef96bc50ff50e6c96d4e2",
           "scope": "Opt-in client response-header policy before framing/body reads. The requester can project source first Content-Length behavior and abandon bodies at headers; default client/server validation is unchanged. Opt-in request-header suppression prevents automatic Accept/Accept-Encoding/User-Agent injection for original requester semantics; defaults remain unchanged. Opt-in source redirects strip Authorization at every hop and convert POST on300/301/302, retaining remaining request headers and dropping content headers on GET. Source mode follows only300/301/302/303/307/308 with Location; default redirect status behavior remains unchanged."
+        },
+        {
+          "path": "httplib/opensim-config-http.patch",
+          "sha256": "1a6770126a31998851bb2f7c783297aeedd95383d24350f0ec9c2b076a5427e1",
+          "scope": "Opt-in raw XML configuration HTTP head/entity framing, per-request header deadlines and per-stream native connection/DNS/read/write error diagnostics. Adds a Request streaming overload; default client/server framing and policies remain unchanged."
         }
       ]
     },
@@ -398,6 +403,20 @@
         }
       ],
       "nativeChanges": "No native engine bytes changed. C++ dynamic ABI adapter translates original ubOde/ODEApi.cs and validates64-bit little-endian single/OpenSim OS0.13.4 configuration. Original per-platform native library is loaded explicitly and installed with its ODE notice. Windows x64, Linux x64/ARM64 and universal macOS binaries are pinned; actual runtime testing currently Windows only."
+    },
+    {
+      "name": "Nini Configuration Project",
+      "version": "bundled bin/Nini.dll source behavior",
+      "license": "MIT",
+      "copyright": "Copyright (c) 2006 Brent R. Matzelle",
+      "files": [
+        {
+          "path": "nini/LICENSE",
+          "sha256": "d7f178e27a4efc944b997a7f5cf972af9ea6ebab3eeeab19f2f8cf1f76b7c3f7",
+          "source": "../../ThirdPartyLicenses/Nini.txt"
+        }
+      ],
+      "scope": "Native IniReader/IniException port; original Nini.dll is used only by differential tests and is not a native runtime dependency. Document/save/merge and full configuration lifecycle remain separate."
     }
   ],
   "systemRuntimeDependencies": [

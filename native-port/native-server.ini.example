@@ -14,7 +14,9 @@ HttpQueuedRequests = 64
 HttpTimeoutSeconds = 5
 MaximumRequestBytes = 1048576
 AllowWebLoginKeys = true
+; Omit this override when using the Robust PresenceServiceConnector in [ServiceList].
 EnablePresenceEndpoint = false
+; Omit these overrides when using the corresponding Robust [ServiceList] connectors.
 EnableGridUserEndpoint = false
 EnableGridEndpoint = false
 EnableAccountEndpoint = false
@@ -31,6 +33,9 @@ FriendsProvider = SQLite
 ; Expose the original grid-facing POST /avatar operations (implies avatar storage).
 EnableAvatarEndpoint = false
 AvatarDatabase = avatars.db
+; Expose POST /mutelist on this listener using the SQLite store below.
+; A Robust ServiceList MuteListConnector can also select the listener port.
+; EnableMuteListEndpoint = true
 ; Connect post-auth inventory/presence/destination preparation.
 EnableLoginOrchestration = false
 ; Opt in to admission on a reachable compatible remote simulator (also enables preparation).
@@ -86,7 +91,14 @@ AuthType = None
 ; HttpAuthPassword = configure-a-password
 
 [PresenceService]
+; Required when a Robust connector registers this service.
+; LocalServiceModule = OpenSim.Services.PresenceService.dll:PresenceService
 AllowDuplicatePresences = false
+; SQL-enabled builds can use the original service schema and migration records.
+; StorageProvider = OpenSim.Data.MySQL.dll
+; StorageProvider = OpenSim.Data.PGSQL.dll
+; ConnectionString = "Server=localhost;Database=opensim;User ID=opensim;Password=configure-a-password;"
+; Realm = Presence
 AllowllHTTPRequestIn = false
 AuthType = None
 ; AuthType = BasicHttpAuthentication
@@ -97,6 +109,16 @@ AuthType = None
 ; Optional shared key included in duplicate-session region kick requests.
 MessageKey =
 
+[MuteListService]
+LocalServiceModule = OpenSim.Services.MuteListService.dll:MuteListService
+; AuthType = BasicHttpAuthentication
+; HttpAuthUsername = service
+; HttpAuthPassword = configure-a-password
+
+[MuteListStore]
+StorageProvider = OpenSim.Data.SQLite.dll
+ConnectionString = Data Source=mutes.db
+
 [GridInfoService]
 gridname = OpenSimulator Native Development
 gridnick = opensim-native
@@ -105,6 +127,10 @@ platform = OpenSim
 login = http://127.0.0.1:9000/
 
 [GridUserService]
+; LocalServiceModule = OpenSim.Services.UserAccountService.dll:GridUserService
+; SQL-enabled builds accept OpenSim.Data.MySQL.dll and OpenSim.Data.PGSQL.dll.
+; StorageProvider = OpenSim.Data.MySQL.dll
+; ConnectionString = "Server=localhost;Database=opensim;User ID=opensim;Password=configure-a-password;"
 Realm = GridUser
 AllowllHTTPRequestIn = false
 AuthType = None
@@ -113,6 +139,7 @@ AuthType = None
 ; HttpAuthPassword = configure-a-password
 
 [GridService]
+; LocalServiceModule = OpenSim.Services.GridService.dll:GridService
 ; Native provider selection is in [NativeServer]; Realm selects its SQLite table.
 Realm = regions
 RegionsAutoRegistration = true
@@ -136,3 +163,12 @@ AllowllHTTPRequestIn = false
 ; AuthType = BasicHttpAuthentication
 ; HttpAuthUsername = grid-user
 ; HttpAuthPassword = grid-password
+
+; Optional persistent profile JSON-RPC service on the HTTP listener.
+[UserProfilesService]
+Enabled = false
+LocalServiceModule = "OpenSim.Services.UserProfilesService.dll:UserProfilesService"
+StorageProvider = "OpenSim.Data.SQLite.dll"
+; SQLite resolves this relative path from the process working directory.
+ConnectionString = "Data Source=profiles.db"
+UserAccountService = "OpenSim.Services.UserAccountService.dll:UserAccountService"

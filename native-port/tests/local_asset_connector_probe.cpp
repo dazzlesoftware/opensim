@@ -4,15 +4,357 @@
 #include <deque>
 #include <iostream>
 #include <sstream>
-using namespace opensim;using namespace services;
-std::string hex(std::string_view text){std::string result;for(unsigned char c:text){result+="0123456789abcdef"[c>>4];result+="0123456789abcdef"[c&15];}return result;}
-using Asset=AssetService::Asset;
-struct Context {std::string trace,failure;Asset a=std::make_shared<framework::AssetBase>(),b=std::make_shared<framework::AssetBase>();int cache_mode,service_mode;bool shared,load=true;std::deque<std::function<void()>> jobs;Context(){a->data=std::make_shared<std::vector<uint8_t>>(std::initializer_list<uint8_t>{1,2});b->data=std::make_shared<std::vector<uint8_t>>(std::initializer_list<uint8_t>{3,4});a->id("00000000-0000-0000-0000-000000000001");b->id("00000000-0000-0000-0000-000000000002");}void event(const std::string& name){trace+=name+";";if(name==failure)throw std::runtime_error("injected");}std::string name(const Asset& asset)const{return !asset?"N":asset==a?"A":asset==b?"B":"?";}std::string bytes(const framework::AssetBytes& value){return value?hex(std::string(value->begin(),value->end())):"N";}};
-struct Cache:framework::IAssetCache {Context& c;Asset held;explicit Cache(Context& value):c(value),held(c.b){}void cache(const Asset& a,bool replace)override{c.event("cache:"+c.name(a)+":"+(replace?"1":"0"));held=a;}void cache_negative(const std::string& id)override{c.event("negative:"+id);}bool read(const std::string& id,Asset& asset,const char* op){c.event(std::string(op)+":"+id);asset=(c.cache_mode==1||c.cache_mode==4)?held:nullptr;return c.cache_mode!=3&&c.cache_mode!=4;}bool get(const std::string& id,Asset& a)override{return read(id,a,"get");}bool get_from_memory(const std::string& id,Asset& a)override{return read(id,a,"memory");}Asset get_cached(const std::string&)override{return {};}bool check(const std::string&)override{return false;}void expire(const std::string& id)override{c.event("expire:"+id);}void clear()override{}};
-struct Service:AssetService {Context& c;Retrieved pending;explicit Service(Context& value):c(value){}Asset get_asset(const std::string& id)override{c.event("service.get:"+id);return c.service_mode==1?nullptr:c.a;}Asset get_foreign(const std::string&,const std::optional<std::string>&,bool)override{return {};}Asset get_cached(const std::string&)override{return {};}std::shared_ptr<framework::AssetMetadata> get_metadata(const std::string&)override{return {};}framework::AssetBytes get_data(const std::string&)override{return {};}bool get_async(const std::string& id,std::any sender,Retrieved callback)override{auto label=sender.has_value()?std::any_cast<std::string>(sender):"N";c.event("service.async:"+id+":"+label);if(c.service_mode==4){pending=[id,sender,callback](const auto&,std::any,Asset asset){callback(id,sender,asset);};return true;}if(c.service_mode!=3){callback(id,sender,c.service_mode==1?nullptr:c.a);if(c.service_mode==5)callback("second",std::string("secondSender"),{});}return c.service_mode!=2&&c.service_mode!=3;}void get(const std::string&,const std::optional<std::string>&,bool,Complete)override{c.event("unexpected.simple");}std::vector<bool> assets_exist(const std::vector<std::string>& ids)override{c.event("exists:"+std::to_string(ids.size()));return {true,false};}std::optional<std::string> store(Asset a)override{c.event("service.store:"+c.name(a));return "stored";}bool update_content(const std::string& id,framework::AssetBytes data)override{c.event("update:"+id+":"+c.bytes(data));return true;}bool erase(const std::string& id)override{c.event("delete:"+id);return true;}};
-struct Backend:AssetConnectorBackend {Context& c;std::shared_ptr<Service> service;Backend(Context& value,std::shared_ptr<Service> s):c(value),service(std::move(s)){}std::shared_ptr<AssetService> load_service(const std::string& name,const server::IniConfig*)override{c.event("load:"+name);return c.load?service:nullptr;}void error(const std::string& message)override{c.event("error:"+message);}void info(const std::string& message)override{c.event("info:"+message);}void debug(const std::string& message)override{c.event("debug:"+message);}void post(std::function<void()> callback,const std::string& name)override{c.event("post:"+name);c.jobs.push_back(std::move(callback));}};
-struct Scene:AssetConnectorScene {Context& c;std::shared_ptr<Cache> cache;int registered=0;Scene(Context& value,std::shared_ptr<Cache> v):c(value),cache(std::move(v)){}void register_service(std::shared_ptr<AssetService>)override{c.event("register");++registered;}AssetConnectorCache asset_cache()override{c.event("scene.cache");return {c.cache_mode?cache:nullptr,c.shared};}std::optional<std::string> region_name()override{c.event("scene.name");return "Region";}};
-namespace opensim::services {struct LocalAssetConnectorProbe {static std::string state(const LocalAssetConnector& c){return std::string(c.enabled_?"1":"0")+(c.service_.load()?"1":"0")+(c.cache_.load()?"1":"0");}};}
-int main(){std::string line;while(std::getline(std::cin,line)){std::istringstream input(line);Context c;std::string ops,fail;int shared;input>>c.cache_mode>>c.service_mode>>shared>>ops>>fail;c.shared=shared!=0;c.failure=fail=="-"?"":fail;auto cache=std::make_shared<Cache>(c);auto service=std::make_shared<Service>(c);auto backend=std::make_shared<Backend>(c,service);auto scene=std::make_shared<Scene>(c,cache);auto connector=std::make_shared<LocalAssetConnector>(backend);std::string result,id="asset",zero="00000000-0000-0000-0000-000000000000";
- for(char op:ops){std::string returned="-";try{switch(op){case 'I':case 'i':case 'E':case 'M':case 'N':{auto config=server::IniConfig::load(std::string("config-")+op+".ini");connector->initialise(&config);break;}case 'A':connector->add_region(scene);break;case 'R':connector->region_loaded(scene);break;case 'G':returned=c.name(connector->get_asset(id));break;case 'Z':returned=c.name(connector->get_asset(zero));break;case 'C':returned=c.name(connector->get_cached(id));break;case 'T':{auto m=connector->get_metadata(id);returned=!m?"N":m==c.a->metadata()?"A":m==c.b->metadata()?"B":"?";break;}case 'D':returned=c.bytes(connector->get_data(id));break;case 'B':case 'b':returned=connector->get_async(op=='B'?id:zero,std::string("sender"),[&](const auto& key,std::any sender,Asset a){c.event("callback:"+key+":"+(sender.has_value()?std::any_cast<std::string>(sender):"N")+":"+c.name(a));})?"1":"0";break;case 'S':case 's':connector->get(op=='S'?id:zero,"https://ignored",true,[&](Asset a){c.event("simple:"+c.name(a));});break;case 'X':returned=c.name(connector->get_foreign(id,"https://ignored",true));break;case 'O':case 'L':c.a->local(op=='L');returned=connector->store(c.a).value_or("N");break;case 'U':returned=connector->update_content(id,std::make_shared<std::vector<uint8_t>>(std::initializer_list<uint8_t>{9}))?"1":"0";break;case 'd':returned=connector->erase(id)?"1":"0";break;case 'H':{auto v=connector->assets_exist({id,zero});returned="";for(bool b:v)returned+=b?'1':'0';break;}case 'P':case 'Q':{size_t n=op=='P'?std::min(size_t(1),c.jobs.size()):c.jobs.size();while(n--){auto job=std::move(c.jobs.front());c.jobs.pop_front();job();}break;}case 'K':if(service->pending)service->pending("",{},c.a);break;case 'V':c.load=!c.load;break;case 'W':c.service_mode=c.service_mode==1?0:1;break;case 'Y':c.cache_mode=c.cache_mode==1?2:1;break;case 'F':connector->remove_region(scene);break;case 'J':connector->close();connector->post_initialise();break;}}catch(...){returned="EX";}result+=std::string(1,op)+":"+hex(returned)+":"+LocalAssetConnectorProbe::state(*connector)+":"+std::to_string(scene->registered)+":"+std::to_string(c.jobs.size())+":"+c.bytes(c.a->data)+":"+c.bytes(c.b->data)+";";}
- std::cout<<result<<'|'<<hex(c.trace)<<'\n';c.jobs.clear();service->pending={};}}
+using namespace opensim;
+using namespace services;
+std::string hex(std::string_view text) {
+    std::string result;
+    for (unsigned char c : text) {
+        result += "0123456789abcdef"[c >> 4];
+        result += "0123456789abcdef"[c & 15];
+    }
+    return result;
+}
+using Asset = AssetService::Asset;
+struct Context {
+    std::string trace, failure;
+    Asset a = std::make_shared<framework::AssetBase>(), b = std::make_shared<framework::AssetBase>();
+    int cache_mode, service_mode;
+    bool shared, load = true;
+    std::deque<std::function<void()>> jobs;
+    Context() {
+        a->data = std::make_shared<std::vector<uint8_t>>(std::initializer_list<uint8_t>{1, 2});
+        b->data = std::make_shared<std::vector<uint8_t>>(std::initializer_list<uint8_t>{3, 4});
+        a->id("00000000-0000-0000-0000-000000000001");
+        b->id("00000000-0000-0000-0000-000000000002");
+    }
+    void event(const std::string &name) {
+        trace += name + ";";
+        if (name == failure)
+            throw std::runtime_error("injected");
+    }
+    std::string name(const Asset &asset) const {
+        return !asset ? "N" : asset == a ? "A" : asset == b ? "B" : "?";
+    }
+    std::string bytes(const framework::AssetBytes &value) {
+        return value ? hex(std::string(value->begin(), value->end())) : "N";
+    }
+};
+struct Cache : framework::IAssetCache {
+    Context &c;
+    Asset held;
+    explicit Cache(Context &value) : c(value), held(c.b) {}
+    void cache(const Asset &a, bool replace) override {
+        c.event("cache:" + c.name(a) + ":" + (replace ? "1" : "0"));
+        held = a;
+    }
+    void cache_negative(const std::string &id) override {
+        c.event("negative:" + id);
+    }
+    bool read(const std::string &id, Asset &asset, const char *op) {
+        c.event(std::string(op) + ":" + id);
+        asset = (c.cache_mode == 1 || c.cache_mode == 4) ? held : nullptr;
+        return c.cache_mode != 3 && c.cache_mode != 4;
+    }
+    bool get(const std::string &id, Asset &a) override {
+        return read(id, a, "get");
+    }
+    bool get_from_memory(const std::string &id, Asset &a) override {
+        return read(id, a, "memory");
+    }
+    Asset get_cached(const std::string &) override {
+        return {};
+    }
+    bool check(const std::string &) override {
+        return false;
+    }
+    void expire(const std::string &id) override {
+        c.event("expire:" + id);
+    }
+    void clear() override {}
+};
+struct Service : AssetService {
+    Context &c;
+    Retrieved pending;
+    explicit Service(Context &value) : c(value) {}
+    Asset get_asset(const std::string &id) override {
+        c.event("service.get:" + id);
+        return c.service_mode == 1 ? nullptr : c.a;
+    }
+    Asset get_foreign(const std::string &, const std::optional<std::string> &, bool) override {
+        return {};
+    }
+    Asset get_cached(const std::string &) override {
+        return {};
+    }
+    std::shared_ptr<framework::AssetMetadata> get_metadata(const std::string &) override {
+        return {};
+    }
+    framework::AssetBytes get_data(const std::string &) override {
+        return {};
+    }
+    bool get_async(const std::string &id, std::any sender, Retrieved callback) override {
+        auto label = sender.has_value() ? std::any_cast<std::string>(sender) : "N";
+        c.event("service.async:" + id + ":" + label);
+        if (c.service_mode == 4) {
+            pending = [id, sender, callback](const auto &, std::any, Asset asset) {
+                callback(id, sender, asset);
+            };
+            return true;
+        }
+        if (c.service_mode != 3) {
+            callback(id, sender, c.service_mode == 1 ? nullptr : c.a);
+            if (c.service_mode == 5)
+                callback("second", std::string("secondSender"), {});
+        }
+        return c.service_mode != 2 && c.service_mode != 3;
+    }
+    void get(const std::string &, const std::optional<std::string> &, bool, Complete) override {
+        c.event("unexpected.simple");
+    }
+    std::vector<bool> assets_exist(const std::vector<std::string> &ids) override {
+        c.event("exists:" + std::to_string(ids.size()));
+        return {true, false};
+    }
+    std::optional<std::string> store(Asset a) override {
+        c.event("service.store:" + c.name(a));
+        return "stored";
+    }
+    bool update_content(const std::string &id, framework::AssetBytes data) override {
+        c.event("update:" + id + ":" + c.bytes(data));
+        return true;
+    }
+    bool erase(const std::string &id) override {
+        c.event("delete:" + id);
+        return true;
+    }
+};
+struct Backend : AssetConnectorBackend {
+    Context &c;
+    std::shared_ptr<Service> service;
+    Backend(Context &value, std::shared_ptr<Service> s) : c(value), service(std::move(s)) {}
+    std::shared_ptr<AssetService> load_service(const std::string &name, const server::IniConfig *) override {
+        c.event("load:" + name);
+        return c.load ? service : nullptr;
+    }
+    void error(const std::string &message) override {
+        c.event("error:" + message);
+    }
+    void info(const std::string &message) override {
+        c.event("info:" + message);
+    }
+    void debug(const std::string &message) override {
+        c.event("debug:" + message);
+    }
+    void post(std::function<void()> callback, const std::string &name) override {
+        c.event("post:" + name);
+        c.jobs.push_back(std::move(callback));
+    }
+};
+struct Scene : AssetConnectorScene {
+    Context &c;
+    std::shared_ptr<Cache> cache;
+    int registered = 0;
+    Scene(Context &value, std::shared_ptr<Cache> v) : c(value), cache(std::move(v)) {}
+    void register_service(std::shared_ptr<AssetService>) override {
+        c.event("register");
+        ++registered;
+    }
+    AssetConnectorCache asset_cache() override {
+        c.event("scene.cache");
+        return {c.cache_mode ? cache : nullptr, c.shared};
+    }
+    std::optional<std::string> region_name() override {
+        c.event("scene.name");
+        return "Region";
+    }
+};
+namespace opensim::services {
+struct LocalAssetConnectorProbe {
+    static std::string state(const LocalAssetConnector &c) {
+        return std::string(c.enabled_ ? "1" : "0") + (c.service_.load() ? "1" : "0") +
+               (c.cache_.load() ? "1" : "0");
+    }
+};
+}
+int main(int argc, char **argv) {
+    if (argc == 2 && std::string_view(argv[1]) == "--coalesce-foreign") {
+        Context context;
+        auto backend = std::make_shared<Backend>(context, std::make_shared<Service>(context));
+        auto connector = std::make_shared<LocalAssetConnector>(backend);
+        auto expected = std::make_shared<framework::AssetBase>();
+        int fetches = 0, completions = 0;
+        connector->foreign_fetch([&](const auto &, const auto &, bool) {
+            ++fetches;
+            return expected;
+        });
+        auto complete = [&](auto asset) {
+            if (asset == expected)
+                ++completions;
+        };
+        connector->get("asset", "http://foreign.invalid", false, complete);
+        connector->get("asset", "http://foreign.invalid", false, complete);
+        if (context.jobs.size() != 1 || fetches != 0 || completions != 0)
+            return 1;
+        auto task = std::move(context.jobs.front());
+        context.jobs.clear();
+        task();
+        return fetches == 1 && completions == 2 ? 0 : 1;
+    }
+    if (argc == 2 && std::string_view(argv[1]) == "--reject-foreign") {
+        struct RejectingBackend : Backend {
+            using Backend::Backend;
+            bool try_post(std::function<void()>, const std::string &) override {
+                return false;
+            }
+        };
+        Context context;
+        auto backend = std::make_shared<RejectingBackend>(context, std::make_shared<Service>(context));
+        auto connector = std::make_shared<LocalAssetConnector>(backend);
+        connector->foreign_fetch([](const auto &, const auto &, bool) -> AssetService::Asset {
+            throw std::runtime_error("Rejected task ran");
+        });
+        int completions = 0;
+        connector->get("asset", "http://foreign.invalid", false, [&](auto asset) {
+            if (asset)
+                throw std::runtime_error("Rejected task returned an asset");
+            ++completions;
+        });
+        return completions == 1 ? 0 : 1;
+    }
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        std::istringstream input(line);
+        Context c;
+        std::string ops, fail;
+        int shared;
+        input >> c.cache_mode >> c.service_mode >> shared >> ops >> fail;
+        c.shared = shared != 0;
+        c.failure = fail == "-" ? "" : fail;
+        auto cache = std::make_shared<Cache>(c);
+        auto service = std::make_shared<Service>(c);
+        auto backend = std::make_shared<Backend>(c, service);
+        auto scene = std::make_shared<Scene>(c, cache);
+        auto connector = std::make_shared<LocalAssetConnector>(backend);
+        std::string result, id = "asset", zero = "00000000-0000-0000-0000-000000000000";
+        for (char op : ops) {
+            std::string returned = "-";
+            try {
+                switch (op) {
+                case 'I':
+                case 'i':
+                case 'E':
+                case 'M':
+                case 'N': {
+                    auto config = server::IniConfig::load(std::string("config-") + op + ".ini");
+                    connector->initialise(&config);
+                    break;
+                }
+                case 'A':
+                    connector->add_region(scene);
+                    break;
+                case 'R':
+                    connector->region_loaded(scene);
+                    break;
+                case 'G':
+                    returned = c.name(connector->get_asset(id));
+                    break;
+                case 'Z':
+                    returned = c.name(connector->get_asset(zero));
+                    break;
+                case 'C':
+                    returned = c.name(connector->get_cached(id));
+                    break;
+                case 'T': {
+                    auto m = connector->get_metadata(id);
+                    returned = !m ? "N" : m == c.a->metadata() ? "A" : m == c.b->metadata() ? "B" : "?";
+                    break;
+                }
+                case 'D':
+                    returned = c.bytes(connector->get_data(id));
+                    break;
+                case 'B':
+                case 'b':
+                    returned =
+                        connector->get_async(
+                            op == 'B' ? id : zero, std::string("sender"),
+                            [&](const auto &key, std::any sender, Asset a) {
+                                c.event("callback:" + key + ":" +
+                                        (sender.has_value() ? std::any_cast<std::string>(sender) : "N") +
+                                        ":" + c.name(a));
+                            })
+                            ? "1"
+                            : "0";
+                    break;
+                case 'S':
+                case 's':
+                    connector->get(op == 'S' ? id : zero, "https://ignored", true,
+                                   [&](Asset a) { c.event("simple:" + c.name(a)); });
+                    break;
+                case 'X':
+                    returned = c.name(connector->get_foreign(id, "https://ignored", true));
+                    break;
+                case 'O':
+                case 'L':
+                    c.a->local(op == 'L');
+                    returned = connector->store(c.a).value_or("N");
+                    break;
+                case 'U':
+                    returned = connector->update_content(id, std::make_shared<std::vector<uint8_t>>(
+                                                                 std::initializer_list<uint8_t>{9}))
+                                   ? "1"
+                                   : "0";
+                    break;
+                case 'd':
+                    returned = connector->erase(id) ? "1" : "0";
+                    break;
+                case 'H': {
+                    auto v = connector->assets_exist({id, zero});
+                    returned = "";
+                    for (bool b : v)
+                        returned += b ? '1' : '0';
+                    break;
+                }
+                case 'P':
+                case 'Q': {
+                    size_t n = op == 'P' ? std::min(size_t(1), c.jobs.size()) : c.jobs.size();
+                    while (n--) {
+                        auto job = std::move(c.jobs.front());
+                        c.jobs.pop_front();
+                        job();
+                    }
+                    break;
+                }
+                case 'K':
+                    if (service->pending)
+                        service->pending("", {}, c.a);
+                    break;
+                case 'V':
+                    c.load = !c.load;
+                    break;
+                case 'W':
+                    c.service_mode = c.service_mode == 1 ? 0 : 1;
+                    break;
+                case 'Y':
+                    c.cache_mode = c.cache_mode == 1 ? 2 : 1;
+                    break;
+                case 'F':
+                    connector->remove_region(scene);
+                    break;
+                case 'J':
+                    connector->close();
+                    connector->post_initialise();
+                    break;
+                }
+            } catch (...) {
+                returned = "EX";
+            }
+            result += std::string(1, op) + ":" + hex(returned) + ":" +
+                      LocalAssetConnectorProbe::state(*connector) + ":" + std::to_string(scene->registered) +
+                      ":" + std::to_string(c.jobs.size()) + ":" + c.bytes(c.a->data) + ":" +
+                      c.bytes(c.b->data) + ";";
+        }
+        std::cout << result << '|' << hex(c.trace) << '\n';
+        c.jobs.clear();
+        service->pending = {};
+    }
+}

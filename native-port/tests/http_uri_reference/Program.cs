@@ -26,8 +26,9 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 using System;using System.Net;using System.Text;using OpenSim.Framework;
-namespace OpenSim.Framework {public static class Util {public static IPAddress GetHostFromDNS(string host)=>host=="bad.invalid"?null:IPAddress.Parse("203.0.113.7");}}
+namespace OpenSim.Framework {public static class Util {public static IPAddress GetHostFromDNS(string host){Program.Dns.Add(host??"NULL");if(Program.Mode==4||Program.Mode==5)throw new Exception("dns");return host=="bad.invalid"?null:IPAddress.Parse("203.0.113.7");}}}
 static class Program {
+ public static int Mode;public static System.Collections.Generic.List<string> Dns=new();
  static string Hex(string value)=>Convert.ToHexString(Encoding.UTF8.GetBytes(value)).ToLowerInvariant();static string Text(string value)=>value=="N"?null:Encoding.UTF8.GetString(Convert.FromHexString(value));
- static void Main(){string line;while((line=Console.ReadLine())!=null){try{var fields=line.Split('|');int mode=int.Parse(fields[0]);var uri=new OSHTTPURI(Text(fields[1]),mode==1);if(mode==2)uri.ResolveDNS();uri.ValidAndResolved(out string error);var text=string.Join("|",(int)uri.Flags,uri.Port,uri.Host,uri.URL,uri.Path,uri.URI,uri.IP?.ToString()??"NULL",uri.URIwEndSlash,uri.HostAndPort,uri.IsValidHost?1:0,uri.IsResolvedHost?1:0,error);if(mode==3){var other=new OSHTTPURI(Text(fields[2]));text+="|"+(uri.Equals(other)?1:0)+"|"+Math.Sign(uri.CompareTo(other));}Console.WriteLine(Hex(text));}catch{Console.WriteLine(Hex("EX"));}}}
+ static void Main(){System.Globalization.CultureInfo.CurrentCulture=System.Globalization.CultureInfo.InvariantCulture;string line;while((line=Console.ReadLine())!=null){try{var fields=line.Split('|');int mode=int.Parse(fields[0]);Mode=mode;Dns.Clear();var uri=new OSHTTPURI(Text(fields[1]),mode==1||mode==4);if(mode==2||mode==5)uri.ResolveDNS();uri.ValidAndResolved(out string error);var text=string.Join("|",(int)uri.Flags,uri.Port,uri.Host,uri.URL,uri.Path,uri.URI,uri.IP?.ToString()??"NULL",uri.URIwEndSlash,uri.HostAndPort,uri.IsValidHost?1:0,uri.IsResolvedHost?1:0,error,string.Join(",",Dns));if(mode==3){var other=new OSHTTPURI(Text(fields[2]));text+="|"+(uri.Equals(other)?1:0)+"|"+uri.CompareTo(other);}Console.WriteLine(Hex(text));}catch{Console.WriteLine(Hex("EX"));}}}
 }

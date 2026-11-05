@@ -1,7 +1,14 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
+// Lookup/read control flow derived from dotnet/runtime v8.0.31.
+// .NET Foundation and Contributors, MIT: third_party/dotnet_collation/LICENSE.
 #include "opensim/framework/time_zone.hpp"
+#include "invariant_datetime_context_platform.hpp"
+#include "opensim/framework/invariant_datetime_context.hpp"
 #include "opensim/framework/text.hpp"
+#include "opensim/framework/runtime_environment.hpp"
+#include "opensim/framework/file_stream_policy.hpp"
+#include "opensim/framework/full_path.hpp"
 #include <algorithm>
 #include <array>
 #include <bit>
@@ -21,107 +28,539 @@
 #include <windows.h>
 #else
 #include <dlfcn.h>
+#include <cerrno>
+#include <fcntl.h>
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #endif
 namespace opensim::framework {
+NativeTimeZoneError::NativeTimeZoneError(std::string t, std::uint32_t h, std::u16string m,
+                                         std::optional<std::u16string> p,
+                                         std::shared_ptr<const NativeTimeZoneError> i)
+    : std::runtime_error(utf8(m)), source_type(std::move(t)), hresult(h), message(std::move(m)),
+      parameter(std::move(p)), inner(std::move(i)) {
+}
 namespace {
-std::string lower(std::string value){for(auto& c:value)if(c>='A'&&c<='Z')c+=32;return value;}
-[[maybe_unused]] std::int64_t year_start(int year){using namespace std::chrono;return duration_cast<seconds>(sys_days{std::chrono::year(year)/1/1}.time_since_epoch()).count();}
-int utc_year(std::int64_t seconds){using namespace std::chrono;return int(year_month_day{floor<days>(sys_seconds{std::chrono::seconds{seconds}})}.year());}
+std::string lower(std::string value) {
+    for (auto& c : value)
+        if (c >= 'A' && c <= 'Z')
+            c += 32;
+    return value;
+}
 // ICU is used only for identifier conversion, never as a substitute for OS rule data.
 struct Icu {
-    using IanaToWindows=std::int32_t(*)(const char16_t*,std::int32_t,char16_t*,std::int32_t,std::int32_t*);
-    using WindowsToIana=std::int32_t(*)(const char16_t*,std::int32_t,const char*,char16_t*,std::int32_t,std::int32_t*);
-    IanaToWindows to_windows=nullptr;WindowsToIana to_iana=nullptr;
+    using IanaToWindows = std::int32_t (*)(const char16_t*, std::int32_t, char16_t*, std::int32_t,
+                                           std::int32_t*);
+    using WindowsToIana = std::int32_t (*)(const char16_t*, std::int32_t, const char*, char16_t*,
+                                           std::int32_t, std::int32_t*);
+    IanaToWindows to_windows = nullptr;
+    WindowsToIana to_iana = nullptr;
 #ifdef _WIN32
-    HMODULE module=nullptr;
-    void* symbol(const std::string& name){return reinterpret_cast<void*>(GetProcAddress(module,name.c_str()));}
+    HMODULE module = nullptr;
+    void* symbol(const std::string& name) {
+        return reinterpret_cast<void*>(GetProcAddress(module, name.c_str()));
+    }
 #else
-    void* module=nullptr;
-    void* symbol(const std::string& name){return dlsym(module,name.c_str());}
+    void* module = nullptr;
+    void* symbol(const std::string& name) {
+        return dlsym(module, name.c_str());
+    }
 #endif
-    Icu(){
+    Icu() {
 #ifdef _WIN32
-        module=LoadLibraryExW(L"icu.dll",nullptr,LOAD_LIBRARY_SEARCH_SYSTEM32);
+        module = LoadLibraryExW(L"icu.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
 #elif defined(__APPLE__)
-        module=dlopen("/usr/lib/libicucore.A.dylib",RTLD_LAZY|RTLD_LOCAL);
+        module = dlopen("/usr/lib/libicucore.A.dylib", RTLD_LAZY | RTLD_LOCAL);
 #else
-        module=dlopen("libicui18n.so",RTLD_LAZY|RTLD_LOCAL);for(int v=120;!module&&v>=40;--v){auto name="libicui18n.so."+std::to_string(v);module=dlopen(name.c_str(),RTLD_LAZY|RTLD_LOCAL);}
+        module = dlopen("libicui18n.so", RTLD_LAZY | RTLD_LOCAL);
+        for (int v = 120; !module && v >= 40; --v) {
+            auto name = "libicui18n.so." + std::to_string(v);
+            module = dlopen(name.c_str(), RTLD_LAZY | RTLD_LOCAL);
+        }
 #endif
-        if(!module)return;std::string suffix;if(!symbol("ucal_getWindowsTimeZoneID")){for(int v=120;v>=40;--v)if(symbol("ucal_getWindowsTimeZoneID_"+std::to_string(v))){suffix="_"+std::to_string(v);break;}}
-        to_windows=reinterpret_cast<IanaToWindows>(symbol("ucal_getWindowsTimeZoneID"+suffix));to_iana=reinterpret_cast<WindowsToIana>(symbol("ucal_getTimeZoneIDForWindowsID"+suffix));
+        if (!module)
+            return;
+        std::string suffix;
+        if (!symbol("ucal_getWindowsTimeZoneID")) {
+            for (int v = 120; v >= 40; --v)
+                if (symbol("ucal_getWindowsTimeZoneID_" + std::to_string(v))) {
+                    suffix = "_" + std::to_string(v);
+                    break;
+                }
+        }
+        to_windows = reinterpret_cast<IanaToWindows>(symbol("ucal_getWindowsTimeZoneID" + suffix));
+        to_iana = reinterpret_cast<WindowsToIana>(symbol("ucal_getTimeZoneIDForWindowsID" + suffix));
     }
-    ~Icu(){
+    ~Icu() {
 #ifdef _WIN32
-        if(module)FreeLibrary(module);
+        if (module)
+            FreeLibrary(module);
 #else
-        if(module)dlclose(module);
+        if (module)
+            dlclose(module);
 #endif
     }
-    std::optional<std::string> convert(const std::string& id,bool windows){if(id.find_first_of("\\\n\r")!=std::string::npos)return {};auto input=utf16_replacing(id);std::array<char16_t,512> buffer{};std::int32_t error=0,n=0;if(windows){if(!to_windows)return {};n=to_windows(input.data(),static_cast<std::int32_t>(input.size()),buffer.data(),static_cast<std::int32_t>(buffer.size()),&error);}else{if(!to_iana)return {};n=to_iana(input.data(),static_cast<std::int32_t>(input.size()),nullptr,buffer.data(),static_cast<std::int32_t>(buffer.size()),&error);}if(error>0||n<=0||n>=static_cast<int>(buffer.size()))return {};return utf8(std::u16string_view(buffer.data(),n));}
+    std::optional<std::u16string> convert(std::u16string_view id, bool windows) {
+        if (id.find_first_of(u"\\\n\r") != std::u16string_view::npos)
+            return {};
+        auto input = id;
+        std::array<char16_t, 100> buffer{};
+        std::int32_t error = 0, n = 0;
+        if (windows) {
+            if (!to_windows)
+                return {};
+            n = to_windows(input.data(), static_cast<std::int32_t>(input.size()), buffer.data(),
+                           static_cast<std::int32_t>(buffer.size()), &error);
+        } else {
+            if (!to_iana)
+                return {};
+            n = to_iana(input.data(), static_cast<std::int32_t>(input.size()), nullptr, buffer.data(),
+                        static_cast<std::int32_t>(buffer.size()), &error);
+        }
+        if (error > 0 || n <= 0 || n > static_cast<int>(buffer.size()))
+            return {};
+        return std::u16string(buffer.data(), n);
+    }
 };
-Icu& icu(){static Icu value;return value;}
+[[maybe_unused]] Icu& icu() {
+    static Icu value;
+    return value;
+}
 #ifdef _WIN32
-std::optional<DYNAMIC_TIME_ZONE_INFORMATION> windows_zone(const std::string& name){auto chars=utf16_replacing(name);std::wstring id(chars.begin(),chars.end());for(DWORD index=0;;++index){DYNAMIC_TIME_ZONE_INFORMATION value{};auto error=EnumDynamicTimeZoneInformation(index,&value);if(error==ERROR_NO_MORE_ITEMS)return {};if(error!=ERROR_SUCCESS)return {};if(CompareStringOrdinal(id.data(),static_cast<int>(id.size()),value.TimeZoneKeyName,-1,TRUE)==CSTR_EQUAL){value.DynamicDaylightTimeDisabled=FALSE;return value;}}}
-std::int64_t seconds_of(const SYSTEMTIME& value){using namespace std::chrono;return duration_cast<seconds>(sys_days{year(value.wYear)/value.wMonth/value.wDay}.time_since_epoch()).count()+value.wHour*3600+value.wMinute*60+value.wSecond;}
-std::int64_t windows_transition(int y,SYSTEMTIME value){using namespace std::chrono;if(!value.wYear){auto first=sys_days{year(y)/value.wMonth/1};int dom=1+(value.wDayOfWeek-static_cast<int>(weekday{first}.c_encoding())+7)%7+7*(value.wDay-1);auto month_end=unsigned(year_month_day_last{year(y)/month_day_last{month(value.wMonth)}}.day());if(dom>static_cast<int>(month_end))dom-=7;value.wYear=static_cast<WORD>(y);value.wDay=static_cast<WORD>(dom);}return seconds_of(value)+(value.wMilliseconds?1:0);}
-bool windows_boundary_daylight(DYNAMIC_TIME_ZONE_INFORMATION& value,std::int64_t seconds){int year=std::clamp(utc_year(seconds-std::int64_t(value.Bias+value.StandardBias)*60),1,9999);TIME_ZONE_INFORMATION rules{};if(!GetTimeZoneInformationForYear(static_cast<USHORT>(year),&value,&rules))throw std::runtime_error("Windows timezone year rules unavailable");if(!rules.DaylightDate.wMonth||rules.DaylightBias==rules.StandardBias)return false;auto begin=windows_transition(year,rules.DaylightDate)+std::int64_t(rules.Bias+rules.StandardBias)*60;auto end=windows_transition(year,rules.StandardDate)+std::int64_t(rules.Bias+rules.DaylightBias)*60;return begin<end?seconds>=begin&&seconds<end:seconds>=begin||seconds<end;}
-std::function<bool(std::int64_t)> windows_daylight(DYNAMIC_TIME_ZONE_INFORMATION value){return [value](std::int64_t seconds){if(value.DynamicDaylightTimeDisabled)return false;auto rules=value;return windows_boundary_daylight(rules,seconds);};}
+struct MissingNativeZone : std::exception {};
+std::shared_ptr<const InvariantTimeZoneRules> windows_named(std::u16string_view id) {
+    auto model =
+        invariant_datetime_platform::windows_registry_zone_lookup(std::wstring(id.begin(), id.end()));
+    if (!model)
+        return {};
+    return std::make_shared<InvariantTimeZoneRules>(model->base_offset, std::move(model->rules));
+}
+#else
+[[noreturn]] void zone_io_error(int code, const std::u16string& path) {
+    if (code == ENOENT) {
+        auto trimmed = std::filesystem::path(utf8(path));
+        if (trimmed.filename().empty())
+            trimmed = trimmed.parent_path();
+        auto parent = trimmed.parent_path();
+        struct stat status{};
+        int result;
+        do {
+            result = ::stat(parent.c_str(), &status);
+        } while (result < 0 && errno == EINTR);
+        if (result == 0 && S_ISDIR(status.st_mode)) {
+            NativeTimeZoneError error("System.IO.FileNotFoundException", 0x80070002u,
+                                      u"Could not find file '" + path + u"'.");
+            error.file_name = path;
+            throw error;
+        }
+    }
+    if (code == ENOENT || code == ENOTDIR)
+        throw NativeTimeZoneError("System.IO.DirectoryNotFoundException", 0x80070003u,
+                                  u"Could not find a part of the path '" + path + u"'.");
+    if (code == EACCES || code == EPERM || code == EBADF)
+        throw NativeTimeZoneError(
+            "System.UnauthorizedAccessException", 0x80070005u,
+            u"Access to the path '" + path + u"' is denied.", {},
+            std::make_shared<NativeTimeZoneError>("System.IO.IOException", static_cast<std::uint32_t>(code),
+                                                  utf16_replacing(std::generic_category().message(code))));
+    if (code == ECANCELED)
+        throw NativeTimeZoneError("System.OperationCanceledException", 0x8013153bu,
+                                  u"The operation was canceled.");
+    if (code == EFBIG)
+        throw NativeTimeZoneError(
+            "System.ArgumentOutOfRangeException", 0x80131502u,
+            u"Specified file length was too large for the file system. (Parameter 'value')", u"value");
+    if (code == EEXIST)
+        throw NativeTimeZoneError("System.IO.IOException", static_cast<std::uint32_t>(code),
+                                  u"The file '" + path + u"' already exists.");
+    if (code == ENAMETOOLONG)
+        throw NativeTimeZoneError("System.IO.PathTooLongException", 0x800700ceu,
+                                  u"The path '" + path +
+                                      u"' is too long, or a component of the specified path is too long.");
+    if (code == EWOULDBLOCK)
+        throw NativeTimeZoneError("System.IO.IOException", static_cast<std::uint32_t>(code),
+                                  u"The process cannot access the file '" + path +
+                                      u"' because it is being used by another process.");
+    throw NativeTimeZoneError("System.IO.IOException", static_cast<std::uint32_t>(code),
+                              utf16_replacing(std::generic_category().message(code)) + u" : '" + path + u"'");
+}
+struct TzFile {
+
+    std::shared_ptr<const InvariantTimeZoneRules> rules;
+    bool at(std::int64_t utc_ticks) const {
+        return rules->utc_is_daylight(utc_ticks);
+    }
+    static std::vector<std::uint8_t> read_bytes(const std::filesystem::path& path,
+                                                std::optional<bool> override_locking = {}) {
+        struct File {
+            int fd = -1;
+            bool locked = false;
+            ~File() {
+                if (fd >= 0) {
+                    if (locked) {
+                        int result;
+                        do {
+                            result = ::flock(fd, LOCK_UN);
+                        } while (result < 0 && errno == EINTR);
+                    }
+                    ::close(fd);
+                }
+            }
+        } file;
+        auto full = get_full_path(path.native());
+        auto raw_path = utf16_replacing(full);
+        do {
+            file.fd = ::open(full.c_str(), O_RDONLY | O_CLOEXEC);
+        } while (file.fd < 0 && errno == EINTR);
+        if (file.fd < 0)
+            zone_io_error(errno, raw_path);
+        auto status = [&]() {
+            struct stat st{};
+            int result;
+            do {
+                result = ::fstat(file.fd, &st);
+            } while (result < 0 && errno == EINTR);
+            if (result < 0)
+                zone_io_error(errno, raw_path);
+            return st;
+        };
+        auto initial = status();
+        if (S_ISDIR(initial.st_mode))
+            zone_io_error(EACCES, raw_path);
+        if (!file_stream_disable_locking(override_locking)) {
+            int result;
+            do {
+                result = ::flock(file.fd, LOCK_SH | LOCK_NB);
+            } while (result < 0 && errno == EINTR);
+            file.locked = result == 0;
+            if (result < 0 && errno == EWOULDBLOCK)
+                zone_io_error(errno, raw_path);
+        }
+        if (!S_ISREG(initial.st_mode)) {
+            off_t result;
+            do {
+                result = ::lseek(file.fd, 0, SEEK_CUR);
+            } while (result < 0 && errno == EINTR);
+            if (result < 0)
+                throw NativeTimeZoneError("System.IO.IOException", 0x80131620u,
+                                          u"Unsupported unseekable file.");
+        }
+        // Preserve the source's repeated fs.Length evaluation and its short circuit/error order.
+        auto length = [&]() { return status().st_size; };
+        if (length() == 0 || length() > 20 * 1024 * 1024)
+            throw NativeTimeZoneError(
+                "System.IO.IOException", 0x80131620u,
+                length() == 0 ? u"The read operation returned an invalid length."
+                              : u"IO operation will not work. Most likely the file will become too long.");
+        auto size = length();
+        if (size < 0)
+            throw NativeTimeZoneError("System.OverflowException", 0x80131516u,
+                                      u"Arithmetic operation resulted in an overflow.");
+        std::vector<std::uint8_t> bytes(static_cast<std::size_t>(size));
+        std::size_t index = 0;
+        bool random_access = true;
+        std::array<std::uint8_t, 4096> buffer;
+        while (index < bytes.size()) {
+            auto remaining = bytes.size() - index;
+            bool buffered = remaining < buffer.size();
+            auto target = buffered ? buffer.data() : bytes.data() + index;
+            auto requested = buffered ? buffer.size() : remaining;
+            ssize_t count;
+            do {
+                count = random_access ? ::pread(file.fd, target, requested, static_cast<off_t>(index))
+                                      : ::read(file.fd, target, requested);
+            } while (count < 0 && errno == EINTR);
+            if (count < 0 && random_access && (errno == ENXIO || errno == ESPIPE)) {
+                random_access = false;
+                do {
+                    count = ::read(file.fd, target, requested);
+                } while (count < 0 && errno == EINTR);
+            }
+            if (count < 0)
+                zone_io_error(errno, raw_path);
+            if (count == 0)
+                throw NativeTimeZoneError("System.IO.EndOfStreamException", 0x80070026u,
+                                          u"Unable to read beyond the end of the stream.");
+            auto used = std::min<std::size_t>(static_cast<std::size_t>(count), remaining);
+            if (buffered)
+                std::copy_n(buffer.data(), used, bytes.data() + index);
+            index += used;
+        }
+        return bytes; // SafeFileHandle disposal precedes TimeZoneInfo construction/rule parsing.
+    }
+    static std::shared_ptr<TzFile> parse(const std::vector<std::uint8_t>& bytes,
+                                         const std::string& requested_id) {
+        invariant_datetime_platform::ZoneModel model;
+        try {
+            model = invariant_datetime_platform::unix_tzif_zone(bytes, requested_id, false, []() {
+                return invariant_datetime_platform::native_utc_now().ticks();
+            });
+        } catch (const std::out_of_range&) {
+            throw NativeTimeZoneError("System.IndexOutOfRangeException", 0x80131508u,
+                                      u"Index was outside the bounds of the array.");
+        } catch (const std::overflow_error&) {
+            throw NativeTimeZoneError("System.OverflowException", 0x80131516u,
+                                      u"Arithmetic operation resulted in an overflow.");
+        } catch (const std::runtime_error&) {
+            try {
+                model = invariant_datetime_platform::unix_tzif_zone(bytes, requested_id, true, []() {
+                    return invariant_datetime_platform::native_utc_now().ticks();
+                });
+            } catch (const std::out_of_range&) {
+                throw NativeTimeZoneError("System.IndexOutOfRangeException", 0x80131508u,
+                                          u"Index was outside the bounds of the array.");
+            } catch (const std::overflow_error&) {
+                throw NativeTimeZoneError("System.OverflowException", 0x80131516u,
+                                          u"Arithmetic operation resulted in an overflow.");
+            } catch (const std::runtime_error&) {
+                throw std::invalid_argument("Invalid timezone data");
+            }
+        }
+        auto result = std::make_shared<TzFile>();
+        result->rules = std::make_shared<InvariantTimeZoneRules>(model.base_offset, std::move(model.rules));
+        return result;
+    }
+};
+std::filesystem::path zone_directory() {
+    auto value = runtime_environment_get(std::make_shared<const std::u16string>(u"TZDIR"));
+    auto path = value ? utf8(*value) : std::string("/usr/share/zoneinfo/");
+    if (!path.ends_with('/'))
+        path += '/';
+    return std::filesystem::path(path);
+}
+std::shared_ptr<TzFile> named_file(const std::u16string& id, std::optional<bool> override_locking = {}) {
+    bool invalid = id.starts_with(u'/');
+    for (auto c : id)
+        if (!((c >= u'a' && c <= u'z') || (c >= u'A' && c <= u'Z') || (c >= u'0' && c <= u'9') || c == u'/' ||
+              c == u'-' || c == u'_' || c == u'+'))
+            invalid = true;
+    if (invalid)
+        throw NativeTimeZoneError("System.TimeZoneNotFoundException", 0x80131500u,
+                                  u"The time zone ID '" + id + u"' is invalid.");
+    auto path = zone_directory() / std::filesystem::path(utf8(id));
+    auto invalid_message = u"The time zone ID '" + id +
+                           u"' was found on the local computer, but the file at '" +
+                           utf16_replacing(path.native()) + u"' was corrupt.";
+    std::vector<std::uint8_t> bytes;
+    try {
+        bytes = TzFile::read_bytes(path, override_locking);
+    } catch (const NativeTimeZoneError& e) {
+        if (!e.source_type.starts_with("System.IO.") && e.source_type != "System.UnauthorizedAccessException")
+            throw;
+        if (e.source_type == "System.UnauthorizedAccessException" ||
+            e.source_type == "System.IO.FileNotFoundException" ||
+            e.source_type == "System.IO.DirectoryNotFoundException")
+            throw;
+        throw NativeTimeZoneError("System.InvalidTimeZoneException", 0x80131500u, invalid_message, {},
+                                  std::make_shared<NativeTimeZoneError>(e));
+    } catch (const std::bad_alloc&) {
+        throw NativeTimeZoneError("System.InvalidTimeZoneException", 0x80131500u, invalid_message, {},
+                                  std::make_shared<NativeTimeZoneError>(
+                                      "System.OutOfMemoryException", 0x8007000eu,
+                                      u"Exception of type 'System.OutOfMemoryException' was thrown."));
+    }
+    try {
+        return TzFile::parse(bytes, utf8(id));
+    } catch (const std::invalid_argument&) {
+        throw NativeTimeZoneError("System.InvalidTimeZoneException", 0x80131500u, invalid_message);
+    } catch (const std::bad_alloc&) {
+        throw NativeTimeZoneError("System.OutOfMemoryException", 0x8007000eu,
+                                  u"Exception of type 'System.OutOfMemoryException' was thrown.");
+    }
+}
+#endif
+}
+TimeZoneText time_zone_utc_id_text() {
+    static auto value = std::make_shared<const std::u16string>(u"UTC");
+    return value;
+}
+TimeZone::TimeZone(std::string id, std::function<bool(std::int64_t)> daylight)
+    : TimeZone(std::make_shared<const std::u16string>(utf16_replacing(id)), std::move(daylight)) {
+}
+TimeZone::TimeZone(TimeZoneText id, std::function<bool(std::int64_t)> daylight)
+    : id_(utf8(*id)), daylight_(std::move(daylight)), raw_id_(std::move(id)) {
+}
+bool TimeZone::daylight_at(std::int64_t utc_seconds) const {
+    if (utc_seconds < -62135596800ll || utc_seconds > 253402300799ll)
+        throw std::out_of_range("Timezone date is outside DateTime range");
+    return daylight_at_ticks(621355968000000000ll + utc_seconds * 10000000ll);
+}
+bool TimeZone::daylight_at_ticks(std::int64_t utc_ticks) const {
+    if (utc_ticks < 0 || utc_ticks > 3155378975999999999ll)
+        throw std::out_of_range("Timezone date is outside DateTime range");
+    return daylight_(utc_ticks);
+}
+struct TimeZoneDatabase::State {
+    std::shared_ptr<NativeInvariantDateTimeContext> owner;
+    NativeTimeZoneLookupOptions options;
+};
+TimeZoneDatabase::TimeZoneDatabase() : TimeZoneDatabase(std::make_shared<NativeInvariantDateTimeContext>()) {
+}
+TimeZoneDatabase::TimeZoneDatabase(std::shared_ptr<NativeInvariantDateTimeContext> owner)
+    : TimeZoneDatabase(std::move(owner), {}) {
+}
+TimeZoneDatabase::TimeZoneDatabase(std::shared_ptr<NativeInvariantDateTimeContext> owner,
+                                   NativeTimeZoneLookupOptions options)
+    : state_(std::make_unique<State>(State{std::move(owner), std::move(options)})) {
+    if (!state_->owner)
+        throw std::invalid_argument("Null timezone cache owner");
+}
+TimeZoneDatabase::~TimeZoneDatabase() = default;
+std::shared_ptr<TimeZone> TimeZoneDatabase::find(const std::optional<std::string>& id) {
+    return find_utf16(id ? std::optional(utf16_replacing(*id)) : std::nullopt);
+}
+std::shared_ptr<TimeZone> TimeZoneDatabase::find_utf16(const std::optional<std::u16string>& id) {
+    return find_text(id ? std::make_shared<const std::u16string>(*id) : TimeZoneText{});
+}
+std::shared_ptr<TimeZone> TimeZoneDatabase::find_text(TimeZoneText id) {
+    if (!id)
+        throw NativeTimeZoneError("System.ArgumentNullException", 0x80004003u,
+                                  u"Value cannot be null. (Parameter 'id')", u"id");
+    auto missing = [&](std::shared_ptr<const NativeTimeZoneError> inner = {}) {
+        return NativeTimeZoneError("System.TimeZoneNotFoundException", 0x80131500u,
+                                   u"The time zone ID '" + *id + u"' was not found on the local computer.",
+                                   {}, std::move(inner));
+    };
+    if (id->empty() || id->size() > 255 || id->find(u'\0') != id->npos)
+        throw missing();
+    auto requested = utf8(*id);
+    auto key = lower(requested);
+    if (key == "utc") {
+        static const auto utc =
+            std::shared_ptr<TimeZone>(new TimeZone(time_zone_utc_id_text(), [](auto) { return false; }));
+        return utc;
+    }
+    auto owner = state_->owner;
+    auto raw = *id;
+    auto converter = state_->options.windows_to_iana;
+    auto comparer = state_->options.ordinal_ignore_case_equal;
+    auto lease = owner->legacy_named_cache_lease();
+    return owner->cached_legacy_named_raw(
+        raw,
+        [owner, requested, key, raw, converter, id, comparer, lease] {
+            std::function<bool(std::int64_t)> daylight;
+#ifdef _WIN32
+            std::shared_ptr<const NativeTimeZoneError> error;
+            std::shared_ptr<const InvariantTimeZoneRules> rules;
+            try {
+                rules = windows_named(raw);
+            } catch (const NativeTimeZoneError& e) {
+                if (e.source_type == "System.Security.SecurityException")
+                    throw;
+                error = std::make_shared<NativeTimeZoneError>(e);
+            }
+            if (rules)
+                daylight = [rules](auto seconds) { return rules->utc_is_daylight(seconds); };
+            else {
+                auto alternative = owner->legacy_iana_to_windows_raw(*id);
+                if (alternative) {
+                    try {
+                        auto alternate_text = std::make_shared<const std::u16string>(*alternative);
+                        auto alternate = owner->cached_legacy_named_raw(
+                            *alternative,
+                            [alternate_text] {
+                                auto alternate_rules = windows_named(*alternate_text);
+                                if (!alternate_rules)
+                                    throw MissingNativeZone{};
+                                return std::shared_ptr<TimeZone>(
+                                    new TimeZone(alternate_text, [alternate_rules](auto seconds) {
+                                        return alternate_rules->utc_is_daylight(seconds);
+                                    }));
+                            },
+                            comparer, lease);
+                        daylight = alternate->daylight_;
+                        error.reset();
+                    } catch (const MissingNativeZone&) {
+                        error.reset();
+                    } catch (const NativeTimeZoneError& e) {
+                        if (e.source_type == "System.Security.SecurityException")
+                            throw;
+                        error = std::make_shared<NativeTimeZoneError>(e);
+                    }
+                }
+                if (error)
+                    throw *error;
+                if (!daylight)
+                    throw NativeTimeZoneError("System.TimeZoneNotFoundException", 0x80131500u,
+                                              u"The time zone ID '" + raw +
+                                                  u"' was not found on the local computer.");
+            }
 
 #else
-struct TransitionRule{int kind=0,a=0,b=0,c=0,time=7200;char basis='w';};
-struct PosixRule {
-    int standard_offset=0,daylight_offset=0;bool daylight=false;TransitionRule start,end;
-    std::int64_t transition(int year,const TransitionRule& rule,int previous_offset)const{using namespace std::chrono;int day=0;if(rule.kind=='M'){auto first=sys_days{std::chrono::year(year)/static_cast<unsigned>(rule.a)/1};auto first_weekday=weekday{first}.c_encoding();int dom=1+(rule.c-static_cast<int>(first_weekday)+7)%7+7*(rule.b-1);auto month_end=unsigned(year_month_day_last{std::chrono::year(year)/month_day_last{month(static_cast<unsigned>(rule.a))}}.day());if(dom>static_cast<int>(month_end))dom-=7;day=static_cast<int>((first-sys_days{std::chrono::year(year)/1/1}).count())+dom-1;}else{day=rule.a-(rule.kind=='J'?1:0);if(rule.kind=='J'&&std::chrono::year(year).is_leap()&&rule.a>=60)++day;}auto value=year_start(year)+std::int64_t(day)*86400+rule.time;return value-(rule.basis=='u'?0:rule.basis=='s'?standard_offset:previous_offset);}
-    bool at(std::int64_t seconds)const{if(!daylight)return false;int year=utc_year(seconds);for(int y=year-1;y<=year+1;++y){auto begin=transition(y,start,standard_offset),finish=transition(y,end,daylight_offset);if(finish<begin)finish=transition(y+1,end,daylight_offset);if(seconds>=begin&&seconds<finish)return true;}return false;}
-};
-struct PosixParser {
-    std::string_view text;std::size_t pos=0;
-    [[noreturn]] void bad(){throw std::invalid_argument("Invalid POSIX timezone rule");}
-    bool name(){auto start=pos;if(pos<text.size()&&text[pos]=='<'){auto end=text.find('>',++pos);if(end==std::string_view::npos||end==pos)bad();pos=end+1;return true;}while(pos<text.size()&&((text[pos]>='a'&&text[pos]<='z')||(text[pos]>='A'&&text[pos]<='Z')))++pos;return pos-start>=3;}
-    int number(int maximum){auto start=pos;int n=0;while(pos<text.size()&&text[pos]>='0'&&text[pos]<='9'){n=n*10+(text[pos++]-'0');if(n>maximum)bad();}if(start==pos)bad();return n;}
-    int offset(){int sign=1;if(pos<text.size()&&(text[pos]=='-'||text[pos]=='+')){if(text[pos]=='-')sign=-1;++pos;}int n=number(167)*3600;for(int scale:{60,1}){if(pos==text.size()||text[pos]!=':')break;++pos;n+=number(59)*scale;}return sign*n;}
-    TransitionRule rule(){TransitionRule r;if(pos<text.size()&&text[pos]=='M'){r.kind='M';++pos;r.a=number(12);if(r.a<1||pos==text.size()||text[pos++]!='.')bad();r.b=number(5);if(r.b<1||pos==text.size()||text[pos++]!='.')bad();r.c=number(6);}else{r.kind=pos<text.size()&&text[pos]=='J'?'J':'N';if(r.kind=='J')++pos;r.a=number(r.kind=='J'?365:365);if(r.kind=='J'&&r.a<1)bad();}if(pos<text.size()&&text[pos]=='/'){++pos;r.time=offset();if(pos<text.size()&&(text[pos]=='w'||text[pos]=='s'||text[pos]=='u'||text[pos]=='g'||text[pos]=='z')){r.basis=text[pos++];if(r.basis=='g'||r.basis=='z')r.basis='u';}}return r;}
-    PosixRule parse(){PosixRule r;if(!name())bad();r.standard_offset=-offset();if(pos==text.size())return r;if(!name())bad();r.daylight=true;r.daylight_offset=r.standard_offset+3600;if(pos<text.size()&&text[pos]!=',')r.daylight_offset=-offset();if(pos==text.size()||text[pos++]!=',')bad();r.start=rule();if(pos==text.size()||text[pos++]!=',')bad();r.end=rule();if(pos!=text.size())bad();return r;}
-};
-struct TzFile {
-    struct Type{std::int32_t offset;bool daylight;};std::vector<std::int64_t> transitions;std::vector<std::uint8_t> indices;std::vector<Type> types;std::optional<PosixRule> future;
-    bool at(std::int64_t utc)const{if(future&&(transitions.empty()||utc>transitions.back()))return future->at(utc);auto where=std::upper_bound(transitions.begin(),transitions.end(),utc);std::size_t type=0;if(where!=transitions.begin())type=indices[static_cast<std::size_t>(where-transitions.begin()-1)];else {for(std::size_t i=0;i<types.size();++i)if(!types[i].daylight){type=i;break;}}return types[type].daylight;}
-    static std::shared_ptr<TzFile> read(const std::filesystem::path& path){
-        std::ifstream file(path,std::ios::binary);if(!file)throw std::invalid_argument("Timezone file not found");file.seekg(0,std::ios::end);auto length=file.tellg();if(length<44||length>4*1024*1024)throw std::invalid_argument("Invalid timezone file size");file.seekg(0);std::vector<std::uint8_t> bytes(static_cast<std::size_t>(length));file.read(reinterpret_cast<char*>(bytes.data()),length);if(!file)throw std::invalid_argument("Timezone file read failed");
-        auto u32=[&](std::size_t at){if(at>bytes.size()||bytes.size()-at<4)throw std::invalid_argument("Truncated timezone file");std::uint32_t n=0;for(int i=0;i<4;++i)n=(n<<8)|bytes[at+i];return n;};
-        auto header=[&](std::size_t at){if(at>bytes.size()||bytes.size()-at<44||std::string_view(reinterpret_cast<char*>(bytes.data()+at),4)!="TZif")throw std::invalid_argument("Invalid timezone header");std::array<std::uint32_t,6> n{};for(int i=0;i<6;++i)n[i]=u32(at+20+i*4);if(n[4]==0||n[4]>256)throw std::invalid_argument("Invalid timezone type count");return n;};
-        auto size=[](auto n,int width){return std::uint64_t(n[3])*(width+1)+std::uint64_t(n[4])*6+n[5]+std::uint64_t(n[2])*(width+4)+n[0]+n[1];};
-        std::size_t base=0;int width=4;auto counts=header(base);if(bytes[4]=='2'||bytes[4]=='3'||bytes[4]=='4'){auto next=44+size(counts,4);if(next>bytes.size())throw std::invalid_argument("Truncated timezone block");base=static_cast<std::size_t>(next);width=8;counts=header(base);}auto end=base+44+size(counts,width);if(end>bytes.size())throw std::invalid_argument("Truncated timezone block");
-        auto result=std::make_shared<TzFile>();std::size_t pos=base+44;for(std::uint32_t i=0;i<counts[3];++i){std::int64_t n=0;if(width==4){n=std::bit_cast<std::int32_t>(u32(pos));pos+=4;}else{std::uint64_t bits=0;for(int b=0;b<8;++b)bits=(bits<<8)|bytes[pos++];n=std::bit_cast<std::int64_t>(bits);}if(!result->transitions.empty()&&n<result->transitions.back())throw std::invalid_argument("Unsorted timezone transitions");result->transitions.push_back(n);}
-        for(std::uint32_t i=0;i<counts[3];++i){auto index=bytes[pos++];if(index>=counts[4])throw std::invalid_argument("Invalid timezone transition type");result->indices.push_back(index);}for(std::uint32_t i=0;i<counts[4];++i){auto offset=std::bit_cast<std::int32_t>(u32(pos));result->types.push_back({offset,bytes[pos+4]!=0});pos+=6;}
-        if(width==8&&end+1<bytes.size()&&bytes[end]=='\n'){auto last=std::find(bytes.begin()+static_cast<std::ptrdiff_t>(end+1),bytes.end(),static_cast<std::uint8_t>('\n'));if(last!=bytes.end()){std::string value(bytes.begin()+static_cast<std::ptrdiff_t>(end+1),last);if(!value.empty())try{result->future=PosixParser{value}.parse();}catch(const std::exception&){} }}return result;
-    }
-};
-std::filesystem::path zone_directory(){const char* value=std::getenv("TZDIR");return value&&*value?std::filesystem::path(value):std::filesystem::path("/usr/share/zoneinfo");}
-std::shared_ptr<TzFile> named_file(const std::string& id){auto path=std::filesystem::path(id);if(path.is_absolute())throw std::invalid_argument("Rooted timezone identifier");return TzFile::read(zone_directory()/path);}
+            std::shared_ptr<TzFile> data;
+            std::shared_ptr<const NativeTimeZoneError> error;
+            try {
+                data = named_file(raw, owner->legacy_file_locking_override());
+            } catch (const NativeTimeZoneError& e) {
+                if (e.source_type != "System.InvalidTimeZoneException" &&
+                    e.source_type != "System.TimeZoneNotFoundException" &&
+                    e.source_type != "System.UnauthorizedAccessException" &&
+                    e.source_type != "System.IO.FileNotFoundException" &&
+                    e.source_type != "System.IO.DirectoryNotFoundException")
+                    throw;
+                error = std::make_shared<NativeTimeZoneError>(e);
+                auto alternative = owner->legacy_name_mapping_allowed()
+                                       ? (converter ? converter(*id) : icu().convert(*id, false))
+                                       : std::nullopt;
+                if (alternative) {
+                    try {
+                        auto alternate_text = std::make_shared<const std::u16string>(*alternative);
+                        auto alternate = owner->cached_legacy_named_raw(
+                            *alternative,
+                            [owner, alternate_text] {
+                                auto alternate_data =
+                                    named_file(*alternate_text, owner->legacy_file_locking_override());
+                                return std::shared_ptr<TimeZone>(
+                                    new TimeZone(alternate_text, [alternate_data](auto seconds) {
+                                        return alternate_data->at(seconds);
+                                    }));
+                            },
+                            comparer, lease);
+                        daylight = alternate->daylight_;
+                        error.reset();
+                    } catch (const NativeTimeZoneError& a) {
+                        if (a.source_type != "System.InvalidTimeZoneException" &&
+                            a.source_type != "System.TimeZoneNotFoundException" &&
+                            a.source_type != "System.UnauthorizedAccessException" &&
+                            a.source_type != "System.IO.FileNotFoundException" &&
+                            a.source_type != "System.IO.DirectoryNotFoundException")
+                            throw;
+                        error = std::make_shared<NativeTimeZoneError>(a);
+                    }
+                }
+            }
+            if (error) {
+                if (error->source_type == "System.InvalidTimeZoneException")
+                    throw *error;
+                if (error->source_type == "System.UnauthorizedAccessException")
+                    throw NativeTimeZoneError(
+                        "System.Security.SecurityException", 0x8013150au,
+                        u"The time zone ID '" + raw +
+                            u"' was found on the local computer, but the application does not have permission to read the file.",
+                        {}, error);
+                throw NativeTimeZoneError(
+                    "System.TimeZoneNotFoundException", 0x80131500u,
+                    u"The time zone ID '" + raw + u"' was not found on the local computer.", {}, error);
+            }
+            if (data)
+                daylight = [data](auto seconds) { return data->at(seconds); };
 #endif
+            return std::shared_ptr<TimeZone>(new TimeZone(id, std::move(daylight)));
+        },
+        comparer, lease);
 }
-bool TimeZone::daylight_at(std::int64_t utc_seconds)const{if(utc_seconds<-62135596800ll||utc_seconds>253402300799ll)throw std::out_of_range("Timezone date is outside DateTime range");return daylight_(utc_seconds);}
-struct TimeZoneDatabase::State{std::mutex mutex;std::map<std::string,std::shared_ptr<TimeZone>> zones;std::shared_ptr<TimeZone> local;};
-TimeZoneDatabase::TimeZoneDatabase():state_(std::make_unique<State>()){}
-TimeZoneDatabase::~TimeZoneDatabase()=default;
-std::shared_ptr<TimeZone> TimeZoneDatabase::find(const std::optional<std::string>& id){
-    if(!id)throw std::invalid_argument("Null timezone identifier");if(id->empty()||utf16_replacing(*id).size()>255||id->find('\0')!=std::string::npos)throw std::invalid_argument("Invalid timezone identifier");std::lock_guard lock(state_->mutex);auto key=lower(*id);if(auto found=state_->zones.find(key);found!=state_->zones.end())return found->second;std::function<bool(std::int64_t)> daylight;
-    if(key=="utc")daylight=[](auto){return false;};else{
-#ifdef _WIN32
-        auto found=windows_zone(*id);if(!found){auto alternative=icu().convert(*id,true);if(alternative)found=windows_zone(*alternative);}if(!found)throw std::invalid_argument("Timezone identifier not found");daylight=windows_daylight(*found);
-#else
-        std::shared_ptr<TzFile> data;try{data=named_file(*id);}catch(const std::exception&){auto alternative=icu().convert(*id,false);if(alternative)data=named_file(*alternative);else throw;}daylight=[data](auto seconds){return data->at(seconds);};
-#endif
-    }auto result=std::shared_ptr<TimeZone>(new TimeZone(*id,std::move(daylight)));state_->zones[key]=result;return result;
+std::shared_ptr<TimeZone> TimeZoneDatabase::local() {
+    return state_->owner->cached_legacy_local([](std::shared_ptr<const InvariantTimeZoneRules> rules) {
+        return std::shared_ptr<TimeZone>(
+            new TimeZone("Local", [rules](std::int64_t seconds) { return rules->utc_is_daylight(seconds); }));
+    });
 }
-std::shared_ptr<TimeZone> TimeZoneDatabase::local(){std::lock_guard lock(state_->mutex);if(state_->local)return state_->local;std::function<bool(std::int64_t)> daylight;
-#ifdef _WIN32
-    DYNAMIC_TIME_ZONE_INFORMATION value{};if(GetDynamicTimeZoneInformation(&value)==TIME_ZONE_ID_INVALID)daylight=[](auto){return false;};else daylight=windows_daylight(value);
-#else
-    try{std::shared_ptr<TzFile> data;const char* value=std::getenv("TZ");if(!value)data=TzFile::read("/etc/localtime");else {std::string name(value);if(name.starts_with(':'))name.erase(0,1);if(name.empty())throw std::invalid_argument("Empty local timezone");auto path=std::filesystem::path(name);data=TzFile::read(path.is_absolute()?path:zone_directory()/path);}daylight=[data](auto seconds){return data->at(seconds);};}catch(const std::exception&){daylight=[](auto){return false;};}
-#endif
-    state_->local=std::shared_ptr<TimeZone>(new TimeZone("Local",std::move(daylight)));return state_->local;}
-void TimeZoneDatabase::clear(){std::lock_guard lock(state_->mutex);state_->zones.clear();state_->local.reset();}
-TimeZoneDatabase& time_zones(){static TimeZoneDatabase value;return value;}
+void TimeZoneDatabase::clear() {
+    state_->owner->clear_cached_time_zone_data();
+}
+TimeZoneDatabase& time_zones() {
+    static TimeZoneDatabase value(shared_native_invariant_datetime_context());
+    return value;
+}
 }

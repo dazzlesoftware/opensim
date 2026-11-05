@@ -70,8 +70,9 @@ public:
 };
 class PollSocketError:public std::runtime_error {
 public:
-    PollSocketError(std::string message,bool reset):std::runtime_error(std::move(message)),connection_reset(reset){}
-    bool connection_reset;
+  PollSocketError(std::string message, bool reset)
+      : std::runtime_error(std::move(message)), connection_reset(reset) {}
+  bool connection_reset;
 };
 }
 namespace opensim::services {

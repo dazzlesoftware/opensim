@@ -21,4 +21,5 @@ struct ObjectPropertiesData {
 // separate. Valid UTF-8 strings use source SDK byte limits (63/127/36/36),
 // embedded NUL stops encoding; empty fields have zero length, no extra NUL.
 network::lludp::Packet object_properties(const ObjectPropertiesData&);
+network::lludp::Packet object_properties_family(const ObjectPropertiesData&,std::uint32_t request_flags);
 }

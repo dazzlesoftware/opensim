@@ -28,10 +28,15 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 #include "opensim/framework/http_host.hpp"
 namespace opensim::framework {
-struct HttpUri:HttpHost {
-    explicit HttpUri(const std::optional<std::string>& value,bool resolve=false,const RegionUri::Resolver& resolver={});
-    bool equals(const HttpUri& other)const{return path==other.path&&HttpHost::equals(other);}
-    int compare(const HttpUri& other)const{return path==other.path?HttpHost::compare(other):-1;}
-    std::string url,path;
+struct HttpUri : HttpHost {
+    explicit HttpUri(const std::optional<std::string>& value, bool resolve = false,
+                     const RegionUri::Resolver& resolver = {});
+    bool equals(const HttpUri& other) const {
+        return path == other.path && HttpHost::equals(other);
+    }
+    int compare(const HttpUri& other) const {
+        return path == other.path ? HttpHost::compare(other) : -1;
+    }
+    std::string url, path;
 };
 }

@@ -28,17 +28,46 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 #include "opensim/services/region_store.hpp"
 #include <stdexcept>
-class FaultRegionStore:public opensim::services::RegionStore {
+class FaultRegionStore : public opensim::services::RegionStore {
     opensim::services::NullRegionStore inner;
+
 public:
-    bool store_false=false,store_throws=false,erase_false=false,erase_throws=false;
-    std::shared_ptr<opensim::services::RegionData> get(const opensim::framework::Uuid& id,const opensim::framework::Uuid& scope)override{return inner.get(id,scope);}
-    std::shared_ptr<opensim::services::RegionData> at(std::int32_t x,std::int32_t y,const opensim::framework::Uuid& scope)override{return inner.at(x,y,scope);}
-    std::shared_ptr<opensim::services::RegionData> specific(const std::string& name,const opensim::framework::Uuid& scope)override{return inner.specific(name,scope);}
-    std::optional<opensim::services::RegionRows> find(const std::string& pattern,const opensim::framework::Uuid& scope)override{return inner.find(pattern,scope);}
-    opensim::services::RegionRows range(std::int32_t x1,std::int32_t y1,std::int32_t x2,std::int32_t y2,const opensim::framework::Uuid& scope)override{return inner.range(x1,y1,x2,y2,scope);}
-    opensim::services::RegionRows with_flags(std::int32_t flags,const opensim::framework::Uuid& scope)override{return inner.with_flags(flags,scope);}
-    bool store(const std::shared_ptr<opensim::services::RegionData>& row)override{if(store_throws)throw std::runtime_error("fixture write");return !store_false&&inner.store(row);}
-    bool set(const opensim::framework::Uuid& id,const std::string& key,const std::string& value)override{return inner.set(id,key,value);}
-    bool erase(const opensim::framework::Uuid& id)override{if(erase_throws)throw std::runtime_error("fixture delete");return !erase_false&&inner.erase(id);}
+    bool store_false = false, store_throws = false, erase_false = false, erase_throws = false;
+    std::shared_ptr<opensim::services::RegionData> get(const opensim::framework::Uuid& id,
+                                                       const opensim::framework::Uuid& scope) override {
+        return inner.get(id, scope);
+    }
+    std::shared_ptr<opensim::services::RegionData> at(std::int32_t x, std::int32_t y,
+                                                      const opensim::framework::Uuid& scope) override {
+        return inner.at(x, y, scope);
+    }
+    std::shared_ptr<opensim::services::RegionData> specific(const std::string& name,
+                                                            const opensim::framework::Uuid& scope) override {
+        return inner.specific(name, scope);
+    }
+    std::optional<opensim::services::RegionRows> find(const std::string& pattern,
+                                                      const opensim::framework::Uuid& scope) override {
+        return inner.find(pattern, scope);
+    }
+    opensim::services::RegionRows range(std::int32_t x1, std::int32_t y1, std::int32_t x2, std::int32_t y2,
+                                        const opensim::framework::Uuid& scope) override {
+        return inner.range(x1, y1, x2, y2, scope);
+    }
+    opensim::services::RegionRows with_flags(std::int32_t flags,
+                                             const opensim::framework::Uuid& scope) override {
+        return inner.with_flags(flags, scope);
+    }
+    bool store(const std::shared_ptr<opensim::services::RegionData>& row) override {
+        if (store_throws)
+            throw std::runtime_error("fixture write");
+        return !store_false && inner.store(row);
+    }
+    bool set(const opensim::framework::Uuid& id, const std::string& key, const std::string& value) override {
+        return inner.set(id, key, value);
+    }
+    bool erase(const opensim::framework::Uuid& id) override {
+        if (erase_throws)
+            throw std::runtime_error("fixture delete");
+        return !erase_false && inner.erase(id);
+    }
 };

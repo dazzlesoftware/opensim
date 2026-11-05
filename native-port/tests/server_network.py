@@ -1,6 +1,7 @@
 """Exercise the native executable through actual sockets and persistent databases."""
 import argparse
 import base64
+import time
 import concurrent.futures
 import contextlib
 import gzip
@@ -20,6 +21,30 @@ import urllib.parse
 import uuid
 import xml.etree.ElementTree as ET
 import xmlrpc.client
+import zlib
+
+
+def with_settings(text, section, **settings):
+    """Update one section without relying on duplicate INI keys/sections."""
+    lines = text.splitlines(keepends=True)
+    headers = [i for i, line in enumerate(lines) if line.strip() == "[" + section + "]"]
+    if len(headers) > 1:
+        raise ValueError("Fixture contains duplicate section " + section)
+    if not headers:
+        return text + ("" if text.endswith("\n") else "\n") + "[" + section + "]\n" + "".join(key + " = " + str(value) + "\n" for key, value in settings.items())
+    start = headers[0] + 1
+    end = next((i for i in range(start, len(lines)) if lines[i].lstrip().startswith("[")), len(lines))
+    pending = dict(settings)
+    for i in range(start, end):
+        key, equals, _ = lines[i].partition("=")
+        if equals and key.strip() in pending:
+            name = key.strip()
+            lines[i] = name + " = " + str(pending.pop(name)) + "\n"
+    if pending:
+        if end and not lines[end - 1].endswith("\n"):
+            lines[end - 1] += "\n"
+        lines[end:end] = [key + " = " + str(value) + "\n" for key, value in pending.items()]
+    return "".join(lines)
 
 
 def main():
@@ -44,7 +69,17 @@ def main():
         root.mkdir()
         config = root / "server.ini"
         database = root / "native.db"
-        base_config = """[NativeServer]
+        base_config = """[Startup]
+ServiceConnectors=Hypergrid@0/OpenSim.Server.Handlers.dll:HeloServiceInConnector,0/OpenSim.Server.Handlers.dll:MuteListServiceConnector
+[MuteListService]
+LocalServiceModule = OpenSim.Services.MuteListService.dll:MuteListService
+AuthType = BasicHttpAuthentication
+HttpAuthUsername = mutes
+HttpAuthPassword = fixture-mute-password
+[MuteListStore]
+StorageProvider = OpenSim.Data.SQLite.dll
+ConnectionString = Data Source=mutes.db
+[NativeServer]
 ListenAddress = 127.0.0.1
 UserAccountDatabase = native.db
 AuthenticationDatabase = native.db
@@ -52,13 +87,26 @@ MaximumRequestBytes = 8192
 HttpTimeoutSeconds = 2
 EnablePresenceEndpoint = true
 EnableGridEndpoint = true
+EnableGatekeeperDiscovery = true
 EnableAccountEndpoint = true
 EnableGridUserEndpoint = true
+EnableBakedTextureEndpoint = true
+EnableAgentPreferencesEndpoint = true
+AgentPreferencesDatabase = preferences.db
 GridUserDatabase = grid-user.db
 GridRegionProvider = SQLite
 GridRegionDatabase = regions.db
 [Network]
 http_listener_port = 0
+[BakedTextureService]
+BaseDirectory = bakes
+AuthType = BasicHttpAuthentication
+HttpAuthUsername = bakes
+HttpAuthPassword = fixture-bakes-password
+[AgentPreferencesService]
+AuthType = BasicHttpAuthentication
+HttpAuthUsername = bakes
+HttpAuthPassword = fixture-bakes-password
 [LoginService]
 RequireInventory = false
 AllowRemoteSetLoginLevel = true
@@ -131,8 +179,10 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
                     self.process.wait(timeout=5)
                     raise
 
-            def request(self, method, path, body=None, content_type=None, headers=None):
-                if self.uri.scheme == "https":
+            def request(self, method, path, body=None, content_type=None, headers=None, connector_port=None):
+                if connector_port is not None:
+                    connection = http.client.HTTPConnection(self.uri.hostname, connector_port, timeout=8)
+                elif self.uri.scheme == "https":
                     context = ssl.create_default_context(cafile=str(Path(__file__).parent / "fixtures/localhost-cert.pem"))
                     connection = http.client.HTTPSConnection(self.uri.hostname, self.uri.port, timeout=8, context=context)
                 else:
@@ -147,9 +197,9 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
                 finally:
                     connection.close()
 
-            def login(self, data, method="login_to_simulator"):
+            def login(self, data, method="login_to_simulator", connector_port=None):
                 body = xmlrpc.client.dumps((data,), methodname=method, allow_none=True).encode()
-                status, headers, result = self.request("POST", "/", body, "text/xml")
+                status, headers, result = self.request("POST", "/", body, "text/xml", connector_port=connector_port)
                 check(status == 200, "XML-RPC returns HTTP 200")
                 return xmlrpc.client.loads(result)[0][0]
 
@@ -182,6 +232,66 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
         grid_user = "00000000-0000-0000-0000-000000000001"
         grid_region = "00000000-0000-0000-0000-000000000003"
         with RunningServer() as server:
+            mute_agent = str(uuid.uuid4())
+            mute_id = str(uuid.uuid4())
+            mute_auth = base64.b64encode(b"mutes:fixture-mute-password").decode()
+
+            def mute_request(method, **fields):
+                form = urllib.parse.urlencode({"METHOD": method, "agentid": mute_agent, **fields})
+                status, _, body = server.request(
+                    "POST", "/mutelist", form, "application/x-www-form-urlencoded",
+                    {"Authorization": f"Basic {mute_auth}"},
+                )
+                check(status == 200, f"Mute list {method} returns service XML")
+                return ET.fromstring(body).findtext("result")
+
+            check(server.request("POST", "/mutelist", "METHOD=get")[0] == 401,
+                  "Mute list requires authentication")
+            check(mute_request("get", mutecrc="0") == "", "Empty mute list has an empty payload")
+            check(mute_request("get", mutecrc="-1") == "Failure", "Mute list rejects an invalid CRC")
+            mute_fields = {"muteid": mute_id, "mutename": "Muted & Test"}
+            check(mute_request("update", **mute_fields, mutetype="1", muteflags="2", mutestamp="123") == "Success",
+                  "Mute list accepts an update and explicit timestamp")
+            with sqlite3.connect(root / "mutes.db") as connection:
+                check(connection.execute("SELECT Stamp FROM MuteList").fetchall() == [(123,)],
+                      "Mute list persists the explicit timestamp")
+            mute_data = f"1 {mute_id} Muted & Test|2\n".encode()
+            check(base64.b64decode(mute_request("get", mutecrc="0")) == mute_data,
+                  "Mute list returns the viewer payload in base64")
+            check(mute_request("get", mutecrc=zlib.crc32(mute_data)) == "AQ==",
+                  "Mute list returns the cache-hit marker")
+            check(mute_request("delete", **mute_fields) == "Success", "Mute list removes an existing entry")
+            check(mute_request("delete", **mute_fields) == "Failure", "Mute list reports a missing entry")
+            bake_id = "01234567-89ab-4cde-8fab-0123456789ab"
+            bake_path = "/bakes/" + bake_id
+            bake_auth = {"Authorization": "Basic " + base64.b64encode(b"bakes:fixture-bakes-password").decode()}
+            def preference_request(method, **fields):
+                status, _, payload = server.request("POST", "/agentprefs", urllib.parse.urlencode(dict(METHOD=method, **fields)),
+                                                    "application/x-www-form-urlencoded", bake_auth)
+                check(status == 200, "Authenticated agent preferences request succeeds")
+                return {node.tag: node.text for node in ET.fromstring(payload)}
+            check(server.request("POST", "/agentprefs", "METHOD=getagentprefs")[0] == 401, "Agent preferences require authentication")
+            check(preference_request("getagentprefs", UserID=bake_id) == {}, "Missing preferences return an empty result")
+            values = dict(PrincipalID=bake_id, AccessPrefs="M", HoverHeight="0.125", Language="fr-ca",
+                          LanguageIsPublic="False", PermEveryone="0", PermGroup="0", PermNextOwner="532480")
+            check(preference_request("setagentprefs", **values) == {"result": "Success"}, "Agent preferences are stored")
+            check(preference_request("getagentprefs", UserID=bake_id) == values, "Agent preferences round-trip over the legacy protocol")
+            check(preference_request("getagentlang", UserID=bake_id) == {"Language": "en-us"}, "Private language is withheld")
+            values["LanguageIsPublic"] = "True"
+            preference_request("setagentprefs", **values)
+            check(preference_request("getagentlang", UserID=bake_id) == {"Language": "fr-ca"}, "Public language is returned")
+            check(server.request("GET", bake_path)[0] == 401, "XBakes requires configured authentication")
+            check(server.request("GET", bake_path, headers=bake_auth)[::2] == (200, b""), "XBakes missing entries return empty data")
+            for data in (b"first\x00bake", b"replacement\xff"):
+                check(server.request("POST", bake_path, data, "application/octet-stream", bake_auth)[0] == 200, "XBakes stores bytes")
+                check(server.request("GET", bake_path, headers=bake_auth)[::2] == (200, data), "XBakes returns the latest bytes")
+            check((root / "bakes/01/23/45/67-8" / bake_id).read_bytes() == data, "XBakes uses the legacy storage layout")
+            server.process.stdin.write(f"delete bakes {bake_id}\n")
+            server.process.stdin.flush()
+            deadline = time.monotonic() + 5
+            while "Bakes deleted" not in server.lines.get(timeout=max(.01, deadline - time.monotonic())):
+                check(time.monotonic() < deadline, "XBakes console confirms deletion")
+            check(server.request("GET", bake_path, headers=bake_auth)[::2] == (200, b""), "XBakes console deletion removes the stored payload")
             def account_request(method, **values):
                 status, _, body = server.request("POST", "/accounts", urllib.parse.urlencode({"METHOD": method, **values}))
                 check(status == 200, "account service HTTP 200")
@@ -215,6 +325,12 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
             check(registry({"METHOD":"register"}).findtext("Result") == "Failure", "grid registration protocol version required")
             check(registry(registration).findtext("Result") == "Success", "grid region registration through real HTTP")
             check(registry({"METHOD":"get_region_by_name", "NAME":"Network Region"}).findtext("result/uuid") == region_id, "registered region name lookup through HTTP")
+            linked = server.login({"region_name": "Network Region"}, "link_region")
+            check(linked["result"] == "True" and linked["uuid"] == region_id, "Gatekeeper links a registered region")
+            destination = server.login({"region_uuid": region_id}, "get_region")
+            check(destination["result"] == "true" and destination["internal_port"] == "9000", "Gatekeeper resolves a linked region")
+            check(server.login({"region_uuid": "00000000-0000-0000-0000-000000000000"}, "get_region")["result"] == "false",
+                  "Gatekeeper reports a missing region")
             check(registry({"METHOD":"get_region_by_name", "NAME":"http://127.0.0.1:9000/Network Region"}).findtext("result/uuid") == region_id, "configured local grid URL resolves through HTTP")
             check(registry({"METHOD":"get_localregion_by_name", "NAME":"http://127.0.0.1:9000/Network Region"}).findtext("result/uuid") == region_id, "configured local-only grid URL resolves through HTTP")
             check(registry({"METHOD":"get_default_regions"}).findtext("region0/uuid") == region_id, "grid default flags applied through HTTP")
@@ -266,6 +382,12 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
             check(status == 200 and info.findtext("gridname") == "Native & Test <Grid>", "grid discovery escapes XML")
             check(info.findtext("login") == server.uri.geturl(), "ephemeral listener advertises its actual port")
             check(json.loads(server.request("GET", "/json_grid_info")[2])["platform"] == "OpenSim", "JSON grid discovery")
+            for method in ("GET", "HEAD"):
+                status, headers, body = server.request(method, "/helo/" if method == "GET" else "/helo")
+                check(status == 200 and {key.lower(): value for key, value in headers.items()}.get(
+                    "x-handlers-provided") == "opensim-robust" and not body,
+                      f"Hypergrid HELO {method} discovery")
+            check(server.request("POST", "/helo")[0] == 405, "Hypergrid HELO rejects POST")
             check(server.login({}, "get_grid_info")["gridnick"] == "native-test", "XML-RPC grid discovery")
             bound = cli("--port", str(server.uri.port), expected=1)
             check("bind" in bound.stderr.lower(), "occupied port fails visibly")
@@ -336,18 +458,94 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
             info = ET.fromstring(result).find("result")
             check(status == 200 and info.findtext("Online") == "False" and info.findtext("HomePosition") == "<10, 20, 30>" and info.findtext("LastPosition") == "<70, 80, 90>", "grid-user home and logout position survive server restart")
             check(restarted.login(credentials)["message"].startswith("Error connecting"), "account/password persistence survives server restart")
-        config.write_text(base_config + "\n[NativeServer]\nGridRegionProvider=Null\n", encoding="utf-8")
+        config.write_text(base_config + f"\n[GatekeeperService]\nScopeID={persisted_scope}\nAllowTeleportsToAnyRegion=false\n", encoding="utf-8")
+        with RunningServer() as restricted:
+            try:
+                restricted.login({"region_uuid": persisted_id}, "get_region")
+            except xmlrpc.client.Fault as fault:
+                check(fault.faultCode == -32603, "Gatekeeper faults before linking a default region")
+            else:
+                check(False, "Gatekeeper faults before linking a default region")
+            linked = restricted.login({"region_name": "Unlisted"}, "link_region")
+            check(linked["result"] == "True" and linked["uuid"] == persisted_id, "Gatekeeper links the configured default region")
+            destination = restricted.login({"region_uuid": str(uuid.uuid4())}, "get_region")
+            check(destination["uuid"] == persisted_id and destination["message"] == "Teleporting to the default region.",
+                  "Gatekeeper redirects arbitrary region requests to the default region")
+        with socket.socket() as probe:
+            probe.bind(("127.0.0.1", 0))
+            public_port = probe.getsockname()[1]
+        split_config = with_settings(base_config, "GridService",
+                                     LocalServiceModule="OpenSim.Services.GridService.dll:GridService")
+        split_config = split_config.replace("EnableGridEndpoint = true\n", "").replace(
+            "EnableGridUserEndpoint = true\n", "")
+        config.write_text(split_config + f"\n[GatekeeperService]\nScopeID={persisted_scope}\n[ServiceList]\n"
+                          f"GatekeeperServiceInConnector={public_port}/OpenSim.Server.Handlers.dll:GatekeeperServiceInConnector\n"
+                          f"HeloServiceInConnector={public_port}/OpenSim.Server.Handlers.dll:HeloServiceInConnector\n"
+                          f"BakedTextureService={public_port}/OpenSim.Server.Handlers.dll:XBakesConnector\n"
+                          f"MuteListConnector={public_port}/OpenSim.Server.Handlers.dll:MuteListServiceConnector\n"
+                          f"PresenceServiceConnector={public_port}/OpenSim.Server.Handlers.dll:PresenceServiceConnector\n"
+                          f"GridServiceConnector={public_port}/OpenSim.Server.Handlers.dll:GridServiceConnector\n"
+                          f"GridUserServiceConnector={public_port}/OpenSim.Server.Handlers.dll:GridUserServiceConnector\n"
+                          "[PresenceService]\nLocalServiceModule=OpenSim.Services.PresenceService.dll:PresenceService\n"
+                          "[GridUserService]\nLocalServiceModule=OpenSim.Services.UserAccountService.dll:GridUserService\n"
+                          "AuthType=BasicHttpAuthentication\nHttpAuthUsername=griduser\n"
+                          "HttpAuthPassword=fixture-griduser-password\n",
+                          encoding="utf-8")
+        with RunningServer() as split:
+            check(split.request("POST", "/mutelist", connector_port=public_port)[0] == 401,
+                  "Mute list shares its configured service listener")
+            check(split.request("POST", "/mutelist")[0] == 404,
+                  "Mute list is scoped to its configured service listener")
+            status, _, body = split.request("POST", "/presence", presence_body, connector_port=public_port)
+            check(status == 200 and ET.fromstring(body).findtext("result") == "null",
+                  "Presence shares the existing connector listener")
+            check(split.request("POST", "/presence", presence_body)[0] == 404,
+                  "Presence is scoped to its configured service listener")
+            grid_lookup = urllib.parse.urlencode(
+                {"METHOD": "get_region_by_uuid", "SCOPEID": persisted_scope, "REGIONID": persisted_id})
+            status, _, body = split.request("POST", "/grid", grid_lookup, connector_port=public_port)
+            check(status == 200 and ET.fromstring(body).findtext("result/uuid") == persisted_id,
+                  "Grid service reads persistent regions through the configured listener")
+            check(split.request("POST", "/grid", grid_lookup)[0] == 404,
+                  "Grid service is scoped to its configured listener")
+            grid_user_lookup = urllib.parse.urlencode({"METHOD": "getgriduserinfo", "UserID": grid_user})
+            check(split.request("POST", "/griduser", grid_user_lookup, connector_port=public_port)[0] == 401,
+                  "Grid-user connector requires its configured authentication")
+            grid_user_auth = {"Authorization": "Basic " +
+                              base64.b64encode(b"griduser:fixture-griduser-password").decode()}
+            status, _, body = split.request("POST", "/griduser", grid_user_lookup,
+                                            headers=grid_user_auth, connector_port=public_port)
+            check(status == 200 and ET.fromstring(body).findtext("result/UserID") == grid_user,
+                  "Grid-user service reads persistent accounts through the configured listener")
+            check(split.request("POST", "/griduser", grid_user_lookup, headers=grid_user_auth)[0] == 404,
+                  "Grid-user service is scoped to its configured listener")
+            check(split.login({"region_uuid": persisted_id}, "get_region", public_port)["uuid"] == persisted_id,
+                  "Gatekeeper resolves regions on its configured port")
+            check(split.request("HEAD", "/helo", connector_port=public_port)[0] == 200,
+                  "HELO and Gatekeeper share the public listener")
+            check(split.request("POST", bake_path, b"shared listener bake", headers=bake_auth, connector_port=public_port)[0] == 200,
+                  "XBakes shares the configured service listener")
+            check(split.request("GET", bake_path, headers=bake_auth, connector_port=public_port)[::2] == (200, b"shared listener bake"),
+                  "Shared service listener returns the baked payload")
+            for method, port in (("get_region", None), ("login_to_simulator", public_port)):
+                try:
+                    split.login({}, method, port)
+                except xmlrpc.client.Fault as fault:
+                    check(fault.faultCode == -32601, f"{method} is isolated to its configured listener")
+                else:
+                    check(False, f"{method} is isolated to its configured listener")
+        config.write_text(with_settings(base_config, "NativeServer", GridRegionProvider="Null"), encoding="utf-8")
         with RunningServer() as volatile:
             status, _, result = volatile.request("POST", "/grid", "METHOD=get_region_by_uuid&REGIONID="+persisted_id)
             check(status == 200 and ET.fromstring(result).findtext("result") == "null", "Null region provider remains independent of durable storage")
-        config.write_text(base_config + "\n[NativeServer]\nGridRegionProvider=unknown\n", encoding="utf-8")
+        config.write_text(with_settings(base_config, "NativeServer", GridRegionProvider="unknown"), encoding="utf-8")
         result = cli(expected=1)
         check("GridRegionProvider" in result.stderr, "unknown region provider rejected explicitly")
         for section,key,message in [("Const","GatekeeperURI","GatekeeperURI configuration error"),("Const","HomeURI","HomeURI configuration error"),("GridInfo","SearchServerURI","SearchServerURI configuration error")]:
             config.write_text(base_config+"\n["+section+"]\n"+key+"=bad/path\n", encoding="utf-8")
             result = cli(expected=1)
             check(message in result.stderr, "invalid "+key+" rejected before listening")
-        config.write_text(base_config + "\n[PresenceService]\nAuthType=BasicHttpAuthentication\nHttpAuthUsername=service\nHttpAuthPassword=test-service-password\n[UserAccountService]\nAuthType=BasicHttpAuthentication\nHttpAuthUsername=service\nHttpAuthPassword=test-service-password\n", encoding="utf-8")
+        config.write_text(with_settings(with_settings(base_config, "PresenceService", AuthType="BasicHttpAuthentication", HttpAuthUsername="service", HttpAuthPassword="test-service-password"), "UserAccountService", AuthType="BasicHttpAuthentication", HttpAuthUsername="service", HttpAuthPassword="test-service-password"), encoding="utf-8")
         with RunningServer() as protected:
             check(protected.request("POST", "/accounts", "METHOD=getaccount&UserID="+principal)[0] == 401, "account endpoint requires configured Basic authentication")
             check(protected.request("POST", "/accounts", "METHOD=getaccount&UserID="+principal, headers={"Authorization":"Basic "+base64.b64encode(b"service:test-service-password").decode()})[0] == 200, "account endpoint accepts configured Basic authentication")
@@ -359,7 +557,26 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
             check(protected.request("POST", "/presence", presence_body, headers={"Authorization": authorization, "X-SecondLife-Shard": "test"})[0] == 403, "script exclusion precedes Basic authentication")
             status, _, result = protected.request("POST", "/presence", presence_body, headers={"Authorization": "Basic invalid!"})
             check(status == 500 and b"test-service-password" not in result, "malformed service authentication propagates to HTTP error without credentials")
-        config.write_text(base_config + "\n[NativeServer]\nEnablePresenceEndpoint=false\nEnableGridUserEndpoint=false\nEnableGridEndpoint=false\nEnableAccountEndpoint=false\n", encoding="utf-8")
+        startup_presence = with_settings(
+            base_config.replace("EnablePresenceEndpoint = true\n", ""), "Startup",
+            ServiceConnectors="0/OpenSim.Server.Handlers.dll:PresenceServiceConnector",
+        )
+        config.write_text(with_settings(startup_presence, "NativeServer", PresenceDatabase="presence-rejected.db"),
+                          encoding="utf-8")
+        invalid = cli(expected=1)
+        check("PresenceService.LocalServiceModule is required" in invalid.stderr and
+              not (root / "presence-rejected.db").exists(),
+              "Legacy presence registration validates the module before opening storage")
+        startup_presence = with_settings(startup_presence, "PresenceService",
+                                         LocalServiceModule="OpenSim.Services.PresenceService.dll:PresenceService")
+        config.write_text(startup_presence, encoding="utf-8")
+        with RunningServer() as legacy:
+            status, _, body = legacy.request("POST", "/presence", presence_body)
+            check(status == 200 and ET.fromstring(body).findtext("result") == "null",
+                  "Legacy Startup.ServiceConnectors registers presence on the primary listener")
+        config.write_text(with_settings(startup_presence, "NativeServer", EnablePresenceEndpoint="false",
+                                        EnableGridUserEndpoint="false", EnableGridEndpoint="false",
+                                        EnableAccountEndpoint="false"), encoding="utf-8")
         with RunningServer() as disabled:
             check(disabled.request("POST", "/accounts", "METHOD=getaccount")[0] == 404, "account route can be disabled")
             check(disabled.request("POST", "/presence", presence_body)[0] == 404, "presence route can be disabled")
@@ -375,24 +592,38 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
             with RunningServer(("--host", "::1")) as ipv6:
                 check(ipv6.request("GET", "/health")[0] == 200, "IPv6 listener and peer transport")
         fixture = Path(__file__).parent / "fixtures"
-        config.write_text(base_config + f"\n[NativeServer]\nTlsCertificate = {(fixture / 'localhost-cert.pem').as_posix()}\nTlsPrivateKey = {(fixture / 'localhost-key.pem').as_posix()}\n", encoding="utf-8")
+        config.write_text(with_settings(base_config, "NativeServer", TlsCertificate=(fixture / "localhost-cert.pem").as_posix(), TlsPrivateKey=(fixture / "localhost-key.pem").as_posix()), encoding="utf-8")
         if args.http_only:
             skipped.append("TLS not selected for explicit HTTP-only coverage")
         elif features["tls"]:
-            try:
-                with RunningServer() as secure:
+            with RunningServer() as secure:
+                try:
                     check(secure.uri.scheme == "https" and secure.login(credentials)["message"].startswith("Error connecting"), "HTTPS login with certificate verification")
-            except ssl.SSLCertVerificationError as error:
-                report = {"passed": False, "checksBeforeFailure": len(checks), "features": features,
-                          "tlsVerificationError": str(error), "observations": checks,
-                          "note": "Certificate verification remains enabled. Check local TLS interception or certificate configuration; this is not recorded as a passing HTTPS test."}
-                (args.work / "network-results.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-                raise
+                except ssl.SSLCertVerificationError as error:
+                    fixture_der = ssl.PEM_cert_to_DER_cert((fixture / "localhost-cert.pem").read_text(encoding="ascii"))
+                    expected_fingerprint = hashlib.sha256(fixture_der).hexdigest()
+                    report = {"passed": False, "checksBeforeFailure": len(checks), "features": features,
+                              "tlsVerificationError": str(error), "observations": checks,
+                              "expectedPeerSha256": expected_fingerprint}
+                    # Collect the presented certificate without sending an HTTP request or credentials.
+                    diagnostic = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+                    diagnostic.check_hostname = False
+                    diagnostic.verify_mode = ssl.CERT_NONE
+                    try:
+                        with socket.create_connection((secure.uri.hostname, secure.uri.port), timeout=8) as raw:
+                            with diagnostic.wrap_socket(raw, server_hostname=secure.uri.hostname) as peer:
+                                fingerprint = hashlib.sha256(peer.getpeercert(binary_form=True)).hexdigest()
+                        report["observedPeerSha256"] = fingerprint
+                        report["peerMatchesFixture"] = fingerprint == expected_fingerprint
+                    except OSError as diagnostic_error:
+                        report["peerDiagnosticError"] = str(diagnostic_error)
+                    (args.work / "network-results.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+                    raise
         else:
             result = cli(expected=1)
             check("TLS requested" in result.stderr, "TLS config cannot silently fall back to plaintext")
             skipped.append("TLS support not compiled")
-        config.write_text(base_config + "\n[UserAccountService]\nConnectionString=untouched-accounts.db\n[AuthenticationService]\nConnectionString=untouched-auth.db\n", encoding="utf-8")
+        config.write_text(with_settings(with_settings(base_config, "UserAccountService", ConnectionString="untouched-accounts.db"), "AuthenticationService", ConnectionString="untouched-auth.db"), encoding="utf-8")
         cli("--init-db", expected=1)
         check(not (root / "untouched-accounts.db").exists() and not (root / "untouched-auth.db").exists(), "existing service database rejected before account/auth initialization writes")
         # Both spellings run through real startup, account provisioning and login.
@@ -401,9 +632,7 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
         for tag, account_setting, auth_setting, account_file, auth_file in [
             ("comma", "URI=file:accounts.db,version=3", "URI=file:auth.db,version=3", "accounts.db,version=3", "auth.db,version=3"),
             ("semicolon", '"DataSource=accounts-options.db;URI=invalid;Version=+3"', '"Data_Source=auth-options.db;Pooling=off;Version=03"', "accounts-options.db", "auth-options.db")]:
-            config.write_text(base_config + "\n[UserAccountService]\nConnectionString = " + account_setting +
-                              "\n[AuthenticationService]\nConnectionString = " + auth_setting +
-                              f"\n[NativeServer]\nGridUserDatabase=separate-grid-user-{tag}.db\nGridRegionDatabase=separate-regions-{tag}.db\n", encoding="utf-8")
+            config.write_text(with_settings(with_settings(with_settings(base_config, "UserAccountService", ConnectionString=account_setting), "AuthenticationService", ConnectionString=auth_setting), "NativeServer", GridUserDatabase=f"separate-grid-user-{tag}.db", GridRegionDatabase=f"separate-regions-{tag}.db"), encoding="utf-8")
             cli("--init-db")
             cli("--create-user", "Separate", "User", password="separate-password\n")
             with RunningServer() as separated:
@@ -423,7 +652,7 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
         with contextlib.closing(sqlite3.connect(root/"auth-options.db")) as connection, connection:
             connection.execute("ALTER TABLE auth RENAME TO AuthRealm")
         option_config=config.read_text(encoding="utf-8")
-        config.write_text(option_config+"\n[UserAccountService]\nRealm=AccountRealm\n[AuthenticationService]\nRealm=AuthRealm\n",encoding="utf-8")
+        config.write_text(with_settings(with_settings(option_config, "UserAccountService", Realm="AccountRealm"), "AuthenticationService", Realm="AuthRealm"),encoding="utf-8")
         cli("--create-user","Realm","User",password="realm-password\n")
         with RunningServer() as realm_server:
             check(realm_server.login({"first":"Realm","last":"User","passwd":"realm-password"})["message"].startswith("Error connecting"),"configured account and authentication realms support creation and login without default tables")

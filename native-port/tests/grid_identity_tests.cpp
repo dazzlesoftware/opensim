@@ -31,11 +31,103 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <stdexcept>
 using namespace opensim;
-void check(bool value,const char* message){if(!value)throw std::runtime_error(message);}
-int main(){const auto path=std::filesystem::temp_directory_path()/("opensim-identity-"+framework::Uuid::random().str()+".ini");try{
- framework::RegionUri::Resolver resolver=[](const std::string& host)->std::optional<std::string>{return host=="bad.invalid"?std::nullopt:std::optional<std::string>{"203.0.113.7"};};server::IniConfig empty;server::GridIdentity missing(empty,std::nullopt,resolver);check(!missing.has_hypergrid&&!missing.gate_uri()&&missing.gate_uri_slash().empty()&&!missing.economy_url,"ignore-missing default struct/null behavior");bool threw=false;try{server::GridIdentity required(empty,"",resolver);}catch(const std::runtime_error& error){threw=std::string(error.what())=="GatekeeperURI configuration error";}check(threw,"empty default requires gatekeeper");
- {std::ofstream file(path);file<<"[Const]\nGatekeeperURI=http://gate.example\nHomeURI=https://home.example:9000\nGatekeeperURIAlias=alias.example,https://alias.example:80, bad/path\nHomeURIAlias=homealias.example\nStunServers=stun.example:3478,stun.example:3478,bad/path\n[GridInfo]\nGridName=Identity Grid\n";}
- auto config=server::IniConfig::load(path);server::GridIdentity info(config,std::nullopt,resolver);check(info.has_hypergrid&&info.gate_uri()=="http://gate.example:80"&&info.home_uri()=="https://home.example:9000","host configuration");check(info.grid_aliases->size()==1&&info.is_local_grid("https://alias.example:80")==1,"alias identity ignores scheme and suppresses duplicate host/port");check(info.is_local_home("homealias.example")==1&&info.is_local_grid("bad/path")==-1&&info.is_local_grid(std::nullopt)==1,"local home/invalid/empty rules");check(info.is_local_grid("http://bad.invalid",true)==-2&&info.is_local_grid("http://elsewhere.example",true)==0,"DNS result classification");check(info.stun_servers->size()==2,"STUN duplicates retained");info.add_grid_aliases(std::vector<std::string>{});check(info.grid_aliases->size()==1,"empty alias setter preserves state");info.set_stuns(std::vector<std::string>{});check(!info.stun_servers,"empty STUN setter clears state");info.set_grid_url("http://new.example");check(info.grid_url=="http://new.example:80"&&info.is_local_grid("gate.example")==1&&info.is_local_grid("new.example")==0,"grid URL display setter does not change identity");
- services::NullRegionStore store("!static");services::GridService service(store,config,[]{return 1700000000;},{},{},resolver);services::GridRegion region;region.id=framework::Uuid::random();region.name="Region";region.x=25600;region.y=25600;region.internal_endpoint=services::RegionEndpoint{"0.0.0.0",9000};region.external_host="127.0.0.1";check(service.register_region({},region).empty(),"register identity test region");check(service.by_name({},"http://gate.example/Region")->id==region.id&&service.local_by_name({},"http://alias.example/Region")->id==region.id,"service uses configured native grid identity");
- std::filesystem::remove(path);std::cout<<"PASS: grid identity configuration and registry integration\n";return 0;
-}catch(const std::exception& error){std::filesystem::remove(path);std::cerr<<error.what()<<'\n';return 1;}}
+void check(bool value, const char* message) {
+    if (!value)
+        throw std::runtime_error(message);
+}
+int main() {
+    const auto path = std::filesystem::temp_directory_path() /
+                      ("opensim-identity-" + framework::Uuid::random().str() + ".ini");
+    try {
+        framework::RegionUri::Resolver resolver = [](const std::string& host) -> std::optional<std::string> {
+            return host == "bad.invalid" ? std::nullopt : std::optional<std::string>{"203.0.113.7"};
+        };
+        server::IniConfig empty;
+        server::GridIdentity missing(empty, std::nullopt, resolver);
+        check(!missing.has_hypergrid && !missing.gate_uri() && missing.gate_uri_slash().empty() &&
+                  !missing.economy_url,
+              "ignore-missing default struct/null behavior");
+        bool threw = false;
+        try {
+            server::GridIdentity required(empty, "", resolver);
+        } catch (const std::runtime_error& error) {
+            threw = std::string(error.what()) == "GatekeeperURI configuration error";
+        }
+        check(threw, "empty default requires gatekeeper");
+        {
+            std::ofstream file(path);
+            file
+                << "[Const]\nGatekeeperURI=http://gate.example\nHomeURI=https://home.example:9000\nGatekeeperURIAlias=alias.example,https://alias.example:80, bad/path\nHomeURIAlias=homealias.example\nStunServers=stun.example:3478,stun.example:3478,bad/path\n[GridInfo]\nGridName=Identity Grid\n";
+        }
+        auto config = server::IniConfig::load(path);
+        server::GridIdentity info(config, std::nullopt, resolver);
+        check(info.has_hypergrid && info.gate_uri() == "http://gate.example:80" &&
+                  info.home_uri() == "https://home.example:9000",
+              "host configuration");
+        check(info.grid_aliases->size() == 1 && info.is_local_grid("https://alias.example:80") == 1,
+              "alias identity ignores scheme and suppresses duplicate host/port");
+        check(info.is_local_home("homealias.example") == 1 && info.is_local_grid("bad/path") == -1 &&
+                  info.is_local_grid(std::nullopt) == 1,
+              "local home/invalid/empty rules");
+        check(info.is_local_grid("http://bad.invalid", true) == -2 &&
+                  info.is_local_grid("http://elsewhere.example", true) == 0,
+              "DNS result classification");
+        check(info.stun_servers->size() == 2, "STUN duplicates retained");
+        info.add_grid_aliases(std::vector<std::string>{});
+        check(info.grid_aliases->size() == 1, "empty alias setter preserves state");
+        info.set_stuns(std::vector<std::string>{});
+        check(!info.stun_servers, "empty STUN setter clears state");
+        info.set_grid_url("http://new.example");
+        check(info.grid_url == "http://new.example:80" && info.is_local_grid("gate.example") == 1 &&
+                  info.is_local_grid("new.example") == 0,
+              "grid URL display setter does not change identity");
+        check(info.accepts_gatekeeper_token("http://gate.example/;token"),
+              "Gatekeeper token names the configured grid");
+        check(info.accepts_gatekeeper_token("https://alias.example:80;token"),
+              "Gatekeeper token names a grid alias");
+        check(!info.accepts_gatekeeper_token("http://gate.example:9000;token") &&
+                  !info.accepts_gatekeeper_token("http://gate.example") &&
+                  !info.accepts_gatekeeper_token(";token") &&
+                  !info.accepts_gatekeeper_token("bad/path;token"),
+              "Gatekeeper rejects invalid or foreign token destinations");
+        int verification_calls = 0;
+        const auto verify = [&](const framework::HttpHost&, bool local) {
+            ++verification_calls;
+            return local;
+        };
+        check(!server::authenticate_gatekeeper_agent(info, "bad/path;token", "192.0.2.10",
+                                                     "http://gate.example", verify, resolver) &&
+                  !server::authenticate_gatekeeper_agent(info, "http://gate.example;token", "",
+                                                         "http://gate.example", verify, resolver) &&
+                  !server::authenticate_gatekeeper_agent(info, "http://gate.example;token", "192.0.2.10",
+                                                         "http://bad.invalid", verify, resolver) &&
+                  verification_calls == 0,
+              "Gatekeeper rejects invalid requests before session verification");
+        check(server::authenticate_gatekeeper_agent(info, "http://gate.example;token", "192.0.2.10",
+                                                    "http://gate.example", verify, resolver) &&
+                  !server::authenticate_gatekeeper_agent(info, "http://gate.example;token", "192.0.2.10",
+                                                         "https://home.example:9000", verify, resolver) &&
+                  verification_calls == 2,
+              "Gatekeeper distinguishes local and remote session verification");
+        services::NullRegionStore store("!static");
+        services::GridService service(store, config, [] { return 1700000000; }, {}, {}, resolver);
+        services::GridRegion region;
+        region.id = framework::Uuid::random();
+        region.name = "Region";
+        region.x = 25600;
+        region.y = 25600;
+        region.internal_endpoint = services::RegionEndpoint{"0.0.0.0", 9000};
+        region.external_host = "127.0.0.1";
+        check(service.register_region({}, region).empty(), "register identity test region");
+        check(service.by_name({}, "http://gate.example/Region")->id == region.id &&
+                  service.local_by_name({}, "http://alias.example/Region")->id == region.id,
+              "service uses configured native grid identity");
+        std::filesystem::remove(path);
+        std::cout << "PASS: grid identity configuration and registry integration\n";
+        return 0;
+    } catch (const std::exception& error) {
+        std::filesystem::remove(path);
+        std::cerr << error.what() << '\n';
+        return 1;
+    }
+}

@@ -4,21 +4,182 @@
 #include "opensim/network/osd_json.hpp"
 #include <sqlite3.h>
 #include <iostream>
-using namespace opensim;using namespace services;using network::Value;
-std::string hex(std::string_view s){std::string out;for(unsigned char c:s){out+="0123456789abcdef"[c>>4];out+="0123456789abcdef"[c&15];}return out;}
-std::string unhex(std::string_view s){std::string out;for(size_t i=0;i<s.size();i+=2)out+=char(std::stoi(std::string(s.substr(i,2)),nullptr,16));return out;}
-std::optional<std::string> text(const Value& v){if(v.kind==Value::Kind::Undefined)return {};auto s=network::osd_string(v);return s=="."?"":s;}
-std::optional<SqliteTableStrings> strings(const Value& v){if(v.kind!=Value::Kind::Array)return {};SqliteTableStrings out;for(auto& x:v.array)out.push_back(text(x));return out;}
-std::shared_ptr<SqliteTableFields> fields(const Value& v){if(v.kind!=Value::Kind::Array)return {};auto out=std::make_shared<SqliteTableFields>();for(auto& pair:v.array)(*out)[text(pair.array.at(0)).value()]=text(pair.array.at(1));return out;}
-struct TypedRow{framework::Uuid principal;bool active=false;int32_t count=0;std::optional<std::string> name;std::shared_ptr<SqliteTableFields> data;};
-SqliteTableSchema<TypedRow> schema(){SqliteTableSchema<TypedRow> s;s.fields={
- {"PrincipalID",[](auto& r){return r.principal.str();},[](auto& r,const auto& row,int col){framework::try_parse_sdk_uuid(row.value_text(col),r.principal);}},
- {"Active",[](auto& r){return r.active?"True":"False";},[](auto& r,const auto& row,int col){r.active=row.int32_value(col)!=0;}},
- {"Count",[](auto& r){return std::to_string(r.count);},[](auto& r,const auto& row,int col){r.count=row.int32_value(col);}},
- {"Name",[](auto& r){return r.name;},[](auto& r,const auto& row,int col){r.name=row.string_value(col);}}};s.data=[](auto& r)->std::shared_ptr<SqliteTableFields>&{return r.data;};return s;}
-std::string data(const std::shared_ptr<SqliteTableFields>& d){std::string out;for(auto& [key,v]:*d)out+=hex(key)+"="+(v?hex(*v):"N")+",";return out;}
-std::string rows(const std::vector<std::shared_ptr<TypedRow>>& values){std::string out=std::to_string(values.size())+"|";for(auto& r:values)out+=r->principal.str()+":"+(r->active?"1":"0")+":"+std::to_string(r->count)+":"+(r->name?hex(*r->name):"N")+":"+data(r->data)+";";return out;}
-std::string rows(const std::vector<std::shared_ptr<FriendsData>>& values){std::string out=std::to_string(values.size())+"|";for(auto& r:values)out+=(r->principal?hex(*r->principal):"N")+":"+(r->friend_id?hex(*r->friend_id):"N")+":"+data(r->data)+";";return out;}
-std::string snapshot(sqlite3* db,bool friends){const char* sql=friends?"SELECT coalesce(group_concat(v,'|'),'') FROM (SELECT quote(PrincipalID)||':'||quote(Friend)||':'||quote(Flags)||':'||quote(Offered) AS v FROM Friends ORDER BY PrincipalID,Friend)":"SELECT coalesce(group_concat(v,'|'),'') FROM (SELECT quote(PrincipalID)||':'||quote(Active)||':'||quote(Count)||':'||quote(Name) AS v FROM Records ORDER BY PrincipalID,Name)";sqlite3_stmt* s=nullptr;if(sqlite3_prepare_v2(db,sql,-1,&s,nullptr)!=SQLITE_OK){if(s)sqlite3_finalize(s);return "X";}std::string value;if(sqlite3_step(s)==SQLITE_ROW){auto p=sqlite3_column_text(s,0);if(p)value.assign(reinterpret_cast<const char*>(p),sqlite3_column_bytes(s,0));}sqlite3_finalize(s);return hex(value);}
-int main(){std::string line;while(std::getline(std::cin,line)){auto input=network::parse_osd_json(unhex(line));bool friends=network::osd_string(input.get("type"))=="friends";auto db=std::make_shared<SqliteDatabase>();db->open_path(":memory:",true);auto setup=network::osd_string(input.get("setup"));if(sqlite3_exec(db->handle(),setup.c_str(),nullptr,nullptr,nullptr)!=SQLITE_OK){std::cout<<"FIXTURE_EX\n";continue;}SqliteGenericTable<TypedRow> typed([db]{return db;},"Records",schema());SqliteFriendsStore store(db,"Friends");std::string output;
- for(auto& op:input.get("ops").array){std::string result="-";try{auto kind=network::osd_string(op.get("op"));if(kind=="fields"||kind=="delete"){auto f=strings(op.get("fields")),k=strings(op.get("keys"));if(kind=="fields")result=friends?rows(store.get_fields(f?&*f:nullptr,k?&*k:nullptr)):rows(typed.get_fields(f?&*f:nullptr,k?&*k:nullptr));else result=(friends?store.delete_fields(f?&*f:nullptr,k?&*k:nullptr):typed.delete_fields(f?&*f:nullptr,k?&*k:nullptr))?"1":"0";}else if(kind=="field")result=friends?rows(store.get_field(text(op.get("field")),text(op.get("key")))):rows(typed.get_field(text(op.get("field")),text(op.get("key"))));else if(kind=="where")result=friends?rows(store.get_where(text(op.get("where")))):rows(typed.get_where(text(op.get("where"))));else if(kind=="friends")result=rows(store.get(text(op.get("principal"))));else if(kind=="query")result=rows(typed.query(network::osd_string(op.get("sql")),{}));else if(kind=="singledelete")result=(friends?store.erase(text(op.get("field")),text(op.get("key"))):typed.delete_field(text(op.get("field")),text(op.get("key"))))?"1":"0";else if(kind=="raw"){auto sql=network::osd_string(op.get("sql"));if(sqlite3_exec(db->handle(),sql.c_str(),nullptr,nullptr,nullptr)!=SQLITE_OK)throw std::runtime_error("raw");}else if(kind=="store"){bool nullrow=network::osd_boolean(op.get("nullrow"));if(friends){auto row=nullrow?std::shared_ptr<FriendsData>{}:std::make_shared<FriendsData>();if(row){row->principal="a";row->friend_id="b";row->data=fields(op.get("data"));}result=store.store(row)?"1":"0";}else{auto row=nullrow?std::shared_ptr<TypedRow>{}:std::make_shared<TypedRow>();if(row){row->principal=framework::Uuid("00000000-0000-0000-0000-000000000001");row->active=true;row->count=7;row->name=text(op.get("name"));row->data=fields(op.get("data"));}result=typed.store(row)?"1":"0";}}}catch(...){result="EX";}output+=hex(result)+":"+snapshot(db->handle(),friends)+";";}std::cout<<output<<'\n';}}
+using namespace opensim;
+using namespace services;
+using network::Value;
+std::string hex(std::string_view s) {
+    std::string out;
+    for (unsigned char c : s) {
+        out += "0123456789abcdef"[c >> 4];
+        out += "0123456789abcdef"[c & 15];
+    }
+    return out;
+}
+std::string unhex(std::string_view s) {
+    std::string out;
+    for (size_t i = 0; i < s.size(); i += 2)
+        out += char(std::stoi(std::string(s.substr(i, 2)), nullptr, 16));
+    return out;
+}
+std::optional<std::string> text(const Value& v) {
+    if (v.kind == Value::Kind::Undefined)
+        return {};
+    auto s = network::osd_string(v);
+    return s == "." ? "" : s;
+}
+std::optional<SqliteTableStrings> strings(const Value& v) {
+    if (v.kind != Value::Kind::Array)
+        return {};
+    SqliteTableStrings out;
+    for (auto& x : v.array)
+        out.push_back(text(x));
+    return out;
+}
+std::shared_ptr<SqliteTableFields> fields(const Value& v) {
+    if (v.kind != Value::Kind::Array)
+        return {};
+    auto out = std::make_shared<SqliteTableFields>();
+    for (auto& pair : v.array)
+        (*out)[text(pair.array.at(0)).value()] = text(pair.array.at(1));
+    return out;
+}
+struct TypedRow {
+    framework::Uuid principal;
+    bool active = false;
+    int32_t count = 0;
+    std::optional<std::string> name;
+    std::shared_ptr<SqliteTableFields> data;
+};
+SqliteTableSchema<TypedRow> schema() {
+    SqliteTableSchema<TypedRow> s;
+    s.fields = {{"PrincipalID", [](auto& r) { return r.principal.str(); },
+                 [](auto& r, const auto& row, int col) {
+                     framework::try_parse_sdk_uuid(row.value_text(col), r.principal);
+                 }},
+                {"Active", [](auto& r) { return r.active ? "True" : "False"; },
+                 [](auto& r, const auto& row, int col) { r.active = row.int32_value(col) != 0; }},
+                {"Count", [](auto& r) { return std::to_string(r.count); },
+                 [](auto& r, const auto& row, int col) { r.count = row.int32_value(col); }},
+                {"Name", [](auto& r) { return r.name; },
+                 [](auto& r, const auto& row, int col) { r.name = row.string_value(col); }}};
+    s.data = [](auto& r) -> std::shared_ptr<SqliteTableFields>& { return r.data; };
+    return s;
+}
+std::string data(const std::shared_ptr<SqliteTableFields>& d) {
+    std::string out;
+    for (auto& [key, v] : *d)
+        out += hex(key) + "=" + (v ? hex(*v) : "N") + ",";
+    return out;
+}
+std::string rows(const std::vector<std::shared_ptr<TypedRow>>& values) {
+    std::string out = std::to_string(values.size()) + "|";
+    for (auto& r : values)
+        out += r->principal.str() + ":" + (r->active ? "1" : "0") + ":" + std::to_string(r->count) + ":" +
+               (r->name ? hex(*r->name) : "N") + ":" + data(r->data) + ";";
+    return out;
+}
+std::string rows(const std::vector<std::shared_ptr<FriendsData>>& values) {
+    std::string out = std::to_string(values.size()) + "|";
+    for (auto& r : values)
+        out += (r->principal ? hex(*r->principal) : "N") + ":" + (r->friend_id ? hex(*r->friend_id) : "N") +
+               ":" + data(r->data) + ";";
+    return out;
+}
+std::string snapshot(sqlite3* db, bool friends) {
+    const char* sql =
+        friends
+            ? "SELECT coalesce(group_concat(v,'|'),'') FROM (SELECT quote(PrincipalID)||':'||quote(Friend)||':'||quote(Flags)||':'||quote(Offered) AS v FROM Friends ORDER BY PrincipalID,Friend)"
+            : "SELECT coalesce(group_concat(v,'|'),'') FROM (SELECT quote(PrincipalID)||':'||quote(Active)||':'||quote(Count)||':'||quote(Name) AS v FROM Records ORDER BY PrincipalID,Name)";
+    sqlite3_stmt* s = nullptr;
+    if (sqlite3_prepare_v2(db, sql, -1, &s, nullptr) != SQLITE_OK) {
+        if (s)
+            sqlite3_finalize(s);
+        return "X";
+    }
+    std::string value;
+    if (sqlite3_step(s) == SQLITE_ROW) {
+        auto p = sqlite3_column_text(s, 0);
+        if (p)
+            value.assign(reinterpret_cast<const char*>(p), sqlite3_column_bytes(s, 0));
+    }
+    sqlite3_finalize(s);
+    return hex(value);
+}
+int main() {
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        auto input = network::parse_osd_json(unhex(line));
+        bool friends = network::osd_string(input.get("type")) == "friends";
+        auto db = std::make_shared<SqliteDatabase>();
+        db->open_path(":memory:", true);
+        auto setup = network::osd_string(input.get("setup"));
+        if (sqlite3_exec(db->handle(), setup.c_str(), nullptr, nullptr, nullptr) != SQLITE_OK) {
+            std::cout << "FIXTURE_EX\n";
+            continue;
+        }
+        SqliteGenericTable<TypedRow> typed([db] { return db; }, "Records", schema());
+        SqliteFriendsStore store(db, "Friends");
+        std::string output;
+        for (auto& op : input.get("ops").array) {
+            std::string result = "-";
+            try {
+                auto kind = network::osd_string(op.get("op"));
+                if (kind == "fields" || kind == "delete") {
+                    auto f = strings(op.get("fields")), k = strings(op.get("keys"));
+                    if (kind == "fields")
+                        result = friends ? rows(store.get_fields(f ? &*f : nullptr, k ? &*k : nullptr))
+                                         : rows(typed.get_fields(f ? &*f : nullptr, k ? &*k : nullptr));
+                    else
+                        result = (friends ? store.delete_fields(f ? &*f : nullptr, k ? &*k : nullptr)
+                                          : typed.delete_fields(f ? &*f : nullptr, k ? &*k : nullptr))
+                                     ? "1"
+                                     : "0";
+                } else if (kind == "field")
+                    result = friends ? rows(store.get_field(text(op.get("field")), text(op.get("key"))))
+                                     : rows(typed.get_field(text(op.get("field")), text(op.get("key"))));
+                else if (kind == "where")
+                    result = friends ? rows(store.get_where(text(op.get("where"))))
+                                     : rows(typed.get_where(text(op.get("where"))));
+                else if (kind == "friends")
+                    result = rows(store.get(text(op.get("principal"))));
+                else if (kind == "query")
+                    result = rows(typed.query(network::osd_string(op.get("sql")), {}));
+                else if (kind == "singledelete")
+                    result = (friends ? store.erase(text(op.get("field")), text(op.get("key")))
+                                      : typed.delete_field(text(op.get("field")), text(op.get("key"))))
+                                 ? "1"
+                                 : "0";
+                else if (kind == "raw") {
+                    auto sql = network::osd_string(op.get("sql"));
+                    if (sqlite3_exec(db->handle(), sql.c_str(), nullptr, nullptr, nullptr) != SQLITE_OK)
+                        throw std::runtime_error("raw");
+                } else if (kind == "store") {
+                    bool nullrow = network::osd_boolean(op.get("nullrow"));
+                    if (friends) {
+                        auto row = nullrow ? std::shared_ptr<FriendsData>{} : std::make_shared<FriendsData>();
+                        if (row) {
+                            row->principal = "a";
+                            row->friend_id = "b";
+                            row->data = fields(op.get("data"));
+                        }
+                        result = store.store(row) ? "1" : "0";
+                    } else {
+                        auto row = nullrow ? std::shared_ptr<TypedRow>{} : std::make_shared<TypedRow>();
+                        if (row) {
+                            row->principal = framework::Uuid("00000000-0000-0000-0000-000000000001");
+                            row->active = true;
+                            row->count = 7;
+                            row->name = text(op.get("name"));
+                            row->data = fields(op.get("data"));
+                        }
+                        result = typed.store(row) ? "1" : "0";
+                    }
+                }
+            } catch (...) {
+                result = "EX";
+            }
+            output += hex(result) + ":" + snapshot(db->handle(), friends) + ";";
+        }
+        std::cout << output << '\n';
+    }
+}

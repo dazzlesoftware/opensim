@@ -1,3 +1,4 @@
+#include "opensim/network/sdk_llsd_xml.hpp"
 /*
 Copyright (c) Contributors, http://opensimulator.org/
 See CONTRIBUTORS.TXT for a full list of copyright holders.
@@ -27,69 +28,191 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "opensim/server/login_application.hpp"
 #include <stdexcept>
+#include "opensim/framework/ip_address.hpp"
 namespace opensim::server {
 using namespace network;
-LoginApplication::LoginApplication(services::ILoginService& login,const IniConfig& config):handlers_(login),grid_info_(config.section("GridInfoService")) {
-    if(!grid_info_.contains("platform"))grid_info_["platform"]="OpenSim";
-    const auto home=config.get("Startup","HomeURI",config.get("Hypergrid","HomeURI",config.get("LoginService","SRV_HomeURI")));
-    if(!home.empty())grid_info_["home"]=home;
-    for(const auto& pair:{std::pair{"HomeURIAlias","homealias"},std::pair{"GatekeeperURI","gatekeeper"},std::pair{"GatekeeperURIAlias","gatekeeperalias"}}){
-        const auto value=config.get("Startup",pair.first,config.get("Hypergrid",pair.first));
-        if(!value.empty())grid_info_[pair.second]=value;
+LoginApplication::LoginApplication(services::ILoginService& login, const IniConfig& config)
+    : handlers_(login), grid_info_(config.section("GridInfoService")) {
+    if (!grid_info_.contains("platform"))
+        grid_info_["platform"] = "OpenSim";
+    const auto home = config.get(
+        "Startup", "HomeURI", config.get("Hypergrid", "HomeURI", config.get("LoginService", "SRV_HomeURI")));
+    if (!home.empty())
+        grid_info_["home"] = home;
+    for (const auto& pair : {std::pair{"HomeURIAlias", "homealias"}, std::pair{"GatekeeperURI", "gatekeeper"},
+                             std::pair{"GatekeeperURIAlias", "gatekeeperalias"}}) {
+        const auto value = config.get("Startup", pair.first, config.get("Hypergrid", pair.first));
+        if (!value.empty())
+            grid_info_[pair.second] = value;
     }
     grid_info_xml(grid_info_); // Reject invalid XML keys at startup, before accepting traffic.
 }
-void LoginApplication::set_default_login_uri(const std::string& uri){if(!grid_info_.contains("login"))grid_info_["login"]=uri;}
-HttpResponse LoginApplication::handle(const HttpRequest& request) {
-    if(request.path.starts_with("/auth")&&authentication_)return authentication_->handle(request);
-    if(request.path=="/friends"&&friends_)return friends_->handle(request);
-    if(request.path=="/avatar"&&avatar_)return avatar_->handle(request);
-    if(request.path=="/accounts"&&accounts_)return accounts_->handle(request);
-    if(request.path=="/presence"&&presence_)return presence_->handle(request);
-    if(request.path=="/grid"&&grid_)return grid_->handle(request);
-    if(request.path=="/griduser"&&grid_user_)return grid_user_->handle(request);
+void LoginApplication::set_default_login_uri(const std::string& uri) {
+    if (!grid_info_.contains("login"))
+        grid_info_["login"] = uri;
+}
+HttpResponse LoginApplication::handle_gatekeeper(const HttpRequest& request) {
     HttpResponse response;
-    response.headers["Cache-Control"]="no-store";
-    if(request.path=="/health"||request.path=="/ready") {
-        if(request.method!="GET"&&request.method!="HEAD"){response.status=405;response.headers["Allow"]="GET, HEAD";return response;}
-        response.content_type="application/json";
-        response.status=request.path=="/ready"?503:200;
-        response.body="{\"service\":\"OpenSimNative\",\"running\":true,\"authentication_ready\":true,\"simulation_ready\":false,\"login_success_available\":false}";
+    response.status = 404;
+    if (!gatekeeper_ || request.method != "POST" || request.path != "/")
         return response;
-    }
-    if(request.path=="/get_grid_info"||request.path=="/json_grid_info") {
-        if(request.method!="GET"&&request.method!="HEAD"){response.status=405;response.headers["Allow"]="GET, HEAD";return response;}
-        if(request.path=="/get_grid_info"){response.content_type="application/xml";response.body=grid_info_xml(grid_info_);}
-        else {response.content_type="application/json";response.body=json_strings(grid_info_);}
-        return response;
-    }
-    if(request.path!="/"&&request.path!="/login"){response.status=404;return response;}
-    if(request.method!="POST"){response.status=405;response.headers["Allow"]="POST";return response;}
-    auto content=request.content_type.substr(0,request.content_type.find(';'));
-    for(auto& c:content)if(c>='A'&&c<='Z')c=static_cast<char>(c-'A'+'a');
-    if(content=="application/llsd+xml") {
-        response.content_type="application/llsd+xml";
-        try {
-            const auto value=parse_llsd_xml(request.body);
-            if(value.kind!=Value::Kind::Map){response.status=400;return response;}
-            response.body=llsd_xml(handlers_.llsd_login(value,request.remote_ip));
-        }catch(const std::exception&){response.status=400;}
-        return response;
-    }
-    response.content_type="text/xml";
     RpcCall call;
-    try{call=parse_xml_rpc(request.body);}catch(const std::exception&){response.status=404;return response;}
+    try {
+        call = parse_xml_rpc(request.body);
+    } catch (const std::exception&) {
+        return response;
+    }
+    response.status = 200;
+    response.content_type = "text/xml";
+    if (call.method != "link_region" && call.method != "get_region") {
+        response.body = xml_rpc_fault(-32601, "Requested method [" + call.method + "] not found");
+        return response;
+    }
     try {
         const Value empty;
-        const auto& data=call.parameters.empty()?empty:call.parameters.front();
-        if(call.method=="login_to_simulator")response.body=xml_rpc_response(handlers_.xml_rpc_login(data,request.remote_ip));
-        else if(call.method=="set_login_level")response.body=xml_rpc_response(handlers_.set_level(data));
-        else if(call.method=="get_grid_info") {
-            std::map<std::string,Value> info;for(const auto& [key,value]:grid_info_)info[key]=Value(value);
-            response.body=xml_rpc_response(Value::object(std::move(info)));
-        }else response.body=xml_rpc_fault(-32601,"Requested method ["+call.method+"] not found");
-    }catch(const std::exception&){response.body=xml_rpc_fault(-32603,"Error processing XML-RPC request");}
-    response.headers["Access-Control-Allow-Origin"]="*";
+        response.body = xml_rpc_response(
+            gatekeeper_(call.method, call.parameters.empty() ? empty : call.parameters.front()));
+    } catch (const std::exception&) {
+        response.body = xml_rpc_fault(-32603, "Error processing XML-RPC request");
+    }
+    return response;
+}
+HttpResponse LoginApplication::handle(const HttpRequest& request, bool allow_gatekeeper) {
+    if (request.path.starts_with("/auth") && authentication_)
+        return authentication_->handle(request);
+    if (request.path == "/friends" && friends_)
+        return friends_->handle(request);
+    if (request.path == "/offlineim" && offline_im_)
+        return offline_im_->handle(request);
+    if (request.path == "/avatar" && avatar_)
+        return avatar_->handle(request);
+    if (request.path == "/accounts" && accounts_)
+        return accounts_->handle(request);
+    if (request.path == "/presence" && presence_)
+        return presence_->handle(request);
+    if (request.path == "/grid" && grid_)
+        return grid_->handle(request);
+    if (request.path == "/griduser" && grid_user_)
+        return grid_user_->handle(request);
+    HttpResponse response;
+    response.headers["Cache-Control"] = "no-store";
+    if (request.path == "/health" || request.path == "/ready") {
+        if (request.method != "GET" && request.method != "HEAD") {
+            response.status = 405;
+            response.headers["Allow"] = "GET, HEAD";
+            return response;
+        }
+        response.content_type = "application/json";
+        response.status = request.path == "/ready" ? 503 : 200;
+        response.body =
+            "{\"service\":\"OpenSimNative\",\"running\":true,\"authentication_ready\":true,\"simulation_ready\":false,\"login_success_available\":false}";
+        return response;
+    }
+    if (request.path == "/get_grid_info" || request.path == "/json_grid_info") {
+        if (request.method != "GET" && request.method != "HEAD") {
+            response.status = 405;
+            response.headers["Allow"] = "GET, HEAD";
+            return response;
+        }
+        if (request.path == "/get_grid_info") {
+            response.content_type = "application/xml";
+            response.body = grid_info_xml(grid_info_);
+        } else {
+            response.content_type = "application/json";
+            response.body = json_strings(grid_info_);
+        }
+        return response;
+    }
+    if (request.content_type == "application/json-rpc")
+        return json_rpc_.handle(request);
+    if (request.path != "/" && request.path != "/login") {
+        response.status = 404;
+        return response;
+    }
+    if (request.method != "POST") {
+        response.status = 405;
+        response.headers["Allow"] = "POST";
+        return response;
+    }
+    auto content = request.content_type.substr(0, request.content_type.find(';'));
+    for (auto& c : content)
+        if (c >= 'A' && c <= 'Z')
+            c = static_cast<char>(c - 'A' + 'a');
+    if (content == "application/llsd+xml") {
+        response.content_type = "application/llsd+xml";
+        try {
+            const auto value = deserialize_sdk_llsd_xml(request.body);
+            if (value.kind != Value::Kind::Map) {
+                response.status = 400;
+                return response;
+            }
+            response.body = llsd_xml(handlers_.llsd_login(value, request.remote_ip));
+        } catch (const std::exception&) {
+            response.status = 400;
+        }
+        return response;
+    }
+    response.content_type = "text/xml";
+    RpcCall call;
+    try {
+        call = parse_xml_rpc(request.body);
+    } catch (const std::exception&) {
+        response.status = 404;
+        return response;
+    }
+    try {
+        const Value empty;
+        const auto& data = call.parameters.empty() ? empty : call.parameters.front();
+        if (call.method == "login_to_simulator") {
+            auto client_ip = request.remote_ip;
+            // BaseHttpServer passes XFF as Params[3]; LLLoginHandlers uses
+            // Util.GetClientIPFromXFF's first comma-delimited address, untrimmed.
+            if (const auto header = request.headers.find("x-forwarded-for");
+                header != request.headers.end()) {
+                try {
+                    const auto first = header->second.substr(0, header->second.find(','));
+                    if (const auto address = framework::IpAddress::parse(first))
+                        client_ip = address->str();
+                } catch (const std::exception&) {
+                } // Source retains the transport peer on parse failure.
+            }
+            response.body = xml_rpc_response(handlers_.xml_rpc_login(data, client_ip));
+        } else if (call.method == "grid_instant_message" && grid_message_)
+            response.body =
+                xml_rpc_response(Value::object({{"success", grid_message_(data) ? "TRUE" : "FALSE"}}));
+        else if (home_agent_verifier_ &&
+                 (call.method == "verify_agent" || call.method == "verify_client" ||
+                  call.method == "agent_is_coming_home" || call.method == "logout_agent"))
+            response.body = xml_rpc_response(
+                network::Value::object({{"result", home_agent_verifier_(call.method, data)
+                                                       ? (call.method == "logout_agent" ? "true" : "True")
+                                                       : "False"}}));
+        else if (call.method == "get_home_region" && home_region_lookup_)
+            response.body = xml_rpc_response(home_region_lookup_(data));
+        else if (call.method == "get_online_friends" && home_user_lookup_)
+            // The legacy XML-RPC method returns an empty map. Live presence uses HGFriends.
+            response.body = xml_rpc_response(Value::object({}));
+        else if ((call.method == "get_uuid" || call.method == "locate_user" ||
+                  call.method == "get_server_urls" || call.method == "get_user_info" ||
+                  call.method == "get_uui" || call.method == "status_notification") &&
+                 home_user_lookup_)
+            response.body = xml_rpc_response(home_user_lookup_(call.method, data, request.remote_ip));
+        else if (allow_gatekeeper && (call.method == "link_region" || call.method == "get_region") &&
+                 gatekeeper_)
+            response.body = xml_rpc_response(gatekeeper_(call.method, data));
+        else if (call.method == "set_login_level")
+            response.body = xml_rpc_response(handlers_.set_level(data));
+        else if (call.method == "get_grid_info") {
+            std::map<std::string, Value> info;
+            for (const auto& [key, value] : grid_info_)
+                info[key] = Value(value);
+            response.body = xml_rpc_response(Value::object(std::move(info)));
+        } else
+            response.body = xml_rpc_fault(-32601, "Requested method [" + call.method + "] not found");
+    } catch (const std::exception&) {
+        response.body = xml_rpc_fault(-32603, "Error processing XML-RPC request");
+    }
+    response.headers["Access-Control-Allow-Origin"] = "*";
     return response;
 }
 }

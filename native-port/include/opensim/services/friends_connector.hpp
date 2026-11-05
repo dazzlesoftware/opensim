@@ -3,12 +3,13 @@
 #pragma once
 #include "opensim/services/friends_service.hpp"
 #include "opensim/network/service_protocol.hpp"
+namespace opensim::network {class WebHttpClients;}
 namespace opensim::services {
 class FriendsConnector:public IFriendsService {
 public:
     using Request=std::function<std::string(const std::string&,const std::string&)>;
     explicit FriendsConnector(std::optional<std::string> uri=std::string{},Request request={});
-    explicit FriendsConnector(const server::IniConfig& config,Request request={});
+    explicit FriendsConnector(const server::IniConfig& config,Request request={},std::shared_ptr<network::WebHttpClients> clients={});
     std::vector<FriendInfo> get(const framework::Uuid& principal)override;
     std::vector<FriendInfo> get(const std::optional<std::string>& principal)override;
     bool store(const std::optional<std::string>& principal,const std::optional<std::string>& friend_id,std::int32_t flags)override;

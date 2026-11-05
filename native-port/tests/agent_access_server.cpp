@@ -7,7 +7,244 @@
 #include <mutex>
 #include <iostream>
 using namespace opensim;
-struct UpdateObject:framework::AgentTransferObject{std::string xml,extra;bool changed=false;explicit UpdateObject(std::string value):xml(std::move(value)){}std::string to_xml2()override{return xml;}std::string extra_to_xml_string()override{return extra;}void extra_from_xml_string(const std::string& value)override{extra=value;}bool has_group_changed()const override{return changed;}void has_group_changed(bool value)override{changed=value;}};
-struct UpdateScene:framework::AgentTransferScene{std::shared_ptr<framework::AgentTransferObject> deserialize_object(const std::string& xml)override{if(xml=="throw")throw std::runtime_error("controlled deserializer");return std::make_shared<UpdateObject>(xml);}};
-struct Service:services::ISimulationLogin,services::ISimulationAgentLifecycle,services::ISimulationAgentUpdates{std::atomic<int> data_updates=0,position_updates=0,scene_calls=0;std::shared_ptr<framework::AgentData> last_data;std::shared_ptr<framework::AgentPosition> last_position;framework::EntityTransferContext last_context;std::shared_ptr<framework::AgentTransferScene> get_scene(const framework::Uuid&)override{++scene_calls;return std::make_shared<UpdateScene>();}bool update_agent(services::GridRegion&,const std::shared_ptr<framework::AgentData>& data,framework::EntityTransferContext& context)override{std::lock_guard lock(state);++data_updates;last_data=data;last_context=context;return !data->agent_id.str().ends_with('9');}bool update_agent(services::GridRegion&,const std::shared_ptr<framework::AgentPosition>& data)override{std::lock_guard lock(state);++position_updates;last_position=data;auto circuit=circuits.get_agent_circuit_data(data->agent_id);if(circuit)circuit->start_position=data->position;return !data->agent_id.str().ends_with('9');}std::mutex state;std::atomic<int> closes=0,releases=0;std::optional<std::string> last_auth;framework::Uuid last_agent,last_region;bool release_agent(const framework::Uuid& region,const framework::Uuid& agent,const std::string& uri)override{std::lock_guard lock(state);last_auth=uri;last_agent=agent;last_region=region;++releases;return false;}bool close_agent(services::GridRegion& region,const framework::Uuid& agent,const std::optional<std::string>& auth)override{std::lock_guard lock(state);last_auth=auth;last_agent=agent;last_region=region.id;circuits.remove_circuit(agent);++closes;return false;}std::atomic<int> calls=0,creates=0;framework::AgentCircuitManager circuits;bool query_access(services::GridRegion&,const framework::Uuid& id,const std::optional<std::string>&,bool,const framework::Vector3&,std::vector<framework::Uuid>& features,framework::EntityTransferContext& context,std::string& reason)override{++calls;if(id.str().ends_with('9')){reason="denied by fixture";return false;}features.push_back(framework::Uuid("00000000-0000-0000-0000-000000000008"));context.inbound_version=12;context.outbound_version=13;reason="";return true;}bool create_agent(const services::GridRegion*,services::GridRegion&,const std::shared_ptr<framework::AgentCircuitData>& circuit,std::uint32_t,framework::EntityTransferContext&,std::string& reason)override{++creates;if(circuit->agent_id.str().ends_with('9')){reason="denied by fixture";return false;}circuits.add_new_circuit(circuit);reason="";return true;}};
-int main(int argc,char**){try{const bool admission=argc>1;auto service_ptr=std::make_shared<Service>();auto& service=*service_ptr;std::mutex workers_mutex;std::vector<std::future<void>> workers;server::AgentDeleteHandler lifecycle(service_ptr,[&](std::function<void()> task,const std::string&){std::lock_guard lock(workers_mutex);workers.push_back(std::async(std::launch::async,[task=std::move(task)]{try{task();}catch(const std::exception&){} }));});server::AgentUpdateHandler updates(&service);server::AgentAccessHandler access(&service,&lifecycle,&updates);network::HttpServerOptions options;options.port=0;options.custom_methods={"QUERYACCESS"};options.decompress_request_body=false;network::HttpServer server(options,[&](const network::HttpRequest& request){network::HttpResponse response;response.content_type="application/json";if(request.path=="/stats"){auto stats=network::Value::object({});std::lock_guard state_guard(service.state);stats.set("data_updates",network::Value(service.data_updates.load()));stats.set("position_updates",network::Value(service.position_updates.load()));stats.set("scene_calls",network::Value(service.scene_calls.load()));if(service.last_data){stats.set("data_agent",service.last_data->agent_id.str());stats.set("data_position",framework::vector3_string(service.last_data->position));stats.set("data_objects",network::Value(static_cast<std::int32_t>(service.last_data->attachment_objects?service.last_data->attachment_objects->size():0)));stats.set("update_context",service.last_context.pack());}if(service.last_position){stats.set("position_agent",service.last_position->agent_id.str());stats.set("position_value",framework::vector3_string(service.last_position->position));}stats.set("closes",network::Value(service.closes.load()));stats.set("releases",network::Value(service.releases.load()));stats.set("last_auth_null",network::Value(!service.last_auth));stats.set("last_auth",service.last_auth.value_or(""));stats.set("last_agent",service.last_agent.str());stats.set("last_region",service.last_region.str());stats.set("queries",network::Value(service.calls.load()));stats.set("creates",network::Value(service.creates.load()));auto values=service.circuits.get_agent_circuits();stats.set("circuits",network::Value(static_cast<std::int32_t>(values.size())));if(!values.empty()){auto circuit=values.begin()->second;stats.set("agent",circuit->agent_id.str());stats.set("session",circuit->session_id.str());stats.set("circuit_position",framework::vector3_string(circuit->start_position));stats.set("code",std::to_string(circuit->circuit_code));stats.set("authenticated",network::Value(service.circuits.authenticate_session(circuit->session_id,circuit->agent_id,circuit->circuit_code).authorised));stats.set("urls",network::Value(static_cast<std::int32_t>(circuit->service_urls?circuit->service_urls->size():0)));if(circuit->service_urls){auto found=circuit->service_urls->find("Large");if(found!=circuit->service_urls->end())if(auto text=std::any_cast<std::string>(&found->second))stats.set("large_bytes",network::Value(static_cast<std::int32_t>(text->size())));}}response.body=network::osd_json(stats,true);return response;}if(request.path=="/ready"){response.status=503;response.body="{\"simulation_ready\":false}";return response;}if(admission){access.process_admission(request,response);return response;}response.body="false";if(request.method!="QUERYACCESS"){response.status=405;return response;}for(const auto& [key,value]:request.headers)if(key=="x-secondlife-shard")response.status=406;server::AgentPathParameters parameters;if(!server::agent_path_parameters(request.path,parameters)){response.status=404;return response;}if(parameters.agent.is_zero()||parameters.region.is_zero()){response.status=400;return response;}network::Value args;try{args=network::parse_osd_json(request.body);if(args.kind!=network::Value::Kind::Map)throw std::invalid_argument("Not map");}catch(const std::exception&){response.status=400;return response;}access.query_access(args,response,parameters.agent,parameters.region);return response;});server.start([](int port){std::cout<<"LISTENING http://127.0.0.1:"<<port<<std::endl;});std::string command;std::getline(std::cin,command);server.stop();{std::lock_guard lock(workers_mutex);for(auto& worker:workers)worker.get();}return 0;}catch(const std::exception& e){std::cerr<<e.what();return 1;}}
+struct UpdateObject : framework::AgentTransferObject {
+    std::string xml, extra;
+    bool changed = false;
+    explicit UpdateObject(std::string value) : xml(std::move(value)) {
+    }
+    std::string to_xml2() override {
+        return xml;
+    }
+    std::string extra_to_xml_string() override {
+        return extra;
+    }
+    void extra_from_xml_string(const std::string& value) override {
+        extra = value;
+    }
+    bool has_group_changed() const override {
+        return changed;
+    }
+    void has_group_changed(bool value) override {
+        changed = value;
+    }
+};
+struct UpdateScene : framework::AgentTransferScene {
+    std::shared_ptr<framework::AgentTransferObject> deserialize_object(const std::string& xml) override {
+        if (xml == "throw")
+            throw std::runtime_error("controlled deserializer");
+        return std::make_shared<UpdateObject>(xml);
+    }
+};
+struct Service : services::ISimulationLogin,
+                 services::ISimulationAgentLifecycle,
+                 services::ISimulationAgentUpdates {
+    std::atomic<int> data_updates = 0, position_updates = 0, scene_calls = 0;
+    std::shared_ptr<framework::AgentData> last_data;
+    std::shared_ptr<framework::AgentPosition> last_position;
+    framework::EntityTransferContext last_context;
+    std::shared_ptr<framework::AgentTransferScene> get_scene(const framework::Uuid&) override {
+        ++scene_calls;
+        return std::make_shared<UpdateScene>();
+    }
+    bool update_agent(services::GridRegion&, const std::shared_ptr<framework::AgentData>& data,
+                      framework::EntityTransferContext& context) override {
+        std::lock_guard lock(state);
+        ++data_updates;
+        last_data = data;
+        last_context = context;
+        return !data->agent_id.str().ends_with('9');
+    }
+    bool update_agent(services::GridRegion&, const std::shared_ptr<framework::AgentPosition>& data) override {
+        std::lock_guard lock(state);
+        ++position_updates;
+        last_position = data;
+        auto circuit = circuits.get_agent_circuit_data(data->agent_id);
+        if (circuit)
+            circuit->start_position = data->position;
+        return !data->agent_id.str().ends_with('9');
+    }
+    std::mutex state;
+    std::atomic<int> closes = 0, releases = 0;
+    std::optional<std::string> last_auth;
+    framework::Uuid last_agent, last_region;
+    bool release_agent(const framework::Uuid& region, const framework::Uuid& agent,
+                       const std::string& uri) override {
+        std::lock_guard lock(state);
+        last_auth = uri;
+        last_agent = agent;
+        last_region = region;
+        ++releases;
+        return false;
+    }
+    bool close_agent(services::GridRegion& region, const framework::Uuid& agent,
+                     const std::optional<std::string>& auth) override {
+        std::lock_guard lock(state);
+        last_auth = auth;
+        last_agent = agent;
+        last_region = region.id;
+        circuits.remove_circuit(agent);
+        ++closes;
+        return false;
+    }
+    std::atomic<int> calls = 0, creates = 0;
+    framework::AgentCircuitManager circuits;
+    bool query_access(services::GridRegion&, const framework::Uuid& id, const std::optional<std::string>&,
+                      bool, const framework::Vector3&, std::vector<framework::Uuid>& features,
+                      framework::EntityTransferContext& context, std::string& reason) override {
+        ++calls;
+        if (id.str().ends_with('9')) {
+            reason = "denied by fixture";
+            return false;
+        }
+        features.push_back(framework::Uuid("00000000-0000-0000-0000-000000000008"));
+        context.inbound_version = 12;
+        context.outbound_version = 13;
+        reason = "";
+        return true;
+    }
+    bool create_agent(const services::GridRegion*, services::GridRegion&,
+                      const std::shared_ptr<framework::AgentCircuitData>& circuit, std::uint32_t,
+                      framework::EntityTransferContext&, std::string& reason) override {
+        ++creates;
+        if (circuit->agent_id.str().ends_with('9')) {
+            reason = "denied by fixture";
+            return false;
+        }
+        circuits.add_new_circuit(circuit);
+        reason = "";
+        return true;
+    }
+};
+int main(int argc, char**) {
+    try {
+        const bool admission = argc > 1;
+        auto service_ptr = std::make_shared<Service>();
+        auto& service = *service_ptr;
+        std::mutex workers_mutex;
+        std::vector<std::future<void>> workers;
+        server::AgentDeleteHandler lifecycle(
+            service_ptr, [&](std::function<void()> task, const std::string&) {
+                std::lock_guard lock(workers_mutex);
+                workers.push_back(std::async(std::launch::async, [task = std::move(task)] {
+                    try {
+                        task();
+                    } catch (const std::exception&) {
+                    }
+                }));
+            });
+        server::AgentUpdateHandler updates(&service);
+        server::AgentAccessHandler access(&service, &lifecycle, &updates);
+        network::HttpServerOptions options;
+        options.port = 0;
+        options.custom_methods = {"QUERYACCESS"};
+        options.decompress_request_body = false;
+        network::HttpServer server(options, [&](const network::HttpRequest& request) {
+            network::HttpResponse response;
+            response.content_type = "application/json";
+            if (request.path == "/stats") {
+                auto stats = network::Value::object({});
+                std::lock_guard state_guard(service.state);
+                stats.set("data_updates", network::Value(service.data_updates.load()));
+                stats.set("position_updates", network::Value(service.position_updates.load()));
+                stats.set("scene_calls", network::Value(service.scene_calls.load()));
+                if (service.last_data) {
+                    stats.set("data_agent", service.last_data->agent_id.str());
+                    stats.set("data_active_group", service.last_data->active_group_id.str());
+                    stats.set("data_position", framework::vector3_string(service.last_data->position));
+                    stats.set("data_objects", network::Value(static_cast<std::int32_t>(
+                                                  service.last_data->attachment_objects
+                                                      ? service.last_data->attachment_objects->size()
+                                                      : 0)));
+                    stats.set("update_context", service.last_context.pack());
+                }
+                if (service.last_position) {
+                    stats.set("position_agent", service.last_position->agent_id.str());
+                    stats.set("position_value", framework::vector3_string(service.last_position->position));
+                }
+                stats.set("closes", network::Value(service.closes.load()));
+                stats.set("releases", network::Value(service.releases.load()));
+                stats.set("last_auth_null", network::Value(!service.last_auth));
+                stats.set("last_auth", service.last_auth.value_or(""));
+                stats.set("last_agent", service.last_agent.str());
+                stats.set("last_region", service.last_region.str());
+                stats.set("queries", network::Value(service.calls.load()));
+                stats.set("creates", network::Value(service.creates.load()));
+                auto values = service.circuits.get_agent_circuits();
+                stats.set("circuits", network::Value(static_cast<std::int32_t>(values.size())));
+                if (!values.empty()) {
+                    auto circuit = values.begin()->second;
+                    stats.set("agent", circuit->agent_id.str());
+                    stats.set("session", circuit->session_id.str());
+                    stats.set("circuit_position", framework::vector3_string(circuit->start_position));
+                    stats.set("code", std::to_string(circuit->circuit_code));
+                    stats.set("authenticated",
+                              network::Value(service.circuits
+                                                 .authenticate_session(circuit->session_id, circuit->agent_id,
+                                                                       circuit->circuit_code)
+                                                 .authorised));
+                    stats.set("urls", network::Value(static_cast<std::int32_t>(
+                                          circuit->service_urls ? circuit->service_urls->size() : 0)));
+                    if (circuit->service_urls) {
+                        auto found = circuit->service_urls->find("Large");
+                        if (found != circuit->service_urls->end())
+                            if (auto text = std::any_cast<std::string>(&found->second))
+                                stats.set("large_bytes",
+                                          network::Value(static_cast<std::int32_t>(text->size())));
+                    }
+                }
+                response.body = network::osd_json(stats, true);
+                return response;
+            }
+            if (request.path == "/ready") {
+                response.status = 503;
+                response.body = "{\"simulation_ready\":false}";
+                return response;
+            }
+            if (admission) {
+                access.process_admission(request, response);
+                return response;
+            }
+            response.body = "false";
+            if (request.method != "QUERYACCESS") {
+                response.status = 405;
+                return response;
+            }
+            for (const auto& [key, value] : request.headers)
+                if (key == "x-secondlife-shard")
+                    response.status = 406;
+            server::AgentPathParameters parameters;
+            if (!server::agent_path_parameters(request.path, parameters)) {
+                response.status = 404;
+                return response;
+            }
+            if (parameters.agent.is_zero() || parameters.region.is_zero()) {
+                response.status = 400;
+                return response;
+            }
+            network::Value args;
+            try {
+                args = network::parse_osd_json(request.body);
+                if (args.kind != network::Value::Kind::Map)
+                    throw std::invalid_argument("Not map");
+            } catch (const std::exception&) {
+                response.status = 400;
+                return response;
+            }
+            access.query_access(args, response, parameters.agent, parameters.region);
+            return response;
+        });
+        server.start([](int port) { std::cout << "LISTENING http://127.0.0.1:" << port << std::endl; });
+        std::string command;
+        std::getline(std::cin, command);
+        server.stop();
+        {
+            std::lock_guard lock(workers_mutex);
+            for (auto& worker : workers)
+                worker.get();
+        }
+        return 0;
+    } catch (const std::exception& e) {
+        std::cerr << e.what();
+        return 1;
+    }
+}

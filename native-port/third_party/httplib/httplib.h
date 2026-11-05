@@ -1828,6 +1828,15 @@ struct Request {
   // Opt-in callers supply the exact application request headers.
   bool opensim_no_default_accept_headers = false;
   bool opensim_source_redirects = false;
+  // Opt-in streaming phase policy; zero/false preserve existing APIs.
+  time_t opensim_stream_header_timeout_msec = 0;
+  std::function<bool()> opensim_stream_header_interrupted;
+  bool opensim_stream_raw_content = false;
+  // Framework validates supplied headers with its strict source ASCII encoder.
+  bool opensim_request_ascii_headers = false;
+  std::function<void(Headers &)> opensim_prepare_request_headers;
+  // Opt-in consumed framework HTTP/1 head parser; default reader is unchanged.
+  std::function<bool(const std::function<ssize_t(char *, size_t)> &, Response &)> opensim_response_head_reader;
   // Opt-in client header policy, before response framing/body processing.
   std::function<void(Response &)> opensim_response_headers_read;
   ContentReceiverWithProgress content_receiver;
@@ -2013,6 +2022,8 @@ public:
   virtual bool wait_writable() const = 0;
   virtual bool is_peer_alive() const { return wait_writable(); }
 
+  virtual int opensim_write_socket_error() const { return 0; }
+  virtual int opensim_read_socket_error() const { return 0; }
   virtual ssize_t read(char *ptr, size_t size) = 0;
   virtual ssize_t write(const char *ptr, size_t size) = 0;
   virtual void get_remote_ip_and_port(std::string &ip, int &port) const = 0;
@@ -2196,6 +2207,17 @@ private:
   std::regex regex_;
 };
 
+class PredicateMatcher final : public MatcherBase {
+public:
+  explicit PredicateMatcher(std::function<bool(const Request &)> predicate)
+      : MatcherBase(""), predicate_(std::move(predicate)) {}
+
+  bool match(Request &request) const override { return predicate_(request); }
+
+private:
+  std::function<bool(const Request &)> predicate_;
+};
+
 int close_socket(socket_t sock) noexcept;
 
 bool is_accept_resource_error();
@@ -2299,6 +2321,10 @@ public:
                       Handler handler);
   Server &CustomRoute(const std::string &method, const std::string &pattern,
                       HandlerWithContentReader handler);
+  // OpenSimulator script URLs accept extension methods within their own paths.
+  Server &CustomMethodFallback(const std::string &pattern, Handler handler);
+  Server &CustomMethodFallback(std::function<bool(const Request &)> predicate,
+                               Handler handler);
 
   Server &WebSocket(const std::string &pattern, WebSocketHandler handler);
   Server &WebSocket(const std::string &pattern, WebSocketHandler handler,
@@ -2551,6 +2577,7 @@ private:
   // Set when CustomRoute() refuses a registration. Written before listen(),
   // read by is_valid() on the same thread, so it needs no synchronization.
   bool has_invalid_registration_ = false;
+  Handlers custom_method_fallback_handlers_;
 
   struct MountPointEntry {
     std::string mount_point;
@@ -2758,6 +2785,10 @@ struct NormalizedTarget {
 
 } // namespace detail
 
+struct OpensimTlsServerNames {
+  std::string certificate_host, sni_host;
+  bool ignore_sni_error = false;
+};
 class ClientImpl {
 public:
   explicit ClientImpl(const std::string &host);
@@ -2775,6 +2806,17 @@ public:
   struct StreamHandle {
     std::unique_ptr<Response> response;
     Error error = Error::Success;
+    int opensim_native_connection_error = 0;
+    int opensim_native_dns_error = 0;
+    int opensim_native_read_error = 0;
+    int opensim_native_write_error = 0;
+    bool opensim_reused_connection = false;
+    bool opensim_header_wait_timed_out = false;
+    std::chrono::steady_clock::time_point opensim_connection_created{};
+    bool opensim_read_ready() const;
+    bool opensim_idle_connection_usable() const;
+    size_t opensim_buffered_size() const;
+    bool opensim_has_buffered_data() const { return opensim_buffered_size()!=0; }
 
     StreamHandle() = default;
     StreamHandle(const StreamHandle &) = delete;
@@ -2788,9 +2830,19 @@ public:
     }
 
     ssize_t read(char *buf, size_t len);
+    // Opt-in source entity framing consumes the owned raw stream.
+    ssize_t read_raw(char *buf, size_t len) { opensim_native_read_error=0; if(!is_valid()||!stream_)return -1;auto n=stream_->read(buf,len);opensim_native_read_error=stream_->opensim_read_socket_error();return n; }
     void parse_trailers_if_needed();
     Error get_read_error() const { return body_reader_.last_error; }
     bool has_read_error() const { return body_reader_.has_error(); }
+
+    // Explicit per-handle phase transition; existing streams are unaffected.
+    void set_read_timeouts(time_t sec, time_t usec, time_t max_msec) {
+      if (stream_) { stream_->set_read_timeout(sec, usec); stream_->set_max_timeout(max_msec); }
+    }
+    void set_read_interrupt(std::function<bool()> interrupted) {
+      if (stream_) { stream_->set_read_interrupt(std::move(interrupted)); }
+    }
 
     bool trailers_parsed_ = false;
 
@@ -2908,6 +2960,11 @@ public:
   // Streaming API: Open a stream for reading response body incrementally
   // Socket ownership is transferred to StreamHandle for true streaming
   // Supports all HTTP methods (GET, POST, PUT, PATCH, DELETE, etc.)
+  StreamHandle open_stream(Request &request);
+  // A source-framed consumer may transfer a completely consumed stream back
+  // into a fresh client for its identical direct endpoint and TLS policy.
+  bool opensim_adopt_stream(StreamHandle &&handle);
+  bool opensim_idle_socket_usable() const;
   StreamHandle open_stream(const std::string &method, const std::string &path,
                            const Params &params = {},
                            const Headers &headers = {},
@@ -2971,6 +3028,8 @@ public:
   void set_interface(const std::string &intf);
 
   void set_proxy(const std::string &host, int port);
+  void opensim_set_proxy_tunnel(std::function<bool(Stream &, Response &, Error &)> callback) { opensim_proxy_tunnel_ = std::move(callback); }
+  void opensim_set_tls_server_names(std::function<OpensimTlsServerNames()> callback) { opensim_tls_server_names_ = std::move(callback); }
   void set_proxy_basic_auth(const std::string &username,
                             const std::string &password);
   void set_proxy_bearer_token_auth(const std::string &token);
@@ -3056,6 +3115,10 @@ protected:
   std::string client_cert_path_;
   std::string client_key_path_;
 
+  mutable int opensim_native_connection_error_ = 0;
+  mutable int opensim_native_dns_error_ = 0;
+  std::function<bool(Stream &, Response &, Error &)> opensim_proxy_tunnel_;
+  std::function<OpensimTlsServerNames()> opensim_tls_server_names_;
   time_t connection_timeout_sec_ = CPPHTTPLIB_CONNECTION_TIMEOUT_SECOND;
   time_t connection_timeout_usec_ = CPPHTTPLIB_CONNECTION_TIMEOUT_USECOND;
   time_t read_timeout_sec_ = CPPHTTPLIB_CLIENT_READ_TIMEOUT_SECOND;
@@ -3316,6 +3379,9 @@ public:
   // Streaming API: Open a stream for reading response body incrementally
   // Socket ownership is transferred to StreamHandle for true streaming
   // Supports all HTTP methods (GET, POST, PUT, PATCH, DELETE, etc.)
+  ClientImpl::StreamHandle open_stream(Request &request);
+  bool opensim_adopt_stream(ClientImpl::StreamHandle &&handle);
+  bool opensim_idle_socket_usable() const;
   ClientImpl::StreamHandle open_stream(const std::string &method,
                                        const std::string &path,
                                        const Params &params = {},
@@ -3379,6 +3445,8 @@ public:
   void set_interface(const std::string &intf);
 
   void set_proxy(const std::string &host, int port);
+  void opensim_set_proxy_tunnel(std::function<bool(Stream &, Response &, Error &)> callback);
+  void opensim_set_tls_server_names(std::function<OpensimTlsServerNames()> callback);
   void set_proxy_basic_auth(const std::string &username,
                             const std::string &password);
   void set_proxy_bearer_token_auth(const std::string &token);
@@ -3832,7 +3900,7 @@ socket_t create_client_socket(const std::string &host, const std::string &ip,
                               time_t read_timeout_sec, time_t read_timeout_usec,
                               time_t write_timeout_sec,
                               time_t write_timeout_usec,
-                              const std::string &intf, Error &error);
+                              const std::string &intf, Error &error, int *native_error = nullptr, int *dns_error = nullptr);
 
 const char *get_header_value(const Headers &headers, const std::string &key,
                              const char *def, size_t id);
@@ -6783,7 +6851,8 @@ select_read_interruptible(socket_t sock, time_t sec, time_t usec,
 }
 
 inline Error wait_until_socket_is_ready(socket_t sock, time_t sec,
-                                        time_t usec) {
+                                        time_t usec, int *native_error = nullptr) {
+  if (native_error) { *native_error = 0; }
   struct pollfd pfd_read;
   pfd_read.fd = sock;
   pfd_read.events = POLLIN | POLLOUT;
@@ -6801,8 +6870,20 @@ inline Error wait_until_socket_is_ready(socket_t sock, time_t sec,
     socklen_t len = sizeof(error);
     auto res = getsockopt(sock, SOL_SOCKET, SO_ERROR,
                           reinterpret_cast<char *>(&error), &len);
+    if (native_error) {
+#ifdef _WIN32
+      *native_error = res >= 0 ? error : WSAGetLastError();
+#else
+      *native_error = res >= 0 ? error : errno;
+#endif
+    }
     auto successful = res >= 0 && !error;
     return successful ? Error::Success : Error::Connection;
+  }
+
+  if (native_error && poll_res > 0) {
+    int native = 0; socklen_t size = sizeof(native);
+    if (getsockopt(sock, SOL_SOCKET, SO_ERROR, reinterpret_cast<char *>(&native), &size) >= 0) { *native_error = native; }
   }
 
   return Error::Connection;
@@ -6832,6 +6913,8 @@ public:
   bool wait_readable() const override;
   bool wait_writable() const override;
   bool is_peer_alive() const override;
+  int opensim_write_socket_error() const override { return opensim_write_socket_error_; }
+  int opensim_read_socket_error() const override { return opensim_read_socket_error_; }
   ssize_t read(char *ptr, size_t size) override;
   ssize_t write(const char *ptr, size_t size) override;
   void get_remote_ip_and_port(std::string &ip, int &port) const override;
@@ -6848,10 +6931,13 @@ public:
   // skip its own readiness wait, which would otherwise ask the kernel a
   // question that was answered a moment ago. Consumed by that read.
   void set_readable_hint() { readable_hint_ = true; }
+  void opensim_disable_read_buffer() { opensim_unbuffered_read_ = true; }
 
 private:
   bool ensure_readable();
 
+  int opensim_write_socket_error_ = 0;
+  int opensim_read_socket_error_ = 0;
   socket_t sock_;
   // Atomic because ws::WebSocket::set_read_timeout() reaches this from another
   // thread while a read is in flight -- that is the point of it, for a caller
@@ -6868,6 +6954,7 @@ private:
   size_t read_buff_off_ = 0;
   size_t read_buff_content_size_ = 0;
   bool readable_hint_ = false;
+  bool opensim_unbuffered_read_ = false;
 
   static const size_t read_buff_size_ = 1024l * 4;
 };
@@ -7363,7 +7450,8 @@ template <typename BindOrConnect>
 socket_t create_socket(const std::string &host, const std::string &ip, int port,
                        int address_family, int socket_flags, bool tcp_nodelay,
                        bool ipv6_v6only, SocketOptions socket_options,
-                       BindOrConnect bind_or_connect, time_t timeout_sec = 0) {
+                       BindOrConnect bind_or_connect, time_t timeout_sec = 0, int *dns_error = nullptr) {
+  if (dns_error) { *dns_error = 0; }
   // Get address info
   const char *node = nullptr;
   struct addrinfo hints;
@@ -7433,8 +7521,9 @@ socket_t create_socket(const std::string &host, const std::string &ip, int port,
 
   auto service = std::to_string(port);
 
-  if (getaddrinfo_with_timeout(node, service.c_str(), &hints, &result,
-                               timeout_sec)) {
+  auto lookup_error = getaddrinfo_with_timeout(node, service.c_str(), &hints, &result, timeout_sec);
+  if (lookup_error) {
+    if (dns_error) { *dns_error = lookup_error; }
 #if defined __linux__ && !defined __ANDROID__
     res_init();
 #endif
@@ -7628,7 +7717,8 @@ inline socket_t create_client_socket(
     SocketOptions socket_options, time_t connection_timeout_sec,
     time_t connection_timeout_usec, time_t read_timeout_sec,
     time_t read_timeout_usec, time_t write_timeout_sec,
-    time_t write_timeout_usec, const std::string &intf, Error &error) {
+    time_t write_timeout_usec, const std::string &intf, Error &error, int *native_error, int *dns_error) {
+  if (native_error) { *native_error = 0; }
   auto sock = create_socket(
       host, ip, port, address_family, 0, tcp_nodelay, ipv6_v6only,
       std::move(socket_options),
@@ -7651,11 +7741,18 @@ inline socket_t create_client_socket(
 
         if (ret < 0) {
           if (is_connection_error()) {
+            if (native_error) {
+#ifdef _WIN32
+              *native_error = WSAGetLastError();
+#else
+              *native_error = errno;
+#endif
+            }
             error = Error::Connection;
             return false;
           }
           error = wait_until_socket_is_ready(sock2, connection_timeout_sec,
-                                             connection_timeout_usec);
+                                             connection_timeout_usec, native_error);
           if (error != Error::Success) {
             if (error == Error::ConnectionTimeout) { quit = true; }
             return false;
@@ -7671,9 +7768,10 @@ inline socket_t create_client_socket(
         error = Error::Success;
         return true;
       },
-      connection_timeout_sec); // Pass DNS timeout
+      connection_timeout_sec, dns_error); // Pass DNS timeout
 
   if (sock != INVALID_SOCKET) {
+    if (native_error) { *native_error = 0; }
     error = Error::Success;
   } else {
     if (error == Error::Success) { error = Error::Connection; }
@@ -11316,6 +11414,9 @@ inline const char *pem_c_str(const char *pem, size_t len, std::string &buf) {
 // WebSocketClient also exposes; everything else takes the defaults, which is
 // what keeps the two clients on one implementation.
 struct ClientTlsSessionOptions {
+  bool opensim_sni_override = false;
+  std::string opensim_sni_host;
+  bool opensim_ignore_sni_error = false;
   // Both SSLClient and WebSocketClient expose this independently of
   // certificate verification.
   bool server_hostname_verification = true;
@@ -11411,10 +11512,14 @@ inline bool setup_client_tls_session(
 
   // RFC 6066: SNI must not be set for IP addresses; skip it for IP hosts, so
   // their identity is checked post-handshake below instead.
-  if (!is_ip_address(host)) {
-    if (!set_sni(session, host.c_str(),
-                 verify_in_handshake && options.server_hostname_verification)) {
-      return fail(Error::SSLConnection, 0, get_error());
+  const auto& sni_host=options.opensim_sni_override?options.opensim_sni_host:host;
+  if (!sni_host.empty() && !is_ip_address(sni_host)) {
+    if (!set_sni(session, sni_host.c_str(),
+                 !options.opensim_sni_override && verify_in_handshake && options.server_hostname_verification)) {
+      if(!options.opensim_ignore_sni_error)return fail(Error::SSLConnection, 0, get_error());
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+      ERR_clear_error();
+#endif
     }
   }
 
@@ -12718,6 +12823,7 @@ inline bool SocketStream::is_peer_alive() const {
 }
 
 inline ssize_t SocketStream::read(char *ptr, size_t size) {
+  opensim_read_socket_error_ = 0;
 #ifdef _WIN32
   size =
       (std::min)(size, static_cast<size_t>((std::numeric_limits<int>::max)()));
@@ -12747,9 +12853,16 @@ inline ssize_t SocketStream::read(char *ptr, size_t size) {
   read_buff_off_ = 0;
   read_buff_content_size_ = 0;
 
-  if (size < read_buff_size_) {
+  if (size < read_buff_size_ && !opensim_unbuffered_read_) {
     auto n = read_socket(sock_, read_buff_.data(), read_buff_size_,
                          CPPHTTPLIB_RECV_FLAGS);
+    if(n<0){
+#ifdef _WIN32
+      opensim_read_socket_error_=WSAGetLastError();
+#else
+      opensim_read_socket_error_=errno;
+#endif
+    }
     if (n <= 0) {
       if (n == 0) {
         error_ = Error::ConnectionClosed;
@@ -12768,6 +12881,13 @@ inline ssize_t SocketStream::read(char *ptr, size_t size) {
     }
   } else {
     auto n = read_socket(sock_, ptr, size, CPPHTTPLIB_RECV_FLAGS);
+    if(n<0){
+#ifdef _WIN32
+      opensim_read_socket_error_=WSAGetLastError();
+#else
+      opensim_read_socket_error_=errno;
+#endif
+    }
     if (n <= 0) {
       if (n == 0) {
         error_ = Error::ConnectionClosed;
@@ -12780,6 +12900,7 @@ inline ssize_t SocketStream::read(char *ptr, size_t size) {
 }
 
 inline ssize_t SocketStream::write(const char *ptr, size_t size) {
+  opensim_write_socket_error_=0;
   if (!wait_writable()) { return -1; }
 
 #if defined(_WIN32) && !defined(_WIN64)
@@ -12787,7 +12908,15 @@ inline ssize_t SocketStream::write(const char *ptr, size_t size) {
       (std::min)(size, static_cast<size_t>((std::numeric_limits<int>::max)()));
 #endif
 
-  return send_socket(sock_, ptr, size, CPPHTTPLIB_SEND_FLAGS);
+  auto n=send_socket(sock_, ptr, size, CPPHTTPLIB_SEND_FLAGS);
+  if(n<0){
+#ifdef _WIN32
+    opensim_write_socket_error_=WSAGetLastError();
+#else
+    opensim_write_socket_error_=errno;
+#endif
+  }
+  return n;
 }
 
 inline void SocketStream::get_remote_ip_and_port(std::string &ip,
@@ -13654,6 +13783,20 @@ inline Server &Server::CustomRoute(const std::string &method,
                      std::move(handler));
 }
 
+inline Server &Server::CustomMethodFallback(const std::string &pattern,
+                                            Handler handler) {
+  return add_handler(custom_method_fallback_handlers_, pattern,
+                     std::move(handler));
+}
+
+inline Server &Server::CustomMethodFallback(
+    std::function<bool(const Request &)> predicate, Handler handler) {
+  custom_method_fallback_handlers_.emplace_back(
+      std::make_unique<detail::PredicateMatcher>(std::move(predicate)),
+      std::move(handler));
+  return *this;
+}
+
 inline const Server::CustomHandlerEntry *
 Server::find_custom_entry(const std::string &method) const {
   // find() alone would be correct here. The empty() check is what keeps the
@@ -13977,16 +14120,6 @@ inline bool Server::parse_request_line(const char *s, Request &req) const {
     req.version.assign(sp2 + 1, end);
   }
 
-  // A method outside the built-in set is accepted only when a handler has been
-  // registered for it with CustomRoute().
-  const auto &methods = builtin_methods();
-
-  if (methods.find(req.method) == methods.end() &&
-      !find_custom_entry(req.method)) {
-    output_error_log(Error::InvalidHTTPMethod, &req);
-    return false;
-  }
-
   if (req.version != "HTTP/1.1" && req.version != "HTTP/1.0") {
     output_error_log(Error::InvalidHTTPVersion, &req);
     return false;
@@ -14010,6 +14143,15 @@ inline bool Server::parse_request_line(const char *s, Request &req) const {
                    });
   }
 
+  if (!builtin_methods().count(req.method) && !find_custom_entry(req.method)) {
+    if (!detail::fields::is_token(req.method) ||
+        !std::any_of(custom_method_fallback_handlers_.begin(),
+                     custom_method_fallback_handlers_.end(),
+                     [&](const auto &entry) { return entry.first->match(req); })) {
+      output_error_log(Error::InvalidHTTPMethod, &req);
+      return false;
+    }
+  }
   return true;
 }
 
@@ -14778,6 +14920,9 @@ inline bool Server::routing(Request &req, Response &res, Stream &strm,
   } else if (custom) {
     return dispatch_request(req, res, custom->handlers, strm);
   }
+  if (dispatch_request(req, res, custom_method_fallback_handlers_, strm)) {
+    return true;
+  }
 
   res.status = StatusCode::BadRequest_400;
   return false;
@@ -15544,12 +15689,14 @@ ClientImpl::is_proxy_enabled_for_host(const std::string &host) const {
 }
 
 inline socket_t ClientImpl::create_client_socket(Error &error) const {
+  opensim_native_connection_error_ = 0;
+  opensim_native_dns_error_ = 0;
   if (is_proxy_enabled_for_host(host_)) {
     return detail::create_client_socket(
         proxy_host_, std::string(), proxy_port_, address_family_, tcp_nodelay_,
         ipv6_v6only_, socket_options_, connection_timeout_sec_,
         connection_timeout_usec_, read_timeout_sec_, read_timeout_usec_,
-        write_timeout_sec_, write_timeout_usec_, interface_, error);
+        write_timeout_sec_, write_timeout_usec_, interface_, error, &opensim_native_connection_error_, &opensim_native_dns_error_);
   }
 
   // Check is custom IP or hostname specified for host_
@@ -15561,7 +15708,7 @@ inline socket_t ClientImpl::create_client_socket(Error &error) const {
       connect_host, ip, port_, address_family_, tcp_nodelay_, ipv6_v6only_,
       socket_options_, connection_timeout_sec_, connection_timeout_usec_,
       read_timeout_sec_, read_timeout_usec_, write_timeout_sec_,
-      write_timeout_usec_, interface_, error);
+      write_timeout_usec_, interface_, error, &opensim_native_connection_error_, &opensim_native_dns_error_);
 }
 
 inline bool ClientImpl::create_and_connect_socket(Socket &socket,
@@ -15872,6 +16019,14 @@ ClientImpl::open_stream(const std::string &method, const std::string &path,
   return handle;
 }
 
+inline ClientImpl::StreamHandle ClientImpl::open_stream(Request &req) {
+  req.path = detail::encode_request_target(req.path, path_encode_);
+  prepare_default_headers(req, true, std::string());
+  auto handle = open_stream_(req);
+  if (handle.error != Error::Success) { output_error_log(handle.error, &req); }
+  return handle;
+}
+
 inline ClientImpl::StreamHandle ClientImpl::open_stream_(Request &req) {
   StreamHandle handle;
   handle.response = detail::make_unique<Response>();
@@ -15897,6 +16052,8 @@ inline ClientImpl::StreamHandle ClientImpl::open_stream_(Request &req) {
 
     if (!is_alive) {
       if (!ensure_socket_connection(socket_, handle.error)) {
+        handle.opensim_native_connection_error = opensim_native_connection_error_;
+        handle.opensim_native_dns_error = opensim_native_dns_error_;
         handle.response.reset();
         return handle;
       }
@@ -15912,6 +16069,8 @@ inline ClientImpl::StreamHandle ClientImpl::open_stream_(Request &req) {
       }
     }
 
+    handle.opensim_reused_connection = is_alive;
+    handle.opensim_connection_created = std::chrono::steady_clock::now();
     transfer_socket_ownership_to_handle(handle);
   }
 
@@ -15934,9 +16093,15 @@ inline ClientImpl::StreamHandle ClientImpl::open_stream_(Request &req) {
   handle.stream_ = handle.socket_stream_.get();
 
   auto &strm = *handle.stream_;
+  strm.set_read_interrupt(req.opensim_stream_header_interrupted);
+  if (req.opensim_stream_header_timeout_msec > 0) {
+    strm.set_max_timeout(req.opensim_stream_header_timeout_msec);
+  }
 
   // After connecting, as for a buffered request
   add_credential_headers(req);
+
+  if (req.opensim_prepare_request_headers) { req.opensim_prepare_request_headers(req.headers); }
 
   // Build the request line and headers in memory first, like write_request()
   // does, so that a rejected header leaves nothing on the wire.
@@ -15950,14 +16115,26 @@ inline ClientImpl::StreamHandle ClientImpl::open_stream_(Request &req) {
       return handle;
     }
 
-    if (!detail::check_and_write_headers(bstrm, req.headers, header_writer_,
-                                         handle.error)) {
+    bool wrote_headers = false;
+    if (req.opensim_request_ascii_headers) {
+      wrote_headers = true;
+      for (const auto &h : req.headers) {
+        std::string line = h.first + ": " + h.second + "\r\n";
+        if (bstrm.write(line.data(), line.size()) < 0) { wrote_headers = false; break; }
+      }
+      if (wrote_headers && bstrm.write("\r\n", 2) < 0) { wrote_headers = false; }
+      if (!wrote_headers) { handle.error = Error::Write; }
+    } else {
+      wrote_headers = detail::check_and_write_headers(bstrm, req.headers, header_writer_, handle.error);
+    }
+    if (!wrote_headers) {
       handle.response.reset();
       return handle;
     }
 
     const auto &data = bstrm.get_buffer();
     if (!detail::write_data(strm, data.data(), data.size())) {
+      handle.opensim_native_write_error=strm.opensim_write_socket_error();
       handle.error = Error::Write;
       handle.response.reset();
       return handle;
@@ -15965,15 +16142,19 @@ inline ClientImpl::StreamHandle ClientImpl::open_stream_(Request &req) {
   }
 
   if (!req.body.empty()) {
-    if (strm.write(req.body.data(), req.body.size()) < 0) {
+    if (!detail::write_data(strm, req.body.data(), req.body.size())) {
+      handle.opensim_native_write_error=strm.opensim_write_socket_error();
       handle.error = Error::Write;
       handle.response.reset();
       return handle;
     }
   }
 
-  if (!read_response_line(strm, req, *handle.response) ||
-      !detail::read_headers(strm, handle.response->headers)) {
+  bool head_read = req.opensim_response_head_reader
+      ? req.opensim_response_head_reader([&strm,&handle](char *buf, size_t n) { auto read=strm.read(buf,n);handle.opensim_native_read_error=strm.opensim_read_socket_error();return read; }, *handle.response)
+      : (read_response_line(strm, req, *handle.response) && detail::read_headers(strm, handle.response->headers));
+  if (!head_read) {
+    handle.opensim_header_wait_timed_out = strm.get_error() == Error::Timeout;
     handle.error = Error::Read;
     handle.response.reset();
     return handle;
@@ -16016,7 +16197,7 @@ inline ClientImpl::StreamHandle ClientImpl::open_stream_(Request &req) {
 
   auto content_encoding = detail::get_combined_header_value(
       handle.response->headers, "Content-Encoding");
-  if (!content_encoding.empty()) {
+  if (!req.opensim_stream_raw_content && !content_encoding.empty()) {
     // Same policy as prepare_content_receiver(): reject a coding we know about
     // but were not built with, pass an unrecognized one through as-is.
     handle.decompressor_ = detail::create_decompressor(content_encoding);
@@ -16223,6 +16404,69 @@ ClientImpl::transfer_socket_ownership_to_handle(StreamHandle &handle) {
   socket_.ssl = nullptr;
 #endif
   socket_.sock = INVALID_SOCKET;
+}
+
+inline bool ClientImpl::opensim_adopt_stream(StreamHandle &&handle) {
+  std::lock_guard<std::mutex> guard(socket_mutex_);
+  if (socket_.is_open() || !handle.is_valid() || handle.opensim_has_buffered_data() || !handle.connection_ ||
+      !handle.connection_->is_open()) { return false; }
+  // SocketStream does not own the descriptor/session. Destroy its request
+  // timeout/cancellation state before handing the connection to a new request.
+  handle.socket_stream_.reset();
+  handle.stream_ = nullptr;
+  socket_.sock = handle.connection_->sock;
+  handle.connection_->sock = INVALID_SOCKET;
+#ifdef CPPHTTPLIB_SSL_ENABLED
+  socket_.ssl = handle.connection_->session;
+  handle.connection_->session = nullptr;
+#endif
+  return true;
+}
+
+#ifdef CPPHTTPLIB_SSL_ENABLED
+inline bool opensim_tls_idle_usable(tls::session_t session, socket_t sock) {
+  if (!session || tls::pending(session)>0) return false;
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+  detail::set_nonblocking(sock, true);
+  auto restore=detail::scope_exit([&]{detail::set_nonblocking(sock,false);});
+  auto ssl=static_cast<SSL*>(session);char byte;
+  ERR_clear_error();
+  auto n=SSL_peek(ssl,&byte,1);
+  if(n>0||SSL_get_error(ssl,n)!=SSL_ERROR_WANT_READ)return false;
+#else
+  if(tls::is_peer_closed(session,sock)||tls::pending(session)>0)return false;
+#endif
+  return tls::pending(session)==0&&detail::select_read(sock,0,0)==0;
+}
+#endif
+inline bool ClientImpl::opensim_idle_socket_usable() const {
+  std::lock_guard<std::mutex> guard(socket_mutex_);
+  // As HttpConnection.PrepareForReuse: readable means EOF or unsolicited
+  // response data, either of which invalidates an idle HTTP/1 connection.
+  if (!socket_.is_open()) return false;
+#ifdef CPPHTTPLIB_SSL_ENABLED
+  if (socket_.ssl) return opensim_tls_idle_usable(socket_.ssl,socket_.sock);
+#endif
+  return detail::select_read(socket_.sock, 0, 0) == 0;
+}
+inline bool ClientImpl::StreamHandle::opensim_idle_connection_usable() const {
+  if (!connection_ || !connection_->is_open() || opensim_has_buffered_data()) return false;
+#ifdef CPPHTTPLIB_SSL_ENABLED
+  // SSL_peek processes control records (including TLS1.3 session tickets)
+  // without consuming application data. Application bytes invalidate reuse.
+  if (connection_->session) return opensim_tls_idle_usable(connection_->session,connection_->sock);
+#endif
+  return detail::select_read(connection_->sock, 0, 0) == 0;
+}
+inline bool ClientImpl::StreamHandle::opensim_read_ready() const {
+  return opensim_has_buffered_data() || (connection_ && connection_->is_open() && detail::select_read(connection_->sock, 0, 0) != 0);
+}
+inline size_t ClientImpl::StreamHandle::opensim_buffered_size() const {
+  size_t size=0;if(stream_)stream_->buffered_data(size);
+#ifdef CPPHTTPLIB_SSL_ENABLED
+  if(connection_&&connection_->session)size+=static_cast<size_t>((std::max)(0,tls::pending(connection_->session)));
+#endif
+  return size;
 }
 
 // A plain HTTP proxy reads the target in absolute-form (RFC 9112 3.2.2)
@@ -18723,6 +18967,14 @@ Client::open_stream(const std::string &method, const std::string &path,
   return cli_->open_stream(method, path, params, headers, body, content_type);
 }
 
+inline ClientImpl::StreamHandle Client::open_stream(Request &req) { return cli_->open_stream(req); }
+inline bool Client::opensim_adopt_stream(ClientImpl::StreamHandle &&handle) {
+  return cli_->opensim_adopt_stream(std::move(handle));
+}
+inline bool Client::opensim_idle_socket_usable() const {
+  return cli_->opensim_idle_socket_usable();
+}
+
 inline bool Client::send(Request &req, Response &res, Error &error) {
   return cli_->send(req, res, error);
 }
@@ -18804,6 +19056,12 @@ inline void Client::set_interface(const std::string &intf) {
 
 inline void Client::set_proxy(const std::string &host, int port) {
   cli_->set_proxy(host, port);
+}
+inline void Client::opensim_set_proxy_tunnel(std::function<bool(Stream &, Response &, Error &)> callback) {
+  cli_->opensim_set_proxy_tunnel(std::move(callback));
+}
+inline void Client::opensim_set_tls_server_names(std::function<OpensimTlsServerNames()> callback) {
+  cli_->opensim_set_tls_server_names(std::move(callback));
 }
 inline void Client::set_proxy_basic_auth(const std::string &username,
                                          const std::string &password) {
@@ -19109,6 +19367,12 @@ inline bool SSLClient::connect_with_proxy(
     std::chrono::time_point<std::chrono::steady_clock> start_time,
     Response &res, bool &success, Error &error) {
   success = true;
+  if (opensim_proxy_tunnel_) {
+    auto connected=detail::process_client_socket(socket.sock,read_timeout_sec_,read_timeout_usec_,write_timeout_sec_,write_timeout_usec_,max_timeout_msec_,start_time,
+      [&](Stream &stream){static_cast<detail::SocketStream &>(stream).opensim_disable_read_buffer();return opensim_proxy_tunnel_(stream,res,error);});
+    if(!connected){shutdown_ssl(socket,true);shutdown_socket(socket);close_socket(socket);success=false;}
+    return connected;
+  }
   Response proxy_res;
   if (!detail::process_client_socket(
           socket.sock, read_timeout_sec_, read_timeout_usec_,
@@ -19364,8 +19628,11 @@ inline bool SSLClient::initialize_ssl(Socket &socket, Error &error) {
   });
 
   detail::ClientTlsSessionError tls_error;
+  auto names=opensim_tls_server_names_?opensim_tls_server_names_():OpensimTlsServerNames{host_,host_,false};
+  options.opensim_sni_override=static_cast<bool>(opensim_tls_server_names_);
+  options.opensim_sni_host=names.sni_host;options.opensim_ignore_sni_error=names.ignore_sni_error;
   if (!detail::setup_client_tls_session(
-          host_, ctx_, session, socket.sock, server_certificate_verification_,
+          names.certificate_host, ctx_, session, socket.sock, server_certificate_verification_,
           connection_timeout_sec_, connection_timeout_usec_, &tls_error,
           options)) {
     error = tls_error.error;

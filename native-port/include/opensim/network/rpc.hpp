@@ -33,21 +33,50 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <string_view>
 #include <vector>
+namespace opensim::framework {
+class AssetDateTime;
+class ConfigUriObject;
+}
 namespace opensim::network {
 class BinaryStorage {
-public:
-    using Bytes=std::shared_ptr<std::vector<std::uint8_t>>;
-    BinaryStorage()noexcept=default;
-    BinaryStorage(const BinaryStorage& other)noexcept:bytes_(other.load()){}
-    BinaryStorage& operator=(const BinaryStorage& other)noexcept{bytes_.store(other.load());return *this;}
-    BinaryStorage& operator=(Bytes value)noexcept{bytes_.store(std::move(value));return *this;}
-    Bytes load()const noexcept{return bytes_.load();}
-    bool initialize(Bytes& expected,Bytes desired)const noexcept{return bytes_.compare_exchange_strong(expected,std::move(desired));}
-private:
+  public:
+    using Bytes = std::shared_ptr<std::vector<std::uint8_t>>;
+    BinaryStorage() noexcept = default;
+    BinaryStorage(const BinaryStorage& other) noexcept : bytes_(other.load()) {}
+    BinaryStorage& operator=(const BinaryStorage& other) noexcept {
+        bytes_.store(other.load());
+        return *this;
+    }
+    BinaryStorage& operator=(Bytes value) noexcept {
+        bytes_.store(std::move(value));
+        return *this;
+    }
+    Bytes load() const noexcept {
+        return bytes_.load();
+    }
+    bool initialize(Bytes& expected, Bytes desired) const noexcept {
+        return bytes_.compare_exchange_strong(expected, std::move(desired));
+    }
+
+  private:
     mutable std::atomic<Bytes> bytes_{};
 };
 struct Value {
-    enum class Kind { Undefined, String, Integer, Boolean, Real, Uuid, Date, Uri, Binary, Array, Map, Long };
+    enum class Kind {
+        Undefined,
+        String,
+        Integer,
+        Boolean,
+        Real,
+        Uuid,
+        Date,
+        Uri,
+        Binary,
+        Array,
+        Map,
+        Long,
+        NullReference
+    };
     Kind kind = Kind::Undefined;
     std::string text;
     std::int32_t integer = 0;
@@ -55,33 +84,49 @@ struct Value {
     bool boolean = false;
     double real = 0;
     mutable BinaryStorage binary_data;
+    std::shared_ptr<const std::u16string> sdk_string;
+    std::shared_ptr<const framework::AssetDateTime> sdk_date;
+    std::shared_ptr<const framework::ConfigUriObject> sdk_uri;
     std::vector<Value> array;
-    std::map<std::string,Value> map;
+    std::map<std::string, Value> map;
     std::vector<std::string> map_order;
     std::shared_ptr<Value> reference;
-    const Value& view()const;
+    const Value& view() const;
     static Value alias(const std::shared_ptr<Value>& value);
     Value() = default;
-    Value(const char* value) : kind(Kind::String),text(value) { }
-    Value(std::string value) : kind(Kind::String),text(std::move(value)) { }
-    explicit Value(std::int32_t value) : kind(Kind::Integer),integer(value) { }
-    explicit Value(bool value) : kind(Kind::Boolean),boolean(value) { }
-    static Value object(std::map<std::string,Value> fields);
-    static Value long_integer(std::int64_t number){Value result;result.kind=Kind::Long;result.long_value=number;return result;}
+    Value(const char* value) : kind(Kind::String), text(value) {}
+    Value(std::string value) : kind(Kind::String), text(std::move(value)) {}
+    explicit Value(std::int32_t value) : kind(Kind::Integer), integer(value) {}
+    explicit Value(bool value) : kind(Kind::Boolean), boolean(value) {}
+    static Value object(std::map<std::string, Value> fields);
+    static Value null_reference() {
+        Value value;
+        value.kind = Kind::NullReference;
+        return value;
+    }
+    static Value long_integer(std::int64_t number) {
+        Value result;
+        result.kind = Kind::Long;
+        result.long_value = number;
+        return result;
+    }
     std::string as_string() const;
     bool contains(std::string_view name) const;
     const Value& get(std::string_view name) const;
-    void set(std::string key,Value value);
-    std::vector<std::string> ordered_keys()const;
+    void set(std::string key, Value value);
+    std::vector<std::string> ordered_keys() const;
 };
-struct RpcCall { std::string method; std::vector<Value> parameters; };
+struct RpcCall {
+    std::string method;
+    std::vector<Value> parameters;
+};
 RpcCall parse_xml_rpc(std::string_view bytes);
 std::string xml_rpc_request(const RpcCall& call);
 Value parse_xml_rpc_response(std::string_view bytes);
 Value parse_llsd_xml(std::string_view bytes);
 std::string xml_rpc_response(const Value& value);
-std::string xml_rpc_fault(std::int32_t code,const std::string& message);
+std::string xml_rpc_fault(std::int32_t code, const std::string& message);
 std::string llsd_xml(const Value& value);
-std::string grid_info_xml(const std::map<std::string,std::string>& info);
-std::string json_strings(const std::map<std::string,std::string>& fields);
+std::string grid_info_xml(const std::map<std::string, std::string>& info);
+std::string json_strings(const std::map<std::string, std::string>& fields);
 }

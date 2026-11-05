@@ -6,16 +6,39 @@
 #include "opensim/server/agent_delete.hpp"
 #include "opensim/server/agent_update.hpp"
 namespace opensim::server {
-struct AgentPathParameters{framework::Uuid agent,region;std::string action;};
-bool agent_path_parameters(std::string_view path,AgentPathParameters& result);
+struct AgentPathParameters {
+    framework::Uuid agent, region;
+    std::string action;
+};
+bool agent_path_parameters(std::string_view path, AgentPathParameters& result);
 // Parsed-OSD access/create-agent cores. Scene services supply actual admission.
 class AgentAccessHandler {
-public:
-    explicit AgentAccessHandler(services::ISimulationLogin* service,AgentDeleteHandler* lifecycle=nullptr,AgentUpdateHandler* updates=nullptr):service_(service),lifecycle_(lifecycle),updates_(updates){}
-    void process_admission(const network::HttpRequest& request,network::HttpResponse& response);
-    void query_access(const network::Value& args,network::HttpResponse& response,const framework::Uuid& agent,const framework::Uuid& region);
-    void post_agent(const network::Value& args,network::HttpResponse& response,const framework::Uuid& path_agent,const std::optional<std::string>& caller_address);
-private:
+  public:
+    using CreateAgent = std::function<bool(const services::GridRegion*, services::GridRegion&,
+                                           const std::shared_ptr<framework::AgentCircuitData>&, std::uint32_t,
+                                           services::LoginTransferContext&, std::string&)>;
+    using LaunchHomeAgent =
+        std::function<bool(const services::GridRegion*, services::GridRegion&, services::GridRegion&,
+                           const std::shared_ptr<framework::AgentCircuitData>&, std::string_view,
+                           services::LoginTransferContext&, std::string&)>;
+    explicit AgentAccessHandler(services::ISimulationLogin* service, AgentDeleteHandler* lifecycle = nullptr,
+                                AgentUpdateHandler* updates = nullptr)
+        : service_(service), lifecycle_(lifecycle), updates_(updates) {}
+    void process_admission(const network::HttpRequest& request, network::HttpResponse& response);
+    void query_access(const network::Value& args, network::HttpResponse& response,
+                      const framework::Uuid& agent, const framework::Uuid& region);
+    void post_agent(const network::Value& args, network::HttpResponse& response,
+                    const framework::Uuid& path_agent, const std::optional<std::string>& caller_address);
+    void set_create_agent_handler(CreateAgent handler) {
+        create_agent_ = std::move(handler);
+    }
+    void set_home_agent_handler(LaunchHomeAgent handler) {
+        home_agent_ = std::move(handler);
+    }
+
+  private:
+    CreateAgent create_agent_;
+    LaunchHomeAgent home_agent_;
     services::ISimulationLogin* service_;
     AgentDeleteHandler* lifecycle_;
     AgentUpdateHandler* updates_;

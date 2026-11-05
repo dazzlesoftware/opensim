@@ -29,9 +29,42 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <stdexcept>
 using opensim::framework::HttpHost;
-void check(bool value,const char* message){if(!value)throw std::runtime_error(message);}
-int main(){try{
- HttpHost empty(std::nullopt);check(empty.flags==HttpHost::Empty&&empty.uri_slash()=="/"&&empty.host_port()==":80","empty source host state");HttpHost secure("HTTPS://GRID.EXAMPLE/");check(secure.valid()&&secure.port==443&&secure.uri=="https://grid.example:443","secure normalization");HttpHost plain("grid.example:443");check(secure.equals(plain)&&secure.compare(plain)==0,"host identity ignores scheme");check(!HttpHost("grid.example:65536").valid()&&!HttpHost("grid.example/path").valid(),"port and internal path rejection");check(HttpHost("httpXxxgrid.example").uri=="http://grid.example:80","source prefix compatibility");
- HttpHost parsed("localhost:0");check(parsed.valid()&&parsed.port==0,"zero port accepted");std::string error;check(!parsed.valid_and_resolved(error)&&error=="failed DNS resolve of uri host","unresolved host error");check(parsed.resolve_dns([](const auto&)->std::optional<std::string>{return "203.0.113.7";})&&parsed.resolved()&&!parsed.ip,"source ResolveDNS sets flag without assigning IP");check(parsed.valid_and_resolved(error)&&error.empty(),"valid resolved state");check(!parsed.resolve_dns([](const auto&)->std::optional<std::string>{return std::nullopt;})&&!parsed.resolved(),"failed resolution clears resolved flag");
- HttpHost resolved("grid.example",true,[](const auto&)->std::optional<std::string>{return "203.0.113.7";});check(resolved.resolved()&&resolved.ip=="203.0.113.7","constructor resolution assigns IP");std::cout<<"PASS: HTTP host normalization and state\n";return 0;
-}catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}}
+void check(bool value, const char* message) {
+    if (!value)
+        throw std::runtime_error(message);
+}
+int main() {
+    try {
+        HttpHost empty(std::nullopt);
+        check(empty.flags == HttpHost::Empty && empty.uri_slash() == "/" && empty.host_port() == ":80",
+              "empty source host state");
+        HttpHost secure("HTTPS://GRID.EXAMPLE/");
+        check(secure.valid() && secure.port == 443 && secure.uri == "https://grid.example:443",
+              "secure normalization");
+        HttpHost plain("grid.example:443");
+        check(secure.equals(plain) && secure.compare(plain) == 0, "host identity ignores scheme");
+        check(!HttpHost("grid.example:65536").valid() && !HttpHost("grid.example/path").valid(),
+              "port and internal path rejection");
+        check(HttpHost("httpXxxgrid.example").uri == "http://grid.example:80", "source prefix compatibility");
+        HttpHost parsed("localhost:0");
+        check(parsed.valid() && parsed.port == 0, "zero port accepted");
+        std::string error;
+        check(!parsed.valid_and_resolved(error) && error == "failed DNS resolve of uri host",
+              "unresolved host error");
+        check(parsed.resolve_dns([](const auto&) -> std::optional<std::string> { return "203.0.113.7"; }) &&
+                  parsed.resolved() && !parsed.ip,
+              "source ResolveDNS sets flag without assigning IP");
+        check(parsed.valid_and_resolved(error) && error.empty(), "valid resolved state");
+        check(!parsed.resolve_dns([](const auto&) -> std::optional<std::string> { return std::nullopt; }) &&
+                  !parsed.resolved(),
+              "failed resolution clears resolved flag");
+        HttpHost resolved("grid.example", true,
+                          [](const auto&) -> std::optional<std::string> { return "203.0.113.7"; });
+        check(resolved.resolved() && resolved.ip == "203.0.113.7", "constructor resolution assigns IP");
+        std::cout << "PASS: HTTP host normalization and state\n";
+        return 0;
+    } catch (const std::exception& error) {
+        std::cerr << error.what() << '\n';
+        return 1;
+    }
+}

@@ -3,25 +3,220 @@
 #include "opensim/services/get_assets_module.hpp"
 #include "opensim/server/poll_http_service.hpp"
 namespace opensim::services {
-namespace {template<class T>T& required(const std::shared_ptr<T>& value){if(!value)throw std::invalid_argument("Null asset capability dependency");return *value;}std::shared_ptr<AssetsModuleState> shared_state(){static auto state=std::make_shared<AssetsModuleState>();return state;}}
-std::shared_ptr<framework::ObjectJobQueue> AssetsModuleBackend::make_worker(framework::ObjectJobEngine::Callback callback,const std::string& name,int hold,int concurrency){auto self=shared_from_this();return std::make_shared<framework::ObjectJobEngine>(std::move(callback),name,hold,concurrency,[self](const auto& name,const auto& error){self->job_error(name,error);});}
-server::PollResponsePtr AssetsModuleBackend::make_response(const network::HttpRequest& request){return server::PollHttpService::response(request);}
-std::shared_ptr<server::HttpResponseState> AssetsModuleBackend::response_state(const server::PollResponsePtr& response){return server::PollHttpService::response_state(response);}
-std::shared_ptr<AssetPollHandler> AssetPollHandler::create(std::string path,framework::Uuid agent,std::shared_ptr<AssetsModuleScene> scene,std::optional<std::string> foreign,std::shared_ptr<AssetsModuleState> state,std::shared_ptr<AssetsModuleBackend> backend){auto value=std::make_shared<AssetPollHandler>();value->url=std::move(path);value->id=agent;value->timeout_ms=INT32_MAX;value->scene_=std::move(scene);value->foreign_=std::move(foreign);value->state_=std::move(state);value->backend_=std::move(backend);std::weak_ptr<AssetPollHandler> weak=value;
-    value->has_events=[weak](auto req,auto id){return required(weak.lock()).has(req,id);};value->drop=[weak](auto req,auto id){required(weak.lock()).dropped(req,id);};value->get_events=[weak](auto req,auto id){return required(weak.lock()).events(req,id);};value->no_events=timeout;value->request=[weak](auto req,const auto& request){return required(weak.lock()).receive(req,request);};return value;
+namespace {
+template <class T> T &required(const std::shared_ptr<T> &value) {
+    if (!value)
+        throw std::invalid_argument("Null asset capability dependency");
+    return *value;
 }
-bool AssetPollHandler::has(framework::Uuid request,framework::Uuid){std::lock_guard lock(responses_mutex_);return responses_.contains(request.str());}
-void AssetPollHandler::dropped(framework::Uuid request,framework::Uuid){std::lock_guard lock(responses_mutex_);responses_.erase(request.str());std::lock_guard drops(dropped_mutex_);dropped_.insert(request.str());}
-server::PollTablePtr AssetPollHandler::events(framework::Uuid request,framework::Uuid){std::lock_guard lock(responses_mutex_);auto key=request.str();if(responses_.contains(key)){auto response=responses_.at(key);responses_.erase(key);auto model=backend_->response_state(response);if(required(model).priority()<0)model->priority(0);auto result=std::make_shared<server::PollTable>();result->set("h",response);return result;}return std::make_shared<server::PollTable>();}
-server::PollTablePtr AssetPollHandler::timeout(framework::Uuid,framework::Uuid){auto result=std::make_shared<server::PollTable>();result->set("int_response_code",int32_t(500));result->set("str_response_string",std::string("timeout"));result->set("content_type",std::string("text/plain"));result->set("keepalive",false);return result;}
-server::PollResponsePtr AssetPollHandler::receive(framework::Uuid request,const network::HttpRequest& native){auto job=std::make_shared<AssetPollRequest>();job->poll=shared_from_this();job->request_id=request;job->request=native;required(state_->worker.load()).enqueue(job);return {};}
-void AssetPollHandler::process(std::shared_ptr<AssetPollRequest> input){[[maybe_unused]]auto lifetime=shared_from_this();auto request=required(input).request_id;if(required(scene_).shutting_down())return;{std::lock_guard lock(responses_mutex_);std::lock_guard drops(dropped_mutex_);if(dropped_.erase(request.str()))return;}auto response=backend_->make_response(input->request);auto model=backend_->response_state(response);auto handler=state_->handler.load();required(handler).handle(std::make_shared<server::AssetHttpRequest>(input->request),model,foreign_);{std::lock_guard lock(responses_mutex_);std::lock_guard drops(dropped_mutex_);if(dropped_.erase(request.str()))return;responses_[request.str()]=response;}}
-GetAssetsModule::GetAssetsModule(std::shared_ptr<AssetsModuleBackend> backend,std::shared_ptr<AssetsModuleState> state):backend_(std::move(backend)),state_(state?std::move(state):shared_state()){required(backend_);}
-void GetAssetsModule::initialise(const server::IniConfig* source){if(!source)throw std::invalid_argument("Null asset capability configuration");if(!source->has_section("ClientStack.LindenCaps"))return;size_t i=0;for(auto key:{"Cap_GetTexture","Cap_GetMesh","Cap_GetMesh2","Cap_GetAsset"}){urls_[i]=source->get("ClientStack.LindenCaps",key,"");if(!urls_[i]->empty())enabled_=true;++i;}}
-void GetAssetsModule::add_region(std::shared_ptr<AssetsModuleScene> scene){if(!enabled_)return;scene_=std::move(scene);}
-void GetAssetsModule::remove_region(std::shared_ptr<AssetsModuleScene> scene){if(!enabled_)return;required(scene).events().on_register_caps.remove(SceneDelegateIdentity{this,"GetAssets.RegisterCaps"});state_->scenes--;scene_=nullptr;}
-void GetAssetsModule::region_loaded(std::shared_ptr<AssetsModuleScene> scene){[[maybe_unused]]auto lifetime=weak_from_this().lock();if(!enabled_)return;std::lock_guard lock(state_->load_mutex);if(!state_->service.load()){auto service=required(scene).asset_service();state_->service=service;auto backend=backend_;state_->handler=std::make_shared<server::GetAssetsHandler>(service,[backend](const auto& text){backend->warn(text);});}if(!state_->service.load()){enabled_=false;return;}if(!users_.load())users_=required(scene).user_management();auto weak=weak_from_this();required(scene).events().on_register_caps.add({{this,"GetAssets.RegisterCaps"},[weak](auto agent,auto caps){if(auto self=weak.lock())self->register_caps(agent,std::move(caps));}});state_->scenes++;if(!state_->worker.load()){auto state=state_;state_->worker=backend_->make_worker([state](std::any job){do_requests(std::move(job),state);},"GetCapsAssetWorker",1000,3);}}
-void GetAssetsModule::close(){if(int32_t(state_->scenes)<=0){auto worker=state_->worker.load();if(worker){worker->dispose();state_->worker=nullptr;}}}
-void GetAssetsModule::do_requests(std::any job,const std::shared_ptr<AssetsModuleState>& state){if(int32_t(required(state).scenes)<=0)return;if(auto request=std::any_cast<std::shared_ptr<AssetPollRequest>>(&job);request&&*request&&!(*request)->request_id.is_zero())required((*request)->poll).process(*request);}
-void GetAssetsModule::register_caps(framework::Uuid agent,std::shared_ptr<Caps> caps){[[maybe_unused]]auto lifetime=shared_from_this();std::optional<std::string> foreign;auto users=users_.load();if(users)foreign=users->user_server_url(agent,"AssetServerURI");auto external=required(scene_.load()).external_caps();size_t i=0;for(auto name:{"GetTexture","GetMesh","GetMesh2","ViewerAsset"}){auto url=urls_[i];if(!url)throw std::invalid_argument("Null asset capability URL");if(*url=="localhost"){auto path="/"+backend_->random_uuid().str();if(external)external->register_user(agent,caps,name,path);else{auto poll=AssetPollHandler::create(path,agent,scene_.load(),foreign,state_,backend_);required(caps).register_poll(name,poll);}}else if(i==0||!url->empty())required(caps).register_external(name,url);++i;}}
+std::shared_ptr<AssetsModuleState> shared_state() {
+    static auto state = std::make_shared<AssetsModuleState>();
+    return state;
+}
+}
+std::shared_ptr<framework::ObjectJobQueue>
+AssetsModuleBackend::make_worker(framework::ObjectJobEngine::Callback callback, const std::string &name,
+                                 int hold, int concurrency) {
+    auto self = shared_from_this();
+    return std::make_shared<framework::ObjectJobEngine>(
+        std::move(callback), name, hold, concurrency,
+        [self](const auto &name, const auto &error) { self->job_error(name, error); });
+}
+server::PollResponsePtr AssetsModuleBackend::make_response(const network::HttpRequest &request) {
+    return server::PollHttpService::response(request);
+}
+std::shared_ptr<server::HttpResponseState>
+AssetsModuleBackend::response_state(const server::PollResponsePtr &response) {
+    return server::PollHttpService::response_state(response);
+}
+std::shared_ptr<AssetPollHandler> AssetPollHandler::create(std::string path, framework::Uuid agent,
+                                                           std::shared_ptr<AssetsModuleScene> scene,
+                                                           std::optional<std::string> foreign,
+                                                           std::shared_ptr<AssetsModuleState> state,
+                                                           std::shared_ptr<AssetsModuleBackend> backend) {
+    auto value = std::make_shared<AssetPollHandler>();
+    value->url = std::move(path);
+    value->id = agent;
+    value->timeout_ms = INT32_MAX;
+    value->scene_ = std::move(scene);
+    value->foreign_ = std::move(foreign);
+    value->state_ = std::move(state);
+    value->backend_ = std::move(backend);
+    std::weak_ptr<AssetPollHandler> weak = value;
+    value->has_events = [weak](auto req, auto id) { return required(weak.lock()).has(req, id); };
+    value->drop = [weak](auto req, auto id) { required(weak.lock()).dropped(req, id); };
+    value->get_events = [weak](auto req, auto id) { return required(weak.lock()).events(req, id); };
+    value->no_events = timeout;
+    value->request = [weak](auto req, const auto &request) {
+        return required(weak.lock()).receive(req, request);
+    };
+    return value;
+}
+bool AssetPollHandler::has(framework::Uuid request, framework::Uuid) {
+    std::lock_guard lock(responses_mutex_);
+    return responses_.contains(request.str());
+}
+void AssetPollHandler::dropped(framework::Uuid request, framework::Uuid) {
+    std::lock_guard lock(responses_mutex_);
+    responses_.erase(request.str());
+    std::lock_guard drops(dropped_mutex_);
+    dropped_.insert(request.str());
+}
+server::PollTablePtr AssetPollHandler::events(framework::Uuid request, framework::Uuid) {
+    std::lock_guard lock(responses_mutex_);
+    auto key = request.str();
+    if (responses_.contains(key)) {
+        auto response = responses_.at(key);
+        responses_.erase(key);
+        auto model = backend_->response_state(response);
+        if (required(model).priority() < 0)
+            model->priority(0);
+        auto result = std::make_shared<server::PollTable>();
+        result->set("h", response);
+        return result;
+    }
+    return std::make_shared<server::PollTable>();
+}
+server::PollTablePtr AssetPollHandler::timeout(framework::Uuid, framework::Uuid) {
+    auto result = std::make_shared<server::PollTable>();
+    result->set("int_response_code", int32_t(500));
+    result->set("str_response_string", std::string("timeout"));
+    result->set("content_type", std::string("text/plain"));
+    result->set("keepalive", false);
+    return result;
+}
+server::PollResponsePtr AssetPollHandler::receive(framework::Uuid request,
+                                                  const network::HttpRequest &native) {
+    auto job = std::make_shared<AssetPollRequest>();
+    job->poll = shared_from_this();
+    job->request_id = request;
+    job->request = native;
+    required(state_->worker.load()).enqueue(job);
+    return {};
+}
+void AssetPollHandler::process(std::shared_ptr<AssetPollRequest> input) {
+    [[maybe_unused]] auto lifetime = shared_from_this();
+    auto request = required(input).request_id;
+    if (required(scene_).shutting_down())
+        return;
+    {
+        std::lock_guard lock(responses_mutex_);
+        std::lock_guard drops(dropped_mutex_);
+        if (dropped_.erase(request.str()))
+            return;
+    }
+    auto response = backend_->make_response(input->request);
+    auto model = backend_->response_state(response);
+    auto handler = state_->handler.load();
+    required(handler).handle(std::make_shared<server::AssetHttpRequest>(input->request), model, foreign_);
+    {
+        std::lock_guard lock(responses_mutex_);
+        std::lock_guard drops(dropped_mutex_);
+        if (dropped_.erase(request.str()))
+            return;
+        responses_[request.str()] = response;
+    }
+}
+GetAssetsModule::GetAssetsModule(std::shared_ptr<AssetsModuleBackend> backend,
+                                 std::shared_ptr<AssetsModuleState> state)
+    : backend_(std::move(backend)), state_(state ? std::move(state) : shared_state()) {
+    required(backend_);
+}
+void GetAssetsModule::initialise(const server::IniConfig *source) {
+    if (!source)
+        throw std::invalid_argument("Null asset capability configuration");
+    if (!source->has_section("ClientStack.LindenCaps"))
+        return;
+    size_t i = 0;
+    for (auto key : {"Cap_GetTexture", "Cap_GetMesh", "Cap_GetMesh2", "Cap_GetAsset"}) {
+        urls_[i] = source->get("ClientStack.LindenCaps", key, "");
+        if (!urls_[i]->empty())
+            enabled_ = true;
+        ++i;
+    }
+}
+void GetAssetsModule::add_region(std::shared_ptr<AssetsModuleScene> scene) {
+    if (!enabled_)
+        return;
+    scene_ = std::move(scene);
+}
+void GetAssetsModule::remove_region(std::shared_ptr<AssetsModuleScene> scene) {
+    if (!enabled_)
+        return;
+    required(scene).events().on_register_caps.remove(SceneDelegateIdentity{this, "GetAssets.RegisterCaps"});
+    state_->scenes--;
+    scene_.store(nullptr);
+}
+void GetAssetsModule::region_loaded(std::shared_ptr<AssetsModuleScene> scene) {
+    [[maybe_unused]] auto lifetime = weak_from_this().lock();
+    if (!enabled_)
+        return;
+    std::lock_guard lock(state_->load_mutex);
+    if (!state_->service.load()) {
+        auto service = required(scene).asset_service();
+        state_->service = service;
+        auto backend = backend_;
+        state_->handler = std::make_shared<server::GetAssetsHandler>(
+            service, [backend](const auto &text) { backend->warn(text); });
+    }
+    if (!state_->service.load()) {
+        enabled_ = false;
+        return;
+    }
+    if (!users_.load())
+        users_ = required(scene).user_management();
+    auto weak = weak_from_this();
+    required(scene).events().on_register_caps.add(
+        {{this, "GetAssets.RegisterCaps"}, [weak](auto agent, auto caps) {
+             if (auto self = weak.lock())
+                 self->register_caps(agent, std::move(caps));
+         }});
+    state_->scenes++;
+    if (!state_->worker.load()) {
+        auto state = state_;
+        state_->worker = backend_->make_worker([state](std::any job) { do_requests(std::move(job), state); },
+                                               "GetCapsAssetWorker", 1000, 3);
+    }
+}
+void GetAssetsModule::close() {
+    if (int32_t(state_->scenes) <= 0) {
+        auto worker = state_->worker.load();
+        if (worker) {
+            worker->dispose();
+            state_->worker.store(nullptr);
+        }
+    }
+}
+void GetAssetsModule::do_requests(std::any job, const std::shared_ptr<AssetsModuleState> &state) {
+    if (int32_t(required(state).scenes) <= 0)
+        return;
+    if (auto request = std::any_cast<std::shared_ptr<AssetPollRequest>>(&job);
+        request && *request && !(*request)->request_id.is_zero())
+        required((*request)->poll).process(*request);
+}
+void GetAssetsModule::register_caps(framework::Uuid agent, std::shared_ptr<Caps> caps) {
+    [[maybe_unused]] auto lifetime = shared_from_this();
+    std::optional<std::string> foreign;
+    auto users = users_.load();
+    if (users)
+        foreign = users->user_server_url(agent, "AssetServerURI");
+    auto external = required(scene_.load()).external_caps();
+    size_t i = 0;
+    for (auto name : {"GetTexture", "GetMesh", "GetMesh2", "ViewerAsset"}) {
+        auto url = urls_[i];
+        if (!url)
+            throw std::invalid_argument("Null asset capability URL");
+        if (*url == "localhost") {
+            auto path = "/" + backend_->random_uuid().str();
+            if (external)
+                external->register_user(agent, caps, name, path);
+            else {
+                auto poll = AssetPollHandler::create(path, agent, scene_.load(), foreign, state_, backend_);
+                required(caps).register_poll(name, poll);
+            }
+        } else if (i == 0 || !url->empty())
+            required(caps).register_external(name, url);
+        ++i;
+    }
+}
 }

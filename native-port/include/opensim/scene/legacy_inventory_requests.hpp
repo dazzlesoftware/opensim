@@ -4,7 +4,10 @@
 #include "opensim/scene/inventory_packets.hpp"
 namespace opensim::scene {
 struct LegacyItemRequest {framework::Uuid owner,item;};
-struct LegacyFolderRequest {framework::Uuid folder;bool fetch_folders=false,fetch_items=false;};
+struct LegacyFolderRequest {
+    framework::Uuid folder;
+    bool fetch_folders = false, fetch_items = false;
+};
 struct LegacyInventoryBackend {
  std::function<std::optional<services::InventoryItem>(framework::Uuid,framework::Uuid)> item;
  std::function<services::InventoryCollection(framework::Uuid,framework::Uuid)> content;

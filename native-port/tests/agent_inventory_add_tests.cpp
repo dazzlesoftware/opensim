@@ -2,12 +2,132 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/scene/agent_inventory_add.hpp"
 #include <iostream>
-using namespace opensim;using namespace scene;
+using namespace opensim;
+using namespace scene;
 namespace {
-framework::Uuid id(int n){auto s=std::to_string(n);return framework::Uuid("11223344-5566-7788-99aa-"+std::string(12-s.size(),'0')+s);}
-std::string probe(int kind,int mode,int asset,int failure){std::string trace;int adds=0;auto step=[&](int p,std::string v){trace+="|"+v;if(failure==p)throw std::runtime_error("injected");};auto value=std::make_shared<TaskInventoryAgentItem>();value->item.id=id(1);value->item.owner=id(2);value->item.parent=(mode&1)?framework::Uuid{}:id(3);value->item.asset_type=asset;value->item.creator_id=(mode&32768)?"invalid":id(4).str();value->creator_data=(mode&8192)?std::optional<std::string>{}:(mode&16384)?std::optional<std::string>(""):std::optional<std::string>("profile;creator");
- services::InventoryFolder system{"Fallback",0,0,id(6),id(11),id(12)},root{"Root",0,0,id(7),id(13),id(14)},parent{"Parent",0,0,id(12),id(11),{}};
- auto client=[&]{AgentInventoryClient c;c.agent=id(9);c.active=!(mode&512);c.remove_items=[&](auto ids){step(11,"REMOVE:"+ids.at(0).str());};c.bulk_item=[&](auto i){step(12,"BULK:"+i->item.owner.str()+":"+i->item.parent.str());};c.alert=[&](auto text,bool modal){step(13,"ALERT:"+text+":"+(modal?"1":"0"));};c.create_update=[&](auto i,auto callback){step(14,"CREATE:"+i->item.owner.str()+":"+i->item.parent.str()+":"+std::to_string(callback));};return c;};
- AgentInventoryAddBackend b;b.add_item=[&](auto i){++adds;step(1,"ADD"+std::to_string(adds)+":"+i->item.owner.str()+":"+i->item.parent.str()+":"+inventory_storage_projection(*i).creator_id);if((mode&2048)&&adds==1)i->item.parent=id(77);return adds==1?!(mode&2):!(mode&4);};b.system_folder=[&](auto owner,std::int8_t type)->std::optional<services::InventoryFolder>{step(2,"SYSTEM:"+owner.str()+":"+std::to_string(type));if(mode&8)return {};return system;};b.root_folder=[&](auto owner)->std::optional<services::InventoryFolder>{step(3,"ROOT:"+owner.str());if(mode&16)return {};return root;};b.folder=[&](auto owner,auto key)->std::optional<services::InventoryFolder>{step(10,"PARENT:"+owner.str()+":"+key.str());if(mode&1024)return {};return parent;};b.is_god=[&](auto owner){step(5,"GOD:"+owner.str());return bool(mode&32);};b.upload_complete=[&](auto i,int level){step(6,"UPLOAD:"+i->item.owner.str()+":"+std::to_string(level));if(mode&4096)i->item.owner=id(88);};b.client=[&](auto owner)->std::optional<AgentInventoryClient>{step(9,"PRESENCE:"+owner.str());if(mode&(128|256))return {};return client();};b.debug=[&](auto){step(7,"DEBUG");};b.warn=[&](auto){step(8,"WARN");};AgentInventoryAddController controller(std::move(b));std::string result="VOID";try{if(kind==0)result=controller.add(value,!(mode&64))?"TRUE":"FALSE";else if(kind==1)controller.add(client(),value);else controller.change_placement(value,system);}catch(...){result="THROW";}return result+":"+std::to_string(adds)+":"+value->item.owner.str()+":"+value->item.parent.str()+":"+value->item.creator_id+trace;}
+framework::Uuid id(int n) {
+    auto s = std::to_string(n);
+    return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - s.size(), '0') + s);
 }
-int main(int argc,char**argv){try{if(argc>1&&std::string_view(argv[1])=="--probe"){int k,m,a,f;while(std::cin>>k>>m>>a>>f)std::cout<<probe(k,m,a,f)<<'\n';return 0;}int n=0;auto check=[&](bool b,const char*s){++n;if(!b)throw std::runtime_error(s);};check(probe(1,2|4,10,0).find("|CREATE:")!=std::string::npos,"client sends evenstorefalse");check(probe(0,64,10,0).find("|GOD:")!=std::string::npos&&probe(0,64,10,0).find("|UPLOAD:")==std::string::npos,"isgod evennotrigger");check(probe(0,2,4,0).find("|SYSTEM:")==std::string::npos&&probe(0,2,4,0).find("|ROOT:")!=std::string::npos,"undefinedfoldertype skipssystem");check(probe(0,2,10,0).find(" under Parent:0")!=std::string::npos,"placementalert");check(probe(2,512,10,0).find("|REMOVE:")==std::string::npos,"inactiveplacementrecipient");std::cout<<"PASS: "<<n<<" agent inventory add checks\n";return 0;}catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}}
+std::string probe(int kind, int mode, int asset, int failure) {
+    std::string trace;
+    int adds = 0;
+    auto step = [&](int p, std::string v) {
+        trace += "|" + v;
+        if (failure == p)
+            throw std::runtime_error("injected");
+    };
+    auto value = std::make_shared<TaskInventoryAgentItem>();
+    value->item.id = id(1);
+    value->item.owner = id(2);
+    value->item.parent = (mode & 1) ? framework::Uuid{} : id(3);
+    value->item.asset_type = asset;
+    value->item.creator_id = (mode & 32768) ? "invalid" : id(4).str();
+    value->creator_data = (mode & 8192)    ? std::optional<std::string>{}
+                          : (mode & 16384) ? std::optional<std::string>("")
+                                           : std::optional<std::string>("profile;creator");
+    services::InventoryFolder system{"Fallback", 0, 0, id(6), id(11), id(12)},
+        root{"Root", 0, 0, id(7), id(13), id(14)}, parent{"Parent", 0, 0, id(12), id(11), {}};
+    auto client = [&] {
+        AgentInventoryClient c;
+        c.agent = id(9);
+        c.active = !(mode & 512);
+        c.remove_items = [&](auto ids) { step(11, "REMOVE:" + ids.at(0).str()); };
+        c.bulk_item = [&](auto i) { step(12, "BULK:" + i->item.owner.str() + ":" + i->item.parent.str()); };
+        c.alert = [&](auto text, bool modal) { step(13, "ALERT:" + text + ":" + (modal ? "1" : "0")); };
+        c.create_update = [&](auto i, auto callback) {
+            step(14, "CREATE:" + i->item.owner.str() + ":" + i->item.parent.str() + ":" +
+                         std::to_string(callback));
+        };
+        return c;
+    };
+    AgentInventoryAddBackend b;
+    b.add_item = [&](auto i) {
+        ++adds;
+        step(1, "ADD" + std::to_string(adds) + ":" + i->item.owner.str() + ":" + i->item.parent.str() + ":" +
+                    inventory_storage_projection(*i).creator_id);
+        if ((mode & 2048) && adds == 1)
+            i->item.parent = id(77);
+        return adds == 1 ? !(mode & 2) : !(mode & 4);
+    };
+    b.system_folder = [&](auto owner, std::int8_t type) -> std::optional<services::InventoryFolder> {
+        step(2, "SYSTEM:" + owner.str() + ":" + std::to_string(type));
+        if (mode & 8)
+            return {};
+        return system;
+    };
+    b.root_folder = [&](auto owner) -> std::optional<services::InventoryFolder> {
+        step(3, "ROOT:" + owner.str());
+        if (mode & 16)
+            return {};
+        return root;
+    };
+    b.folder = [&](auto owner, auto key) -> std::optional<services::InventoryFolder> {
+        step(10, "PARENT:" + owner.str() + ":" + key.str());
+        if (mode & 1024)
+            return {};
+        return parent;
+    };
+    b.is_god = [&](auto owner) {
+        step(5, "GOD:" + owner.str());
+        return bool(mode & 32);
+    };
+    b.upload_complete = [&](auto i, int level) {
+        step(6, "UPLOAD:" + i->item.owner.str() + ":" + std::to_string(level));
+        if (mode & 4096)
+            i->item.owner = id(88);
+    };
+    b.client = [&](auto owner) -> std::optional<AgentInventoryClient> {
+        step(9, "PRESENCE:" + owner.str());
+        if (mode & (128 | 256))
+            return {};
+        return client();
+    };
+    b.debug = [&](auto) { step(7, "DEBUG"); };
+    b.warn = [&](auto) { step(8, "WARN"); };
+    AgentInventoryAddController controller(std::move(b));
+    std::string result = "VOID";
+    try {
+        if (kind == 0)
+            result = controller.add(value, !(mode & 64)) ? "TRUE" : "FALSE";
+        else if (kind == 1)
+            controller.add(client(), value);
+        else
+            controller.change_placement(value, system);
+    } catch (...) {
+        result = "THROW";
+    }
+    return result + ":" + std::to_string(adds) + ":" + value->item.owner.str() + ":" +
+           value->item.parent.str() + ":" + value->item.creator_id + trace;
+}
+}
+int main(int argc, char **argv) {
+    try {
+        if (argc > 1 && std::string_view(argv[1]) == "--probe") {
+            int k, m, a, f;
+            while (std::cin >> k >> m >> a >> f)
+                std::cout << probe(k, m, a, f) << '\n';
+            return 0;
+        }
+        int n = 0;
+        auto check = [&](bool b, const char *s) {
+            ++n;
+            if (!b)
+                throw std::runtime_error(s);
+        };
+        check(probe(1, 2 | 4, 10, 0).find("|CREATE:") != std::string::npos, "client sends evenstorefalse");
+        check(probe(0, 64, 10, 0).find("|GOD:") != std::string::npos &&
+                  probe(0, 64, 10, 0).find("|UPLOAD:") == std::string::npos,
+              "isgod evennotrigger");
+        check(probe(0, 2, 4, 0).find("|SYSTEM:") == std::string::npos &&
+                  probe(0, 2, 4, 0).find("|ROOT:") != std::string::npos,
+              "undefinedfoldertype skipssystem");
+        check(probe(0, 2, 10, 0).find(" under Parent:0") != std::string::npos, "placementalert");
+        check(probe(2, 512, 10, 0).find("|REMOVE:") == std::string::npos, "inactiveplacementrecipient");
+        std::cout << "PASS: " << n << " agent inventory add checks\n";
+        return 0;
+    } catch (const std::exception &e) {
+        std::cerr << e.what() << '\n';
+        return 1;
+    }
+}

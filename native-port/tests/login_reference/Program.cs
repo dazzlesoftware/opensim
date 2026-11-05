@@ -27,6 +27,8 @@ sealed class Echo : ILoginService {
 }
 static class Program {
     static void Main(){
+        OpenSim.Framework.Culture.SetCurrentCulture();
+        OpenSim.Framework.Culture.SetDefaultCurrentCulture();
         Console.InputEncoding=Encoding.UTF8;Console.OutputEncoding=new UTF8Encoding(false);
         var handlers=new LLLoginHandlers(new Echo());
         var endpoint=new IPEndPoint(IPAddress.Loopback,1234);
@@ -36,6 +38,11 @@ static class Program {
                 int split=line.IndexOf('\t');string mode=line[..split],body=line[(split+1)..];
                 object result;
                 if(mode=="failure")result=((LLFailedLoginResponse)typeof(LLFailedLoginResponse).GetField(body).GetValue(null)).ToHashtable();
+                else if(mode=="levelraw"){
+                    var chars=new char[body.Length/4];for(int i=0;i<chars.Length;i++)chars[i]=(char)Convert.ToUInt16(body.Substring(i*4,4),16);
+                    var request=new XmlRpcRequest();request.Params.Add(new Hashtable{{"first","Test"},{"last","User"},{"passwd","secret"},{"level",new string(chars)}});
+                    result=handlers.HandleXMLRPCSetLoginLevel(request,endpoint).Value;
+                }
                 else if(mode=="llsd"){
                     var value=OSDParser.DeserializeLLSDXml(new MemoryStream(Encoding.UTF8.GetBytes(body)));
                     var map=(OSDMap)handlers.HandleLLSDLogin(value,endpoint);

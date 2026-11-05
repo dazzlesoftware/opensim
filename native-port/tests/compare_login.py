@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 import xmlrpc.client
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCES = ["OpenSim/Server/Handlers/Login/LLLoginHandlers.cs", "OpenSim/Services/Interfaces/ILoginService.cs"]
+SOURCES = ["OpenSim/Server/Handlers/Login/LLLoginHandlers.cs", "OpenSim/Services/Interfaces/ILoginService.cs", "OpenSim/Framework/Culture.cs"]
 
 
 def original_class(text, name):
@@ -28,7 +28,7 @@ def reference(dotnet, work):
     work.mkdir(parents=True, exist_ok=True)
     project = ET.Element("Project", Sdk="Microsoft.NET.Sdk")
     props = ET.SubElement(project, "PropertyGroup")
-    for name, value in {"TargetFramework": "net8.0", "OutputType": "Exe", "EnableDefaultCompileItems": "false", "Nullable": "disable"}.items():
+    for name, value in {"TargetFramework": "net8.0", "OutputType": "Exe", "EnableDefaultCompileItems": "false", "Nullable": "disable", "RuntimeFrameworkVersion": "8.0.31", "RollForward": "Disable"}.items():
         ET.SubElement(props, name).text = value
     group = ET.SubElement(project, "ItemGroup")
     for source in SOURCES:
@@ -91,6 +91,12 @@ def cases():
         yield "llsd\t" + ET.tostring(root, encoding="unicode")
     for level in [0, 200, "-100", "invalid", None, 2147483647, -2147483648, " +1 "]:
         yield "level\t" + xmlrpc.client.dumps(({**base, "level": level},), methodname="set_login_level", allow_none=True).replace("\n", "")
+    levels=["+-1","-+1","++1","--1","+ -1","+1","-0","000001","2147483648","-2147483649","9"*1000,"1\0","1\0\0","1 \0","1\0 ","\0",""," ","2147483647","-2147483648"]
+    for code in list(range(33))+[0x85,0xa0,0x1680,*range(0x2000,0x200c),0x2028,0x2029,0x202f,0x205f,0x3000]:
+        c=chr(code)
+        for value in [c+'1','1'+c,c+'-1'+c,c+'+2147483647'+c]:levels.append(value)
+    for level in levels:
+        yield 'levelraw\t'+level.encode('utf-16-be').hex()
 
 
 def main():

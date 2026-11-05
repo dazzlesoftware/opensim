@@ -7,7 +7,8 @@ def build_reference(dotnet,w):
  source=ROOT/'OpenSim/Framework/WebUtil.cs';method=extract(source.read_text(encoding='utf-8-sig'),r'public static string MakeRequest\(string method, string requestUrl, string obj, int timeoutsecs = -1,')
  original=source.read_text(encoding='utf-8-sig')
  for pattern in [r'MaxAutomaticRedirections\s*=\s*10',r'AutomaticDecompression\s*=\s*DecompressionMethods.None',r'UseCookies\s*=\s*false',r'ConnectTimeout\s*=\s*TimeSpan.FromSeconds\(120\)']:assert re.search(pattern,original),pattern
- wrapper=w/'Requester.cs';wrapper.write_text('using System;using System.Net.Http;using System.IO;using System.Text;using System.Threading;using OpenSim.Framework.ServiceAuth;namespace OpenSim.Framework{public static class SynchronousRestFormsRequester{static log4net.ILog m_log=new log4net.Logger();'+method+'}}',encoding='utf-8')
+ timeout=extract(original,r'public static int EstimatedReceiveTimeout\(HttpContentHeaders headers, bool keepalive\)')
+ wrapper=w/'Requester.cs';wrapper.write_text('using System;using System.Net.Http;using System.Net.Http.Headers;using System.IO;using System.Text;using System.Threading;using OpenSim.Framework.ServiceAuth;namespace OpenSim.Framework{public static class SynchronousRestFormsRequester{static log4net.ILog m_log=new log4net.Logger();'+method+'}public static partial class WebUtil{'+timeout+'}}',encoding='utf-8')
  project=ET.Element('Project',Sdk='Microsoft.NET.Sdk');props=ET.SubElement(project,'PropertyGroup')
  for k,v in dict(TargetFramework='net8.0',OutputType='Exe',EnableDefaultCompileItems='false').items():ET.SubElement(props,k).text=v
  group=ET.SubElement(project,'ItemGroup')
@@ -22,6 +23,8 @@ def main():
  lengths={'invalid':['bad'],'negative':['-1'],'plus':['+'+str(len(body))],'overflow':[str(2**63)],'uint64-max':[str(2**64-1)],'empty-length':[''],'comma':[f'{len(body)},{len(body)}'],'duplicate-conflict':[str(len(body)),str(len(body)+5)],'duplicate-same':[str(len(body))]*2,'invalid-first':['bad',str(len(body))],'invalid-last':[str(len(body)),'bad'],'zero-first':['0',str(len(body))],'zero-last':[str(len(body)),'0'],'padded-positive':['0'+str(len(body))],'space-length':[' '+str(len(body))+' '],'signed-max':[str(2**63-1)],'chunked-length':[str(len(body))],'chunked-invalid':['bad']}
  positive={'duplicate-conflict','duplicate-same','invalid-last','zero-last','padded-positive','space-length','chunked-length'}
  cases += [(name,name in positive or name=='signed-max','EX' if name=='signed-max' else 'OK|'+body.hex() if name in positive else 'OK|') for name in lengths]
+ lengths['invalid-timeout']=[str(((1<<32)-5002)*1024)]
+ cases.append(('invalid-timeout',False,'EX'))
  cases += [(name,True,None) for name in ['gzip','deflate']]
  class Handler(http.server.BaseHTTPRequestHandler):
   protocol_version='HTTP/1.1';state=None
@@ -79,6 +82,6 @@ def main():
       reader.join(timeout=2);process.stdout.close();process.stderr.close()
     if rows[0]!=rows[1]:differences.append(dict(profile=profile,source=rows[0],native=rows[1]))
   finally:server.shutdown();worker.join(timeout=5)
- report=dict(passed=not differences,observations=len(observations),profiles=len(cases),sourceSha256=hashlib.sha256(source.read_bytes()).hexdigest(),methodSha256=hashlib.sha256(method.encode()).hexdigest(),scope='Exact original SynchronousRestFormsRequester.MakeRequest POST method and actual .NET HttpClient versus native transport over gated HTTP sockets. Factory, adaptive timeout calculation, clock/logging/auth configuration are controlled. No-length/chunked/zero replies and final HTTP errors complete before body release; positive-length UTF8/BOM reads wait and truncated bodies fail. Full global HTTP configuration, adaptive streaming/cancellation, error text and Unix execution remain pending.',results=observations,differences=differences);(w/'rest-forms-results.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8');assert not differences,differences
+ report=dict(passed=not differences,observations=len(observations),profiles=len(cases),sourceSha256=hashlib.sha256(source.read_bytes()).hexdigest(),methodSha256=hashlib.sha256(method.encode()).hexdigest(),scope='Exact original SynchronousRestFormsRequester.MakeRequest POST method and actual .NET HttpClient versus native transport over gated HTTP sockets. Factory, clock/logging/auth configuration are controlled; the receive timeout calculation is extracted from source. No-length/chunked/zero replies and final HTTP errors complete before body release; positive-length UTF8/BOM reads wait and truncated bodies fail. The invalid receive timeout exits before reading. Detailed cancellation timing and exception text remain outside this fixture.',results=observations,differences=differences);(w/'rest-forms-results.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8');assert not differences,differences
  print(f'PASS: {len(observations)} original/native gated response-lifetime observations')
 if __name__=='__main__':main()

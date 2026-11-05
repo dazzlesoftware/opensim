@@ -6,17 +6,275 @@
 #include <iostream>
 #include <map>
 #include <stdexcept>
-using namespace opensim;using network::Value;using framework::Uuid;using services::CapabilitiesModule;
-std::string hex(std::string_view s){std::string out;const char* h="0123456789abcdef";for(unsigned char c:s){out+=h[c>>4];out+=h[c&15];}return out;}
-std::string decode(std::string_view s){std::string out;for(std::size_t i=0;i<s.size();i+=2)out+=static_cast<char>(std::stoi(std::string(s.substr(i,2)),nullptr,16));return out;}
-Uuid id(int n){return Uuid("00000000-0000-0000-0000-00000000000"+std::to_string(n));}
-std::string opt(const std::optional<std::string>& s){return s?hex(*s):"-";}
-struct Scene;struct Object;
-struct Context{Value command;CapabilitiesModule owner;std::map<std::string,std::shared_ptr<Scene>> scenes;std::vector<std::shared_ptr<Object>> objects;std::map<std::string,std::function<void(const std::vector<std::string>&)>> commands;std::shared_ptr<CapabilitiesModule::Seeds> seeds=std::make_shared<CapabilitiesModule::Seeds>();std::shared_ptr<CapabilitiesModule::Seeds> saved;std::string trace,selected;int next=0;std::uint32_t code=1;bool mutated=false;void log(const std::string& op,const std::string& label="",const std::string& detail="");};
-struct Object:services::CapabilityObject{Context& ctx;int serial;Uuid agent;std::optional<std::string> path;std::string host,region;int port;int activates=0,deregisters=0,disposes=0;Object(Context& c,Uuid a,std::optional<std::string> p,std::string h,std::string r,int pnum):ctx(c),serial(++c.next),agent(a),path(std::move(p)),host(std::move(h)),region(std::move(r)),port(pnum){}std::optional<std::string> caps_path()const override{return path;}Uuid agent_id()const override{return agent;}void deregister_handlers()override{ctx.log("old-deregister",std::to_string(serial));++deregisters;}void dispose()override{ctx.log("dispose",std::to_string(serial));++disposes;}void activate()override{ctx.log("activate",std::to_string(serial));++activates;}std::optional<std::string> base_url()const override{return "http://"+host+":"+std::to_string(port);}services::CapabilityPaths local_paths()const override{services::CapabilityPaths result;result["SEED"]="/CAPS/"+path.value_or("")+"0000/";result["Test"]="/test/";return result;}services::CapabilityPaths poll_paths()const override{services::CapabilityPaths result;result["Poll"]="/poll/";return result;}services::CapabilityPaths external_paths()const override{services::CapabilityPaths result;result["External"]="https://outside/cap";return result;}};
-struct Scene:services::CapabilityModuleScene{Context& ctx;std::string label;bool registered=false;Scene(Context& c,std::string s):ctx(c),label(std::move(s)){}std::optional<std::string> region_name()const override{return "Region"+label;}void register_module(CapabilitiesModule*)override{ctx.log("module-register",label);registered=true;}void unregister_module(CapabilitiesModule*)override{ctx.log("module-unregister",label);registered=false;}std::shared_ptr<services::CapabilityObject> make_caps(const std::optional<std::string>& path,const Uuid& agent)override{auto caps=std::make_shared<Object>(ctx,agent,path,"host"+label,"Region"+label,network::osd_boolean(ctx.command.get("no_server"))?0:9000);ctx.log("factory",std::to_string(caps->serial),"host"+label+":"+(network::osd_boolean(ctx.command.get("no_server"))?"0":"9000")+":"+opt(path)+":"+agent.str()+":Region"+label);ctx.objects.push_back(caps);return caps;}void register_caps(const Uuid& agent,const std::shared_ptr<services::CapabilityObject>& cap)override{ctx.log("register-event",label,agent.str()+":"+std::to_string(std::dynamic_pointer_cast<Object>(cap)->serial));}void deregister_caps(const Uuid& agent,const std::shared_ptr<services::CapabilityObject>& cap)override{ctx.log("deregister-event",label,agent.str()+":"+std::to_string(std::dynamic_pointer_cast<Object>(cap)->serial));}void add_command(services::CapabilityCommand command)override{ctx.log("command",command.name,hex(command.help)+":"+hex(command.summary)+":"+opt(command.details));ctx.commands[command.name]=std::move(command.handler);}bool console_has_selected_scene()const override{return !ctx.selected.empty();}bool selected_for_console()const override{return ctx.selected.empty()||ctx.selected==label;}std::optional<std::string> presence_name(const Uuid&)override{return "Test User";}void console_output(const std::string& text)override{ctx.log("console","",hex(text));}void info(const std::string& text)override{ctx.log("info","",hex(text));}};
-void Context::log(const std::string& op,const std::string& label,const std::string& detail){trace+=op+":"+label+":"+detail+";";if(network::osd_string(command.get("failure"))==op)throw std::runtime_error(op);if(!mutated&&network::osd_string(command.get("mutation"))==op){mutated=true;if(op=="register-event")owner.activate_caps(code);else if(op=="factory")owner.add_region(scenes.at("B"));else if(op=="deregister-event")owner.create_caps(id(3),9);else if(op=="old-deregister")owner.remove_caps(id(1),code);else if(op=="info")(*seeds)[999]="new";}}
-int main(){std::string line;while(std::getline(std::cin,line)){Context ctx{network::parse_osd_json(decode(line))};ctx.scenes["A"]=std::make_shared<Scene>(ctx,"A");ctx.scenes["B"]=std::make_shared<Scene>(ctx,"B");(*ctx.seeds)[256]="first";ctx.owner.set_console_backend(ctx.scenes["A"]);std::string results;
-for(const auto& op:ctx.command.get("ops").array){auto method=network::osd_string(op.get("op"));auto n=op.contains("agent")?network::osd_integer(op.get("agent")):1;Uuid agent=id(n);ctx.code=static_cast<std::uint32_t>(op.contains("code")?network::osd_integer(op.get("code")):1);std::string value="OK";try{if(method=="add")ctx.owner.add_region(network::osd_boolean(op.get("null_scene"))?nullptr:ctx.scenes.at(op.contains("scene")?network::osd_string(op.get("scene")):"A"));else if(method=="remove_region")ctx.owner.remove_region(ctx.scenes.at("B"));else if(method=="seed"){auto circuit=std::make_shared<framework::AgentCircuitData>();circuit->agent_id=agent;circuit->caps_path=op.contains("path")?(op.get("path").kind==Value::Kind::Undefined?std::nullopt:std::optional<std::string>(network::osd_string(op.get("path")))):std::optional<std::string>("seed");circuit->children_cap_seeds=network::osd_boolean(op.get("null_seeds"))?nullptr:ctx.seeds;ctx.owner.set_agent_caps_seeds(network::osd_boolean(op.get("null_agent"))?nullptr:circuit);}else if(method=="path")value=opt(ctx.owner.get_caps_path(agent));else if(method=="create")ctx.owner.create_caps(agent,ctx.code);else if(method=="remove")ctx.owner.remove_caps(agent,ctx.code);else if(method=="activate")ctx.owner.activate_caps(ctx.code);else if(method=="get"){auto cap=std::dynamic_pointer_cast<Object>(ctx.owner.get_caps_for_user(ctx.code));value=cap?std::to_string(cap->serial):"-";}else if(method=="set_children")ctx.owner.set_children_seed(agent,network::osd_boolean(op.get("null_seeds"))?nullptr:ctx.seeds);else if(method=="get_children"){auto seeds=ctx.owner.get_children_seeds(agent);value=seeds?std::to_string(seeds->size())+":"+(seeds==ctx.seeds?"1":"0"):"-";ctx.saved=seeds;}else if(method=="mutate_saved"){if(!ctx.saved)throw std::runtime_error("null");(*ctx.saved)[512]="saved";}else if(method=="mutate_seed")(*ctx.seeds)[512]="changed";else if(method=="drop")ctx.owner.drop_child_seed(agent,static_cast<std::uint64_t>(op.contains("handle")?network::osd_integer(op.get("handle")):256));else if(method=="child")value=opt(ctx.owner.get_child_seed(agent,static_cast<std::uint64_t>(op.contains("handle")?network::osd_integer(op.get("handle")):256)));else if(method=="dump")ctx.owner.dump_children_seeds(agent);else if(method=="select")ctx.selected=network::osd_string(op.get("scene"));else if(method=="list")ctx.owner.show_caps_list({});else if(method=="stats"){std::vector<std::string> args(static_cast<std::size_t>(network::osd_integer(op.get("count"))));ctx.owner.show_caps_stats_by_cap(args);}else if(method=="user_stats")ctx.owner.show_caps_stats_by_user({});else if(method=="lifecycle"){ctx.owner.initialise(nullptr);ctx.owner.region_loaded(nullptr);ctx.owner.post_initialise();ctx.owner.close();value=ctx.owner.replaceable_interface()==nullptr&&ctx.owner.name=="Capabilities Module"?"1":"0";}}catch(const std::exception&){value="EX";}results+=value+",";}
-std::string actors;for(const auto& cap:ctx.objects)actors+=std::to_string(cap->serial)+":"+cap->agent.str()+":"+opt(cap->path)+":"+std::to_string(cap->activates)+":"+std::to_string(cap->deregisters)+":"+std::to_string(cap->disposes)+";";std::cout<<results<<"|"<<hex(ctx.trace)<<"|"<<actors<<"|"<<ctx.owner.caps_count()<<"|"<<ctx.scenes.at("A")->registered<<ctx.scenes.at("B")->registered<<"\n";
-}}
+using namespace opensim;
+using network::Value;
+using framework::Uuid;
+using services::CapabilitiesModule;
+std::string hex(std::string_view s) {
+    std::string out;
+    const char* h = "0123456789abcdef";
+    for (unsigned char c : s) {
+        out += h[c >> 4];
+        out += h[c & 15];
+    }
+    return out;
+}
+std::string decode(std::string_view s) {
+    std::string out;
+    for (std::size_t i = 0; i < s.size(); i += 2)
+        out += static_cast<char>(std::stoi(std::string(s.substr(i, 2)), nullptr, 16));
+    return out;
+}
+Uuid id(int n) {
+    return Uuid("00000000-0000-0000-0000-00000000000" + std::to_string(n));
+}
+std::string opt(const std::optional<std::string>& s) {
+    return s ? hex(*s) : "-";
+}
+struct Scene;
+struct Object;
+struct Context {
+    Value command;
+    CapabilitiesModule owner;
+    std::map<std::string, std::shared_ptr<Scene>> scenes;
+    std::vector<std::shared_ptr<Object>> objects;
+    std::map<std::string, std::function<void(const std::vector<std::string>&)>> commands;
+    std::shared_ptr<CapabilitiesModule::Seeds> seeds = std::make_shared<CapabilitiesModule::Seeds>();
+    std::shared_ptr<CapabilitiesModule::Seeds> saved;
+    std::string trace, selected;
+    int next = 0;
+    std::uint32_t code = 1;
+    bool mutated = false;
+    void log(const std::string& op, const std::string& label = "", const std::string& detail = "");
+};
+struct Object : services::CapabilityObject {
+    Context& ctx;
+    int serial;
+    Uuid agent;
+    std::optional<std::string> path;
+    std::string host, region;
+    int port;
+    int activates = 0, deregisters = 0, disposes = 0;
+    Object(Context& c, Uuid a, std::optional<std::string> p, std::string h, std::string r, int pnum)
+        : ctx(c), serial(++c.next), agent(a), path(std::move(p)), host(std::move(h)), region(std::move(r)),
+          port(pnum) {
+    }
+    std::optional<std::string> caps_path() const override {
+        return path;
+    }
+    Uuid agent_id() const override {
+        return agent;
+    }
+    void deregister_handlers() override {
+        ctx.log("old-deregister", std::to_string(serial));
+        ++deregisters;
+    }
+    void dispose() override {
+        ctx.log("dispose", std::to_string(serial));
+        ++disposes;
+    }
+    void activate() override {
+        ctx.log("activate", std::to_string(serial));
+        ++activates;
+    }
+    std::optional<std::string> base_url() const override {
+        return "http://" + host + ":" + std::to_string(port);
+    }
+    services::CapabilityPaths local_paths() const override {
+        services::CapabilityPaths result;
+        result["SEED"] = "/CAPS/" + path.value_or("") + "0000/";
+        result["Test"] = "/test/";
+        return result;
+    }
+    services::CapabilityPaths poll_paths() const override {
+        services::CapabilityPaths result;
+        result["Poll"] = "/poll/";
+        return result;
+    }
+    services::CapabilityPaths external_paths() const override {
+        services::CapabilityPaths result;
+        result["External"] = "https://outside/cap";
+        return result;
+    }
+};
+struct Scene : services::CapabilityModuleScene {
+    Context& ctx;
+    std::string label;
+    bool registered = false;
+    Scene(Context& c, std::string s) : ctx(c), label(std::move(s)) {
+    }
+    std::optional<std::string> region_name() const override {
+        return "Region" + label;
+    }
+    void register_module(CapabilitiesModule*) override {
+        ctx.log("module-register", label);
+        registered = true;
+    }
+    void unregister_module(CapabilitiesModule*) override {
+        ctx.log("module-unregister", label);
+        registered = false;
+    }
+    std::shared_ptr<services::CapabilityObject> make_caps(const std::optional<std::string>& path,
+                                                          const Uuid& agent) override {
+        auto caps = std::make_shared<Object>(ctx, agent, path, "host" + label, "Region" + label,
+                                             network::osd_boolean(ctx.command.get("no_server")) ? 0 : 9000);
+        ctx.log("factory", std::to_string(caps->serial),
+                "host" + label + ":" + (network::osd_boolean(ctx.command.get("no_server")) ? "0" : "9000") +
+                    ":" + opt(path) + ":" + agent.str() + ":Region" + label);
+        ctx.objects.push_back(caps);
+        return caps;
+    }
+    void register_caps(const Uuid& agent, const std::shared_ptr<services::CapabilityObject>& cap) override {
+        ctx.log("register-event", label,
+                agent.str() + ":" + std::to_string(std::dynamic_pointer_cast<Object>(cap)->serial));
+    }
+    void deregister_caps(const Uuid& agent, const std::shared_ptr<services::CapabilityObject>& cap) override {
+        ctx.log("deregister-event", label,
+                agent.str() + ":" + std::to_string(std::dynamic_pointer_cast<Object>(cap)->serial));
+    }
+    void add_command(services::CapabilityCommand command) override {
+        ctx.log("command", command.name,
+                hex(command.help) + ":" + hex(command.summary) + ":" + opt(command.details));
+        ctx.commands[command.name] = std::move(command.handler);
+    }
+    bool console_has_selected_scene() const override {
+        return !ctx.selected.empty();
+    }
+    bool selected_for_console() const override {
+        return ctx.selected.empty() || ctx.selected == label;
+    }
+    std::optional<std::string> presence_name(const Uuid&) override {
+        return "Test User";
+    }
+    void console_output(const std::string& text) override {
+        ctx.log("console", "", hex(text));
+    }
+    void info(const std::string& text) override {
+        ctx.log("info", "", hex(text));
+    }
+};
+void Context::log(const std::string& op, const std::string& label, const std::string& detail) {
+    trace += op + ":" + label + ":" + detail + ";";
+    if (network::osd_string(command.get("failure")) == op)
+        throw std::runtime_error(op);
+    if (!mutated && network::osd_string(command.get("mutation")) == op) {
+        mutated = true;
+        if (op == "register-event")
+            owner.activate_caps(code);
+        else if (op == "factory")
+            owner.add_region(scenes.at("B"));
+        else if (op == "deregister-event")
+            owner.create_caps(id(3), 9);
+        else if (op == "old-deregister")
+            owner.remove_caps(id(1), code);
+        else if (op == "info")
+            (*seeds)[999] = "new";
+    }
+}
+int main() {
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        Context ctx{network::parse_osd_json(decode(line))};
+        ctx.scenes["A"] = std::make_shared<Scene>(ctx, "A");
+        ctx.scenes["B"] = std::make_shared<Scene>(ctx, "B");
+        (*ctx.seeds)[256] = "first";
+        ctx.owner.set_console_backend(ctx.scenes["A"]);
+        std::string results;
+        for (const auto& op : ctx.command.get("ops").array) {
+            auto method = network::osd_string(op.get("op"));
+            auto n = op.contains("agent") ? network::osd_integer(op.get("agent")) : 1;
+            Uuid agent = id(n);
+            ctx.code =
+                static_cast<std::uint32_t>(op.contains("code") ? network::osd_integer(op.get("code")) : 1);
+            std::string value = "OK";
+            try {
+                if (method == "add")
+                    ctx.owner.add_region(network::osd_boolean(op.get("null_scene"))
+                                             ? nullptr
+                                             : ctx.scenes.at(op.contains("scene")
+                                                                 ? network::osd_string(op.get("scene"))
+                                                                 : "A"));
+                else if (method == "remove_region")
+                    ctx.owner.remove_region(ctx.scenes.at("B"));
+                else if (method == "seed") {
+                    auto circuit = std::make_shared<framework::AgentCircuitData>();
+                    circuit->agent_id = agent;
+                    circuit->caps_path =
+                        op.contains("path")
+                            ? (op.get("path").kind == Value::Kind::Undefined
+                                   ? std::nullopt
+                                   : std::optional<std::string>(network::osd_string(op.get("path"))))
+                            : std::optional<std::string>("seed");
+                    circuit->children_cap_seeds =
+                        network::osd_boolean(op.get("null_seeds")) ? nullptr : ctx.seeds;
+                    ctx.owner.set_agent_caps_seeds(network::osd_boolean(op.get("null_agent")) ? nullptr
+                                                                                              : circuit);
+                } else if (method == "path")
+                    value = opt(ctx.owner.get_caps_path(agent));
+                else if (method == "create")
+                    ctx.owner.create_caps(agent, ctx.code);
+                else if (method == "remove")
+                    ctx.owner.remove_caps(agent, ctx.code);
+                else if (method == "activate")
+                    ctx.owner.activate_caps(ctx.code);
+                else if (method == "get") {
+                    auto cap = std::dynamic_pointer_cast<Object>(ctx.owner.get_caps_for_user(ctx.code));
+                    value = cap ? std::to_string(cap->serial) : "-";
+                } else if (method == "set_children")
+                    ctx.owner.set_children_seed(
+                        agent, network::osd_boolean(op.get("null_seeds")) ? nullptr : ctx.seeds);
+                else if (method == "get_children") {
+                    auto seeds = ctx.owner.get_children_seeds(agent);
+                    value =
+                        seeds ? std::to_string(seeds->size()) + ":" + (seeds == ctx.seeds ? "1" : "0") : "-";
+                    ctx.saved = seeds;
+                } else if (method == "mutate_saved") {
+                    if (!ctx.saved)
+                        throw std::runtime_error("null");
+                    (*ctx.saved)[512] = "saved";
+                } else if (method == "mutate_seed")
+                    (*ctx.seeds)[512] = "changed";
+                else if (method == "drop")
+                    ctx.owner.drop_child_seed(
+                        agent, static_cast<std::uint64_t>(
+                                   op.contains("handle") ? network::osd_integer(op.get("handle")) : 256));
+                else if (method == "child")
+                    value = opt(ctx.owner.get_child_seed(
+                        agent, static_cast<std::uint64_t>(
+                                   op.contains("handle") ? network::osd_integer(op.get("handle")) : 256)));
+                else if (method == "dump")
+                    ctx.owner.dump_children_seeds(agent);
+                else if (method == "select")
+                    ctx.selected = network::osd_string(op.get("scene"));
+                else if (method == "list")
+                    ctx.owner.show_caps_list({});
+                else if (method == "stats") {
+                    std::vector<std::string> args(
+                        static_cast<std::size_t>(network::osd_integer(op.get("count"))));
+                    ctx.owner.show_caps_stats_by_cap(args);
+                } else if (method == "user_stats")
+                    ctx.owner.show_caps_stats_by_user({});
+                else if (method == "lifecycle") {
+                    ctx.owner.initialise(nullptr);
+                    ctx.owner.region_loaded(nullptr);
+                    ctx.owner.post_initialise();
+                    ctx.owner.close();
+                    value = ctx.owner.replaceable_interface() == nullptr &&
+                                    ctx.owner.name == "Capabilities Module"
+                                ? "1"
+                                : "0";
+                }
+            } catch (const std::exception&) {
+                value = "EX";
+            }
+            results += value + ",";
+        }
+        std::string actors;
+        for (const auto& cap : ctx.objects)
+            actors += std::to_string(cap->serial) + ":" + cap->agent.str() + ":" + opt(cap->path) + ":" +
+                      std::to_string(cap->activates) + ":" + std::to_string(cap->deregisters) + ":" +
+                      std::to_string(cap->disposes) + ";";
+        std::cout << results << "|" << hex(ctx.trace) << "|" << actors << "|" << ctx.owner.caps_count() << "|"
+                  << ctx.scenes.at("A")->registered << ctx.scenes.at("B")->registered << "\n";
+    }
+}

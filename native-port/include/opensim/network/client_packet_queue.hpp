@@ -34,28 +34,32 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace opensim::network {
 // Like LLUDPClient.DequeueOutgoing, calls are serialized by the owning transport.
 class ClientPacketQueue {
-public:
-    using Packet=std::shared_ptr<OutgoingPacket>;
-    using Send=std::function<void(const Packet&)>;
-    using Empty=std::function<void(ThrottleOutPacketTypeFlags)>;
-    explicit ClientPacketQueue(const ThrottleRates& rates=ThrottleRates{},TokenBucket* parent=nullptr,TokenBucket::Clock clock={});
+  public:
+    using Packet = std::shared_ptr<OutgoingPacket>;
+    using Send = std::function<void(const Packet&)>;
+    using Empty = std::function<void(ThrottleOutPacketTypeFlags)>;
+    explicit ClientPacketQueue(const ThrottleRates& rates = ThrottleRates{}, TokenBucket* parent = nullptr,
+                               TokenBucket::Clock clock = {});
     bool enqueue(const Packet& packet);
-    bool drain(const Send& send,const std::function<int()>& unacked_count,const Empty& empty={});
+    bool drain(const Send& send, const std::function<int()>& unacked_count, const Empty& empty = {});
     void clear();
-    std::size_t queued(ThrottleOutPacketType category)const;
-    std::size_t queued()const;
-    void set_throttles(std::span<const std::uint8_t> data,float factor=1);
-    std::vector<std::uint8_t> packed_throttles(float multiplier=1)const;
-    int bytes_can_send(ThrottleOutPacketType category,int time_ms)const;
-    void force_setting(int category,int setting,int mtu=1200);
-    int setting(int category)const;
-    AdaptiveTokenBucket& flow(){return flow_;}
-private:
-    float max_rate_,burst_time_;
+    std::size_t queued(ThrottleOutPacketType category) const;
+    std::size_t queued() const;
+    void set_throttles(std::span<const std::uint8_t> data, float factor = 1);
+    std::vector<std::uint8_t> packed_throttles(float multiplier = 1) const;
+    int bytes_can_send(ThrottleOutPacketType category, int time_ms) const;
+    void force_setting(int category, int setting, int mtu = 1200);
+    int setting(int category) const;
+    AdaptiveTokenBucket& flow() {
+        return flow_;
+    }
+
+  private:
+    float max_rate_, burst_time_;
     AdaptiveTokenBucket flow_;
-    std::array<std::unique_ptr<TokenBucket>,7> buckets_;
-    std::array<std::deque<Packet>,7> queues_;
-    std::array<Packet,7> next_;
-    bool closed_=false;
+    std::array<std::unique_ptr<TokenBucket>, 7> buckets_;
+    std::array<std::deque<Packet>, 7> queues_;
+    std::array<Packet, 7> next_;
+    bool closed_ = false;
 };
 }

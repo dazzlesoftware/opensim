@@ -51,9 +51,41 @@ public:
     virtual std::shared_ptr<PresenceData> get(const framework::Uuid& session)=0;
     virtual std::vector<std::shared_ptr<PresenceData>> get(const std::string& field,const std::string& value)=0;
     virtual bool erase(const std::string& field,const std::string& value)=0;
+    virtual bool persistent() const { return false; }
+    virtual bool erase_session_in_region(const framework::Uuid&, const framework::Uuid&) { return false; }
     virtual void logout_region(const framework::Uuid& region)=0;
     virtual bool report(const framework::Uuid& session,const framework::Uuid& region)=0;
     virtual bool verify(const framework::Uuid& agent,const framework::Uuid& secure_session)=0;
+};
+class SqliteDatabase;
+struct TravelRecord {
+    framework::Uuid session_id, user_id;
+    std::string grid, service_token, client_ip, external_ip;
+};
+class SqliteTravelStore {
+public:
+    explicit SqliteTravelStore(const std::string& path);
+    std::optional<TravelRecord> get(const framework::Uuid& session);
+    std::optional<TravelRecord> get_by_user(const framework::Uuid& user);
+    void store(const TravelRecord& record);
+    void erase(const framework::Uuid& session);
+private:
+    std::shared_ptr<SqliteDatabase> database_;
+};
+class SqlitePresenceStore final : public PresenceStore {
+public:
+    explicit SqlitePresenceStore(const std::string& path);
+    bool store(const std::shared_ptr<PresenceData>& data) override;
+    std::shared_ptr<PresenceData> get(const framework::Uuid& session) override;
+    std::vector<std::shared_ptr<PresenceData>> get(const std::string& field, const std::string& value) override;
+    bool erase(const std::string& field, const std::string& value) override;
+    bool persistent() const override { return true; }
+    bool erase_session_in_region(const framework::Uuid& session, const framework::Uuid& region) override;
+    void logout_region(const framework::Uuid& region) override;
+    bool report(const framework::Uuid& session, const framework::Uuid& region) override;
+    bool verify(const framework::Uuid& agent, const framework::Uuid& secure_session) override;
+private:
+    std::shared_ptr<SqliteDatabase> database_;
 };
 class NullPresenceStore final:public PresenceStore {
 public:
@@ -69,6 +101,8 @@ private:
     struct State;
     std::shared_ptr<State> state_;
 };
+std::unique_ptr<PresenceStore> mysql_presence_store(const std::string& connection, const std::string& realm);
+std::unique_ptr<PresenceStore> postgres_presence_store(const std::string& connection, const std::string& realm);
 class PresenceCache {
 public:
     using Clock=std::function<double()>;
@@ -87,6 +121,10 @@ public:
     virtual ~IPresenceService()=default;
     virtual bool login(const std::string& user,const framework::Uuid& session,const framework::Uuid& secure_session)=0;
     virtual bool logout(const framework::Uuid& session)=0;
+    virtual bool logout_from_region(const framework::Uuid& session, const framework::Uuid&) {
+        logout(session);
+        return true;
+    }
     virtual bool logout_region(const framework::Uuid& region)=0;
     virtual bool report(const framework::Uuid& session,const framework::Uuid& region)=0;
     virtual std::optional<PresenceInfo> agent(const framework::Uuid& session)=0;
@@ -97,6 +135,7 @@ public:
     explicit PresenceService(PresenceStore& store,bool allow_duplicates=false,std::shared_ptr<PresenceCache> cache={});
     bool login(const std::string& user,const framework::Uuid& session,const framework::Uuid& secure_session)override;
     bool logout(const framework::Uuid& session)override;
+    bool logout_from_region(const framework::Uuid& session, const framework::Uuid& region) override;
     bool logout_region(const framework::Uuid& region)override;
     bool report(const framework::Uuid& session,const framework::Uuid& region)override;
     std::optional<PresenceInfo> agent(const framework::Uuid& session)override;

@@ -5,6 +5,7 @@ on:
     paths:
       - 'native-port/**'
       - 'OpenSim/Framework/**'
+      - 'OpenSim/Region/Application/ConfigurationLoader.cs'
       - 'OpenSim/Capabilities/**'
       - 'OpenSim/Region/ClientStack/Linden/Caps/**'
       - 'OpenSim/Region/Framework/Interfaces/IEntityTransferModule.cs'
@@ -72,6 +73,7 @@ on:
     paths:
       - 'native-port/**'
       - 'OpenSim/Framework/**'
+      - 'OpenSim/Region/Application/ConfigurationLoader.cs'
       - 'OpenSim/Capabilities/**'
       - 'OpenSim/Region/ClientStack/Linden/Caps/**'
       - 'OpenSim/Region/Framework/Interfaces/IEntityTransferModule.cs'
@@ -148,16 +150,33 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.11'
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          # Runtime 8.0.31 is the pinned compatibility oracle, never a production dependency.
+          dotnet-version: '8.0.425'
       - name: Configure C++ and reference comparison
+        if: runner.os != 'macOS'
         run: cmake -S native-port -B native-port/build -DCMAKE_BUILD_TYPE=Release -DOPENSIM_DIFFERENTIAL_TESTS=ON
+      - name: Configure macOS with both OfflineIM SQL providers
+        if: runner.os == 'macOS'
+        run: |
+          brew install libpq mariadb-connector-c
+          cmake -S native-port -B native-port/build -DCMAKE_BUILD_TYPE=Release -DOPENSIM_DIFFERENTIAL_TESTS=ON \
+            -DOPENSIM_REQUIRE_OFFLINE_IM_SQL=ON \
+            "-DCMAKE_PREFIX_PATH=$(brew --prefix libpq);$(brew --prefix mariadb-connector-c)"
       - name: Build C++
         run: cmake --build native-port/build --config Release --parallel
       - name: Test native behavior and compare original C#
-        run: ctest --test-dir native-port/build -C Release --output-on-failure
+        run: ctest --test-dir native-port/build -C Release -j2 --output-on-failure --output-junit ctest-results.xml
+      - name: Retain native compatibility results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-compatibility-${{ matrix.os }}
+          path: |
+            native-port/build/ctest-results.xml
+            native-port/build/Testing/Temporary/LastTest.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -179,6 +198,8 @@ jobs:
             native-port/build/grid-identity-reference/grid-identity-parity-results.json
             native-port/build/login-destination-reference/login-destination-parity-results.json
             native-port/build/login-orchestration-reference/login-orchestration-parity-results.json
+            native-port/build/advanced-profile-network/connected-region-results.json
+            native-port/build/connected-region-network/connected-region-results.json
             native-port/build/agent-launch-reference/agent-launch-parity-results.json
             native-port/build/avatar-wearable-reference/avatar-wearable-parity-results.json
             native-port/build/appearance-models-reference/appearance-models-parity-results.json
@@ -274,7 +295,7 @@ jobs:
           dotnet-version: '8.0.x'
       - name: Configure TLS and gzip through pinned vcpkg manifest
         shell: pwsh
-        run: cmake -S native-port -B native-port/build -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DOPENSIM_REQUIRE_TLS=ON -DOPENSIM_DIFFERENTIAL_TESTS=ON
+        run: cmake -S native-port -B native-port/build -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" -DOPENSIM_REQUIRE_TLS=ON -DOPENSIM_DIFFERENTIAL_TESTS=ON -DVCPKG_MANIFEST_FEATURES=offline-im-sql -DOPENSIM_REQUIRE_OFFLINE_IM_SQL=ON
       - run: cmake --build native-port/build --config Release --parallel
       - run: ctest --test-dir native-port/build -C Release --output-on-failure
       - uses: actions/upload-artifact@v4

@@ -4,6 +4,7 @@
 #include "opensim/network/osd_json.hpp"
 namespace opensim::network {
 Value osd_timed_request(const std::string& url,const Value& data,const std::string& method,int timeout_milliseconds,bool compressed=false,bool keepalive=false);
+Value osd_json_rpc_request(const std::string& url,const Value& data,int timeout_milliseconds=10000);
 Value osd_delete_request(const std::string& url,int timeout_milliseconds=10000);
 Value canonical_osd_response(std::string_view body);
 Value osd_request(const std::string& url,const Value& data,const std::string& method,bool compressed=false,bool keepalive=false);

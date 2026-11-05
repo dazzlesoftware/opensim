@@ -35,83 +35,93 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace opensim::services {
 struct InventoryFolder {
     std::string name;
-    int type=0,version=0;
-    framework::Uuid id,owner,parent;
+    int type = 0, version = 0;
+    framework::Uuid id, owner, parent;
 };
 struct InventoryItem {
     framework::Uuid asset_id;
-    int asset_type=0;
-    std::string name,description;
-    int next_permissions=0,current_permissions=0,inventory_type=0;
+    int asset_type = 0;
+    std::string name, description;
+    int next_permissions = 0, current_permissions = 0, inventory_type = 0;
     std::string creator_id;
-    int base_permissions=0,everyone_permissions=0,sale_price=0,sale_type=0,creation_date=0;
+    int base_permissions = 0, everyone_permissions = 0, sale_price = 0, sale_type = 0, creation_date = 0;
     framework::Uuid group_id;
-    int group_owned=0,flags=0;
-    framework::Uuid id,owner,parent;
-    int group_permissions=0;
-    bool operator==(const InventoryItem&)const=default;
+    int group_owned = 0, flags = 0;
+    framework::Uuid id, owner, parent;
+    int group_permissions = 0;
+    bool operator==(const InventoryItem&) const = default;
 };
 class InventoryFolderStore {
-public:
-    using Filter=std::vector<std::pair<std::string,std::string>>;
-    explicit InventoryFolderStore(const std::string& path,bool initialize=false);
+  public:
+    using Filter = std::vector<std::pair<std::string, std::string>>;
+    explicit InventoryFolderStore(const std::string& path, bool initialize = false);
     ~InventoryFolderStore();
-    InventoryFolderStore(const InventoryFolderStore&)=delete;
-    InventoryFolderStore& operator=(const InventoryFolderStore&)=delete;
+    InventoryFolderStore(const InventoryFolderStore&) = delete;
+    InventoryFolderStore& operator=(const InventoryFolderStore&) = delete;
     std::vector<InventoryFolder> folders(const Filter& filter);
     bool store(InventoryFolder& folder);
-    bool move(const framework::Uuid& id,const framework::Uuid& parent);
+    bool move(const framework::Uuid& id, const framework::Uuid& parent);
     bool erase(const Filter& filter);
     std::vector<InventoryItem> items(const Filter& filter);
     bool store(InventoryItem& item);
-    bool move_item(const framework::Uuid& id,const framework::Uuid& parent);
+    bool move_item(const framework::Uuid& id, const framework::Uuid& parent);
     bool erase_items(const Filter& filter);
     std::vector<InventoryItem> active_gestures(const framework::Uuid& owner);
-    int asset_permissions(const framework::Uuid& owner,const framework::Uuid& asset);
-private:
+    int asset_permissions(const framework::Uuid& owner, const framework::Uuid& asset);
+
+  private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
 };
 // Folder portion of XInventoryService. Item/library/provider paths remain separate.
 class InventoryFolderService {
-public:
-    explicit InventoryFolderService(InventoryFolderStore& store):store_(store){}
+  public:
+    explicit InventoryFolderService(InventoryFolderStore& store) : store_(store) {}
     bool create_user_inventory(const framework::Uuid& owner);
     std::optional<InventoryFolder> root(const framework::Uuid& owner);
-    std::optional<InventoryFolder> for_type(const framework::Uuid& owner,int type);
+    std::optional<InventoryFolder> for_type(const framework::Uuid& owner, int type);
     std::optional<std::vector<InventoryFolder>> skeleton(const framework::Uuid& owner);
-private:
-    InventoryFolder create(const framework::Uuid& owner,const framework::Uuid& parent,int type,const std::string& name);
+
+  private:
+    InventoryFolder create(const framework::Uuid& owner, const framework::Uuid& parent, int type,
+                           const std::string& name);
     InventoryFolderStore& store_;
 };
 struct InventoryCollection {
-    framework::Uuid owner,folder;
-    int version=0;
+    framework::Uuid owner, folder;
+    int version = 0;
     std::vector<InventoryFolder> folders;
     std::vector<InventoryItem> items;
 };
-class InventoryService:public InventoryFolderService {
-public:
-    explicit InventoryService(InventoryFolderStore& store,bool allow_delete=true):InventoryFolderService(store),store_(store),allow_delete_(allow_delete){}
-    std::optional<InventoryFolder> folder(const framework::Uuid& principal,const framework::Uuid& id);
-    std::optional<InventoryItem> item(const framework::Uuid& principal,const framework::Uuid& id);
-    InventoryCollection content(const framework::Uuid& principal,const framework::Uuid& id);
-    std::vector<InventoryCollection> multiple_content(const framework::Uuid& principal,const std::vector<framework::Uuid>& ids);
-    std::vector<std::optional<InventoryItem>> multiple_items(const framework::Uuid& principal,const std::vector<framework::Uuid>& ids);
-    std::vector<InventoryItem> folder_items(const framework::Uuid& principal,const framework::Uuid& id);
+class InventoryService : public InventoryFolderService {
+  public:
+    explicit InventoryService(InventoryFolderStore& store, bool allow_delete = true)
+        : InventoryFolderService(store), store_(store), allow_delete_(allow_delete) {}
+    std::optional<InventoryFolder> folder(const framework::Uuid& principal, const framework::Uuid& id);
+    std::optional<InventoryItem> item(const framework::Uuid& principal, const framework::Uuid& id);
+    InventoryCollection content(const framework::Uuid& principal, const framework::Uuid& id);
+    std::vector<InventoryCollection> multiple_content(const framework::Uuid& principal,
+                                                      const std::vector<framework::Uuid>& ids);
+    std::vector<std::optional<InventoryItem>> multiple_items(const framework::Uuid& principal,
+                                                             const std::vector<framework::Uuid>& ids);
+    std::vector<InventoryItem> folder_items(const framework::Uuid& principal, const framework::Uuid& id);
     bool add_folder(InventoryFolder folder);
     bool update_folder(InventoryFolder folder);
     bool move_folder(const InventoryFolder& folder);
     bool add_item(const InventoryItem& item);
     bool update_item(InventoryItem& item);
-    bool move_items(const framework::Uuid& principal,const std::vector<InventoryItem>& items);
-    bool delete_items(const framework::Uuid& principal,const std::vector<framework::Uuid>& ids);
-    bool delete_folders(const framework::Uuid& principal,const std::vector<framework::Uuid>& ids,bool only_if_trash=true);
-    bool purge_folder(const framework::Uuid& id,bool only_if_trash=true);
+    bool move_items(const framework::Uuid& principal, const std::vector<InventoryItem>& items);
+    bool delete_items(const framework::Uuid& principal, const std::vector<framework::Uuid>& ids);
+    bool delete_folders(const framework::Uuid& principal, const std::vector<framework::Uuid>& ids,
+                        bool only_if_trash = true);
+    bool purge_folder(const framework::Uuid& id, bool only_if_trash = true);
     std::vector<InventoryItem> active_gestures(const framework::Uuid& principal);
-    int asset_permissions(const framework::Uuid& principal,const framework::Uuid& asset);
-    bool has_inventory_for_user(const framework::Uuid&)const{return false;}
-private:
+    int asset_permissions(const framework::Uuid& principal, const framework::Uuid& asset);
+    bool has_inventory_for_user(const framework::Uuid&) const {
+        return false;
+    }
+
+  private:
     bool parent_is_trash_or_lost(const framework::Uuid& id);
     InventoryFolderStore& store_;
     bool allow_delete_;

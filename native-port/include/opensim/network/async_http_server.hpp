@@ -36,6 +36,7 @@ public:
     int start(const std::function<void(int)>& on_bound={});
     void stop();
     bool is_running()const;
+    bool certificate_matches_host(std::string_view hostname) const;
 private:
     struct Impl;
     std::shared_ptr<Impl> impl_;

@@ -31,11 +31,15 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace opensim::server {
 network::ServiceXmlValue grid_extra_features(const IniConfig& config);
 class GridEndpoint {
-public:
-    using Features=std::function<network::ServiceXmlValue()>;
-    GridEndpoint(services::GridService& service,const IniConfig& config,Features features):service_(service),auth_(config,"GridService"),features_(std::move(features)){}
+  public:
+    using Features = std::function<network::ServiceXmlValue()>;
+    GridEndpoint(services::GridService& service, const IniConfig& config, Features features)
+        : service_(service), auth_(config, "GridService"), features_(std::move(features)) {}
     network::HttpResponse handle(const network::HttpRequest& request);
-private:
-    services::GridService& service_;network::ServiceAuth auth_;Features features_;
+
+  private:
+    services::GridService& service_;
+    network::ServiceAuth auth_;
+    Features features_;
 };
 }

@@ -59,6 +59,7 @@ struct HttpServerOptions {
     std::string certificate,private_key;
     std::vector<std::string> custom_methods;
     bool decompress_request_body=true;
+    std::string pkcs12_bundle, pkcs12_password;
 };
 class HttpServer {
 public:

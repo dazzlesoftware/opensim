@@ -91,12 +91,14 @@ public:
         if (!allow_overflow && count > subtract(capacity_, size_))
             throw std::overflow_error("Buffer Overflow");
         auto source_index = offset;
-        for (std::int32_t i = 0; i < count; i = add(i, 1), tail_ = add(tail_, 1), source_index = add(source_index, 1)) {
+        for (std::int32_t copied = 0; copied < count; copied = add(copied, 1)) {
             if (tail_ == capacity_) tail_ = 0;
             // Managed bounds exceptions must never become native memory corruption.
             if (source_index < 0 || static_cast<std::size_t>(source_index) >= source.size())
                 throw std::out_of_range("Source array index");
             buffer_.at(static_cast<std::size_t>(tail_)) = source[static_cast<std::size_t>(source_index)];
+            tail_ = add(tail_, 1);
+            source_index = add(source_index, 1);
         }
         size_ = std::min(add(size_, count), capacity_);
         return count;
@@ -128,11 +130,13 @@ public:
     std::int32_t get(std::span<T> destination, std::int32_t offset, std::int32_t count) {
         const auto real_count = std::min(count, size_);
         auto destination_index = offset;
-        for (std::int32_t i = 0; i < real_count; i = add(i, 1), head_ = add(head_, 1), destination_index = add(destination_index, 1)) {
+        for (std::int32_t copied = 0; copied < real_count; copied = add(copied, 1)) {
             if (head_ == capacity_) head_ = 0;
             if (destination_index < 0 || static_cast<std::size_t>(destination_index) >= destination.size())
                 throw std::out_of_range("Destination array index");
             destination[static_cast<std::size_t>(destination_index)] = buffer_.at(static_cast<std::size_t>(head_));
+            head_ = add(head_, 1);
+            destination_index = add(destination_index, 1);
         }
         size_ = subtract(size_, real_count);
         return real_count;
@@ -151,11 +155,13 @@ public:
     void copy_to(std::int32_t /*index*/, std::span<T> destination, std::int32_t array_index, std::int32_t count) const {
         if (count > size_) throw std::out_of_range("Count Too Large");
         auto buffer_index = head_;
-        for (std::int32_t i = 0; i < count; i = add(i, 1), buffer_index = add(buffer_index, 1), array_index = add(array_index, 1)) {
+        for (std::int32_t copied = 0; copied < count; copied = add(copied, 1)) {
             if (buffer_index == capacity_) buffer_index = 0;
             if (array_index < 0 || static_cast<std::size_t>(array_index) >= destination.size())
                 throw std::out_of_range("Destination array index");
             destination[static_cast<std::size_t>(array_index)] = buffer_.at(static_cast<std::size_t>(buffer_index));
+            buffer_index = add(buffer_index, 1);
+            array_index = add(array_index, 1);
         }
     }
     [[nodiscard]] std::vector<T> to_array() const {
@@ -175,7 +181,9 @@ public:
         }
         Iterator& operator++() {
             if (index_ == owner_->capacity_) index_ = 0;
-            index_ = add(index_, 1); position_ = add(position_, 1); return *this;
+            index_ = add(index_, 1);
+            position_ = add(position_, 1);
+            return *this;
         }
         bool operator!=(const Iterator& /*end*/) const { return position_ < owner_->size_; }
     private:

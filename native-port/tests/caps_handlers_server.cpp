@@ -1,2 +1,106 @@
 #include "caps_http_listener.hpp"
-int main(){try{auto listener=std::make_shared<Listener>();services::Caps object(listener,"127.0.0.1",0,"seed",framework::Uuid{},"region",[listener]{return listener;});auto& caps=object.handlers();std::atomic<int> waiting=0;network::HttpServerOptions options;options.port=0;network::HttpServer http(options,[&](const network::HttpRequest& r){network::HttpResponse response;if(r.path=="/ready"){response.status=503;return response;}if(r.path=="/wait"){++waiting;try{response.body=object.wait_for_activation()?"true":"false";--waiting;}catch(...){--waiting;throw;}return response;}if(r.path=="/state"){std::lock_guard lock(listener->mutex);response.body=std::to_string(waiting.load())+":"+std::to_string(listener->polls.size());return response;}if(r.path=="/control/activate"){object.activate();return response;}if(r.path=="/control/dispose"){object.dispose();return response;}if(r.path=="/control/external"){object.register_external("External",r.body);return response;}if(r.path=="/control/poll"){auto poll=std::make_shared<services::CapabilityPollHandler>();poll->url=r.body;object.register_poll("Poll",poll);return response;}if(r.path=="/object-details"||r.path=="/object-xml"){services::Caps::Requested names={"X","External","Poll"};if(r.path=="/object-xml"){response.content_type="application/llsd+xml";response.body="<llsd><map>";object.append_details_xml(&names,&response.body);response.body+="</map></llsd>";}else{auto value=network::Value::object({});for(const auto& e:object.details(false,&names))value.set(e.first,e.second.value_or(""));response.content_type="application/json";response.body=network::osd_json(value,true);}return response;}if(r.path=="/control/remove"){caps.remove("X");return response;}if(r.path=="/control/clear"){caps.set("X",nullptr);return response;}if(r.path=="/control/normal"||r.path=="/control/simple"||r.path=="/control/hidden"){auto end=r.body.find('\n');auto h=std::make_shared<Handler>(r.body.substr(end+1),r.body.substr(0,end),r.path=="/control/normal"?"normal":"simple");if(r.path=="/control/normal")caps.set("X",h);else caps.add_simple("X",h,r.path!="/control/hidden");return response;}if(r.path=="/details"||r.path=="/requested"){server::CapsHandlers::Requested req={"X"};auto map=caps.details(false,r.path=="/requested"?&req:nullptr);auto value=network::Value::object({});for(const auto& e:map)value.set(e.first,e.second.value_or(""));response.content_type="application/json";response.body=network::osd_json(value,true);return response;}return listener->dispatch(r);});http.start([](int port){std::cout<<"LISTENING "<<port<<std::endl;});std::string line;std::getline(std::cin,line);http.stop();return 0;}catch(const std::exception& e){std::cerr<<e.what();return 1;}}
+int main() {
+    try {
+        auto listener = std::make_shared<Listener>();
+        services::Caps object(listener, "127.0.0.1", 0, "seed", framework::Uuid{}, "region",
+                              [listener] { return listener; });
+        auto& caps = object.handlers();
+        std::atomic<int> waiting = 0;
+        network::HttpServerOptions options;
+        options.port = 0;
+        network::HttpServer http(options, [&](const network::HttpRequest& r) {
+            network::HttpResponse response;
+            if (r.path == "/ready") {
+                response.status = 503;
+                return response;
+            }
+            if (r.path == "/wait") {
+                ++waiting;
+                try {
+                    response.body = object.wait_for_activation() ? "true" : "false";
+                    --waiting;
+                } catch (...) {
+                    --waiting;
+                    throw;
+                }
+                return response;
+            }
+            if (r.path == "/state") {
+                std::lock_guard lock(listener->mutex);
+                response.body = std::to_string(waiting.load()) + ":" + std::to_string(listener->polls.size());
+                return response;
+            }
+            if (r.path == "/control/activate") {
+                object.activate();
+                return response;
+            }
+            if (r.path == "/control/dispose") {
+                object.dispose();
+                return response;
+            }
+            if (r.path == "/control/external") {
+                object.register_external("External", r.body);
+                return response;
+            }
+            if (r.path == "/control/poll") {
+                auto poll = std::make_shared<services::CapabilityPollHandler>();
+                poll->url = r.body;
+                object.register_poll("Poll", poll);
+                return response;
+            }
+            if (r.path == "/object-details" || r.path == "/object-xml") {
+                services::Caps::Requested names = {"X", "External", "Poll"};
+                if (r.path == "/object-xml") {
+                    response.content_type = "application/llsd+xml";
+                    response.body = "<llsd><map>";
+                    object.append_details_xml(&names, &response.body);
+                    response.body += "</map></llsd>";
+                } else {
+                    auto value = network::Value::object({});
+                    for (const auto& e : object.details(false, &names))
+                        value.set(e.first, e.second.value_or(""));
+                    response.content_type = "application/json";
+                    response.body = network::osd_json(value, true);
+                }
+                return response;
+            }
+            if (r.path == "/control/remove") {
+                caps.remove("X");
+                return response;
+            }
+            if (r.path == "/control/clear") {
+                caps.set("X", nullptr);
+                return response;
+            }
+            if (r.path == "/control/normal" || r.path == "/control/simple" || r.path == "/control/hidden") {
+                auto end = r.body.find('\n');
+                auto h = std::make_shared<Handler>(r.body.substr(end + 1), r.body.substr(0, end),
+                                                   r.path == "/control/normal" ? "normal" : "simple");
+                if (r.path == "/control/normal")
+                    caps.set("X", h);
+                else
+                    caps.add_simple("X", h, r.path != "/control/hidden");
+                return response;
+            }
+            if (r.path == "/details" || r.path == "/requested") {
+                server::CapsHandlers::Requested req = {"X"};
+                auto map = caps.details(false, r.path == "/requested" ? &req : nullptr);
+                auto value = network::Value::object({});
+                for (const auto& e : map)
+                    value.set(e.first, e.second.value_or(""));
+                response.content_type = "application/json";
+                response.body = network::osd_json(value, true);
+                return response;
+            }
+            return listener->dispatch(r);
+        });
+        http.start([](int port) { std::cout << "LISTENING " << port << std::endl; });
+        std::string line;
+        std::getline(std::cin, line);
+        http.stop();
+        return 0;
+    } catch (const std::exception& e) {
+        std::cerr << e.what();
+        return 1;
+    }
+}

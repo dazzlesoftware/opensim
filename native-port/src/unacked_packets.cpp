@@ -31,68 +31,148 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdexcept>
 namespace opensim::network {
 namespace {
-std::int32_t tick(){const auto now=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();return static_cast<std::int32_t>(static_cast<std::uint64_t>(now)&0x7fffffffu);}
-std::int32_t subtract(std::int32_t a,std::int32_t b){return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(a)-static_cast<std::uint32_t>(b));}
+std::int32_t tick() {
+    const auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
+                         std::chrono::steady_clock::now().time_since_epoch())
+                         .count();
+    return static_cast<std::int32_t>(static_cast<std::uint64_t>(now) & 0x7fffffffu);
 }
-UnackedPacketCollection::UnackedPacketCollection(Clock clock,FreeBuffer free_buffer):clock_(clock?std::move(clock):Clock{tick}),free_buffer_(std::move(free_buffer)){}
-void UnackedPacketCollection::require_open()const{if(closed_)throw std::logic_error("Unacked packet collection was cleared");}
-void UnackedPacketCollection::clear(){
-    std::lock_guard consumer(consumer_mutex_);std::lock_guard pending(pending_mutex_);
-    packets_.clear();pending_adds_.clear();pending_acks_.clear();pending_removes_.clear();oldest_=0;closed_=true;
+std::int32_t subtract(std::int32_t a, std::int32_t b) {
+    return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(a) - static_cast<std::uint32_t>(b));
 }
-std::int32_t UnackedPacketCollection::count()const{
-    std::lock_guard consumer(consumer_mutex_);std::lock_guard pending(pending_mutex_);require_open();
-    const auto size=static_cast<std::uint32_t>(packets_.size()+pending_adds_.size()-pending_acks_.size()-pending_removes_.size());
+}
+UnackedPacketCollection::UnackedPacketCollection(Clock clock, FreeBuffer free_buffer)
+    : clock_(clock ? std::move(clock) : Clock{tick}), free_buffer_(std::move(free_buffer)) {
+}
+void UnackedPacketCollection::require_open() const {
+    if (closed_)
+        throw std::logic_error("Unacked packet collection was cleared");
+}
+void UnackedPacketCollection::clear() {
+    std::lock_guard consumer(consumer_mutex_);
+    std::lock_guard pending(pending_mutex_);
+    packets_.clear();
+    pending_adds_.clear();
+    pending_acks_.clear();
+    pending_removes_.clear();
+    oldest_ = 0;
+    closed_ = true;
+}
+std::int32_t UnackedPacketCollection::count() const {
+    std::lock_guard consumer(consumer_mutex_);
+    std::lock_guard pending(pending_mutex_);
+    require_open();
+    const auto size = static_cast<std::uint32_t>(packets_.size() + pending_adds_.size() -
+                                                 pending_acks_.size() - pending_removes_.size());
     return std::bit_cast<std::int32_t>(size);
 }
-void UnackedPacketCollection::add(const Packet& packet){
-    std::lock_guard lock(pending_mutex_);require_open();pending_adds_.push_back(packet);
-    if(!packet||!packet->client||!packet->buffer)throw std::invalid_argument("Invalid outgoing reliable packet");
+void UnackedPacketCollection::add(const Packet& packet) {
+    std::lock_guard lock(pending_mutex_);
+    require_open();
+    pending_adds_.push_back(packet);
+    if (!packet || !packet->client || !packet->buffer)
+        throw std::invalid_argument("Invalid outgoing reliable packet");
     packet->client->unacked_bytes.fetch_add(packet->buffer->data_length);
 }
-void UnackedPacketCollection::acknowledge(std::uint32_t sequence,std::int32_t time,bool resend){std::lock_guard lock(pending_mutex_);require_open();pending_acks_.push_back({sequence,time,resend});}
-void UnackedPacketCollection::remove(std::uint32_t sequence){std::lock_guard lock(pending_mutex_);require_open();pending_removes_.push_back(sequence);}
-void UnackedPacketCollection::free(const Packet& packet){
-    if(packet&&packet->buffer){
+void UnackedPacketCollection::acknowledge(std::uint32_t sequence, std::int32_t time, bool resend) {
+    std::lock_guard lock(pending_mutex_);
+    require_open();
+    pending_acks_.push_back({sequence, time, resend});
+}
+void UnackedPacketCollection::remove(std::uint32_t sequence) {
+    std::lock_guard lock(pending_mutex_);
+    require_open();
+    pending_removes_.push_back(sequence);
+}
+void UnackedPacketCollection::free(const Packet& packet) {
+    if (packet && packet->buffer) {
         packet->client->unacked_bytes.fetch_sub(packet->buffer->data_length);
-        if(free_buffer_)free_buffer_(packet->buffer);
+        if (free_buffer_)
+            free_buffer_(packet->buffer);
         packet->buffer.reset();
     }
 }
-void UnackedPacketCollection::process_queues(){
-    for(;;){
+void UnackedPacketCollection::process_queues() {
+    for (;;) {
         std::uint32_t sequence;
-        {std::lock_guard lock(pending_mutex_);require_open();if(pending_removes_.empty())break;sequence=pending_removes_.front();pending_removes_.pop_front();}
-        auto found=packets_.find(sequence);if(found!=packets_.end()){auto packet=found->second;packets_.erase(found);free(packet);}
+        {
+            std::lock_guard lock(pending_mutex_);
+            require_open();
+            if (pending_removes_.empty())
+                break;
+            sequence = pending_removes_.front();
+            pending_removes_.pop_front();
+        }
+        auto found = packets_.find(sequence);
+        if (found != packets_.end()) {
+            auto packet = found->second;
+            packets_.erase(found);
+            free(packet);
+        }
     }
-    for(;;){
+    for (;;) {
         Packet packet;
-        {std::lock_guard lock(pending_mutex_);if(pending_adds_.empty())break;packet=pending_adds_.front();pending_adds_.pop_front();}
-        if(packet)packets_[packet->sequence_number]=packet;
+        {
+            std::lock_guard lock(pending_mutex_);
+            if (pending_adds_.empty())
+                break;
+            packet = pending_adds_.front();
+            pending_adds_.pop_front();
+        }
+        if (packet)
+            packets_[packet->sequence_number] = packet;
     }
-    for(;;){
+    for (;;) {
         PendingAck ack;
-        {std::lock_guard lock(pending_mutex_);if(pending_acks_.empty())break;ack=pending_acks_.front();pending_acks_.pop_front();}
-        auto found=packets_.find(ack.sequence);
-        if(found!=packets_.end()){
-            auto packet=found->second;packets_.erase(found);
-            if(packet){free(packet);if(packet->client->acknowledge_packets)packet->client->acknowledge_packets(1);}
+        {
+            std::lock_guard lock(pending_mutex_);
+            if (pending_acks_.empty())
+                break;
+            ack = pending_acks_.front();
+            pending_acks_.pop_front();
+        }
+        auto found = packets_.find(ack.sequence);
+        if (found != packets_.end()) {
+            auto packet = found->second;
+            packets_.erase(found);
+            if (packet) {
+                free(packet);
+                if (packet->client->acknowledge_packets)
+                    packet->client->acknowledge_packets(1);
+            }
         }
     }
 }
-std::optional<std::vector<UnackedPacketCollection::Packet>> UnackedPacketCollection::get_expired_packets(std::int32_t timeout){
-    std::lock_guard consumer(consumer_mutex_);process_queues();std::optional<std::vector<Packet>> expired;
-    bool first=true;
-    if(!packets_.empty()){
-        const auto now=clock_()&0x7fffffff;
-        for(const auto& [sequence,packet]:packets_){
-            if(!packet->buffer){remove(sequence);continue;}
-            if(first){oldest_=packet->sequence_number;first=false;}
-            const auto sent=packet->tick_count.exchange(0);
-            if(sent==0)continue;
-            if(subtract(now,sent)<timeout){const auto previous=packet->tick_count.exchange(sent);if(previous>sent)packet->tick_count.exchange(previous);continue;}
-            if(!expired)expired.emplace();
-            if(packet->client->expire_packets)packet->client->expire_packets(1);
+std::optional<std::vector<UnackedPacketCollection::Packet>>
+UnackedPacketCollection::get_expired_packets(std::int32_t timeout) {
+    std::lock_guard consumer(consumer_mutex_);
+    process_queues();
+    std::optional<std::vector<Packet>> expired;
+    bool first = true;
+    if (!packets_.empty()) {
+        const auto now = clock_() & 0x7fffffff;
+        for (const auto& [sequence, packet] : packets_) {
+            if (!packet->buffer) {
+                remove(sequence);
+                continue;
+            }
+            if (first) {
+                oldest_ = packet->sequence_number;
+                first = false;
+            }
+            const auto sent = packet->tick_count.exchange(0);
+            if (sent == 0)
+                continue;
+            if (subtract(now, sent) < timeout) {
+                const auto previous = packet->tick_count.exchange(sent);
+                if (previous > sent)
+                    packet->tick_count.exchange(previous);
+                continue;
+            }
+            if (!expired)
+                expired.emplace();
+            if (packet->client->expire_packets)
+                packet->client->expire_packets(1);
             expired->push_back(packet);
         }
     }

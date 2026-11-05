@@ -8,6 +8,7 @@ namespace opensim::services {
 std::shared_ptr<MigrationDatabase> sqlite_migration_database(sqlite3* connection);
 std::shared_ptr<MigrationResources> asset_store_migrations();
 std::shared_ptr<MigrationResources> friends_store_migrations();
+std::shared_ptr<MigrationResources> mute_list_migrations();
 std::shared_ptr<MigrationResources> avatar_store_migrations();
 std::shared_ptr<MigrationResources> grid_user_store_migrations();
 std::shared_ptr<MigrationResources> user_account_store_migrations();

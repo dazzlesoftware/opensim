@@ -25,99 +25,165 @@ IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+// INI document loading derives from Nini, copyright (c) 2006 Brent R. Matzelle.
+// MIT license: native-port/third_party/nini/LICENSE.
 #include "opensim/server/config.hpp"
+#include "opensim/server/config_xml_startup.hpp"
 #include "opensim/framework/filesystem.hpp"
+#include "opensim/framework/native_configuration_loader.hpp"
+#include "opensim/framework/nini_config_invariant.hpp"
+#include "opensim/framework/config_uri.hpp"
+#include <iostream>
+#include "opensim/framework/culture_prefix.hpp"
+#include "opensim/framework/text.hpp"
 #include "opensim/services/sqlite_connection.hpp"
-#include <charconv>
-#include <fstream>
-#include <sstream>
-#include <stdexcept>
 namespace opensim::server {
 namespace {
-std::string trim(std::string text) {
-    const auto start=text.find_first_not_of(" \t\r\n");
-    if(start==std::string::npos)return {};
-    return text.substr(start,text.find_last_not_of(" \t\r\n")-start+1);
+using Text = framework::NiniWriterText;
+Text startup_text(std::u16string value) {
+    return framework::nini_writer_text(std::move(value));
 }
+std::shared_ptr<framework::RegionApplicationConfigurationState> default_application_state() {
+    static const auto state = std::make_shared<framework::RegionApplicationConfigurationState>();
+    return state;
+}
+void startup_log(framework::RegionLoaderLogLevel, Text format, std::vector<Text> args,
+                 framework::RegionLoaderLogCall call) {
+    auto value = format ? *format : std::u16string{};
+    if (call == framework::RegionLoaderLogCall::Format) {
+        // ConfigurationLoader's consumed formats have positional arguments and no
+        // alignment/format specifiers; inserted user paths are never parsed as formats.
+        std::u16string rendered;
+        for (std::size_t n = 0; n < value.size();) {
+            bool found = false;
+            for (std::size_t i = 0; i < args.size(); ++i) {
+                auto number = std::to_string(i);
+                std::u16string token = u"{";
+                token.append(number.begin(), number.end());
+                token += u'}';
+                if (value.compare(n, token.size(), token) == 0) {
+                    if (args[i])
+                        rendered += *args[i];
+                    n += token.size();
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+                rendered += value[n++];
+        }
+        value = std::move(rendered);
+    }
+    std::clog << framework::utf8(value) << '\n' << std::flush;
+}
+}
+IniConfig IniConfig::load_startup(const std::filesystem::path& path, ConfigurationStartupOptions options) {
+    auto arena =
+        std::make_shared<framework::NiniConfigArena>(framework::native_nini_invariant_config_backend());
+    auto paths = framework::native_directory_entries_backend();
+    auto selected = startup_text(path.u16string());
+    std::filesystem::path directory;
+    if (framework::is_http_configuration_uri(selected))
+        directory = std::filesystem::current_path();
+    else {
+        selected = paths->full_path(selected);
+        directory = std::filesystem::path(*selected).parent_path();
+    }
+    auto app = options.application ? std::move(options.application) : default_application_state();
+    auto backend = std::make_shared<framework::RegionConfigurationBackend>(
+        framework::native_local_region_configuration_backend(arena, app, paths));
+    framework::bind_native_startup_configuration_services(*backend);
+    auto config_dir = startup_text(directory.u16string());
+    backend->config_directory = [config_dir] { return config_dir; };
+    backend->log = options.log ? std::move(options.log) : decltype(backend->log)(startup_log);
+    backend->exit = options.exit
+                        ? std::move(options.exit)
+                        : decltype(backend->exit)([](int code) { throw ConfigurationStartupExit(code); });
+    if (options.xml_uri_source)
+        backend->xml_uri_source = std::move(options.xml_uri_source);
+    else if (options.xml_http_services)
+        backend->xml_uri_source = native_startup_xml_source(arena, *options.xml_http_services,
+                                                            std::move(options.xml_resolver_policy));
+    else
+        backend->xml_uri_source = [](Text) -> std::shared_ptr<framework::NiniConfigSourceBase> {
+            throw framework::NiniConfigError(
+                framework::NiniConfigError::Kind::Exception,
+                u"Remote XML configuration is not available in the native startup profile");
+        };
+    auto argv = arena->create_source(startup_text(u"NativeProfileStartupSource"));
+    for (auto value : {u"On", u"True", u"Yes"})
+        argv->alias()->add_alias(startup_text(value), true);
+    for (auto value : {u"Off", u"False", u"No"})
+        argv->alias()->add_alias(startup_text(value), false);
+    auto startup = argv->add_config(startup_text(u"Startup"));
+    startup->set_text(startup_text(u"inimaster"), std::move(options.inimaster));
+    startup->set_text(startup_text(u"inifile"), selected);
+    startup->set_text(startup_text(u"inidirectory"), std::move(options.inidirectory));
+    if (options.argv_overrides)
+        argv->merge(options.argv_overrides);
+    framework::RegionConfigurationLoader loader(backend);
+    std::shared_ptr<framework::RegionLoaderConfigSettings> settings;
+    std::shared_ptr<void> network;
+    auto result = loader.load_config_settings(argv, {}, settings, network);
+    // The loader has already completed environment expansion and final argv
+    // replacement. Keep its graph; do not expand again or flatten config owners.
+    return from_native_source(result->source, std::move(directory));
+}
+IniConfig IniConfig::from_native_source(std::shared_ptr<framework::NiniConfigSourceBase> source,
+                                        std::filesystem::path directory) {
+    IniConfig result(NiniConfigView(std::move(source)));
+    result.directory = std::move(directory);
+    return result;
+}
+bool IniConfig::contains(const std::string& name, const std::string& key) const {
+    return view_.contains(name, key);
+}
+void IniConfig::set(const std::string& name, const std::string& key, std::string value) {
+    view_.set(name, key, value);
 }
 IniConfig IniConfig::load(const std::filesystem::path& path) {
-    std::ifstream input(path);
-    if(!input)throw std::runtime_error("Cannot open configuration file: "+path.string());
-    IniConfig result; result.directory=std::filesystem::absolute(path).parent_path();
-    std::string line,current;
-    int number=0;
-    while(std::getline(input,line)) {
-        ++number;
-        if(number==1&&line.starts_with("\xef\xbb\xbf"))line.erase(0,3);
-        line=trim(line);
-        if(line.empty()||line[0]==';'||line[0]=='#')continue;
-        if(line[0]=='[') {
-            auto end=line.find(']');
-            if(end==std::string::npos)throw std::runtime_error("Invalid INI section at line "+std::to_string(number));
-            current=trim(line.substr(1,end-1)); result.sections_.try_emplace(current); continue;
-        }
-        auto equals=line.find('=');
-        if(equals==std::string::npos||current.empty())throw std::runtime_error("Invalid INI setting at line "+std::to_string(number));
-        auto key=trim(line.substr(0,equals)),value=trim(line.substr(equals+1));
-        if(key.starts_with("Include-"))throw std::runtime_error("INI Include-* loading is not ported yet; use an explicit native configuration");
-        if(!value.empty()&&value.front()=='"') {
-            const auto end=value.find('"',1);
-            if(end==std::string::npos)throw std::runtime_error("Unterminated INI quoted value");
-            value=value.substr(1,end-1);
-        } else { const auto comment=value.find(';'); if(comment!=std::string::npos)value=trim(value.substr(0,comment)); }
-        result.sections_[current][key]=value;
-    }
-    if(input.bad())throw std::runtime_error("Configuration read failed");
+    IniConfig result(NiniConfigView::load_raw(path));
+    result.directory = std::filesystem::absolute(path).parent_path();
+    // Load the complete source before checking effective keys. Earlier syntax
+    // failures win; a later replacement section can remove an earlier include.
+    auto configs = result.native_source()->configs();
+    for (std::int32_t i = 0; i < configs->count(); ++i)
+        for (const auto& key : configs->at(i)->get_keys())
+            if (framework::invariant_starts_with(framework::utf8(*key), "Include-"))
+                throw std::runtime_error(
+                    "INI Include-* loading is not ported yet; use an explicit native configuration");
+    // ConfigurationLoader performs this after all startup merges. This explicit
+    // single-file host entry point completes that phase once before module use.
+    result.replace_key_values();
     return result;
 }
-std::string IniConfig::get(const std::string& section_name,const std::string& key,const std::string& fallback) const {
-    const auto found=sections_.find(section_name);
-    if(found==sections_.end())return fallback;
-    const auto value=found->second.find(key);
-    if(value==found->second.end())return fallback;
-    std::string result=value->second;
-    // Nini-style section/key interpolation used by the supplied server config.
-    // A thread-local bound detects cycles across recursive calls.
-    static thread_local unsigned depth=0;
-    struct Guard { Guard(){if(++depth>16){--depth;throw std::runtime_error("INI interpolation cycle");}} ~Guard(){--depth;} } guard;
-    for(std::size_t start=result.find("${");start!=std::string::npos;start=result.find("${")) {
-        const auto end=result.find('}',start+2);
-        if(end==std::string::npos)throw std::runtime_error("Unterminated INI interpolation");
-        auto reference=result.substr(start+2,end-start-2);
-        auto separator=reference.find('|');
-        const auto target_section=separator==std::string::npos?section_name:reference.substr(0,separator);
-        const auto target_key=separator==std::string::npos?reference:reference.substr(separator+1);
-        auto replacement=get(target_section,target_key,"");
-        result.replace(start,end-start+1,replacement);
-    }
-    return result;
+std::string IniConfig::get(const std::string& name, const std::string& key,
+                           const std::string& fallback) const {
+    return view_.get(name, key, fallback);
 }
-int IniConfig::integer(const std::string& section_name,const std::string& key,int fallback) const {
-    const auto value=get(section_name,key,std::to_string(fallback)); int result;
-    auto parse=std::from_chars(value.data(),value.data()+value.size(),result);
-    if(parse.ec!=std::errc{}||parse.ptr!=value.data()+value.size())throw std::runtime_error("Invalid integer configuration: "+section_name+"."+key);
-    return result;
+int IniConfig::integer(const std::string& name, const std::string& key, int fallback) const {
+    return view_.integer(name, key, fallback);
 }
-bool IniConfig::boolean(const std::string& section_name,const std::string& key,bool fallback) const {
-    auto value=get(section_name,key,fallback?"true":"false");
-    for(auto& c:value)if(c>='A'&&c<='Z')c=static_cast<char>(c-'A'+'a');
-    if(value=="true"||value=="yes"||value=="1")return true;
-    if(value=="false"||value=="no"||value=="0")return false;
-    throw std::runtime_error("Invalid boolean configuration: "+section_name+"."+key);
+bool IniConfig::boolean(const std::string& name, const std::string& key, bool fallback) const {
+    return view_.boolean(name, key, fallback);
 }
-std::map<std::string,std::string> IniConfig::section(const std::string& name) const {
-    std::map<std::string,std::string> result;
-    auto found=sections_.find(name);if(found!=sections_.end())for(const auto& [key,value]:found->second)result[key]=get(name,key);
-    return result;
+std::map<std::string, std::string> IniConfig::section(const std::string& name) const {
+    return view_.section(name);
 }
-std::string database_path(const IniConfig& config,const std::string& service,const std::string& native_key) {
-    auto path=config.get(service,"ConnectionString",config.get("NativeServer",native_key,"native.db"));
-    if(path.find('=')!=std::string::npos)
-        path=services::sqlite_connection_path(services::parse_sqlite_connection(path));
-    if(path==":memory:")return path;
-    auto resolved=framework::utf8_path(path);
-    if(resolved.is_relative())resolved=config.directory/resolved;
-    auto utf8=resolved.lexically_normal().u8string();
-    return {reinterpret_cast<const char*>(utf8.data()),utf8.size()};
+std::vector<std::pair<std::string, std::string>> IniConfig::ordered_section(const std::string& name) const {
+    return view_.ordered_section(name);
+}
+std::string database_path(const IniConfig& config, const std::string& service,
+                          const std::string& native_key) {
+    auto path = config.get(service, "ConnectionString", config.get("NativeServer", native_key, "native.db"));
+    if (path.find('=') != std::string::npos)
+        path = services::sqlite_connection_path(services::parse_sqlite_connection(path));
+    if (path == ":memory:")
+        return path;
+    auto resolved = framework::utf8_path(path);
+    if (resolved.is_relative())
+        resolved = config.directory / resolved;
+    auto utf8 = resolved.lexically_normal().u8string();
+    return {reinterpret_cast<const char*>(utf8.data()), utf8.size()};
 }
 }

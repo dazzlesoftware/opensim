@@ -1,0 +1,3 @@
+// Generated from original SQLite UserProfiles.migrations.
+#pragma once
+namespace opensim::services {inline constexpr char ProfilesMigration[] = R"OSIMSQL(@PROFILES_MIGRATION_SQL@)OSIMSQL";}

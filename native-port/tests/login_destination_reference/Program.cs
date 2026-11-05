@@ -29,6 +29,10 @@ static class DestinationProgram {
         void Observe(DestinationReference target,string start,GridUserInfo user,GridRegion homeRegion){
             try{var region=target.Find(UUID.Zero,user,start,homeRegion,out var gate,out var where,out var position,out var look,out var flags);Console.WriteLine((region?.RegionID.ToString()??"-")+"|"+(gate?.RegionID.ToString()??"-")+"|"+where+"|"+Bits(position)+"|"+Bits(look)+"|"+(uint)flags);}catch{Console.WriteLine("EX");}
         }
+        if(args.Length>1&&args[1]=="--stdin") {
+            string line;while((line=Console.ReadLine())!=null)Observe(selector,System.Text.Encoding.UTF8.GetString(Convert.FromHexString(line)),info,null);
+            return;
+        }
         Observe(selector,"home",info,home);Observe(selector,"home",info,null);Observe(selector,"home",null,home);Observe(selector,"last",info,null);
         info.LastRegionID=UUID.Zero;Observe(selector,"last",info,null);info.LastRegionID=Id(99);Observe(selector,"last",info,null);Observe(selector,"last",null,null);
         foreach(var start in new[]{"uri:Alpha&1.25&2.&300","uri:Missing&90&91&92","uri:Alpha@remote.example&1&2&3","uri:http://local.example/Alpha&1&2&3","","home ","uri:Alpha&-1&2&3","uri:Alpha&1&2&-3","uri:Alpha&1e2&2&3","uri:Alpha&"+new string('9',90)+"&2&3","uri:Alpha&0."+new string('0',400)+"1&2&3","uri:Alpha&1&2&3\n","Alpha&1&2&3",null,"uri:&1&2&3","uri:Alpha&\u0661&2&3","uri:http://remote.example/Alpha&1&2&3"})Observe(selector,start,info,null);

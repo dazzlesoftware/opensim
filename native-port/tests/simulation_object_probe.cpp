@@ -1,15 +1,147 @@
+#include "simulation_http_fixture.hpp"
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/services/simulation_connector.hpp"
 #include "opensim/network/osd_json.hpp"
 #include "opensim/network/osd_value.hpp"
 #include <iostream>
-using namespace opensim;using network::Value;
-std::string hex(std::string_view s){std::string out;const char* h="0123456789abcdef";for(unsigned char c:s){out+=h[c>>4];out+=h[c&15];}return out;}
-std::string decode(std::string_view s){std::string out;for(std::size_t i=0;i<s.size();i+=2)out+=static_cast<char>(std::stoi(std::string(s.substr(i,2)),nullptr,16));return out;}
-framework::Uuid id(int n){return framework::Uuid("00000000-0000-0000-0000-00000000000"+std::to_string(n));}
-struct Context{Value command;std::string trace;services::GridRegion* region=nullptr;void log(const std::string& op){trace+=op+";";if(network::osd_string(command.get("failure"))==op)throw std::runtime_error(op);}};
-struct Object:services::SimulationObject{Context& ctx;explicit Object(Context& c):ctx(c){}framework::Uuid object_uuid()const override{ctx.log("uuid");return id(7);}std::string to_xml2()override{ctx.log("xml");if(network::osd_boolean(ctx.command.get("mutate"))){ctx.region->x=-123;ctx.region->name="changed";}return ctx.command.contains("xml")?network::osd_string(ctx.command.get("xml")):"<object/>";}std::string extra_to_xml_string()override{ctx.log("extra");return network::osd_string(ctx.command.get("extra"));}void extra_from_xml_string(const std::string&)override{}bool has_group_changed()const override{ctx.log("modified");return network::osd_boolean(ctx.command.get("modified"));}void has_group_changed(bool)override{}std::shared_ptr<services::SimulationObject> clone_for_new_scene()override{throw std::runtime_error("unexpected clone");}std::optional<std::string> state_snapshot()override{ctx.log("state");return network::osd_boolean(ctx.command.get("null_state"))?std::nullopt:std::optional<std::string>(network::osd_string(ctx.command.get("state")));}void set_state(const std::optional<std::string>&,framework::AgentTransferScene*)override{}};
-struct Connector:services::SimulationConnector{Context& ctx;Connector(Context& c,PositionRequest request={}):SimulationConnector({}, {}, {},{[]{return 0.;},false},std::move(request)),ctx(c){}std::string object_path()const override{ctx.log("path");return network::osd_boolean(ctx.command.get("custom"))?"custom/object/":"object/";}};
-services::GridRegion region(std::string uri,int n=9){services::GridRegion d;d.id=id(n);d.x=25600;d.y=51200;d.name="Destination";d.set_server_uri(uri);return d;}
-int main(int argc,char** argv){if(argc>1){Context ctx{Value::object({})};ctx.command.set("state","scripts");ctx.command.set("extra",std::string(150000,'x'));ctx.command.set("modified",Value(true));auto d=region(argv[1],argc>2?std::stoi(argv[2]):1);ctx.region=&d;Connector connector(ctx);std::cout<<(connector.create_object(&d,{1.25f,2,30},std::make_shared<Object>(ctx),false)?"True":"False");return 0;}std::string line;while(std::getline(std::cin,line)){Context ctx{network::parse_osd_json(decode(line))};auto d=region("http://sim:9000/base/");ctx.region=&d;if(network::osd_boolean(ctx.command.get("null_name")))d.name.reset();Connector connector(ctx,[&](const std::string& uri,const Value& body,int timeout,bool compressed){ctx.log("request");ctx.trace+=hex(uri)+":"+std::to_string(timeout)+":"+(compressed?"1":"0")+":"+hex(network::osd_json(body,true))+";";return ctx.command.get("reply");});std::string result;try{if(network::osd_boolean(ctx.command.get("inventory")))result=connector.create_object(nullptr,id(7),id(8))?"1":"0";else result=connector.create_object(network::osd_boolean(ctx.command.get("null_destination"))?nullptr:&d,{1.25f,2,30},network::osd_boolean(ctx.command.get("null_object"))?nullptr:std::make_shared<Object>(ctx),network::osd_boolean(ctx.command.get("local")))?"1":"0";}catch(const std::exception&){result="EX";}std::cout<<result<<"|"<<hex(ctx.trace)<<"\n";}}
+using namespace opensim;
+using network::Value;
+std::string hex(std::string_view s) {
+    std::string out;
+    const char* h = "0123456789abcdef";
+    for (unsigned char c : s) {
+        out += h[c >> 4];
+        out += h[c & 15];
+    }
+    return out;
+}
+std::string decode(std::string_view s) {
+    std::string out;
+    for (std::size_t i = 0; i < s.size(); i += 2)
+        out += static_cast<char>(std::stoi(std::string(s.substr(i, 2)), nullptr, 16));
+    return out;
+}
+framework::Uuid id(int n) {
+    return framework::Uuid("00000000-0000-0000-0000-00000000000" + std::to_string(n));
+}
+struct Context {
+    Value command;
+    std::string trace;
+    services::GridRegion* region = nullptr;
+    void log(const std::string& op) {
+        trace += op + ";";
+        if (network::osd_string(command.get("failure")) == op)
+            throw std::runtime_error(op);
+    }
+};
+struct Object : services::SimulationObject {
+    Context& ctx;
+    explicit Object(Context& c) : ctx(c) {
+    }
+    framework::Uuid object_uuid() const override {
+        ctx.log("uuid");
+        return id(7);
+    }
+    std::string to_xml2() override {
+        ctx.log("xml");
+        if (network::osd_boolean(ctx.command.get("mutate"))) {
+            ctx.region->x = -123;
+            ctx.region->name = "changed";
+        }
+        return ctx.command.contains("xml") ? network::osd_string(ctx.command.get("xml")) : "<object/>";
+    }
+    std::string extra_to_xml_string() override {
+        ctx.log("extra");
+        return network::osd_string(ctx.command.get("extra"));
+    }
+    void extra_from_xml_string(const std::string&) override {
+    }
+    bool has_group_changed() const override {
+        ctx.log("modified");
+        return network::osd_boolean(ctx.command.get("modified"));
+    }
+    void has_group_changed(bool) override {
+    }
+    std::shared_ptr<services::SimulationObject> clone_for_new_scene() override {
+        throw std::runtime_error("unexpected clone");
+    }
+    std::optional<std::string> state_snapshot() override {
+        ctx.log("state");
+        return network::osd_boolean(ctx.command.get("null_state"))
+                   ? std::nullopt
+                   : std::optional<std::string>(network::osd_string(ctx.command.get("state")));
+    }
+    void set_state(const std::optional<std::string>&, framework::AgentTransferScene*) override {
+    }
+};
+struct Connector : services::SimulationConnector {
+    Context& ctx;
+    Connector(Context& c, PositionRequest request = {})
+        : SimulationConnector({}, {}, {}, {[] { return 0.; }, false}, std::move(request)), ctx(c) {
+    }
+    Connector(Context& c, std::shared_ptr<network::OsdServiceRequester> requester)
+        : SimulationConnector(std::move(requester), {[] { return 0.; }, false}), ctx(c) {
+    }
+    std::string object_path() const override {
+        ctx.log("path");
+        return network::osd_boolean(ctx.command.get("custom")) ? "custom/object/" : "object/";
+    }
+};
+services::GridRegion region(std::string uri, int n = 9) {
+    services::GridRegion d;
+    d.id = id(n);
+    d.x = 25600;
+    d.y = 51200;
+    d.name = "Destination";
+    d.set_server_uri(uri);
+    return d;
+}
+int main(int argc, char** argv) {
+    if (argc > 1) {
+        Context ctx{Value::object({})};
+        ctx.command.set("state", "scripts");
+        ctx.command.set("extra", std::string(150000, 'x'));
+        ctx.command.set("modified", Value(true));
+        auto d = region(argv[1], argc > 2 ? std::stoi(argv[2]) : 1);
+        ctx.region = &d;
+        Connector connector(ctx, simulation_http_requester());
+        std::cout << (connector.create_object(&d, {1.25f, 2, 30}, std::make_shared<Object>(ctx), false)
+                          ? "True"
+                          : "False");
+        return 0;
+    }
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        Context ctx{network::parse_osd_json(decode(line))};
+        auto d = region("http://sim:9000/base/");
+        ctx.region = &d;
+        if (network::osd_boolean(ctx.command.get("null_name")))
+            d.name.reset();
+        Connector connector(
+            ctx, [&](const std::string& uri, const Value& body, int timeout, bool compressed) {
+                ctx.log("request");
+                ctx.trace += hex(uri) + ":" + std::to_string(timeout) + ":" + (compressed ? "1" : "0") + ":" +
+                             hex(network::osd_json(body, true)) + ";";
+                return ctx.command.get("reply");
+            });
+        std::string result;
+        try {
+            if (network::osd_boolean(ctx.command.get("inventory")))
+                result = connector.create_object(nullptr, id(7), id(8)) ? "1" : "0";
+            else
+                result =
+                    connector.create_object(
+                        network::osd_boolean(ctx.command.get("null_destination")) ? nullptr : &d,
+                        {1.25f, 2, 30},
+                        network::osd_boolean(ctx.command.get("null_object")) ? nullptr
+                                                                             : std::make_shared<Object>(ctx),
+                        network::osd_boolean(ctx.command.get("local")))
+                        ? "1"
+                        : "0";
+        } catch (const std::exception&) {
+            result = "EX";
+        }
+        std::cout << result << "|" << hex(ctx.trace) << "\n";
+    }
+}

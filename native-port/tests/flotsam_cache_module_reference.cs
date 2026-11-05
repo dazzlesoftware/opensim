@@ -34,7 +34,11 @@ class Loader:IAssetLoader {
  public void ForEachDefaultXmlAsset(string args,Action<AssetBase> action){Probe.Add("F:"+args);Probe.Fail(13);if(Probe.LoaderMode==7){Probe.Retained=action;return;}if(Probe.LoaderMode==1)return;action(new AssetBase("a","default a",0,"creator"));if(Probe.LoaderMode==5)throw new Exception("middle");if(Probe.LoaderMode==4){action(null);return;}var a=new AssetBase(Probe.LoaderMode==3?"a":"b","default b",0,"creator");if(Probe.LoaderMode==6)a.Metadata=null;action(a);}
 }
 static class ServerUtils{public static T LoadPlugin<T>(string module,object[] args){Probe.Add("L:"+Convert.ToHexString(Encoding.UTF8.GetBytes(module)).ToLowerInvariant());Probe.Fail(12);return Probe.LoaderMode==0?default:(T)(object)new Loader();}}
+class Logger{public void Info(string text){Probe.Add("INFO:"+text);Probe.Fail(17);}}
 partial class FlotsamAssetCache:IAssetCache {
+ Logger m_log=new();
+ void Expire(string id){Probe.Add("EXPIRE:"+Tag+":"+id);Probe.Fail(18);}
+ public void Defaults(bool remove){if(remove)HandleDeleteDefaultAssets();else HandleLoadDefaultAssets();}
  public int Tag,CacheCalls;bool m_Enabled,m_FileCacheEnabled,m_timerRunning,m_cleanupRunning;TimeSpan m_FileExpiration,m_FileExpirationCleanupTimer;IAssetService m_AssetService;string m_assetLoader,m_assetLoaderArgs="args";readonly List<Scene> m_Scenes=new();readonly object timerLock=new();System.Timers.Timer m_CacheCleanTimer;static ObjectJobEngine m_assetFileWriteWorker;static HashSet<string> m_defaultAssets=new();const string m_ModuleName="FlotsamAssetCache";
  public FlotsamAssetCache(int tag,bool enabled,bool file,int loader,long expiration,long cleanup){Tag=tag;m_Enabled=enabled;m_FileCacheEnabled=file;m_assetLoader=loader switch{0=>null,1=>"",2=>"  ",3=>"\u2003",4=>"loader",_=>"\u200b"};m_FileExpiration=TimeSpan.FromTicks(expiration);m_FileExpirationCleanupTimer=TimeSpan.FromTicks(cleanup);}
  void ProcessWrites(object o){}
@@ -49,7 +53,10 @@ static class Probe {
  public static int TimerSerial,WorkerSerial,LoaderMode=2;public static bool Mutate;public static Action<AssetBase> Retained;public static List<System.Timers.Timer> Timers=new();public static List<ObjectJobEngine> Workers=new();static int point,nth,seen;static List<string> trace=new();static FlotsamAssetCache[] modules;static Scene[] scenes;
  public static void Add(string s)=>trace.Add(s);public static void Fail(int p){if(point==p&&++seen==nth)throw new Exception("fault");}
  static string Run(string line){var p=line.Split(' ',StringSplitOptions.RemoveEmptyEntries);int m=p.Length>1?int.Parse(p[1]):0;switch(p[0]){
- case "init":Timers.Clear();Workers.Clear();TimerSerial=WorkerSerial=point=seen=0;nth=1;LoaderMode=2;Mutate=false;FlotsamAssetCache.Reset();long expiration=long.Parse(p[7]),cleanup=long.Parse(p[8]);modules=new[]{new FlotsamAssetCache(0,p[1]=="1",p[2]=="1",int.Parse(p[3]),expiration,cleanup),new FlotsamAssetCache(1,p[4]=="1",p[5]=="1",int.Parse(p[6]),expiration,cleanup)};scenes=Enumerable.Range(0,3).Select(i=>new Scene{Tag=i,Service=new Service(i),Info=new RegionInfo{RegionID=new UUID(i==1?"00000000-0000-0000-0000-000000000002":"00000000-0000-0000-0000-000000000001")}}).ToArray();return "init";
+ case "init":Retained=null;Timers.Clear();Workers.Clear();TimerSerial=WorkerSerial=point=seen=0;nth=1;LoaderMode=2;Mutate=false;FlotsamAssetCache.Reset();long expiration=long.Parse(p[7]),cleanup=long.Parse(p[8]);modules=new[]{new FlotsamAssetCache(0,p[1]=="1",p[2]=="1",int.Parse(p[3]),expiration,cleanup),new FlotsamAssetCache(1,p[4]=="1",p[5]=="1",int.Parse(p[6]),expiration,cleanup)};scenes=Enumerable.Range(0,3).Select(i=>new Scene{Tag=i,Service=new Service(i),Info=new RegionInfo{RegionID=new UUID(i==1?"00000000-0000-0000-0000-000000000002":"00000000-0000-0000-0000-000000000001")}}).ToArray();return "init";
+ case "defaults":modules[m].Defaults(false);return "defaults";
+ case "delete-defaults":modules[m].Defaults(true);return "delete-defaults";
+ case "late":Retained?.Invoke(new AssetBase("late","late",0,""));return "late";
  case "fail":point=m;nth=int.Parse(p[2]);seen=0;return "fail";
  case "loader":LoaderMode=m;return "loader";
  case "mutate":Mutate=m!=0;return "mutate";

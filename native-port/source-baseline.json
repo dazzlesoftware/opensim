@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "8f7f5bb4679331096a1386fddcce3f2c0533adb2",
+  "sourceRevision": "1553d07bd04160e563dd258214a88e4e13417429",
   "targetPlatforms": [
     "Windows",
     "Linux",
@@ -17,8 +17,8 @@
     "csharpFiles": 1556,
     "csharpLines": 571829.0,
     "declaredProjects": 69,
-    "mappedSourceScopes": 183,
-    "sourcesWithoutPortMapping": 1373
+    "mappedSourceScopes": 192,
+    "sourcesWithoutPortMapping": 1364
   },
   "projects": [
     {
@@ -3045,7 +3045,7 @@
       "lines": 39,
       "sha256": "af667f355bf3ae0eda3a92582500c55cfffe520f2abbf117251c035665075df6",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Framework/ConfigurationMember.cs",
@@ -3073,14 +3073,14 @@
       "lines": 820,
       "sha256": "386bf5914a39af35810d0fa4860c4e3a5263f75244b82cb48ea9059a28a6269f",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Framework/Console/ConsoleBase.cs",
       "lines": 221,
       "sha256": "08f9c597ba453617d40bb27b03db9c72545400bc27c01b0039c97e6bd6e2f6da",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Framework/Console/ConsoleDisplayList.cs",
@@ -3136,14 +3136,14 @@
       "lines": 90,
       "sha256": "d27f07b37907e91cafdac7c41dd741287e53194a9c924b55249b328648db7985",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Framework/Console/RemoteConsole.cs",
       "lines": 737,
       "sha256": "3dd3c213b5004966a2744a4eeffb18a2b1f9b0d1d62792421320491b736ec134",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Framework/Constants.cs",
@@ -3689,7 +3689,7 @@
       "lines": 82,
       "sha256": "396168b3e391f6a3433ec981f93206196cd5c4fcd19abddb3b3ec21d172fffad",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Framework/NetworkUtil.cs",
@@ -3801,7 +3801,7 @@
       "lines": 1691,
       "sha256": "e778170915052fa218e9a9aa4cb6c629708933176a4135461656143bd3c32c80",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Framework/RegionFlags.cs",
@@ -4739,7 +4739,7 @@
       "lines": 348,
       "sha256": "bd4be693cc25b4098e7bdceae5941f2fcaed1c13282231fe4b85e9514660c3d3",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Region/Application/IApplicationPlugin.cs",
@@ -7910,7 +7910,7 @@
       "lines": 1353,
       "sha256": "17f1d74963c2bc8375eee45480b1616b2d4417f380dc79fe0fee46eab8d497f6",
       "testDirectory": false,
-      "portStatus": "not_started"
+      "portStatus": "partial"
     },
     {
       "path": "OpenSim/Region/OptionalModules/Agent/InternetRelayClientView/IRCStackModule.cs",

@@ -32,36 +32,43 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <optional>
 #include <vector>
 namespace opensim::network {
-using FormValue=std::variant<std::string,std::vector<std::string>>;
-struct Form:std::map<std::string,FormValue> {
-    using std::map<std::string,FormValue>::map;
+using FormValue = std::variant<std::string, std::vector<std::string>>;
+struct Form : std::map<std::string, FormValue> {
+    using std::map<std::string, FormValue>::map;
     std::vector<std::string> insertion_order;
-    std::vector<std::string> ordered_keys()const;
+    std::vector<std::string> ordered_keys() const;
 };
 Form parse_service_form(std::string_view text);
 std::string service_url_decode(std::string_view text);
+std::string service_query_header(std::string_view query);
+struct ServiceRequestTarget {
+    std::string path;
+    std::string query;
+};
+std::optional<ServiceRequestTarget> canonical_service_request_target(std::string_view target);
 std::string service_url_encode(std::string_view text);
 struct ServiceXmlValue {
     std::string text;
-    std::vector<std::pair<std::string,ServiceXmlValue>> fields;
-    bool list=false;
-    ServiceXmlValue()=default;
-    ServiceXmlValue(std::string value):text(std::move(value)){}
-    ServiceXmlValue(const char* value):text(value){}
-    static ServiceXmlValue object(std::vector<std::pair<std::string,ServiceXmlValue>> fields);
+    std::vector<std::pair<std::string, ServiceXmlValue>> fields;
+    bool list = false;
+    ServiceXmlValue() = default;
+    ServiceXmlValue(std::string value) : text(std::move(value)) {}
+    ServiceXmlValue(const char* value) : text(value) {}
+    static ServiceXmlValue object(std::vector<std::pair<std::string, ServiceXmlValue>> fields);
 };
 std::string service_xml_name(std::string_view value);
 std::string service_xml(const ServiceXmlValue& value);
 std::string service_result(bool success);
 std::string read_service_body(std::string_view bytes);
 ServiceXmlValue parse_service_xml(std::string_view text);
-std::string build_service_form(const std::vector<std::pair<std::string,std::optional<std::string>>>& fields);
+std::string build_service_form(const std::vector<std::pair<std::string, std::optional<std::string>>>& fields);
 class ServiceAuth {
-public:
-    explicit ServiceAuth(const server::IniConfig& config,const std::string& section);
-    bool authenticate(const HttpRequest& request,HttpResponse& response)const;
-private:
-    bool allow_script_requests_,basic_;
-    std::string username_,password_;
+  public:
+    explicit ServiceAuth(const server::IniConfig& config, const std::string& section);
+    bool authenticate(const HttpRequest& request, HttpResponse& response) const;
+
+  private:
+    bool allow_script_requests_, basic_;
+    std::string username_, password_;
 };
 }

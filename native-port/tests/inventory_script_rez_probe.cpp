@@ -5,6 +5,7 @@
 #include "opensim/network/osd_json.hpp"
 #include "opensim/network/osd_value.hpp"
 #include <fstream>
+#include <optional>
 #include <algorithm>
 #include <iostream>
 #include <set>
@@ -14,67 +15,503 @@
 #include <chrono>
 namespace opensim::tests {
 namespace {
-using framework::Uuid;using network::lludp::Packet;
-void require(bool v,const char* message){if(!v)throw std::runtime_error(std::string("Inventory script rez probe: ")+message);}
-std::string hex(std::uint32_t value){std::ostringstream s;s<<std::hex<<std::setfill('0')<<std::setw(8)<<value;return s.str();}
-std::vector<std::string> blocks(std::string_view text){std::vector<std::string> result;std::size_t at=0;const std::string marker="\tinv_item\t0\n";while((at=text.find(marker,at))!=text.npos){auto next=text.find(marker,at+marker.size());result.emplace_back(text.substr(at,next==text.npos?text.size()-at:next-at));if(next==text.npos)break;at=next;}return result;}
-std::string field(std::string_view block,const char* key){auto start=block.find(std::string("\t\t")+key+"\t");require(start!=block.npos,"expected task field absent");start+=std::string(key).size()+3;auto end=block.find('\n',start);return std::string(block.substr(start,end-start));}
-bool message(const Packet& p,Uuid object,const std::string& wanted){if(p.spec->name!="ChatFromSimulator")return false;const auto& b=p.block("ChatData");if(std::get<Uuid>(b.at("SourceID"))!=object)return false;auto bytes=std::get<std::vector<std::uint8_t>>(b.at("Message"));return std::string(bytes.begin(),std::find(bytes.begin(),bytes.end(),0))==wanted;}
+using framework::Uuid;
+using network::lludp::Packet;
+void require(bool v, const char *message) {
+    if (!v)
+        throw std::runtime_error(std::string("Inventory script rez probe: ") + message);
 }
-void run_inventory_script_rez_probe(Uuid agent,Uuid object,std::uint32_t local,const std::filesystem::path& metadata,const LegacyInventoryProbeIo& io){std::ifstream input(metadata,std::ios::binary);require(bool(input),"metadata open");std::string bytes((std::istreambuf_iterator<char>(input)),{});auto root=network::parse_osd_json(bytes);if(!root.contains("inventory_rez"))return;auto info=root.get("inventory_rez");auto user=info.get("user"),library=info.get("library");auto user_id=network::osd_uuid(user.get("item_id")),library_id=network::osd_uuid(library.get("item_id"));require(!user_id.is_zero()&&!library_id.is_zero(),"source IDs");auto current=read_task_inventory_file(object,local,6,io);std::set<Uuid> copies;std::set<std::uint32_t> seen_chat;auto chat_count=[&](const auto& list){std::set<std::uint32_t> ids;for(const auto& p:list)if(message(p,object,"Script running"))ids.insert(p.sequence);return ids.size();};
- for(int phase=0;phase<3;++phase){auto source=phase<2?user:library;auto key=phase<2?user_id:library_id;auto before=io.snapshot();auto count=chat_count(before);auto request=io.make("RezScript");request.block("UpdateBlock")["ObjectLocalID"]=std::uint64_t(local);request.block("UpdateBlock")["Enabled"]=false;auto& item=request.block("InventoryBlock");item["ItemID"]=key;item["FolderID"]=Uuid("00000000-0000-0000-0000-00000000dead");item["Type"]=item["InvType"]=std::int64_t(0);item["Name"]=std::vector<std::uint8_t>{'w','r','o','n','g',0};io.send(request);auto serial=7+phase;
-  io.wait([&](const auto& packets){for(auto n=before.size();n<packets.size();++n)if(packets[n].spec->name=="ObjectProperties")for(const auto& b:packets[n].blocks.at("ObjectData"))if(std::get<Uuid>(b.at("ObjectID"))==object&&std::get<std::int64_t>(b.at("InventorySerial"))==serial)return true;return false;});if(phase<2)io.wait([&](const auto& packets){return chat_count(packets)>count;});
-  auto next=read_task_inventory_file(object,local,static_cast<std::int16_t>(serial),io);require(next.filename!=current.filename,"real insertion must invalidate cached filename");auto rows=blocks(next.text);require(rows.size()==std::size_t(3+phase),"actual task row count");auto expected_name=network::osd_string(source.get("name"))+(phase==1?" 1":"");auto row=std::find_if(rows.begin(),rows.end(),[&](const auto& b){return field(b,"name")==expected_name+"|";});require(row!=rows.end(),"stored source name/unique suffix ignored wire name");auto copy=Uuid(field(*row,"item_id"));require(copy!=key&&!copy.is_zero()&&copies.insert(copy).second,"new copy identity");require(field(*row,"owner_id")==agent.str()&&field(*row,"parent_id")==object.str(),"actual task owner/parent");require(field(*row,"creator_id")==network::osd_string(source.get("creator_id")),"canonical stored creator preserved");require(field(*row,"last_owner_id")==Uuid{}.str(),"same-owner transfer leaves source last owner zero");auto current_mask=network::osd_unsigned(source.get("owner_mask"));auto disclosed=(current_mask&0xc000u)==0xc000u?network::osd_string(source.get("asset_id")):Uuid{}.str();require(field(*row,"asset_id")==disclosed,"source asset-disclosure permission rule");require(field(*row,"owner_mask")==hex(current_mask)&&field(*row,"group_mask")==hex(network::osd_unsigned(source.get("group_mask")))&&field(*row,"flags")==hex(network::osd_unsigned(source.get("flags"))),"actual source permissions/full flags");require(std::stoul(field(*row,"creation_date"))>111,"new constructor timestamp must replace source item date");require(field(*row,"type")=="lsltext"&&field(*row,"inv_type")=="script","actual stored types ignore wire types");
-  if(phase<2){auto running=io.make("GetScriptRunning");running.block("Script")["ObjectID"]=object;running.block("Script")["ItemID"]=copy;io.send(running);std::cout<<"Script running query "<<object.str()<<' '<<copy.str()<<" 1"<<std::endl;std::string result;require(bool(std::getline(std::cin,result))&&result=="OK","copied script running event");}
-  else{std::cout<<"Existing library script asset "<<network::osd_string(source.get("asset_id"))<<std::endl;std::string result;require(bool(std::getline(std::cin,result))&&result=="OK","actual library asset delivery");}
-  current=std::move(next);
- }
- std::cout<<"Verified existing user script execution, duplicate names, no-copy retention, library fallback and source metadata\n";
- // Real viewer moves must persist before non-copy removal. A copyable item
- // moved with zero FolderID uses the real system folder and remains in Contents.
- auto target=network::osd_uuid(info.get("destination"));require(!target.is_zero(),"transfer destination fixture");int serial=9;
- std::vector<std::string> transfer_names={"New Script 1",network::osd_string(user.get("name")),network::osd_string(user.get("name"))+" 1",network::osd_string(library.get("name"))};
- for(int phase=0;phase<4;++phase){
-  auto rows=blocks(current.text);auto source=std::find_if(rows.begin(),rows.end(),[&](const auto& row){return field(row,"name")==transfer_names[phase]+"|";});require(source!=rows.end(),"transfer source row");auto task_key=Uuid(field(*source,"item_id"));auto before=io.snapshot().size();auto request=io.make(phase<2?"MoveTaskInventory":"RemoveTaskInventory");request.block("InventoryData")["LocalID"]=std::uint64_t(local);request.block("InventoryData")["ItemID"]=task_key;if(phase<2)request.block("AgentData")["FolderID"]=phase==0?Uuid{}:target;io.send(request);
-  auto matches=[&](const Packet& p){if(p.spec->name!="UpdateCreateInventoryItem")return false;for(const auto& b:p.blocks.at("InventoryData")){auto name=std::get<std::vector<std::uint8_t>>(b.at("Name"));if(std::string(name.begin(),std::find(name.begin(),name.end(),0))==transfer_names[phase])return true;}return false;};
-  io.wait([&](const auto& packets){return std::any_of(packets.begin()+before,packets.end(),matches);});auto packets=io.snapshot();auto response=std::find_if(packets.begin()+before,packets.end(),matches);require(response!=packets.end()&&response->reliable&&response->zerocoded,"actual source create/update delivery flags");const auto& b=response->blocks.at("InventoryData").front();auto new_key=std::get<Uuid>(b.at("ItemID"));require(!new_key.is_zero()&&new_key!=task_key,"transfer allocates avatar item identity");require(std::get<Uuid>(b.at("OwnerID"))==agent&&std::get<std::uint64_t>(b.at("CallbackID"))==0,"transfer owner/callback");
-  network::Value expected=network::Value::object({{"inventoryID",new_key.str()},{"avatarID",agent.str()},{"assetID",std::get<Uuid>(b.at("AssetID")).str()},{"parentFolderID",std::get<Uuid>(b.at("FolderID")).str()},{"inventoryName",transfer_names[phase]},{"creatorID",field(*source,"creator_id")},{"phase",network::Value(phase)}});
-  for(const auto& pair:std::vector<std::pair<std::string,std::string>>{{"base_mask","inventoryBasePermissions"},{"owner_mask","inventoryCurrentPermissions"},{"group_mask","inventoryGroupPermissions"},{"everyone_mask","inventoryEveryOnePermissions"},{"next_owner_mask","inventoryNextPermissions"},{"flags","flags"}}){auto value=std::stoul(field(*source,pair.first.c_str()),nullptr,16);expected.set(pair.second,network::Value::long_integer(value));}
-  require(std::get<std::uint64_t>(b.at("Flags"))==(static_cast<std::uint32_t>(std::stoul(field(*source,"flags"),nullptr,16))&0x2000ffu),"source viewer flags filtering");
-  std::cout<<"Task inventory persisted "<<network::osd_json(expected,true)<<std::endl;std::string result;require(bool(std::getline(std::cin,result))&&result=="OK","actual persisted avatar inventory transaction");
-  auto next=read_task_inventory_file(object,local,static_cast<std::int16_t>(serial+(phase?1:0)),io);auto next_rows=blocks(next.text);bool retained=std::any_of(next_rows.begin(),next_rows.end(),[&](const auto& row){return field(row,"item_id")==task_key.str();});require(retained==(phase==0),"copy retained / move or delete removed source");require(next_rows.size()==rows.size()-(phase?1:0),"source task count after transfer");require((next.filename==current.filename)==(phase==0),"source serial/cache mutation after transfer");if(phase)++serial;current=std::move(next);
- }
- std::cout<<"Verified persistent copy/move, no-copy removal, Trash-before-delete and actual inventory notifications\n";
- // Actual metadata update: wire AssetID does not exist and registry retains the
- // stored asset. Source masks are constrained before serial/cache mutation.
- auto rows=blocks(current.text);auto edited=std::find_if(rows.begin(),rows.end(),[](const auto& row){return field(row,"name")=="New Script 1|";});require(edited!=rows.end(),"metadata edit source");auto edited_id=Uuid(field(*edited,"item_id"));auto base=static_cast<std::uint32_t>(std::stoul(field(*edited,"base_mask"),nullptr,16))|0x80000u;auto flags=static_cast<std::uint32_t>(std::stoul(field(*edited,"flags"),nullptr,16));
- auto update=io.make("UpdateTaskInventory");update.block("UpdateData")["LocalID"]=std::uint64_t(local);auto& fields=update.block("InventoryData");fields["ItemID"]=edited_id;fields["FolderID"]=Uuid::random();fields["CreatorID"]=agent;fields["OwnerID"]=agent;fields["GroupID"]=Uuid::random();fields["BaseMask"]=std::uint64_t(0);fields["OwnerMask"]=std::uint64_t(0x9e000);fields["GroupMask"]=std::uint64_t(0x8000);fields["EveryoneMask"]=std::uint64_t(0x2000);fields["NextOwnerMask"]=std::uint64_t(0x2000);fields["Flags"]=std::uint64_t(0xffffffffu);fields["Type"]=fields["InvType"]=std::int64_t(10);fields["CreationDate"]=std::int64_t(-1);fields["TransactionID"]=Uuid::random();fields["Name"]=std::vector<std::uint8_t>{'E','d','i','t','e','d',' ','s','c','r','i','p','t','!'};fields["Description"]=std::vector<std::uint8_t>{'N','e','w',0};auto before=io.snapshot().size();io.send(update);
- io.wait([&](const auto& packets){for(auto n=before;n<packets.size();++n)if(packets[n].spec->name=="ObjectProperties")for(const auto& b:packets[n].blocks.at("ObjectData"))if(std::get<Uuid>(b.at("ObjectID"))==object&&std::get<std::int64_t>(b.at("InventorySerial"))==13)return true;return false;});auto changed=read_task_inventory_file(object,local,13,io);auto changed_rows=blocks(changed.text);auto row=std::find_if(changed_rows.begin(),changed_rows.end(),[&](const auto& r){return field(r,"item_id")==edited_id.str();});require(row!=changed_rows.end()&&field(*row,"name")=="Edited script|"&&field(*row,"desc")=="New|","exact incoming field conversion");require(field(*row,"parent_id")==object.str()&&field(*row,"group_id")==Uuid{}.str(),"registry repairs parent and group");require(field(*row,"base_mask")==hex(base)&&field(*row,"owner_mask")==hex(0x9e000u&base)&&field(*row,"group_mask")==hex(0x8000u&base)&&field(*row,"everyone_mask")==hex(0x2000u&base)&&field(*row,"next_owner_mask")==hex((0x2000u&base)|0x80000u),"owner mask constraints and forced Move");
- for(const auto& value:std::vector<std::pair<const char*,std::uint32_t>>{{"everyone_mask",0x2000},{"group_mask",0x8000},{"owner_mask",0x9e000},{"next_owner_mask",0x2000}}){if(std::stoul(field(*edited,value.first),nullptr,16)!=value.second)flags|=std::string_view(value.first)=="everyone_mask"?0x80000u:std::string_view(value.first)=="group_mask"?0x40000u:std::string_view(value.first)=="owner_mask"?0x20000u:0x100000u;}
- require(field(*row,"flags")==hex(flags)&&field(*row,"creation_date")=="4294967295"&&field(*row,"asset_id")==field(*edited,"asset_id"),"source overwrite flags / timestamp cast / retained actual asset");require(changed.filename!=current.filename,"metadata edit invalidates Contents cache");current=std::move(changed);
- // The Key=1 request must not update task inventory at all.
- auto ignored_update=io.make("UpdateTaskInventory");ignored_update.blocks=update.blocks;ignored_update.block("UpdateData")["Key"]=std::uint64_t(1);ignored_update.block("InventoryData")["Name"]=std::vector<std::uint8_t>{'b','a','d',0};io.send(ignored_update);auto unchanged=read_task_inventory_file(object,local,13,io);require(unchanged.filename==current.filename&&unchanged.text==current.text,"asset-key update ignored");
- for(int phase=0;phase<2;++phase){auto source_id=phase?library_id:network::osd_uuid(info.get("drop_item"));auto source_name=phase?network::osd_string(library.get("name")):"Dropped no-copy script";auto previous=blocks(current.text);auto request=io.make("UpdateTaskInventory");request.block("UpdateData")["LocalID"]=std::uint64_t(local);request.block("InventoryData")["ItemID"]=source_id;request.block("InventoryData")["Name"]=std::vector<std::uint8_t>{'w','r','o','n','g',0};before=io.snapshot().size();io.send(request);auto expected_serial=14+phase;
-  io.wait([&](const auto& packets){for(auto n=before;n<packets.size();++n)if(packets[n].spec->name=="ObjectProperties")for(const auto& b:packets[n].blocks.at("ObjectData"))if(std::get<Uuid>(b.at("ObjectID"))==object&&std::get<std::int64_t>(b.at("InventorySerial"))==expected_serial)return true;return false;});auto next=read_task_inventory_file(object,local,static_cast<std::int16_t>(expected_serial),io);auto added=blocks(next.text);auto item=std::find_if(added.begin(),added.end(),[&](const auto& r){return field(r,"name")==source_name+"|";});require(added.size()==previous.size()+1&&item!=added.end(),"actual user/library drop ignores wire metadata");auto dropped=Uuid(field(*item,"item_id"));require(dropped!=source_id&&!dropped.is_zero(),"drop allocates new task item identity");
-  for(auto key:{dropped,edited_id}){auto running=io.make("GetScriptRunning");running.block("Script")["ObjectID"]=object;running.block("Script")["ItemID"]=key;io.send(running);}std::cout<<"Task inventory dropped "<<source_id.str()<<' '<<dropped.str()<<' '<<edited_id.str()<<' '<<phase<<std::endl;std::string result;require(bool(std::getline(std::cin,result))&&result=="OK","drop persistence and no automatic script start");current=std::move(next);
- }
- std::cout<<"Verified real metadata permissions/flags, ignored asset-key updates, no-copy inventory consumption and user/library drops without automatic script execution\n";
- run_user_inventory_probe(agent,object,edited_id,metadata,io);
- // Source keeps the engine instance when Type remains LSL but InvType changes.
- // Part event registration, task inventory and engine lifetime are independent.
- auto props=[&](std::size_t first,int serial){io.wait([&](const auto& packets){for(auto n=first;n<packets.size();++n)if(packets[n].spec->name=="ObjectProperties")for(const auto& b:packets[n].blocks.at("ObjectData"))if(std::get<Uuid>(b.at("ObjectID"))==object&&std::get<std::int64_t>(b.at("InventorySerial"))==serial)return true;return false;});};
- auto running_query=[&](Uuid item){auto packet=io.make("GetScriptRunning");packet.block("Script")["ObjectID"]=object;packet.block("Script")["ItemID"]=item;io.send(packet);std::cout<<"Script running query "<<object.str()<<' '<<item.str()<<" 1"<<std::endl;std::string result;require(bool(std::getline(std::cin,result))&&result=="OK","retained engine running reply");};
- auto unique_chat=[&](const std::string& wanted){std::set<std::uint32_t> result;for(const auto& p:io.snapshot())if(message(p,object,wanted))result.insert(p.sequence);return result;};
- auto touch=[&]{auto packet=io.make("ObjectGrab");packet.block("ObjectData")["LocalID"]=std::uint64_t(local);io.send(packet);};
- auto wait_chat=[&](const std::string& wanted,const std::set<std::uint32_t>& previous){io.wait([&](const auto& packets){for(const auto& p:packets)if(message(p,object,wanted)&&!previous.contains(p.sequence))return true;return false;});};
- auto touch_flag=[&](std::size_t first,bool enabled){io.wait([&](const auto& packets){for(auto n=first;n<packets.size();++n)if(packets[n].spec->name=="ObjectUpdate")for(const auto& b:packets[n].blocks.at("ObjectData"))if(std::get<Uuid>(b.at("FullID"))==object&&((std::get<std::uint64_t>(b.at("UpdateFlags"))&0x80u)!=0)==enabled)return true;return false;});};
- auto retype=io.make("UpdateTaskInventory");retype.block("UpdateData")["LocalID"]=std::uint64_t(local);auto& meta=retype.block("InventoryData");meta["ItemID"]=edited_id;meta["OwnerID"]=meta["CreatorID"]=agent;meta["BaseMask"]=std::uint64_t(base);meta["OwnerMask"]=std::uint64_t(0x9e000u&base);meta["GroupMask"]=std::uint64_t(0x8000u&base);meta["EveryoneMask"]=std::uint64_t(0x2000u&base);meta["NextOwnerMask"]=std::uint64_t((0x2000u&base)|0x80000u);meta["Type"]=std::int64_t(10);meta["InvType"]=std::int64_t(7);meta["Name"]=std::vector<std::uint8_t>{'E','d','i','t','e','d',' ','s','c','r','i','p','t',0};meta["CreationDate"]=std::int64_t(-1);before=io.snapshot().size();io.send(retype);props(before,16);current=read_task_inventory_file(object,local,16,io);require(current.text.find("item_id\t"+edited_id.str())!=std::string::npos,"retyped task remains stored");auto previous=unique_chat("Touched.");touch();wait_chat("Touched.",previous);
- auto remove=io.make("RemoveTaskInventory");remove.block("InventoryData")["LocalID"]=std::uint64_t(local);remove.block("InventoryData")["ItemID"]=edited_id;before=io.snapshot().size();io.send(remove);props(before,17);touch_flag(before,false);auto retained_file=read_task_inventory_file(object,local,17,io);require(retained_file.text.find(edited_id.str())==std::string::npos,"retyped inventory item removed");running_query(edited_id);
- auto trash_reply=[&](const auto& packets)->std::optional<network::lludp::Block>{for(auto n=before;n<packets.size();++n)if(packets[n].spec->name=="UpdateCreateInventoryItem")for(const auto& b:packets[n].blocks.at("InventoryData")){auto name=std::get<std::vector<std::uint8_t>>(b.at("Name"));if(std::string(name.begin(),std::find(name.begin(),name.end(),0))=="Edited script"&&std::get<std::int64_t>(b.at("InvType"))==7)return b;}return {};};io.wait([&](const auto& packets){return trash_reply(packets).has_value();});auto trash_item=*trash_reply(io.snapshot());std::cout<<"Retained script trash "<<object.str()<<' '<<edited_id.str()<<' '<<std::get<Uuid>(trash_item.at("ItemID")).str()<<' '<<std::get<Uuid>(trash_item.at("AssetID")).str()<<std::endl;std::string checked;require(bool(std::getline(std::cin,checked))&&checked=="OK","actual retained-script Trash copy");
- previous=unique_chat("Touched.");touch();running_query(edited_id);std::this_thread::sleep_for(std::chrono::milliseconds(250));require(unique_chat("Touched.")==previous,"unregistered touch must not route to retained engine");
- auto reset=io.make("ScriptReset");reset.block("Script")["ObjectID"]=object;reset.block("Script")["ItemID"]=edited_id;previous=unique_chat("I am Alive!");before=io.snapshot().size();io.send(reset);wait_chat("I am Alive!",previous);touch_flag(before,true);running_query(edited_id);auto reset_file=read_task_inventory_file(object,local,17,io);require(reset_file.filename==retained_file.filename&&reset_file.text==retained_file.text,"reset re-registers events without restoring inventory or mutating serial/cache");previous=unique_chat("Touched.");touch();wait_chat("Touched.",previous);
- auto task_rows=blocks(reset_file.text);auto primary=std::find_if(task_rows.begin(),task_rows.end(),[](const auto& row){return field(row,"name")=="New Script|";});require(primary!=task_rows.end(),"ordinary script still present");auto primary_id=Uuid(field(*primary,"item_id"));remove=io.make("RemoveTaskInventory");remove.block("InventoryData")["LocalID"]=std::uint64_t(local);remove.block("InventoryData")["ItemID"]=primary_id;before=io.snapshot().size();io.send(remove);props(before,18);for(auto key:{primary_id,edited_id}){auto query=io.make("GetScriptRunning");query.block("Script")["ObjectID"]=object;query.block("Script")["ItemID"]=key;io.send(query);}std::cout<<"Script lifecycle missing "<<object.str()<<' '<<primary_id.str()<<' '<<edited_id.str()<<std::endl;require(bool(std::getline(std::cin,checked))&&checked=="OK","ordinary script terminated while retained script still runs");
- std::cout<<"Verified source task/event/engine lifetime separation, removed-script running state, touch gating, reset re-registration and ordinary-script termination\n";
- run_generic_asset_probe(agent,metadata,io);
+std::string hex(std::uint32_t value) {
+    std::ostringstream s;
+    s << std::hex << std::setfill('0') << std::setw(8) << value;
+    return s.str();
+}
+std::vector<std::string> blocks(std::string_view text) {
+    std::vector<std::string> result;
+    std::size_t at = 0;
+    const std::string marker = "\tinv_item\t0\n";
+    while ((at = text.find(marker, at)) != text.npos) {
+        auto next = text.find(marker, at + marker.size());
+        result.emplace_back(text.substr(at, next == text.npos ? text.size() - at : next - at));
+        if (next == text.npos)
+            break;
+        at = next;
+    }
+    return result;
+}
+std::string field(std::string_view block, const char *key) {
+    auto start = block.find(std::string("\t\t") + key + "\t");
+    require(start != block.npos, "expected task field absent");
+    start += std::string(key).size() + 3;
+    auto end = block.find('\n', start);
+    return std::string(block.substr(start, end - start));
+}
+bool message(const Packet &p, Uuid object, const std::string &wanted) {
+    if (p.spec->name != "ChatFromSimulator")
+        return false;
+    const auto &b = p.block("ChatData");
+    if (std::get<Uuid>(b.at("SourceID")) != object)
+        return false;
+    auto bytes = std::get<std::vector<std::uint8_t>>(b.at("Message"));
+    return std::string(bytes.begin(), std::find(bytes.begin(), bytes.end(), 0)) == wanted;
+}
+}
+void run_inventory_script_rez_probe(Uuid agent, Uuid object, std::uint32_t local,
+                                    const std::filesystem::path &metadata, const LegacyInventoryProbeIo &io) {
+    std::ifstream input(metadata, std::ios::binary);
+    require(bool(input), "metadata open");
+    std::string bytes((std::istreambuf_iterator<char>(input)), {});
+    auto root = network::parse_osd_json(bytes);
+    if (!root.contains("inventory_rez"))
+        return;
+    auto info = root.get("inventory_rez");
+    auto user = info.get("user"), library = info.get("library");
+    auto user_id = network::osd_uuid(user.get("item_id")),
+         library_id = network::osd_uuid(library.get("item_id"));
+    require(!user_id.is_zero() && !library_id.is_zero(), "source IDs");
+    auto current = read_task_inventory_file(object, local, 6, io);
+    std::set<Uuid> copies;
+    std::set<std::uint32_t> seen_chat;
+    auto chat_count = [&](const auto &list) {
+        std::set<std::uint32_t> ids;
+        for (const auto &p : list)
+            if (message(p, object, "Script running"))
+                ids.insert(p.sequence);
+        return ids.size();
+    };
+    for (int phase = 0; phase < 3; ++phase) {
+        auto source = phase < 2 ? user : library;
+        auto key = phase < 2 ? user_id : library_id;
+        auto before = io.snapshot();
+        auto count = chat_count(before);
+        auto request = io.make("RezScript");
+        request.block("UpdateBlock")["ObjectLocalID"] = std::uint64_t(local);
+        request.block("UpdateBlock")["Enabled"] = false;
+        auto &item = request.block("InventoryBlock");
+        item["ItemID"] = key;
+        item["FolderID"] = Uuid("00000000-0000-0000-0000-00000000dead");
+        item["Type"] = item["InvType"] = std::int64_t(0);
+        item["Name"] = std::vector<std::uint8_t>{'w', 'r', 'o', 'n', 'g', 0};
+        io.send(request);
+        auto serial = 7 + phase;
+        io.wait([&](const auto &packets) {
+            for (auto n = before.size(); n < packets.size(); ++n)
+                if (packets[n].spec->name == "ObjectProperties")
+                    for (const auto &b : packets[n].blocks.at("ObjectData"))
+                        if (std::get<Uuid>(b.at("ObjectID")) == object &&
+                            std::get<std::int64_t>(b.at("InventorySerial")) == serial)
+                            return true;
+            return false;
+        });
+        if (phase < 2)
+            io.wait([&](const auto &packets) { return chat_count(packets) > count; });
+        auto next = read_task_inventory_file(object, local, static_cast<std::int16_t>(serial), io);
+        require(next.filename != current.filename, "real insertion must invalidate cached filename");
+        auto rows = blocks(next.text);
+        require(rows.size() == std::size_t(3 + phase), "actual task row count");
+        auto expected_name = network::osd_string(source.get("name")) + (phase == 1 ? " 1" : "");
+        auto row = std::find_if(rows.begin(), rows.end(),
+                                [&](const auto &b) { return field(b, "name") == expected_name + "|"; });
+        require(row != rows.end(), "stored source name/unique suffix ignored wire name");
+        auto copy = Uuid(field(*row, "item_id"));
+        require(copy != key && !copy.is_zero() && copies.insert(copy).second, "new copy identity");
+        require(field(*row, "owner_id") == agent.str() && field(*row, "parent_id") == object.str(),
+                "actual task owner/parent");
+        require(field(*row, "creator_id") == network::osd_string(source.get("creator_id")),
+                "canonical stored creator preserved");
+        require(field(*row, "last_owner_id") == Uuid{}.str(),
+                "same-owner transfer leaves source last owner zero");
+        auto current_mask = network::osd_unsigned(source.get("owner_mask"));
+        auto disclosed =
+            (current_mask & 0xc000u) == 0xc000u ? network::osd_string(source.get("asset_id")) : Uuid{}.str();
+        require(field(*row, "asset_id") == disclosed, "source asset-disclosure permission rule");
+        require(field(*row, "owner_mask") == hex(current_mask) &&
+                    field(*row, "group_mask") == hex(network::osd_unsigned(source.get("group_mask"))) &&
+                    field(*row, "flags") == hex(network::osd_unsigned(source.get("flags"))),
+                "actual source permissions/full flags");
+        require(std::stoul(field(*row, "creation_date")) > 111,
+                "new constructor timestamp must replace source item date");
+        require(field(*row, "type") == "lsltext" && field(*row, "inv_type") == "script",
+                "actual stored types ignore wire types");
+        if (phase < 2) {
+            auto running = io.make("GetScriptRunning");
+            running.block("Script")["ObjectID"] = object;
+            running.block("Script")["ItemID"] = copy;
+            io.send(running);
+            std::cout << "Script running query " << object.str() << ' ' << copy.str() << " 1" << std::endl;
+            std::string result;
+            require(bool(std::getline(std::cin, result)) && result == "OK", "copied script running event");
+        } else {
+            std::cout << "Existing library script asset " << network::osd_string(source.get("asset_id"))
+                      << std::endl;
+            std::string result;
+            require(bool(std::getline(std::cin, result)) && result == "OK", "actual library asset delivery");
+        }
+        current = std::move(next);
+    }
+    std::cout
+        << "Verified existing user script execution, duplicate names, no-copy retention, library fallback and source metadata\n";
+    // Real viewer moves must persist before non-copy removal. A copyable item
+    // moved with zero FolderID uses the real system folder and remains in Contents.
+    auto target = network::osd_uuid(info.get("destination"));
+    require(!target.is_zero(), "transfer destination fixture");
+    int serial = 9;
+    std::vector<std::string> transfer_names = {"New Script 1", network::osd_string(user.get("name")),
+                                               network::osd_string(user.get("name")) + " 1",
+                                               network::osd_string(library.get("name"))};
+    for (int phase = 0; phase < 4; ++phase) {
+        auto rows = blocks(current.text);
+        auto source = std::find_if(rows.begin(), rows.end(), [&](const auto &row) {
+            return field(row, "name") == transfer_names[phase] + "|";
+        });
+        require(source != rows.end(), "transfer source row");
+        auto task_key = Uuid(field(*source, "item_id"));
+        auto before = io.snapshot().size();
+        auto request = io.make(phase < 2 ? "MoveTaskInventory" : "RemoveTaskInventory");
+        request.block("InventoryData")["LocalID"] = std::uint64_t(local);
+        request.block("InventoryData")["ItemID"] = task_key;
+        if (phase < 2)
+            request.block("AgentData")["FolderID"] = phase == 0 ? Uuid{} : target;
+        io.send(request);
+        auto matches = [&](const Packet &p) {
+            if (p.spec->name != "UpdateCreateInventoryItem")
+                return false;
+            for (const auto &b : p.blocks.at("InventoryData")) {
+                auto name = std::get<std::vector<std::uint8_t>>(b.at("Name"));
+                if (std::string(name.begin(), std::find(name.begin(), name.end(), 0)) ==
+                    transfer_names[phase])
+                    return true;
+            }
+            return false;
+        };
+        io.wait([&](const auto &packets) {
+            return std::any_of(packets.begin() + before, packets.end(), matches);
+        });
+        auto packets = io.snapshot();
+        auto response = std::find_if(packets.begin() + before, packets.end(), matches);
+        require(response != packets.end() && response->reliable && response->zerocoded,
+                "actual source create/update delivery flags");
+        const auto &b = response->blocks.at("InventoryData").front();
+        auto new_key = std::get<Uuid>(b.at("ItemID"));
+        require(!new_key.is_zero() && new_key != task_key, "transfer allocates avatar item identity");
+        require(std::get<Uuid>(b.at("OwnerID")) == agent && std::get<std::uint64_t>(b.at("CallbackID")) == 0,
+                "transfer owner/callback");
+        network::Value expected =
+            network::Value::object({{"inventoryID", new_key.str()},
+                                    {"avatarID", agent.str()},
+                                    {"assetID", std::get<Uuid>(b.at("AssetID")).str()},
+                                    {"parentFolderID", std::get<Uuid>(b.at("FolderID")).str()},
+                                    {"inventoryName", transfer_names[phase]},
+                                    {"creatorID", field(*source, "creator_id")},
+                                    {"phase", network::Value(phase)}});
+        for (const auto &pair : std::vector<std::pair<std::string, std::string>>{
+                 {"base_mask", "inventoryBasePermissions"},
+                 {"owner_mask", "inventoryCurrentPermissions"},
+                 {"group_mask", "inventoryGroupPermissions"},
+                 {"everyone_mask", "inventoryEveryOnePermissions"},
+                 {"next_owner_mask", "inventoryNextPermissions"},
+                 {"flags", "flags"}}) {
+            auto value = std::stoul(field(*source, pair.first.c_str()), nullptr, 16);
+            expected.set(pair.second, network::Value::long_integer(value));
+        }
+        require(
+            std::get<std::uint64_t>(b.at("Flags")) ==
+                (static_cast<std::uint32_t>(std::stoul(field(*source, "flags"), nullptr, 16)) & 0x2000ffu),
+            "source viewer flags filtering");
+        std::cout << "Task inventory persisted " << network::osd_json(expected, true) << std::endl;
+        std::string result;
+        require(bool(std::getline(std::cin, result)) && result == "OK",
+                "actual persisted avatar inventory transaction");
+        auto next =
+            read_task_inventory_file(object, local, static_cast<std::int16_t>(serial + (phase ? 1 : 0)), io);
+        auto next_rows = blocks(next.text);
+        bool retained = std::any_of(next_rows.begin(), next_rows.end(),
+                                    [&](const auto &row) { return field(row, "item_id") == task_key.str(); });
+        require(retained == (phase == 0), "copy retained / move or delete removed source");
+        require(next_rows.size() == rows.size() - (phase ? 1 : 0), "source task count after transfer");
+        require((next.filename == current.filename) == (phase == 0),
+                "source serial/cache mutation after transfer");
+        if (phase)
+            ++serial;
+        current = std::move(next);
+    }
+    std::cout
+        << "Verified persistent copy/move, no-copy removal, Trash-before-delete and actual inventory notifications\n";
+    // Actual metadata update: wire AssetID does not exist and registry retains the
+    // stored asset. Source masks are constrained before serial/cache mutation.
+    auto rows = blocks(current.text);
+    auto edited = std::find_if(rows.begin(), rows.end(),
+                               [](const auto &row) { return field(row, "name") == "New Script 1|"; });
+    require(edited != rows.end(), "metadata edit source");
+    auto edited_id = Uuid(field(*edited, "item_id"));
+    auto base = static_cast<std::uint32_t>(std::stoul(field(*edited, "base_mask"), nullptr, 16)) | 0x80000u;
+    auto flags = static_cast<std::uint32_t>(std::stoul(field(*edited, "flags"), nullptr, 16));
+    auto update = io.make("UpdateTaskInventory");
+    update.block("UpdateData")["LocalID"] = std::uint64_t(local);
+    auto &fields = update.block("InventoryData");
+    fields["ItemID"] = edited_id;
+    fields["FolderID"] = Uuid::random();
+    fields["CreatorID"] = agent;
+    fields["OwnerID"] = agent;
+    fields["GroupID"] = Uuid::random();
+    fields["BaseMask"] = std::uint64_t(0);
+    fields["OwnerMask"] = std::uint64_t(0x9e000);
+    fields["GroupMask"] = std::uint64_t(0x8000);
+    fields["EveryoneMask"] = std::uint64_t(0x2000);
+    fields["NextOwnerMask"] = std::uint64_t(0x2000);
+    fields["Flags"] = std::uint64_t(0xffffffffu);
+    fields["Type"] = fields["InvType"] = std::int64_t(10);
+    fields["CreationDate"] = std::int64_t(-1);
+    fields["TransactionID"] = Uuid::random();
+    fields["Name"] =
+        std::vector<std::uint8_t>{'E', 'd', 'i', 't', 'e', 'd', ' ', 's', 'c', 'r', 'i', 'p', 't', '!'};
+    fields["Description"] = std::vector<std::uint8_t>{'N', 'e', 'w', 0};
+    auto before = io.snapshot().size();
+    io.send(update);
+    io.wait([&](const auto &packets) {
+        for (auto n = before; n < packets.size(); ++n)
+            if (packets[n].spec->name == "ObjectProperties")
+                for (const auto &b : packets[n].blocks.at("ObjectData"))
+                    if (std::get<Uuid>(b.at("ObjectID")) == object &&
+                        std::get<std::int64_t>(b.at("InventorySerial")) == 13)
+                        return true;
+        return false;
+    });
+    auto changed = read_task_inventory_file(object, local, 13, io);
+    auto changed_rows = blocks(changed.text);
+    auto row = std::find_if(changed_rows.begin(), changed_rows.end(),
+                            [&](const auto &r) { return field(r, "item_id") == edited_id.str(); });
+    require(row != changed_rows.end() && field(*row, "name") == "Edited script|" &&
+                field(*row, "desc") == "New|",
+            "exact incoming field conversion");
+    require(field(*row, "parent_id") == object.str() && field(*row, "group_id") == Uuid{}.str(),
+            "registry repairs parent and group");
+    require(field(*row, "base_mask") == hex(base) && field(*row, "owner_mask") == hex(0x9e000u & base) &&
+                field(*row, "group_mask") == hex(0x8000u & base) &&
+                field(*row, "everyone_mask") == hex(0x2000u & base) &&
+                field(*row, "next_owner_mask") == hex((0x2000u & base) | 0x80000u),
+            "owner mask constraints and forced Move");
+    for (const auto &value :
+         std::vector<std::pair<const char *, std::uint32_t>>{{"everyone_mask", 0x2000},
+                                                             {"group_mask", 0x8000},
+                                                             {"owner_mask", 0x9e000},
+                                                             {"next_owner_mask", 0x2000}}) {
+        if (std::stoul(field(*edited, value.first), nullptr, 16) != value.second)
+            flags |= std::string_view(value.first) == "everyone_mask" ? 0x80000u
+                     : std::string_view(value.first) == "group_mask"  ? 0x40000u
+                     : std::string_view(value.first) == "owner_mask"  ? 0x20000u
+                                                                      : 0x100000u;
+    }
+    require(field(*row, "flags") == hex(flags) && field(*row, "creation_date") == "4294967295" &&
+                field(*row, "asset_id") == field(*edited, "asset_id"),
+            "source overwrite flags / timestamp cast / retained actual asset");
+    require(changed.filename != current.filename, "metadata edit invalidates Contents cache");
+    current = std::move(changed);
+    // The Key=1 request must not update task inventory at all.
+    auto ignored_update = io.make("UpdateTaskInventory");
+    ignored_update.blocks = update.blocks;
+    ignored_update.block("UpdateData")["Key"] = std::uint64_t(1);
+    ignored_update.block("InventoryData")["Name"] = std::vector<std::uint8_t>{'b', 'a', 'd', 0};
+    io.send(ignored_update);
+    auto unchanged = read_task_inventory_file(object, local, 13, io);
+    require(unchanged.filename == current.filename && unchanged.text == current.text,
+            "asset-key update ignored");
+    for (int phase = 0; phase < 2; ++phase) {
+        auto source_id = phase ? library_id : network::osd_uuid(info.get("drop_item"));
+        auto source_name = phase ? network::osd_string(library.get("name")) : "Dropped no-copy script";
+        auto previous = blocks(current.text);
+        auto request = io.make("UpdateTaskInventory");
+        request.block("UpdateData")["LocalID"] = std::uint64_t(local);
+        request.block("InventoryData")["ItemID"] = source_id;
+        request.block("InventoryData")["Name"] = std::vector<std::uint8_t>{'w', 'r', 'o', 'n', 'g', 0};
+        before = io.snapshot().size();
+        io.send(request);
+        auto expected_serial = 14 + phase;
+        io.wait([&](const auto &packets) {
+            for (auto n = before; n < packets.size(); ++n)
+                if (packets[n].spec->name == "ObjectProperties")
+                    for (const auto &b : packets[n].blocks.at("ObjectData"))
+                        if (std::get<Uuid>(b.at("ObjectID")) == object &&
+                            std::get<std::int64_t>(b.at("InventorySerial")) == expected_serial)
+                            return true;
+            return false;
+        });
+        auto next = read_task_inventory_file(object, local, static_cast<std::int16_t>(expected_serial), io);
+        auto added = blocks(next.text);
+        auto item = std::find_if(added.begin(), added.end(),
+                                 [&](const auto &r) { return field(r, "name") == source_name + "|"; });
+        require(added.size() == previous.size() + 1 && item != added.end(),
+                "actual user/library drop ignores wire metadata");
+        auto dropped = Uuid(field(*item, "item_id"));
+        require(dropped != source_id && !dropped.is_zero(), "drop allocates new task item identity");
+        for (auto key : {dropped, edited_id}) {
+            auto running = io.make("GetScriptRunning");
+            running.block("Script")["ObjectID"] = object;
+            running.block("Script")["ItemID"] = key;
+            io.send(running);
+        }
+        std::cout << "Task inventory dropped " << source_id.str() << ' ' << dropped.str() << ' '
+                  << edited_id.str() << ' ' << phase << std::endl;
+        std::string result;
+        require(bool(std::getline(std::cin, result)) && result == "OK",
+                "drop persistence and no automatic script start");
+        current = std::move(next);
+    }
+    std::cout
+        << "Verified real metadata permissions/flags, ignored asset-key updates, no-copy inventory consumption and user/library drops without automatic script execution\n";
+    run_user_inventory_probe(agent, object, edited_id, metadata, io);
+    // Source keeps the engine instance when Type remains LSL but InvType changes.
+    // Part event registration, task inventory and engine lifetime are independent.
+    auto props = [&](std::size_t first, int serial) {
+        io.wait([&](const auto &packets) {
+            for (auto n = first; n < packets.size(); ++n)
+                if (packets[n].spec->name == "ObjectProperties")
+                    for (const auto &b : packets[n].blocks.at("ObjectData"))
+                        if (std::get<Uuid>(b.at("ObjectID")) == object &&
+                            std::get<std::int64_t>(b.at("InventorySerial")) == serial)
+                            return true;
+            return false;
+        });
+
+    };
+    auto running_query = [&](Uuid item) {
+        auto packet = io.make("GetScriptRunning");
+        packet.block("Script")["ObjectID"] = object;
+        packet.block("Script")["ItemID"] = item;
+        io.send(packet);
+        std::cout << "Script running query " << object.str() << ' ' << item.str() << " 1" << std::endl;
+        std::string result;
+        require(bool(std::getline(std::cin, result)) && result == "OK", "retained engine running reply");
+    };
+    auto unique_chat = [&](const std::string &wanted) {
+        std::set<std::uint32_t> result;
+        for (const auto &p : io.snapshot())
+            if (message(p, object, wanted))
+                result.insert(p.sequence);
+        return result;
+    };
+    auto touch = [&] {
+        auto packet = io.make("ObjectGrab");
+        packet.block("ObjectData")["LocalID"] = std::uint64_t(local);
+        io.send(packet);
+    };
+    auto wait_chat = [&](const std::string &wanted, const std::set<std::uint32_t> &previous) {
+        io.wait([&](const auto &packets) {
+            for (const auto &p : packets)
+                if (message(p, object, wanted) && !previous.contains(p.sequence))
+                    return true;
+            return false;
+        });
+
+    };
+    auto touch_flag = [&](std::size_t first, bool enabled) {
+        io.wait([&](const auto &packets) {
+            for (auto n = first; n < packets.size(); ++n)
+                if (packets[n].spec->name == "ObjectUpdate")
+                    for (const auto &b : packets[n].blocks.at("ObjectData"))
+                        if (std::get<Uuid>(b.at("FullID")) == object &&
+                            ((std::get<std::uint64_t>(b.at("UpdateFlags")) & 0x80u) != 0) == enabled)
+                            return true;
+            return false;
+        });
+
+    };
+    auto retype = io.make("UpdateTaskInventory");
+    retype.block("UpdateData")["LocalID"] = std::uint64_t(local);
+    auto &meta = retype.block("InventoryData");
+    meta["ItemID"] = edited_id;
+    meta["OwnerID"] = meta["CreatorID"] = agent;
+    meta["BaseMask"] = std::uint64_t(base);
+    meta["OwnerMask"] = std::uint64_t(0x9e000u & base);
+    meta["GroupMask"] = std::uint64_t(0x8000u & base);
+    meta["EveryoneMask"] = std::uint64_t(0x2000u & base);
+    meta["NextOwnerMask"] = std::uint64_t((0x2000u & base) | 0x80000u);
+    meta["Type"] = std::int64_t(10);
+    meta["InvType"] = std::int64_t(7);
+    meta["Name"] =
+        std::vector<std::uint8_t>{'E', 'd', 'i', 't', 'e', 'd', ' ', 's', 'c', 'r', 'i', 'p', 't', 0};
+    meta["CreationDate"] = std::int64_t(-1);
+    before = io.snapshot().size();
+    io.send(retype);
+    props(before, 16);
+    current = read_task_inventory_file(object, local, 16, io);
+    require(current.text.find("item_id\t" + edited_id.str()) != std::string::npos,
+            "retyped task remains stored");
+    auto previous = unique_chat("Touched.");
+    touch();
+    wait_chat("Touched.", previous);
+    auto remove = io.make("RemoveTaskInventory");
+    remove.block("InventoryData")["LocalID"] = std::uint64_t(local);
+    remove.block("InventoryData")["ItemID"] = edited_id;
+    before = io.snapshot().size();
+    io.send(remove);
+    props(before, 17);
+    touch_flag(before, false);
+    auto retained_file = read_task_inventory_file(object, local, 17, io);
+    require(retained_file.text.find(edited_id.str()) == std::string::npos, "retyped inventory item removed");
+    running_query(edited_id);
+    auto trash_reply = [&](const auto &packets) -> std::optional<network::lludp::Block> {
+        for (auto n = before; n < packets.size(); ++n)
+            if (packets[n].spec->name == "UpdateCreateInventoryItem")
+                for (const auto &b : packets[n].blocks.at("InventoryData")) {
+                    auto name = std::get<std::vector<std::uint8_t>>(b.at("Name"));
+                    if (std::string(name.begin(), std::find(name.begin(), name.end(), 0)) ==
+                            "Edited script" &&
+                        std::get<std::int64_t>(b.at("InvType")) == 7)
+                        return b;
+                }
+        return {};
+    };
+    io.wait([&](const auto &packets) { return trash_reply(packets).has_value(); });
+    auto trash_item = *trash_reply(io.snapshot());
+    std::cout << "Retained script trash " << object.str() << ' ' << edited_id.str() << ' '
+              << std::get<Uuid>(trash_item.at("ItemID")).str() << ' '
+              << std::get<Uuid>(trash_item.at("AssetID")).str() << std::endl;
+    std::string checked;
+    require(bool(std::getline(std::cin, checked)) && checked == "OK", "actual retained-script Trash copy");
+    previous = unique_chat("Touched.");
+    touch();
+    running_query(edited_id);
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    require(unique_chat("Touched.") == previous, "unregistered touch must not route to retained engine");
+    auto reset = io.make("ScriptReset");
+    reset.block("Script")["ObjectID"] = object;
+    reset.block("Script")["ItemID"] = edited_id;
+    previous = unique_chat("I am Alive!");
+    before = io.snapshot().size();
+    io.send(reset);
+    wait_chat("I am Alive!", previous);
+    touch_flag(before, true);
+    running_query(edited_id);
+    auto reset_file = read_task_inventory_file(object, local, 17, io);
+    require(reset_file.filename == retained_file.filename && reset_file.text == retained_file.text,
+            "reset re-registers events without restoring inventory or mutating serial/cache");
+    previous = unique_chat("Touched.");
+    touch();
+    wait_chat("Touched.", previous);
+    auto task_rows = blocks(reset_file.text);
+    auto primary = std::find_if(task_rows.begin(), task_rows.end(),
+                                [](const auto &row) { return field(row, "name") == "New Script|"; });
+    require(primary != task_rows.end(), "ordinary script still present");
+    auto primary_id = Uuid(field(*primary, "item_id"));
+    remove = io.make("RemoveTaskInventory");
+    remove.block("InventoryData")["LocalID"] = std::uint64_t(local);
+    remove.block("InventoryData")["ItemID"] = primary_id;
+    before = io.snapshot().size();
+    io.send(remove);
+    props(before, 18);
+    for (auto key : {primary_id, edited_id}) {
+        auto query = io.make("GetScriptRunning");
+        query.block("Script")["ObjectID"] = object;
+        query.block("Script")["ItemID"] = key;
+        io.send(query);
+    }
+    std::cout << "Script lifecycle missing " << object.str() << ' ' << primary_id.str() << ' '
+              << edited_id.str() << std::endl;
+    require(bool(std::getline(std::cin, checked)) && checked == "OK",
+            "ordinary script terminated while retained script still runs");
+    std::cout
+        << "Verified source task/event/engine lifetime separation, removed-script running state, touch gating, reset re-registration and ordinary-script termination\n";
+    run_generic_asset_probe(agent, metadata, io);
 }
 }

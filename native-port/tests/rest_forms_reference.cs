@@ -3,10 +3,9 @@ namespace log4net {public interface ILog{void Debug(object s);void Info(object s
 namespace OpenSim.Framework.ServiceAuth {public interface IServiceAuth{void AddAuthorization(HttpRequestHeaders headers);}}
 namespace OpenSim.Framework {
  public static class Util{public static int EnvironmentTickCount()=>Environment.TickCount;public static int EnvironmentTickCountSubtract(int previous)=>unchecked(Environment.TickCount-previous);public static byte[] UTF8NBGetbytes(string value)=>new UTF8Encoding(false).GetBytes(value);}
- public static class WebUtil{
+ public static partial class WebUtil{
   public static int RequestNumber=0,DebugLevel=0,LongCallTime=int.MaxValue;
   public static HttpClient GetNewGlobalHttpClient(int timeout)=>new HttpClient(new SocketsHttpHandler{AllowAutoRedirect=true,MaxAutomaticRedirections=10,AutomaticDecompression=System.Net.DecompressionMethods.None,UseCookies=false,ConnectTimeout=TimeSpan.FromSeconds(120)}){Timeout=TimeSpan.FromSeconds(30)};
-  public static int EstimatedReceiveTimeout(HttpContentHeaders headers,bool keepalive)=>10000;
   public static void LogOutgoingDetail(string a,int b,string c){}public static void LogResponseDetail(int a,string b){}
  }
 }

@@ -9,14 +9,18 @@ namespace opensim::services {
 // routes; quiesce HTTP/poll dispatch before stop and remove Caps before releasing
 // provider dependencies. Non-localhost URLs use source external registration.
 class RegionInventoryDescendentsRuntime {
-public:
- RegionInventoryDescendentsRuntime(const server::IniConfig&,std::shared_ptr<SceneCapabilityEvents>,InventoryDescendentsBackend,std::function<bool()> shutting_down={});
- ~RegionInventoryDescendentsRuntime();
- RegionInventoryDescendentsRuntime(const RegionInventoryDescendentsRuntime&)=delete;
- RegionInventoryDescendentsRuntime& operator=(const RegionInventoryDescendentsRuntime&)=delete;
- void stop();
- std::uint64_t processed_requests()const;
- std::size_t queued_requests()const;
-private:struct State;std::shared_ptr<State> state_;
+  public:
+    RegionInventoryDescendentsRuntime(const server::IniConfig&, std::shared_ptr<SceneCapabilityEvents>,
+                                      InventoryDescendentsBackend, std::function<bool()> shutting_down = {});
+    ~RegionInventoryDescendentsRuntime();
+    RegionInventoryDescendentsRuntime(const RegionInventoryDescendentsRuntime&) = delete;
+    RegionInventoryDescendentsRuntime& operator=(const RegionInventoryDescendentsRuntime&) = delete;
+    void stop();
+    std::uint64_t processed_requests() const;
+    std::size_t queued_requests() const;
+
+  private:
+    struct State;
+    std::shared_ptr<State> state_;
 };
 }

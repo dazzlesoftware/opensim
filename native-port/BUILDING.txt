@@ -35,7 +35,7 @@ generator. No .NET runtime or SDK is used by opensim-native or the native tests.
 RUN THE SERVER
 
 Copy native-port/native-server.ini.example to a new native-server.ini in your
-chosen data directory. Paths in the config resolve relative to that file.
+chosen data directory. Native database paths resolve relative to that file.
 From the repository root, for a Visual Studio Release build:
 
     native-port/build/Release/opensim-native.exe --config PATH/native-server.ini --init-db
@@ -56,9 +56,17 @@ ConnectionString = "URI=file:NAME.db;Version=3" settings are also supported.
 The bundled provider treats a comma as a filename character: the older spelling
 URI=file:NAME.db,version=3 selects a file literally named NAME.db,version=3.
 Quote the complete INI value to retain semicolons through the scoped INI reader.
-Config includes, wildcard discovery, and the complete Nini loader are unported;
-Include-* settings fail explicitly. Do not substitute this config for a complete
-OpenSim.ini deployment. The supplied native INI is a scoped startup config.
+Native executable startup now uses the original local ConfigurationLoader pipeline:
+ordered and wildcard Include-* files, constant-main-directory include resolution,
+master files, override directories, requested environment keys and exact expansion
+stages. --inimaster FILE selects a master (native profile default: none).
+--inidirectory DIR selects overrides (original default: config); use an absolute
+directory when the process working directory differs from the main config directory,
+as the original loader tests the combined path but enumerates the raw directory.
+--port and --host merge before typed startup validation. File-backed Nini booleans
+use true/false; command-line aliases are not copied into file-source owners.
+Remote XML configuration and complete simulator hosting remain incomplete. The
+single-file IniConfig::load library API remains separate from load_startup.
 
 The default bind address is IPv4 loopback, port 9000. --host accepts IPv4/IPv6
 addresses. --port 0 chooses an unused port and prints the actual listening URI.
@@ -100,10 +108,32 @@ an installed vcpkg instance, use a fresh build directory:
 Replace VCPKG_ROOT with the actual vcpkg directory. Selecting that toolchain
 explicitly opts into its manifest dependency download/build workflow.
 
+Add -DVCPKG_MANIFEST_FEATURES=offline-im-sql to that configure command to
+install the PostgreSQL and MariaDB clients for offline messaging. CMake can
+also find these clients in system development packages. Select
+OpenSim.Data.PGSQL.dll or OpenSim.Data.MySQL.dll in [Messaging] StorageProvider
+and supply the database's ConnectionString in the same section. For a MariaDB
+server intentionally configured for plaintext, use the legacy SSL Mode=Disable
+connection-string option.
+
 To require HTTPS support at configure time:
     cmake -S native-port -B native-port/build -DOPENSIM_REQUIRE_TLS=ON
 
 Set NativeServer.TlsCertificate and TlsPrivateKey to PEM files to use HTTPS.
+For simultaneous region HTTP and script HTTPS, set Network.https_listener
+and Network.https_port and provide the same PEM settings. The main region
+listener serves HTTP, and the additional listener serves secure script URLs.
+The additional listener also accepts a PKCS#12 file through Network.cert_path
+and its password through Network.cert_pass. A relative path is resolved from
+the configuration directory.
+Set Network.https_external to true when a reverse proxy terminates HTTPS.
+The additional listener then accepts plain HTTP on Network.https_port without
+PEM settings, while scripts still receive HTTPS URLs for the proxy.
+For a primary region HTTPS listener, set Network.http_listener_ssl,
+Network.http_listener_sslport and Network.http_listener_cn, and configure the
+PKCS#12 file with Network.http_listener_cert_path and http_listener_cert_pass.
+The plain script listener remains on Network.http_listener_port. Configure
+Network.https_listener separately for secure script URLs.
 Requesting TLS without OpenSSL fails explicitly, with no plaintext fallback.
 The test certificate and private key in tests/fixtures are PUBLIC TEST MATERIAL,
 used only by the HTTPS smoke test. Configure your own certificates for a server.
@@ -2402,6 +2432,35 @@ login URI http://127.0.0.1:9000/. HTTP and UDP may share port9000. For a remote
 viewer, set NativeRegion.BindAddress and ExternalHost appropriately. This is an
 experimental connected profile, not a completed simulator release.
 
+For local-grid teleport between native region processes, enable
+NativeServer.EnableSimulationEndpoint on each destination and point
+PresenceService.ConnectionString at the same SQLite file. The regions also
+need a shared grid registry and accounts. The region_teleport_timeout_network
+CTest exercises viewer handoff, arrival, source cleanup and retry after timeout.
+
+NativeServer.TravelDatabase enables SQLite-backed HomeAgent verification on
+the main HTTP listener. Configure Startup.HomeURI to reach that listener from
+the destination grid. Startup.GatekeeperURI identifies the public Gatekeeper
+and supplies the hostname for the client-IP verification fallback. An outbound
+teleport for a local avatar uses the native travel store when no external
+UserAgentService connector is configured. A native destination requires
+EnableForeignAgentAdmission for circuit creation and EnableSimulationEndpoint
+for the subsequent agent update.
+NativeServer.EnableHypergridUuidOfferLookup enables validation of pending
+Hypergrid friendship offers through the UUID lookup. The default uses the
+managed server's string lookup, which skips pending records in FriendsService.
+For a mixed-grid friendship check, start an isolated managed Robust instance
+with SQLite FriendsService and travel storage. Load UserAgentServerConnector
+before HGFriendsServerConnector in ServiceList so the friendship handler uses
+a travel-data instance whose column list was not initialized by startup cleanup.
+Set OPENSIM_TEST_MANAGED_FRIENDS_URI to its HTTP service base URL and
+OPENSIM_TEST_MANAGED_FRIENDS_DB to its disposable SQLite database, then run
+foreign_agent_network. The test seeds friendship and travel rows in that
+database and checks the resulting records and managed deletion response.
+The main listener also accepts POST /homeagent/<agent-id>/ for relaunches
+that present the current travel token. Set UserAgentService.LoginServerIP to
+the login server's transport peer address to enable its first-launch requests.
+
 EnableLocalRegion binds the actual login orchestrator/agent factory/completion
 to a native World, source SceneAdmission policy flow, registered UDP circuits,
 seed/EventQueue capabilities, handshake, movement-completion messages, terrain
@@ -2749,3 +2808,623 @@ FLOTSAM MODULE LIFECYCLE AND REGION DEFAULT CACHE POPULATION
 Native FlotsamCacheModule now ports unchanged Name/ReplaceableInterface/PostInitialise/Close/AddRegion/RemoveRegion/RegionLoaded methods.29268 source traces compare two module instances sharing the writer/default IDs, duplicate/reference-based region registration/removal, disabled empty-module close, retained and null asset-service selection, null scenes, timer gates and partial construction/start/stop/close failures, shared worker creation/disposal faults, first-region UUID equality, repeated default loading, loader/cache failures and post-cache ID mutation. Actual AssetBase/SDK and the installed .NET8 timer constructor validate source bounds; native tick-to-millisecond conversion includes the original TimeSpan clamp. Native one-shot timer, callback exception handling and Close/restart are exercised, and actual shared worker/NRBF file default loading and restart/shutdown are tested. Dynamic file backends resolve the shared writer at every availability/enqueue step and retain shared state weakly to avoid executor ownership cycles. RegionAssetRuntime now registers/unregisters its supported memory cache through this lifecycle, passes the actual region UUID, preserves default-loader whitespace selection and uses the real FilesystemAssetLoader to cache defaults at RegionLoaded even when AssetLoaderEnabled=false disables SQL service default loading. Real configured tests require cache bytes with no SQL row. A retained previously verified server reproduces missing default cache population over HTTP after the SQL row is removed before first retrieval; fixed live fixtures require the cached bytes and continued SQL absence. A retained default-loader callback now owns the cache data and ID set after region removal/close; forced original GC and native weak-owner observations verify late caching/publication and release when the callback is discarded. Before/after executables retain the deterministic failed ownership guard without invoking a dangling callback. Full initializer/config/console, protected scene gathering/timed cleanup, default-asset console operations, file-backed production hosting, all module-manager/concurrent/GC schedules and Linux/macOS execution remain pending. The default file-backed profile still fails explicitly and application parity remains false.
 
 Module/default-cache verification:303 full MSVC tests and34 focused tests each under ClangCL, MSVC AddressSanitizer and OpenSSL/system-zlib pass against final code. Each profile executes29268 unchanged original lifecycle traces, installed BCL timer construction, original/native retained-callback ownership checks, real timer/shared writer/NRBF/default XML cache integration, and867 actual login/seed/HTTP/UDP/SQLite/baked/inventory/script/physics checks in the expanded bake fixture. Retained before/after artifacts prove the TimeSpan millisecond clamp, default-loader callback ownership and missing region-loaded cache population over HTTP after SQL removal. All execution is Windows x64; the focused live fixtures use HTTP. Production file-backed hosting and complete initializer/console/protected scanning/timed cleanup/default-asset commands, all module-manager/GC/concurrent schedules and Linux/macOS execution remain pending. Report:build/flotsam-module-verification-results.json.
+
+FLOTSAM PROTECTED FILE CLEANUP KERNEL
+
+Native FlotsamCacheCleaner ports the original cleanup elapsed callback, CleanAll and CleanTree control flow. 20992 unchanged original-method comparisons cover protected/default IDs, strict access-time boundaries, cancellation, cooldown arithmetic, nested-directory retention, swallowed deletion failures, partial-state exceptions, weak-only reset and timer rearming. Seven actual Windows access-time comparisons, three original/native filesystem cleanup profiles and two recursive-deletion profiles cover missing-file sentinel conversion, Unicode paths, root-file retention and read-only deletion failures with continued sibling processing. Windows file deletion now uses source-compatible native deletion APIs; sentinel local-time conversion handles dates preceding the FILETIME epoch. Cleanup requires explicit scene-asset gathering and heap providers; it is not wired into production file-cache hosting. Shared cleanup flags are atomic and default-ID mutation/inspection is synchronized. Complete scene asset graph gathering, production heap/cleanup integration, initializer/config/console/default commands, filesystem races and Linux/macOS execution remain pending. Application parity remains false and the default file-backed server profile still fails explicitly.
+
+Cleanup verification:305 full MSVC tests and36 focused tests each under ClangCL and OpenSSL/system-zlib pass. The ASan focused run passed35/36 with the live baked-texture test timing out at120 seconds; its isolated rerun passed in104 seconds with the unchanged timeout/assertions. All36 distinct ASan tests have passing final observations; the full focused run was not repeated. Each profile verifies20992 original cleanup traces,7 actual timestamp cases,3 actual filesystem cleanup profiles and2 recursive deletion profiles. Retained before/after proofs cover missing-file sentinel local time and read-only deletion behavior. All execution is Windows x64 and live fixtures use HTTP. Complete scene-asset gathering, production file-cache hosting and Linux/macOS execution remain pending. Report:build/flotsam-cleanup-verification-results.json.
+
+UUID GATHERER AND NATIVE TEXT-ASSET REFERENCE INSPECTORS
+
+Native UuidGatherer queue/type dispatch and embedded, wearable, gesture, legacy-material and notecard inspectors are implemented. 148280 unchanged original-method observations use actual SDK osUTF8/osUTF8Slice/UUID, original SLUtil notecard/shadow-ID and Util body scanner, controlled service/asset DTO/format callbacks and shared collector/set state. Included are7626 format inputs connecting the unchanged format methods to original dispatch/failure handling, and3756 direct BCL comparisons validate native invariant text search. Decoded-string substring bounds, culture-aware note fields and exact failure messages are preserved. They cover all167 skipped IDs,2430 embedded byte/UTF16 inputs,6414 format inputs, recursive/cyclic work, type hints, shared instances, exception/log ordering, suppression persistence, failure uncertainty, Int32 wrap and source byte-slice line/integer/UUID quirks. Actual native Flotsam asset-service integration traverses scripts, wearables, gestures, notecards and legacy materials to typed leaf references without retrieving textures/sounds/animations, retaining source self-reference uncertainty. Native service binding provides these format inspectors and requires an explicit serialized-object inspector; missing inspectors cannot silently discard references. Serialized-object/shape/particle/extra-parameter/material-override inspection, complete live scene object/terrain/environment/parcel/avatar traversal, HG gathering and production cache cleanup integration remain pending. Custom managed collection/GC/concurrent/culture/invalid-input/SDK unsafe-read semantics and Linux/macOS execution remain unverified. This is partial source parity, not full application parity.
+
+Gatherer verification:307 full MSVC tests and39 focused tests each under ClangCL, MSVC AddressSanitizer and OpenSSL/system-zlib pass against the final corrected implementation. Each profile verifies148280 original gatherer/format/dispatch observations, including167 skipped IDs,2430 embedded scanner inputs,6414 format inputs,7626 inputs connected through original dispatch/failure handling and3756 actual BCL invariant-search comparisons. Existing culture-prefix regressions and867 live login/seed/HTTP/UDP/SQLite/baked/inventory/script/physics checks also pass per profile. Retained source/before/after artifacts prove escaped XML-slice, decoded substring, culture-aware field and logged failure corrections. All execution is Windows x64; live fixtures use HTTP. Serialized-object and complete live scene/HG gathering, production file-cache hosting and Linux/macOS validation remain pending. Report:build/uuid-gatherer-verification-results.json.
+
+SERIALIZED OBJECT ASSET REFERENCE INSPECTION
+
+Native serialized-object UuidGatherer inspection covers animation IDs, collision/looping sounds, sculpt/mesh IDs, projector textures, PBR material entries, particle textures, complete decoded texture entries/material IDs, nested task inventory and material-override text. 180534 original-method observations include2714 object inputs, source extra-parameter readers and actual bundled SDK texture/particle constructors;10340 inputs run formats through original dispatch/failure handling. Native default asset-service binding now supplies serialized-object inspection. A real native cache/service integration follows two cyclic objects plus scripts/wearables/gestures/notecards/legacy materials to18 referenced assets with7 service fetches and no leaf texture/sound/animation fetches. Source prefix/self-closing behavior, cursor quirks, invalid binary continuation, failed-ID filtering, partial animation publication and strict byte thresholds are preserved in compared cases. A malformed animation fixture provably makes the SDK read outside its array; its observed mismatch is retained separately and native bounds that read. Full live scene traversal/HG gathering, arbitrary SDK unsafe/corrupt/Unicode/GC/concurrent/platform behavior and production file-cache cleanup hosting remain pending; application parity remains false.
+
+Serialized-object verification:307 full MSVC tests and39 focused tests each under ClangCL, MSVC AddressSanitizer and OpenSSL/system-zlib pass against the final code. Each profile executes180534 original gatherer/format/dispatch observations, including2714 serialized-object inputs and10340 format inputs connected through original dispatch. Another80 original/native protection/filter cases (560 command/state observations) pass across all four profiles for failed/uncertain/default-skip particle, projector, PBR material, animation and texture references. Native service/cache integration traverses18 referenced assets with7 fetches through two cyclic serialized objects and text assets. Existing867 live login/seed/HTTP/UDP/SQLite/baked/inventory/script/physics checks pass per profile. The observed malformed SDK out-of-array animation read is retained separately; native bounded partial publication is asserted and that unsafe case is not claimed equivalent. Windows x64 only; live fixtures use HTTP. Full live scene traversal, HG gathering, file-cache production hosting and Linux/macOS execution remain pending. Report:build/uuid-object-verification-results.json.
+
+LIVE OBJECT AND SCENE ASSET REFERENCE TRAVERSAL
+
+Native live UuidGatherer AddForInspection(SceneObjectGroup) and RecordMaterialsUuids plus Flotsam GatherSceneAssets orchestration are implemented behind required scene-provider interfaces. 193052 unchanged original-method observations include1610 live-object and1052 scene-scan inputs: side-count face bounds and Int32 wrap, repeated live getters, projector/sculpt/material/override references, collision/looping sounds, corrupt-particle warning/continuation, task inventory, animations, DynAttrs normal/specular maps and their nested cast/null/catch behavior, temporary disposal, terrain/PBR/image IDs, region/parcel environments, root-avatar baked faces, cancellation during part inspection and service retrieval, final queue draining, status-callback order and failure/uncertainty clearing. Caller-owned collected assets now retain original dictionary entry-slot/LIFO reuse order, including direct writes by environment providers. A retained before/after binary proves null override re-reads must convert to an empty span rather than stop the part scan. Native cache/service, live scene-provider graph and actual filesystem cleanup integration protects a referenced asset while deleting an unreferenced stale file. Scene-provider models, environment gathering, list enumeration, geometry side counts and status stamping are explicit dependencies; complete production world/module adapters, actual status-file I/O/touch/console/heap hosting, HG gathering, all concurrent/CLR/SDK unsafe/platform behavior remain pending. File-backed production startup remains explicitly unavailable and application parity remains false.
+
+Live-scene verification:307 full MSVC tests and39 focused tests each under ClangCL, MSVC AddressSanitizer and OpenSSL/system-zlib pass against final code. Each profile executes193052 unchanged original-method observations, including1610 live-object and1052 scene-scan inputs with original bake-index constants. Native integration connects scene-provider traversal, the actual cache/service/serialized-asset inspectors and actual filesystem cleanup, retaining a referenced file and deleting an unreferenced stale file. Retained source/before/after artifacts prove nullable override span conversion and preserved queue order. Original dictionary entry-slot/LIFO order is retained for UUID asset collectors. Existing867 live HTTP login/seed/UDP/SQLite/baked/inventory/script/physics checks pass per profile. All execution is Windows x64; WSL is not installed and Docker was not found locally. Full production scene/geometry/environment/enumerator/status providers, file-cache hosting, HG gathering and Linux/macOS execution remain pending. Report:build/live-scene-gather-verification-results.json.
+
+FLOTSAM STATUS, TOUCH AND CACHE COUNT MAINTENANCE
+
+Native FlotsamCacheMaintenance ports original GetFileCacheCount, StampRegionStatusFile and TouchAllSceneAssets.5376 unchanged-method comparisons cover recursive partial failure, unchecked count arithmetic, sleep thresholds, status path/error/clock/write ordering, missing/cached access, optional refetch, cancellation and mutation-safe ordered dictionary enumeration. Eight actual Windows filesystem profiles compare status bytes/no BOM, preserved existing content, UTC timestamp instants, cache counts and exact warnings for normal, missing-parent, status-directory, read-only, Unicode, wide-tree and sharing-locked paths. A real native SQLite StoredAssetService, LocalAssetConnector, composed Flotsam cache, shared access tracker, queued ObjectJobEngine and NRBF file integration proves touch(false) leaves an absent asset untouched, touch(true) retrieves and writes it, and subsequent touch does not fetch after deleting the SQL row. Native status creation/stamping and recursive counting run on those real files. Before/after artifacts retain missing-path/access warning corrections. The factory uses UTC instants for the DateTime.Now-to-filesystem boundary. Full console/configuration/production world/file-cache hosting, all CLR/culture/time/filesystem race behavior and Linux/macOS execution remain pending; application parity remains false.
+
+
+Cache-maintenance verification:309 full MSVC tests and41 focused tests each under ClangCL, MSVC AddressSanitizer and OpenSSL/system-zlib pass. Each profile compares5376 original-method cases plus8 actual Windows filesystem cases;867 live HTTP network checks remain passing. Native SQLite/connector/queued NRBF cache integration verifies missing versus cached touch/refetch behavior. Retained before/after source and native artifacts prove original path-bearing status warnings. Windows x64 only; production file-cache hosting, console/config/heap/world adapters and Linux/macOS execution remain pending. Report:build/cache-maintenance-verification-results.json.
+
+Console ClearFileCache now deletes cache subdirectories and root files, including region status markers, while preserving the root directory. Per-entry deletion failures warn and continue; enumeration failures and warning callback failures escape as in the original.513 additional unchanged-method cases bring maintenance comparisons to5889. Two affected tests pass under MSVC, ClangCL, AddressSanitizer and OpenSSL/system-zlib after this change; the309 full/41 alternate suites above ran before this subsequent clear-method change. Actual native SQLite/connector/queued NRBF integration now verifies root and tier deletion. Full console command dispatch, configuration, heap/world providers, production file-cache hosting and Linux/macOS execution remain pending. Report:build/cache-clear-verification-results.json.
+
+DEFAULT-ASSET CONSOLE COMMANDS
+
+FlotsamCacheModule now implements original HandleLoadDefaultAssets and HandleDeleteDefaultAssets. They preserve loader whitespace/null handling, cache replacement/expiration order, duplicate counts, ID mutation, partial enumeration failure, default-ID publication only after success, logging failure boundaries and retained callback lifetime. RegionAssetRuntime exposes both operations and opensim-native --console accepts fcache cachedefaultassets and fcache deletedefaultassets. These load/delete defaults in the selected cache without writing to asset storage. Other fcache commands still need console dispatch.
+
+Verification:309 full MSVC tests pass; three affected tests pass each under ClangCL, MSVC AddressSanitizer and OpenSSL/system-zlib.39540 original-method command/state observations include10272 new default-command cases. Actual configured cache-only delete/reload tests pass. Each profile completes870 live HTTP/UDP/login/seed/SQLite/inventory/script/physics checks, including actual stdin commands,404 after removing a cache-only default, reload of changed source bytes, clearing the intervening negative entry and no SQLite resurrection. Windows x64 only; Linux/macOS execution and full production file-cache/console/world integration remain pending. Report:build/cache-default-commands-verification-results.json.
+
+CACHE REPORTS, CONSOLE PARSING, HG GATHERING AND INITIALIZER CORE
+
+Native cache status/hit reports preserve original invariant-culture formatting, zero-request NaN/Infinity behavior, midpoint rounding, live weak/memory/negative counts and64-bit counters. Disk-hit/overlap statistics are per-store while pending write exclusion remains shared. Memory-profile --console supports fcache status, fcache clear [memory] [file], fcache clearnegatives and the prior default-asset commands. Console container clear preserves original expiration epochs and weak dictionary; full data API Clear recreates epochs. Original UTF16 Parser.Parse now handles quotes/options/Unicode whitespace and quoted quit/shutdown in the executable. HGUuidGatherer implements direct foreign fetch versus queued whitespace fallback, URL snapshots/rereads, store-local=true and dynamic debug/error semantics, with actual SQLite/native-inspector integration. Full Flotsam Initialise core preserves shared static and per-instance state behind required native configuration/path/time-span/log/registration providers.
+
+Verification:315 full MSVC tests and15 focused tests each under ClangCL, MSVC AddressSanitizer and OpenSSL/system-zlib pass. Each profile executes320178 original-method observations:196344 parser,11072 HG,15045 initializer,10536 cache state,12374 rate-format,4160 file-store,39540 lifecycle/default-command and31107 composed-cache cases.874 live HTTP checks pass per profile, including real stdin status/negative/quoted-memory/default controls and quoted shutdown. Windows x64 only. Complete configuration provider/static-setting binding, file-cache/world/environment/heap hosting, remaining console commands and Hypergrid transports still need implementation; file-enabled startup remains explicitly rejected. Report:build/cache-console-hg-config-verification-results.json.
+
+NATIVE CACHE PROVIDERS AND COMPLETE CONSOLE ORCHESTRATION
+
+Native TimeSpan.FromHours/TotalHours and Windows Path.GetFullPath providers now bind the Flotsam configuration core through a native backend factory that still requires real host-owned cache factories/log/registration. A native adapter implements bundled Nini typed getters over resolved case-sensitive INI values with invariant startup culture and application On/Off/Yes/No aliases. The runnable memory profile now uses it, accepts On/Off and rejects numeric bool1. Complete original HandleConsoleCommand orchestration is implemented behind required date/culture/task/file/gather/cleanup/output providers, preserving all commands, state flags, async/failure ordering, typed errors and retained callbacks. Current argument copying and reentrant timer ownership are source-backed regressions with retained before/after binaries.
+
+Verification:323 full MSVC tests and16 focused tests each under ClangCL, MSVC AddressSanitizer and OpenSSL/system-zlib pass. Each profile executes364802 source/BCL observations:95221 time-span,2978 path with actual8.3 expansion,137712 Nini,50988 console,15045 initializer,39540 lifecycle/default commands,10536 cache state,12374 report rates and408 configured-runtime cases.875 live HTTP checks pass per profile using actual Off/On cache settings. All execution Windows x64. Complete controller/container/registration/static config/date/world/environment/heap/file-cache hosting is pending; file-enabled startup stays explicitly rejected. Source audit identified known Unix empty-path-message, malformed-UTF8 cwd and cwd errno-classification gaps; corrections and Linux/macOS execution remain pending. Report:build/cache-native-providers-verification-results.json.
+
+INITIALIZER-OWNED EXPIRATION CONTAINERS AND NATIVE STATUS FILES
+
+Actual typed key/asset containers now back the cache, preserving constructor epochs, check intervals, timer state, disposal/value retention and armed old-state lifetime. Native initializer factories allocate those actual objects; the runnable memory profile adopts them without late clock reads, resolves live settings/slots and publishes data-Clear replacements. Console clear keeps objects/epochs, data clear reconstructs them, and manual hosts pump retired states. Invalid file-cache fields are validated after original negative allocation/enabled logging. Native status-file providers preserve Windows enumeration order/path spelling, device-volume roots, Win32 errors, local timestamps and ambiguous-DST bits. Unix path source-audit defects are corrected with pinned provider/algorithm comparisons; actual Linux/macOS execution remains pending.
+
+Verification:327 full MSVC tests and39 focused tests each under ClangCL/OpenSSL/system-zlib pass. ASan passed38/39 in the broad run with a120-second live-network timeout; an unchanged isolated retry passed77.21seconds under the same bound. All875 live checks then pass per profile.716545 source/BCL input cases execute per profile across the selected cache/gatherer/capability surfaces, including37959 actual expiration-class cases,109 actual status-file API cases,3002 Windows paths/metadata plus26884 simulated Unix cases. Real source/native timer lifetime checks return1:1:1:1. Retained before/after/source proofs demonstrate device-root and HRESULT corrections. Full file/console/date/world/heap hosting and generic APIs remain pending; file-backed production startup is rejected. Proven UTF16/UTF32 BOM config and missing-Unicode-config diagnostic defects are the next configuration work. Report:build/cache-owned-containers-verification-results.json.
+
+
+NATIVE CONFIGURATION BYTE DECODING AND NINI READER
+
+Configuration startup now reads binary Unicode paths and detects UTF8, UTF16LE/BE and UTF32LE/BE BOMs once, preserving literal CtrlZ and decoded text. Missing Unicode configuration filenames remain UTF8 in diagnostics. The native Nini reader consumes raw UTF16 and retains the bundled library's quotes, comments, continuation switches, whitespace/EOL quirks, reader state, dynamic exception positions and delimiter-array identity. IniConfig loading now keeps the first duplicate key and replaces an earlier duplicate section, retaining leading/empty section names. Includes, general expansion/merge/events and ordered document/save APIs remain pending.
+
+Isolated evidence:71735 actual BCL decoding/line cases,80864 actual bundled Nini reader state/I/O cases, and six encoding profiles plus missing-file startup. Native invariant status-date formatting has370761 actual DateTime.ToString comparisons; dynamic culture/general-format providers are required. Combined four-profile verification is pending. Actual Linux/macOS execution and complete application parity remain unverified.
+
+
+INVARIANT DATE PARSING AND PRIMITIVE GEOMETRY CORES
+
+Native invariant DateTime.TryParse/stylesNone now implements source token construction, Hebrew/CJK handling, numeric/ISO terminals, fraction rounding, missing-field defaults and timezone adjustment.220418 actual BCL comparisons across both globalization modes and199 token slots per mode pass in isolation. Clock, calendar cutoff, local/UTC offsets, ambiguous daylight and leap support are required providers. Complete native OS context hosting remains pending; the production executable has no CLR fallback.
+
+Provider-free GetPrimType/GetNumberOfSides now preserves exposed shape getter values, exact mesh flag comparison, all profile/path classifications, cuts/twists/hollow behavior and negative face counts.2991037 unchanged original-method/real SDK observations pass in Debug and Release. PrimitiveBaseShape setter/extra-parameter decoding, null/mutable/concurrent shape providers, mesher topology and live-world binding remain pending.
+
+Configuration proof now includes168 exact Nini document cases,68 long-file forms,58 long Nini loads and13 actual startup cases alongside71735 BCL and80864 reader observations. Reserved comment item collisions and Include error ordering match source. Windows framework consumers embed longPathAware to preserve source device-path behavior. Long config startup isolates reader behavior with short database targets; a separate native-only audit also opens Unicode databases inside a432-unit path. Shared verification is pending; application parity remains false.
+
+
+CONFIGURATION, DATE AND GEOMETRY SHARED VERIFICATION
+
+338 full MSVC tests and14 focused tests each under ClangCL, MSVC AddressSanitizer and OpenSSL/system-zlib pass. Each profile compares3734815 selected source/BCL input cases plus168 Nini document,68 long-file,58 long-Nini and13 native startup cases. All execution is Windows x64; actual Linux/macOS execution and full application parity remain unverified. Report:build/config-parser-verification-results.json.
+
+Initial failures are retained in the report: one asset-runtime fixture omitted its connector when replacing a duplicate section; a relative long-path fixture initially used repository-root cwd instead of the actual CTest cwd. Both fixture corrections preserve assertions; existing long-path forms now explicitly require successful reads. Native provider/context, NiniWriter and PrimitiveBaseShape work remains excluded pending complete handoff.
+
+
+FULL NINI DOCUMENT MODEL AND PRIMITIVE SHAPE METHODS
+
+Actual configuration loading now uses native NiniDocument/IniSection/IniItem/IniSectionCollection instead of a duplicate parsing model. Writer/document cores preserve all file styles, mutable ordered state, partial Load/Save, callback mutation, nullable raw UTF16, exception precedence and controlled retired-reader/writer finalization.87546 writer and7614 document cases pass. Native generic error display uses the actual message, including Unicode and malformed-surrogate replacement. Default file/stream encoding remains an explicit provider under development.
+
+All original PrimitiveBaseShape and nested MediaList methods now have native counterparts, with275494 actual-source cases: scalar/factory/extra parameters, shared arrays/clone aliases, SDK property projection/range packing, PBR codecs, mesh keys and media XML orchestration. Native System.Xml/SDK LLSD/current-culture providers remain explicit; the test DOM adapter is not registered in production.
+
+Verification:344 full MSVC tests plus20 focused tests each under ClangCL, MSVC ASan and OpenSSL/system-zlib pass.4105469 selected source/BCL inputs per profile, plus actual Nini/file/startup cases;1205 source hashes verified. Report:build/nini-document-verification-results.json. Separate actual Debian12/GCC12 native-context execution passes64012 .NET8 comparisons; the full Linux project build is in progress and macOS is unexecuted. Application parity remains false.
+
+Native filesystem dependency checkpoint: consumed Nini synchronous text/file factories, default Directory.GetFiles/GetDirectories, and FileSystemName translation/matching are registered. Seven tests pass in each of the MSVC, ClangCL, MSVC AddressSanitizer and OpenSSL/system-zlib Windows profiles: 1,981,099 source inputs plus 176 file cases per profile. The checkpoint retains 1,222 source hashes, a source ZIP and copied binaries, logs, JUnit and source-comparison reports. Report: build/native-filesystem-verification-results.json. Full configuration source/include/runtime binding remains in progress. New-module Linux/macOS execution, unrelated FileStream/Directory overloads, arbitrary CLR finalizer timing and denied Windows symlink fixtures remain unverified. Application parity remains false.
+
+Actual Linux execution checkpoint: the captured Debian12 x86_64/GCC12 project builds and passes its complete349-test CTest suite with zero failures and zero skips (582.85seconds). Runtime source oracles use .NET8.0.31 only for tests. Five real-platform defects were corrected: lstat timestamps for symlinks, missing-parent versus missing-file classification, path-bearing maintenance warnings including directory-as-file access denial, and SDK quaternion normalization summation on CPUs without SSE4.1. The five affected comparisons also pass in all four Windows profiles. Source, binary, logs, JUnit and result hashes are retained in build/linux-vm/final-linux-evidence.tar.gz; report: build/linux-native-verification-results.json. This guest snapshot predates PrimitiveBaseShape and newly integrated filesystem modules, so349 is not the current host inventory. macOS remains unexecuted and full application parity remains false.
+
+Linux filesystem/shape follow-up: all nine newly integrated filesystem and PrimitiveBaseShape tests pass on Debian12/GCC12, with2,256,563 selected source inputs plus173 actual file cases. The updated project fully builds; this is a focused run, separate from the previous349-test full-suite snapshot. The stream fixture now resets a common subprocess working directory, preserving whitespace-only Unix filenames without leaking reference-created files into native observations; all four Windows stream comparisons also pass after this fixture correction. Failed before/fixed after evidence is retained. Report: build/linux-native-filesystem-verification-results.json. macOS and full application parity remain unverified.
+
+Native configuration/context checkpoint:370 full MSVC tests,54 focused ClangCL tests,54 focused MSVC AddressSanitizer tests and55 focused OpenSSL/system-zlib tests pass. All1,269 captured source hashes match; copied binaries, source ZIP, logs, JUnit and selected original-library reports are retained under build/native-config-context-checkpoint. Report: build/native-config-context-verification-results.json. The checkpoint registers Nini configuration classes/concrete invariant providers, Glob, shared OS date caches and real Flotsam expire/timestamp binding; production file-cache startup remains guarded. Separate actual Linux culture/prefix/Glob/gatherer checks pass639,593 observations, and date conversion passes262,217 observations across eight timezones. Full375-test Linux verification of the captured sources is in progress; macOS is unexecuted. Server IniConfig source ownership/alias/startup expansion integration and complete original loader/source types remain the next host phase. Full application parity remains false.
+
+Completed Linux configuration/context checkpoint: the captured Debian12/GCC12 project passes all375 tests with zero failures/skips (773.64seconds). All1,269 source hashes match the Windows370-test snapshot except one documented quote-only Python3.11 f-string fix; that fix also passes the original Nini configuration comparator on all four Windows profiles. Final Linux source/binary/log/JUnit/report archive SHA256:293174e671e3cabd8fb06b76eae259a1e263b81731a95cd7adf9267760ba383f. Report: build/native-config-context-linux-verification-results.json. This verifies the captured checkpoint; the subsequent actual host-config ownership/alias/startup expansion integration is still under development. macOS and full application parity remain unverified.
+
+
+LOCAL STARTUP HOST BINDING
+
+The actual executable now passes a real database-initialization/user-creation/HTTP
+login test driven by local includes, a nested include resolved against the main
+directory, circular-include suppression, process environment values and override
+directory coordinates. A command-line port overrides an otherwise invalid file
+value before NetworkServersInfo reads it. An undeclared environment reference
+still fails at the original earlier expansion stage; a declared missing variable
+retains its file fallback. Owning file sources continue to reject unregistered
+On/Off aliases. The corrected Flotsam module/cache HTTP and six-encoding/long-file
+startup regressions pass in the first MSVC four-test run. All-profile rebuilds and
+updated Linux verification are in progress; macOS remains unexecuted.
+
+The preceding frozen checkpoint ran389 full MSVC,77 ClangCL,77 AddressSanitizer,
+79 OpenSSL and394 full Linux tests. Every profile had exactly the same two old
+Off/On fixture failures; all other tests passed, with no skips. Exact1,317 source
+hashes match Windows/Linux and all failures/binaries/logs are archived in
+build/native-startup-checkpoint and build/linux-vm/native-startup-evidence.tar.gz.
+The earlier370/375 all-green snapshot is retained separately. Current source
+inventory maps189 of1,556 tracked C# files, all without a whole-application parity
+claim;1,367 files still lack mappings. Full application parity remains false.
+
+
+VERIFIED HOST STARTUP AND ARGV CHECKPOINTS
+
+All390 MSVC tests pass, along with78 focused ClangCL,78 AddressSanitizer and80
+OpenSSL/system-zlib tests. Actual Debian12/GCC12 passes all395 tests without
+failures or skips. All1,318 captured source hashes match exactly between Windows
+and Linux. Report: build/native-host-verification-results.json; Linux archive
+SHA256 f1f7c366b43d116c55284023a9199cef679a8d56aed80afc0639b86a04780826.
+The earlier fixture failures and source-proven corrections remain archived.
+
+A separate1,324-input checkpoint adds native Nini ArgvParser/ArgvConfigSource
+and the original Application argv setup helper. Native unit,80,117 actual bundled
+DLL observations and the existing real HTTP startup/login test pass in all four
+Windows profiles and actual Linux. Report: build/native-argv-verification-results.json.
+This preserves mutable original argument elements, cloned arrays, source parser
+quirks, Unicode classes, casing, switch/event/partial-error order and readonly
+Save/Reload behavior. The executable still uses its scoped CLI; full original
+Application entrypoint integration remains incomplete. Remote XML is being
+ported separately. macOS and full application parity remain unverified.
+
+
+SHARED TIMEZONE CACHE AND FILE/URI FOLLOW-UPS
+
+The shared legacy daylight and full date-rule context now use captured cache
+epochs. Clearing replaces the current cache while retained objects keep their
+original rules; the UTC intrinsic retains its identity. The1,327-input checkpoint
+passes39 unique Windows checks per profile and37 on actual Linux. An older unit
+incorrectly required a fresh UTC instance; its original failure is preserved and
+the corrected source-backed unit was rechecked separately. The production inputs
+were unchanged during that recheck. Report: build/native-timezone-cache-verification-results.json.
+
+The separate1,342-input checkpoint passes38 focused checks in each of four Windows
+profiles and37 on actual Linux. This includes221,823 actual BCL HTTP URI component
+observations per profile and13 Linux interrupted-I/O tests that execute production
+code, verify the injected libc hooks and compare results/retry counts with .NET8.
+The Darwin shared-write lock policy matches133 source-derived cases; this is not
+macOS execution. Source, binary, JUnit and report hashes are archived; Linux archive
+SHA256 e64816a3282133c8b5f14181e44b0bcfea2a0b1f3ed327cc4f8c778b40b4ebf4.
+Report: build/native-io-uri-verification-results.json. These are focused follow-ups
+to the390/395 full-suite checkpoint, not claims of a later full-suite run.
+
+Native XML reader/DOM/DTD/writer, default URL transport/cookie providers, complete
+original Application startup, remaining simulator features and macOS execution
+are still being implemented or verified. Full application parity remains false.
+
+
+COOKIE EXPIRY AND NATIVE COOKIE CONTAINER
+
+Fixed cookie Expires parsing now uses the original invariant flags23
+(AllowWhiteSpaces|AdjustToUniversal). The1,345-input checkpoint passes12 focused
+checks in four Windows profiles and actual Linux:110,209 new-style plus220,418
+existing None-mode observations per profile. The old public parser remains
+unchanged in behavior, and native units distinguish explicit-zone UTC expiry
+from the existing local-kind result. Report: build/native-cookie-expiry-verification-results.json.
+
+The separate1,352-input checkpoint registers the native consumed CookieContainer
+and its native providers. All five profiles pass5 focused checks,141,632 actual
+BCL cookie observations and76,053 raw UTF16 hash/FQDN checks, using the actual CLR
+process seed for default Hashtable comparison. Linux source/binary/log archive
+SHA256:04acf2912ed9b745aafdef6e872c7078d271ba73ec049b8075b7202d31dcb71f.
+Report: build/native-cookies-verification-results.json.
+
+The consumed XML download orchestration, stream metadata, URI bridge, response
+headers/entity framing and typed cookie/redirect adapters are registered in
+opensim_framework. The socket implementation is the opensim_config_http target,
+linked by opensim_server_core. It shares the patched cpp-httplib header and TLS/
+zlib configuration with the existing servers. The new opt-in behavior is recorded
+in third_party/httplib/opensim-config-http.patch and the dependency manifest.
+
+Build config_xml_transport_network_tests and config_xml_document_network_tests,
+then run CTest config_xml_transport_network_source_parity and
+config_xml_document_network_source_parity for actual .NET XmlDownloadManager and
+bundled Nini XML URL comparisons. Tests select an explicit direct proxy policy;
+production callers must provide the remaining proxy/error/trust policies.
+Default startup remote XML binding, complete proxy/authentication/TLS/timeout
+behavior, macOS execution, remaining simulator features and full application
+parity are still incomplete.
+
+Startup URL composition is available through ConfigurationStartupOptions:
+set xml_http_services to the explicit native HTTP policies, then call
+IniConfig::load_startup. The host binds URI/cookies/redirects and the native
+Nini XML reader/document pipeline into the same configuration arena and loader
+merge flow. Existing xml_uri_source callbacks take precedence. Unused HTTP
+providers are not validated during local INI loading. xml_resolver_policy can
+supply the shared AppContext-compatible networking switch; file entities retain
+the native file resolver. The ordinary CLI still requires default OS network
+policy composition before it can select this path automatically.
+
+The native HttpEnvironmentProxy parser, bypass selection and credential values
+are registered in opensim_framework. Native URI construction handles HTTP/HTTPS
+and SOCKS proxy URI forms, with host/user-info getters from the common URI model.
+Default NetworkCredential is a shared marker; protocol authentication is still a
+separate implementation. System proxy/PAC lookup, proxy transport selection and
+non-HTTP Uri.Equals remain incomplete; this parser alone does not enable default
+CLI proxy behavior. The source parity test includes process environment priority,
+CGI suppression, NO_PROXY, HTTP/HTTPS and WS/WSS target selection.
+
+ConfigHttpDefaultProxy supplies environment-first selection and a separately
+cached system-provider result, plus the mutable HttpClient default-proxy slot.
+Linux environment misses select HttpNoProxy. Windows and macOS environment misses
+require an explicit OS/PAC provider; that provider remains unfinished. Tests
+compare HttpNoProxy and default assignment with the pinned .NET runtime and cover
+native lazy failure caching, single construction, and concurrent assignment.
+Set ConfigXmlNativeHttpServices.default_proxy to a shared selector's get operation
+to capture its value when a handler first sends a supported request. The captured
+value remains in use on later requests and redirects; an explicit handler proxy
+wins. The route callback still implements bypass, protocol routing and proxy
+credentials. The ordinary CLI does not yet supply these default policies.
+
+Single-IWebProxy resolution now exposes config_http_resolve_proxy and native
+proxy endpoint construction. Source lookup exceptions fall back to direct;
+unsupported schemes and relative URI failures remain outside that catch. The
+connection callback comparison runs the actual SocketsHttpHandler selection
+path without opening external sockets. This does not implement multi-proxy
+failover, SOCKS/TLS proxy protocols, authentication or OS proxy discovery.
+
+ConfigHttpMultiProxyCandidates implements the Windows MultiProxy candidate parser
+for eager and lazy configurations. Prefix matching, HTTP/HTTPS target filtering,
+separator consumption, URI construction and final/cursor flags follow the source
+runtime. All returned proxy candidates are HTTP URIs as in that implementation.
+The 1488-case source gate is Windows-only; Linux builds additionally compared
+against the captured Windows corpus. Failure policy is implemented separately by
+ConfigHttpFailedProxyCache and ConfigHttpMultiProxy.
+
+ConfigHttpFailedProxyCache shares failures across lists, retains failures for
+1800000 milliseconds, conditionally renews exact stored values and opportunistically
+cleans expired entries above the source count/flush thresholds. Native clock and
+URI equality are explicit dependencies. ConfigHttpMultiProxy implements ReadNext,
+including oldest-expiry fallback, tie order and source final/cursor behavior.
+The 9072-case Windows runtime comparison also checks final cache contents; direct
+cache checks verify lifetime, cleanup threshold, conditional removal, URI aliases
+and null-key exceptions. Linux native execution matches the captured Windows corpus.
+OS discovery/PAC, proxy authentication/protocols,
+default CLI composition, macOS execution and full simulator parity remain incomplete.
+
+ConfigXmlNativeHttpServices.proxy_plan can supply a fresh route plan for each
+redirect target, taking precedence over the older single-route callback.
+config_xml_http_multi_proxy_plan adapts ConfigHttpMultiProxy to HTTP proxy routes.
+Same-proxy connection retries retain the current candidate; retryable pre-response
+failures advance the list. Single-final candidates follow the source direct path
+and are not incorrectly marked failed. HTTP status and response-body errors do
+not advance the proxy list. The source comparison uses an actual HttpWindowsProxy
+with injected manual settings and real loopback proxy sockets; it checks full
+exception messages, connection attempts, failed-cache contents and HTTP headers.
+Linux replays the captured scenarios with OS-specific socket messages excluded
+from that comparison; native Linux error translation has separate source gates.
+OS/PAC discovery, TLS/SOCKS proxy protocols, authentication, default CLI policies,
+macOS execution and full application parity remain incomplete.
+
+ConfigHttpWinInetProxyHelper implements WinHTTP automatic lookup policy: options,
+ws/wss URI conversion, one authentication retry, 120000ms recent-detection-failure
+window and manual fallback. Native Windows bindings read current-user IE proxy
+settings, own the WinHTTP session and returned UTF16 buffers, and execute PAC
+lookup. The source gate runs actual .NET helper code against a test-process DLL
+for 6480 cases, compares real settings/session creation, and serves eight local
+PAC cases through the real native API. Each live PAC fixture URL is isolated to
+avoid cross-process script-cache interference observed with invalid scripts.
+Source tests never modify the user's OS proxy configuration. The common policy
+also builds/tests on Linux against the captured Windows corpus. Windows bypass
+and complete provider/default-selector composition are still required; macOS,
+TLS/SOCKS proxy transport, authentication and full simulator parity remain open.
+
+ConfigHttpWindowsProxyBypass implements the source token parser and star-only
+wildcard matcher, including UTF16 casing, exact separator/prefix behavior and
+<local> loopback, flat-name, interface-IP and scoped-IPv6 decisions. URI identity
+getters expose the source HostNameType and IsLoopback state from the native URI
+kernel. Windows local interface enumeration matches source unicast addresses.
+The 6136-case gate invokes actual HttpWindowsProxy construction/GetProxy and
+SimpleRegex through a span bridge, plus direct URI getter checks. Linux common
+policy matches the captured Windows corpus with injected interface addresses.
+These are provider building blocks: complete Windows HttpWindowsProxy composition
+and default-selector wiring, macOS, proxy auth/protocols and full simulator parity
+remain unfinished.
+
+ConfigHttpWindowsProxy now composes native WinInet settings/PAC, manual candidate
+lists, bypass rules, shared failures, credential properties and session disposal.
+It exposes ConfigHttpMultiWebProxy for typed multi-proxy transport adapters. The
+Windows default selector automatically uses this provider after environment
+proxy creation fails; an explicit system_proxy override still takes precedence.
+Six isolated process-environment comparisons verify default selection against
+HttpClient.DefaultProxy, including malformed values and credential presence.
+The 18480-case factory/query source comparison calls actual TryCreate through a
+controlled WinHTTP DLL and verifies nullable PAC bypass handling, recent failure
+suppression, candidate state, credentials and session-close counts. Real factory
+availability is also compared without changing system proxy settings. Linux common
+composition matches the captured Windows corpus through injected providers.
+Automatic typed HTTP binding/CLI policy composition, macOS, TLS/SOCKS proxy
+protocols, HTTP authentication and complete application parity remain unfinished.
+
+config_xml_bind_native_proxy binds default/explicit ConfigHttpProxy objects into
+handler-scoped HTTP providers. Use the same ConfigXmlUriObjects adapter as typed
+HTTP URI binding. The selected proxy and pool credential snapshot persist across
+requests/redirects; explicit proxies also perform the source settings-normalization
+credential read. Routes carry proxy URI, captured credentials and default-identity
+flag for later authentication. Active response streams retain the provider until
+close/destruction. Native forwarding currently supports HTTP targets through HTTP
+proxies; CONNECT, TLS-proxy and SOCKS paths are explicit dependencies in this new
+binding. Existing legacy route callbacks retain their previous behavior.
+The source comparison checks 11 cases/44 handler queries, including alternating
+credential getters whose normalization flag differs from the captured value.
+The live proxy gate now exercises this binding through Windows multi-proxy and
+single environment-proxy objects, including credentials without an auth challenge.
+Automatic startup/CLI composition still needs to bind within the startup URI
+adapter's provenance domain; prebinding against a different adapter is invalid.
+HTTP authentication, remaining proxy protocols, macOS and full simulator parity
+remain unfinished.
+
+Login access regex integration (2026-11-01):
+AllowedClients and DeniedClients now use the native .NET 8 backtracking parser
+and interpreter with invariant culture, original Compiled|IgnoreCase options,
+per-pattern locking, section precedence, and disable-on-construction-failure.
+No production CLR dependency is introduced. Native execution-stack queries use
+Windows allocation bounds, Linux pthread bounds, and macOS pthread bounds with
+the runtime reserve of 128 KiB (64-bit) / 64 KiB (32-bit). Native and managed
+physical recursion limits are not asserted identical. macOS remains unexecuted.
+The original login-access oracle covers 129,204 observations, including .NET
+named/backreference/balancing groups, lookarounds, Unicode categories and casing.
+Full simulator and complete cross-platform feature parity remain unfinished.
+
+Login URI and native stack verification (2026-11-02):
+The fixed login destination grammar now uses the native original URI regex,
+including named captures, Unicode decimal digits and terminal-LF dollar anchor.
+The destination oracle pins .NET 8.0.31 and compares 6,220 observations: the
+original 32 grid scenarios and 5,420 additional URI strings. The oracle compares
+region/gatekeeper IDs, flags, position/look-at float bits and failure occurrence;
+exception-message parity is not established. Worker stack tests reject 32 KiB
+stacks, stop recursive work on 1 MiB stacks and accept ordinary worker stacks.
+These tests execute on Windows MSVC/Clang/ASan and Linux GCC; macOS still needs
+execution. Full login and full simulator feature parity remain unfinished.
+
+Forwarded XML-RPC login identity (2026-11-02):
+LoginApplication applies the original LLLoginHandlers X-Forwarded-For rule:
+parse the first comma-delimited field as an IP address without trimming, use
+its canonical address when valid, otherwise keep the socket peer. LLSD retains
+the socket peer, as in the original handler. There is no new proxy trust policy.
+An extracted original Util.GetClientIPFromXFF oracle on pinned .NET 8.0.31
+compares 4,266 inputs with the real native HTTP login application. It covers
+IPv4 shorthand/octal/hex, IPv6, invalid first fields, whitespace and comma lists.
+The source comparison and server unit checks pass on MSVC, Clang, ASan and GCC.
+Live Windows/Linux login tests confirm the selected IP reaches the admitted
+remote simulator circuit for both protocols. Complete simulator parity and
+actual macOS execution remain open.
+
+Native login console commands (2026-11-02):
+The --console input accepts the original full commands login level <level>,
+login reset, and login text <text>. The existing original console tokenizer
+preserves quoted text. Numeric conversion uses invariant Int32 semantics; a
+failed TryParse writes zero to the minimum level, matching the original. Reset
+reads MinLoginLevel from the shared live configuration. Text uses the first
+argument, emits the original confirmation, and expands literal backslash-n
+for subsequent welcome responses. A mutex protects the mutable welcome string
+from concurrent login requests. The source oracle extracts unchanged
+HandleLoginCommand and compares 5,139 command/state/output observations.
+Live Windows/Linux tests exercise stdin command output, login blocking, reset,
+and the updated welcome in an actual successful LLSD response. General console
+command prefix resolution/help, complete simulator parity and macOS execution
+remain separate unfinished scopes. The original WebSocket login implementation
+and registration are commented out and have not been enabled by this port.
+
+Console command resolution (2026-11-02):
+Native stdin command dispatch now uses the original command-tree resolution
+rules before invoking login/cache handlers: exact keys win over prefixes, a
+unique invariant-culture prefix expands, ambiguous prefixes do not dispatch,
+and arguments remain attached to a terminal command. Earlier expanded tokens
+remain mutated on a later resolution failure, matching the original aliased
+result array. The tree uses insertion order and preserves the original empty
+terminal-key collision/error behavior. Region cache command names come from
+the actual Flotsam configuration registration callbacks, including conditional
+default-asset commands, rather than a separate hard-coded registration list.
+The pinned .NET 8.0.31 oracle extracts actual Parser, AddCommand and
+ResolveCommand for 74,189 fixed-registration observations. Native resolver
+callbacks, shared delegate lists, completion suggestions, help/category output,
+XML export and remote-console hosting remain unfinished separate layers.
+Complete simulator parity and actual macOS execution remain open.
+
+Console help and completion API (2026-11-02):
+The native resolver now retains original category, usage, long and descriptive
+help, plus shared metadata. Native stdin help, help all, help <category> and
+help <command> use original lookup/order rules. Category lookup compares
+invariant-lowercased ordinal strings; command help uses exact tree keys and
+retains the original nearest-terminal fallback. Lists use original .NET
+introsort with invariant collation. Literal CRLF in the checked-out original
+verbatim ItemHelpText is preserved by the source oracle and native constant.
+The next_options API preserves FindNextOption's terminated/nonterminated
+lookup, insertion-order options, <cr> and Command help suggestions. Interactive
+line editing/tab input, shared callback execution and XML import/export remain
+unfinished. Original Commands (entire unchanged class) and Parser validate
+18,270 help/completion observations alongside 74,189 resolver observations.
+Live Windows/Linux login tests verify command and case-insensitive category
+help. Complete simulator parity and macOS execution remain unfinished.
+
+Console callbacks and host dispatch (2026-11-02):
+The native command tree now implements HasCommand and Resolve callback
+execution. The first registration owns metadata and the shared flag; a shared
+command ignores subsequent delegates, while a nonshared command appends only
+distinct callback handles. Reusing a native Callback handle represents original
+delegate identity. Null callbacks stop dispatch and return an empty result;
+earlier callbacks and argument mutations are retained. Successful dispatch
+returns a reference to the caller array, with identity checked against the
+original result; failure/null callbacks have no returned reference. Handler exceptions
+propagate. Changes to the active callback list invalidate enumeration at the
+next original MoveNext boundary, including after the final callback. Adding
+a different command or an already registered callback does not invalidate it.
+The actual host registers help, quit/shutdown, login and selected cache handlers
+with this dispatcher. Original Commands and Parser compare 40,960 callback
+observations with two dispatches each (81,920 attempts), alongside 18,270 help/completion and 74,189 resolver observations.
+XML import/export, interactive line editing, remote console hosting, actual
+macOS execution and complete simulator parity remain unfinished.
+
+Console command XML export (2026-11-02):
+ConsoleCommandResolver.get_xml builds the original HelpTree/Level/Command
+DOM using the retained native System.Xml document layer. Field names/order,
+Name attributes, boolean text, text nodes, ownership and detached-root behavior
+are preserved. Export removes and restores help/quit as in Commands.GetXml.
+The command dictionary now reuses removed slots in LIFO order, preserving the
+original completion order after repeated exports; failed exports retain the
+original partial removals rather than rolling back.
+The source oracle extracts unchanged Commands and Parser and compares 3,024
+scenarios with three exports each (9,072 attempts), including existing document
+roots, null documents, missing help/quit, nested commands and Unicode metadata.
+It checks concrete DOM structure/value/ownership plus subsequent help,
+completion and HasCommand state. Exception messages/types, arbitrary overridden
+XmlDocument subclasses and serialized XML text are outside this gate. XML
+import needs nullable imported metadata and the original partial-load semantics;
+it remains unfinished, along with remote-console transport, interactive input,
+actual macOS execution and full simulator parity.
+
+Console command XML import and nullable metadata (2026-11-02):
+ConsoleCommandDescription now preserves nullable module/usage/long/descriptive
+help. Callbacks receive a nullable module, and direct command help preserves
+null list entries. The live console renders null help entries as blank lines,
+as Console.WriteLine does. Category formatting retains original null-as-empty
+String.Format behavior. Null-module registration retains the original partial
+tree insertion before the category dictionary rejects its null key.
+FromXml now performs the original help/quit removal, tree clear and recursive
+read, restores the local help/quit handlers only after success, and intentionally
+leaves the original category/help index unchanged. Duplicate levels replace
+subtrees, duplicate commands replace metadata/callback lists, unknown names are
+ignored, qualified Name matching is preserved, and failed imports retain their
+partial state. InnerText aggregation and Boolean conversion follow pinned
+.NET 8.0.31, including Unicode whitespace/NUL trimming and null PI values.
+The unchanged Commands source oracle compares 1,144 scenarios with two imports
+and re-exports each (2,288 attempts), callback/module and return-array identity,
+nullable/empty fields, restored local handlers, stale category metadata and
+partial failures. Existing XML export/callback/help/resolver gates also pass.
+The oracle's first failure archive records a test-fixture-only correction:
+unchanged read-only entity text must not be written by its NUL-marker helper.
+Concrete DOM/reader behavior is covered; exception type/message equivalence,
+arbitrary DOM subclasses, remote-console transport, interactive editing, actual
+macOS execution and full simulator parity remain unfinished.
+
+Remote console core: native session authentication, command queue, XML replies, scrollback and expiration are implemented. The original-source comparison passes 975 scenarios / 68392 operations on MSVC, ClangCL and MSVC AddressSanitizer; blocking input/concurrency/timer checks pass on these profiles. The Linux VM was restarted and its successful 975-scenario source result was recovered. HTTP host binding and full application parity remain incomplete; macOS has not been executed.
+
+Native REST console host: set [Startup] console = rest and [Network] ConsoleUser / ConsolePass. ConsoleAllowedOrigin is optional. ConsolePort = 0 uses the main listener; another port creates the console listener on the configured listen address. StartSession, SessionCommand, CloseSession and ReadResponses use the native asynchronous HTTP/poll service. The existing help, quit, shutdown, login and enabled asset-cache commands share the native command registry. Remote quit wakes the blocking reader and stops the server. This is experimental; full simulator parity, complete log/output integration, composite-format console overloads and local interactive line editing remain unfinished. macOS execution has not been verified.
+
+Console prompt overloads: framework::ConsolePrompts ports all five ConsoleBase validation/default/option prompt paths. RemoteConsole::prompts() binds them to the shared remote input queue. ConsolePromptList retains shared identity and enumerator invalidation when callbacks modify validation lists. Source comparison includes all BMP units, null/EOF behavior, duplicate exclusions, ordinal options and diagnostic/read callback mutations (68436 scenarios). Prompts pass echo to ReadLine; the original RemoteConsole still echoes input even when echo=false. Local interactive I/O and composite-format output remain open.
+
+Console logging: ConsoleAppender ports the consumed OpenSimAppender.Append pipeline. It maps installed log4net Error=70000 to error and Warn=60000 to warn; other levels map to normal. Render failures propagate before output handling, output failures use local fallback diagnostics, and unbound output uses invariant collation suffix matching to preserve newline handling (including trailing ignorable characters). The native executable binds the REST console before region initialization, retaining startup messages in scrollback, and routes runtime callbacks to the console. Asset logging retains severity separately from text. Console commands remain untagged. Full log4net layout/filter/threshold/ANSI lifecycle, complete exception rendering and category-only inventory diagnostic formatting remain unfinished.
+
+SDK LLSD XML: network::deserialize_sdk_llsd_xml implements the bundled OSDParser Stream path using the native legacy XmlTextReader. It preserves reader cursor behavior, catch-to-OSD failure, DTD Ignore, BOM decoding, nullable children, raw UTF16 string/key data, numeric/date/URI semantics and insertion order. UTF8 string facades retain replacement encoding; osd_string_utf16 exposes raw SDK data. Default invariant/ICU profile is verified; mutable SDK EnUs culture overrides and complete SDK interfaces remain pending. Inventory/library descendant handlers use this decoder and source rich diagnostics, retaining their legacy category callback as a fallback. Other SDK XML callers/scoped seed/feature adapters still need adoption and verification. Full simulator and macOS parity remain unproved.
+
+Seed capability / simulator XML adoption checkpoint
+Shared native SDK LLSD XML decoder now supplies seed request parsing and simulator-feature deep copies. Standalone XmlTextReader preserves unresolved attribute entity references until ResolveEntity; validating-reader mode retains its existing behavior. Seed 1386, simulator 2041 and SDK XML 198608 source scenarios plus 2510 standalone reader flows pass on MSVC, ClangCL, MSVC ASan and Linux GCC. Full application and macOS parity remain unverified.
+Evidence: build/native-seed-sdk-xml-checkpoint/verification-results.json.
+
+Native binary LLSD capability decoder checkpoint
+Native SDK LLSD binary stream decoder is now bound by the shared capability request parser, including inventory/library items and script/inventory asset update routes. 15924 typed-tree/error scenarios match actual bundled DeserializeLLSDBinary; 2724 SimpleOSDMapHandler HTTP profiles compare exact responses/counters/provider calls. Shared XML branch now uses native SDK XML decoder. Binary header/cursor quirks, little-endian date seconds, local DateTime conversion, UTF8 replacement, ordered duplicate map keys and malformed input preserved. Binary and XML source gates pass MSVC, ClangCL, MSVC ASan and Linux GCC. Live inventory/library binary requests match JSON on Windows/Linux. Notation, alternate JSON stream encodings, unseekable streams and full SDK/application/macOS parity remain incomplete.
+Evidence: build/native-sdk-llsd-binary-checkpoint/verification-results.json.
+
+Native notation LLSD capability decoder checkpoint
+Native bundled SDK LLSD notation stream decoder now feeds the shared capability request parser. 76763 typed-tree/error scenarios compare original DLL behavior, including all BMP integer digit probes, unchecked overflow, header skipping, boolean partial-word quirks, permissive container separators, NUL text termination, escapes, binary/UUID/URI/date and UTF8/16/32 BOM streams. SimpleOSDMapHandler4836 HTTP profiles, inventory core1344 and expiry/timer490 each pass MSVC/ClangCL/MSVC ASan/Linux GCC; existing XML198608 and binary15924 source scenarios also pass. Live notation inventory/library requests match JSON on Windows/Linux. Known parity difference: source unterminated quoted EOF casts -1 to U+FFFF and allocates indefinitely; native currently throws a documented exception. Tests terminate malformed prefixes/containers with explicit NULs to avoid that source allocation loop. Non-invariant notation date culture, complete managed stream semantics, alternate JSON stream encodings and full application/macOS parity remain incomplete.
+Evidence: build/native-sdk-llsd-notation-checkpoint/verification-results.json.
+
+Native automatic OSD stream decoder checkpoint
+Shared automatic OSD stream decoder now matches the bundled SDK fifteen-byte padded ASCII sniff using invariant culture StartsWith, then dispatches native XML/binary/notation or BOM-aware JSON StreamReader. JSON parsing/serialization preserves raw UTF16 scalar metadata and lossless map keys, including lone escaped surrogates.69664 source scenarios compare full typed trees plus exact reserialized JSON strings (all BMP escapes/keys, BOM UTF8/16/32, invalid bytes/truncated encodings and sniff cases); parse exceptions are normalized to EX, not claimed exact diagnostics.22884 original HTTP wrapper profiles pass, with1344 inventory core and490 expiry/timer each. Existing JSON65042, XML198608, binary15924 and notation76763 regressions pass all four profiles. Live UTF8/16/32 BOM JSON inventory requests match plain JSON on Windows/Linux. Non-invariant cultures, arbitrary managed stream positioning/read behavior, exact JSON parser exception diagnostics, notation quoted EOF allocation loop and full application/macOS parity remain incomplete.
+Evidence: build/native-sdk-osd-stream-checkpoint/verification-results.json.
+
+Native OSD overloads and service/login adoption checkpoint
+Native OSDParser string/byte[] automatic decoding is now separate from stream semantics: invariant-ignore-case sniff for strings/byte arrays; UTF16 StringReader XML/notation for text, UTF8 encoding for text binary, raw UTF8 byte JSON, BOM-aware byte XML/notation.139328 source overload scenarios compare typed ordered trees and exact JSON reserialization; existing stream69664/XML198608/notation76763/binary15924 regressions pass all four profiles. WebUtil canonical response handling uses native string decoder and matches1712 whole simulation connector/source observations, including new notation/binary/XML-case/Unicode cases. LLSD HTTP login now uses native SDK XML stream decoder; Windows/Linux210 live login checks include five BOM encodings reaching credential rejection. Parse exception diagnostics, raw UTF16 caller/managed reader interfaces, general culture/transport/lifecycle, notation quoted EOF allocation-loop difference and full application/macOS parity remain incomplete.
+Evidence: build/native-sdk-osd-overloads-checkpoint/verification-results.json.
+
+Native JSON-RPC host and response checkpoint
+Native JSON-RPC v2 response/error model and BaseHttpServer dispatch/registration methods now have C++ counterparts and are bound to the executable for exact application/json-rpc content type. Stateful Reply/Result/Error aliases, omitted-default JSON, unused Error.Data, ref replacement/null outcomes, duplicate registration and dictionary slot reuse, stream disposal and error logging preserve tested source behavior.1966 original class/dispatch/registration scenarios pass MSVC, ClangCL, MSVC ASan and Linux GCC; source uses actual SDK JSON/BOM parsing plus controlled parse failure/disposal/delegate edges. Native malformed JSON text is still generic except source root-Null token diagnostic; full lexer diagnostics remain required. Preserve original InternalError=-32604 and missing-handler InvalidRequest=-32600, response to notifications, text/html;charset=UTF-8 default, and keep-alive. Main binds handler errors to typed console error logging.216 live login/server checks pass Windows/Linux, including JSON-RPC unknown handler/notification/version envelopes and POST/GET reuse of one socket. Generic object/CLR/delegate/stream APIs, full HTTP header/lifecycle/concurrency behavior, outgoing JsonRpcRequestManager, production modules and whole application/macOS parity remain incomplete.
+Evidence: build/native-json-rpc-checkpoint/verification-results.json.
+
+Native SDK JSON reader and diagnostic checkpoint
+Native default LitJson JSON consumption now uses the bundled SDK 28-state lexer, predictive parse table/reader and wrapper-to-OSD mapping, replacing the handwritten recursive syntax parser. Exact error messages preserve UTF16 including embedded NUL; UInt64-to-Int64 boxing cast failures are deferred until mapping, retaining exception precedence and escaping the JSON-RPC JsonException catch.90304 exact original SDK JSON scenarios (typed trees, exact JSON reserialization, malformed prefixes/randomized text, every BMP root character, BOM UTF8/16/32, numeric EOF/overflow, nested containers) and3136 original JSON-RPC scenarios pass MSVC/ClangCL/MSVC ASan/Linux GCC. Existing JSON65042, automatic stream69664 and string/byte overload139328 regressions pass all four.224 live login/JSON-RPC checks pass Windows/Linux, with six exact malformed diagnostics including NUL plus map/UInt64 cast HTTP500 outcomes. The initial native mapper dropped nested empty arrays; this was corrected and depths1..64 added. Native nesting limit512 remains a source difference; arbitrary reader/JsonData/reflection/interfaces/options/cultures, managed exceptions/streams/lifetime, full HTTP behavior and whole application/macOS parity remain incomplete.
+Evidence: build/native-sdk-json-reader-checkpoint/verification-results.json.
+
+Native outgoing JSON-RPC and profile DTO checkpoint
+Native JsonRpcRequestManager implements both original control-flow overloads through OSD references and declared native member bindings. Eight UserProfiles.cs profile/account DTOs preserve field names/order/defaults/null strings, UUID/bool/int/byte conversions and partial updates.4940 unchanged original-manager/real SDK reflection scenarios pass all four MSVC/ClangCL/MSVC ASan/Linux GCC profiles: exact pre-wire/wire JSON, timeout10000/rpc flag, nullable argument precedence, URI whitespace, generated UUID v4 validation, response/error/ref identity and debug/exception messages.57 actual outgoing HTTP requests per profile match SDK-derived wire bytes and original object/OSD outcomes, including full-envelope OSD returns, empty/false responses, error results, six raw/BOM UTF8/16/32 reply forms and JSON-RPC headers. Shared OSD sender now decodes reply bytes with native StreamReader BOM rules before canonicalization; default RPC transport uses application/json-rpc. Existing1712 connector observations and224 live login/server checks remain passing on Windows/Linux (connector regressions all four profiles). UserProfileCacheEntry, full generic reflection/unsupported field types and managed identity/stream/lifetime semantics, production profile/module/viewer wiring, global WebUtil factory/proxy/TLS/redirect/adaptive receive timeout and exact transport failures, whole application/macOS parity remain incomplete.
+Evidence: build/native-json-rpc-request-checkpoint/verification-results.json.
+
+Profile handlers checkpoint (native-profile-handlers-checkpoint): eighteen native
+profile JSON-RPC methods and provider interface, source parity and live HTTP tests.
+Provider is injected; production persistence/configuration/viewer wiring is pending.
+SDK UUID constructor and UTF-16 TryParse preserve runtime SIMD/scalar differences.
+Full simulator parity and macOS execution remain incomplete.
+
+Profile service checkpoint (native-profiles-service-checkpoint): native operation
+service, storage contract, both service constructors and connector enable/plugin
+configuration now implemented. Explicit factories are injected at plugin boundaries.
+Source operation/configuration gates plus composed real HTTP listener test cover
+the original classes; concrete database providers, executable/viewer wiring and
+full application/macOS verification are still pending.
+
+Persistent SQLite profiles (native-sqlite-profiles-checkpoint): set
+[UserProfilesService] Enabled=true, LocalServiceModule=
+OpenSim.Services.UserProfilesService.dll:UserProfilesService, StorageProvider=
+OpenSim.Data.SQLite.dll, ConnectionString="Data Source=/absolute/path/profiles.db",
+UserAccountService=OpenSim.Services.UserAccountService.dll:UserAccountService.
+Storage/connection can fall back to [DatabaseService] as in the original service.
+The existing HTTP listener handles application/json-rpc profile requests.
+Profiles migrate on enabled service startup; --init-db initializes the other
+selected native service databases. Original SQLite provider failure/no-op paths
+are retained, including classified deletion and preference read parameter errors.
+The sample native-server.ini.example contains a disabled profile section.
+Relative profile SQLite paths follow the process working directory, matching the
+provider; use an absolute path to keep the destination explicit. MySQL/PGSQL,
+viewer/region/cache integration and full ADO/GC/application/macOS parity remain
+incomplete. Retired source readers are collected on the native host loop tick.
+
+Local-region profile connector (native-local-profiles-checkpoint): when
+NativeServer.EnableLocalRegion=true, select the original local module with
+[Modules] UserProfilesServices=LocalUserProfilesServicesConnector and configure
+[UserProfilesService] as above. The disabled example is in native-region.ini.example.
+Module selection and service enablement are separate. Original local startup
+logs empty/failed service loads and continues with no profile handlers; the server
+connector instead registers its null-service handlers. Full viewer/cache module,
+remote database providers and generic plugin discovery remain incomplete.
+
+Basic viewer profiles (native-basic-profile-checkpoint): the local region now
+answers AvatarPropertiesRequest with original basic properties and interests
+packets, including account membership name and birth date. This original fallback
+is enabled when the [UserProfiles] section is absent; even an empty section disables
+it. [UserProfilesService] is the separate persistent JSON-RPC service. The advanced
+viewer UserProfileModule/cache/HG/group/edit features are still pending. Source
+SDK oversized charter/interest byte-prefix wrapping is retained by the profile
+packet codec; other packet validation retains its existing policy.
+
+Profile packet construction also includes source-compatible avatar notes and user-info replies. These are building blocks for the pending advanced UserProfileModule; enabling [UserProfiles] still suppresses the basic module and does not enable the unported advanced workflow.
+
+Classified and pick detail reply construction is ported as well, including source maturity flags and SDK string limits. Their advanced-module request/cache/service binding remains pending.
+
+Picks and classifieds list packet construction follows original invariant worker culture, dictionary/.NET sort behavior and wire limits; actual advanced profile handlers and group EventQueue replies remain pending.
+
+AvatarGroupsReply construction uses the source EventQueue message format and visibility filtering, with a native EventQueueModule adapter. The advanced profile module that requests these groups remains pending.
+
+The advanced profile lifecycle base is implemented and source-compared, including reload/error retention and status command registration. It is abstract until real handlers and cache owners are supplied; [UserProfiles] advanced viewer support is still pending.
+
+UserProfileRequests ports notes/preferences handlers and owner local/HG routing, using the real native RPC manager by default. The controller is exercised against the running native profile server and SQLite; the original preferences-read provider error remains silent at the viewer handler. Actual advanced module client/event installation is still pending.
+
+The framework ExpiringCacheOS port preserves source timer-driven expiry, stale reads, cached Values array identity and ref-return lock failures. Real native timer/concurrency checks accompany the original-class comparison; advanced profile cache binding and broader managed lifetime/custom-key races remain pending.
+
+Cached profile picks requests now compose the real ExpiringCacheOS, original list identity/expiry rules and default native OSD RPC transport. Actual HTTP/SQLite checks verify shared cached lists and re-fetch after clear. Canonical profile-cache/group models are present; full advanced viewer module installation remains pending.
+
+Classified-list controller requests now retain source creator/interest counters and shared profile-list caching. Live native HTTP/SQLite checks cover cached replies and profile-cache clear/refetch. Classified detail consumption/update/delete and full advanced viewer installation remain pending.
+
+Classified details: profile_classified_info_source_parity compares 8544 unchanged original workflows; sdk_vector3_try_source_parity compares 207271 actual SDK raw UTF16/IEEE outcomes. profile_requests_network exercises real detail RPC/SQLite/cache/UDP framing. Whole application and macOS verification remain pending.
+
+Classified updates: profile_classified_update_source_parity compiles the unchanged original method against controlled scene/land/money/client/RPC boundaries and actual SDK vector/OSD/UUID dependencies. profile_requests_network also updates an existing classified through real HTTP/SQLite, independently reads stored parcel/category/position fields and verifies cache invalidation. Complete advanced module scene wiring remains pending.
+
+Pick deletion: profile_pick_delete_source_parity compares10752 original method/cache/SDK flows, including shared list identity and mutation/reentry. profile_requests_network creates a temporary pick over actual HTTP/SQLite, deletes it through the native controller, frames the reply and independently verifies SQLite row absence. Advanced module runtime binding and macOS remain pending.
+
+Pick detail prerequisites: sdk_vector3d_text_source_parity verifies431634 actual SDK UTF16/IEEE/format outcomes. fake_parcel_source_parity verifies190248 unchanged original Util helper/SDK UUID observations. Full PickInfoRequest/GetPick integration remains pending.
+
+Pick details: profile_pick_info_source_parity compares20780 full unchanged PickInfoRequest/GetPick workflows with actual SDK vectors and original fake parcel helpers, controlled scene/grid/client/RPC boundaries and exact state/traces. profile_requests_network verifies real SQLite GetPick remains uncached, PickInfoRequest caches shared records, mutation changes packet replies without HTTP and deletion still removes the record. Full advanced module binding/macOS remain pending.
+
+Pick creation/editing: profile_pick_update_source_parity compares21500 unchanged original workflows with actual Constants.MaxProfilePicks20, SDK vectors and original cache/helpers. profile_requests_network creates and edits picks through production HTTP/SQLite, checks cached references/replies and independently reads scene parcel/position/gatekeeper fields. Complete advanced module binding, properties/interests/groups/async processing and macOS remain pending.
+
+Waiting-client set: reference_hash_set_source_parity compares10911 scenarios with actual pinned .NET8.0.31 HashSet reference objects, including slots/nulls/enumerator mutations and detached ownership. UserProfileCacheEntry.ProfileClientSet now uses this container. Custom managed equality/comparers and CLR GC timing are outside the verified subset; full async module/broadcast remains pending.
+
+Advanced profile async controller: profile_async_source_parity compares 3832 original-source cases; profile_requests_network verifies real HTTP/SQLite workers and property/interest edits. Account/scene/legacy/user-agent fixture boundaries are controlled. Production advanced module binding and remote transports remain pending; full application parity is not verified.
+
+Legacy OpenProfile: open_profile_source_parity runs 5975 unchanged full-class comparisons; profile_async_source_parity includes composed legacy decoding (4372 cases). services::OpenProfileClient requires a real XMLRPCRequester boundary; no fake default transport is installed. HTTP/XMLRPCRequester/Nwc parsing and production advanced host wiring remain pending.
+
+Nwc response codec: nwc_xml_rpc_source_parity compares17910 observations against bundled XMLRPC.dll, including actual XML reader/logger/reentrancy/error and identity behavior. The wire serializer, HTTP transport and production advanced binding remain pending; existing strict pugi XML-RPC codec is separate.
+
+Nwc serialization: nwc_xml_rpc_serializer_source_parity compares5820 actual DLL observations: compact wire/diagnostic bytes, partial/close errors, boxed wire types and fault/request properties. UTF8 replacement encoder is a no-BOM clone of the intrinsic encoding, not strict StreamWriter default encoding. Real HTTP/XMLRPCRequester and full advanced production bindings remain pending.
+
+Live XML-RPC input: nwc_xml_rpc_stream_source_parity compares7454 real DLL/default StreamReader segmented input cases. Native Reader.from_text_input and ByteTextReader.read_chars retain source read sizes/order, BOM decoding and disposal failures. Nwc null TextReader follows legacy empty-input behavior; null string remains ArgumentNull. HTTP/socket/global policy remains pending.
+
+Native Nwc HTTP: nwc_http_network_source_parity uses actual DLL.Send and unchanged legacy/helper over real local HTTP:52 flows/61 captured requests. NwcXmlRpcHttpTransport takes explicit URI/proxy/TLS/error policy providers; new shared HTTP operation preserves GET defaults. Global client pooling/policy/logging and production advanced profile binding remain pending.
+
+XMLRPCRequester: xml_rpc_requester_source_parity executes13524 control-flow scenarios against the unchanged original helper with controlled client/serializer/LINQ/logger/clock boundaries. nwc_http_network_source_parity now composes the native helper and real transport for legacy profile requests at DebugLevel0. Exact diagnostic XML formatting remains a required provider; global connection pooling/TLS policies and advanced runtime installation remain pending.
+
+XML-RPC diagnostic defaults supersede the previous required formatter boundary: xml_rpc_diagnostics_source_parity compares9008 actual SDK serialized requests/responses and real XElement Parse/DisableFormatting observations plus unchanged WebUtil/BinaryToASCII helpers. Consumed Nwc XML has no attributes/namespaces; arbitrary LINQ XML writers are outside this API. nwc_http_network_source_parity now covers58 flows/67 wire requests including6 DebugLevel5 flows with exact stable-map logs (timing compared separately). Production wrapper uses these diagnostic defaults. Global connection pooling/policies and advanced host remain pending.
+
+User-agent directory: user_agent_connector_source_parity compares669 unchanged-method scenarios for original URI/config-home constructors, CallServer and GetUserInfo/GetServerURLs/LocateUser/GetUUI/GetUUID. Real Nwc parser and SDK UUID preserve response types and retained boxed references; client/log failures controlled. Native Nwc HTTP gate now69 flows/79 captured requests, including11 actual GetUserInfo calls at10000ms with error/fault/null/redirect/BOM/chunked behavior. Other user-agent methods, full configuration GridInfo resolution, global pooling/policies and advanced host remain pending.
+
+User-agent verification: directory/boolean source gate now2537 unchanged-method cases, including GetBoolResponse out-reason partial state and repeated catch-path casts, VerifyAgent/VerifyClient/IsAgentComingHome/LogoutAgent and SetClientToken. Real HTTP gate81 flows/92 captures includes12 boolean-helper calls in addition to11 GetUserInfo calls. Home region/friends/grid login/agent packing/inherited simulation methods and global pool/policy/host remain incomplete.
+
+User-agent home/friends: expanded source gate4560 cases uses unchanged full GridRegion, real SDK UUID/Vector3 and original GetHomeRegion/StatusNotification/GetOnlineFriends. Exact vectors/defaults/endpoints, casts/partial outputs and ordered partial UUID results under explicit controlled friend Hashtable.Keys/custom ToString boundaries. Combined actual HTTP103 flows/116 captures adds12 home and10 online-friend paths. Arbitrary CLR Hashtable hash/enumeration and list mutation semantics are not claimed. Grid login/packing/inherited simulation, full configuration, global pool/TLS/proxy policies and production host remain pending.
+
+User-agent grid login: user_agent_grid_source_parity4096 cases execute unchanged LoginAgentToGrid overloads/AgentPath/PackData and unchanged base PackData with actual GridRegion/EntityTransferContext/SDK OSD, explicit CreateAgent/circuit identity boundary. Exact partial packet/key order/flags/reasons, gatekeeper mutation/reentry and owning retention are checked. AgentLauncher calls an owning login interface, retaining gatekeeper identities; reference entry points borrow and require caller lifetime. UserAgentServiceConnector inherits the existing real SimulationConnector OSD sender. New composed grid-login HTTP, full base diagnostics/errors/transport policies, full GridInfo configuration and advanced production host remain pending.
+
+Full OSD request control flow: osd_service_requester_source_parity compares17062 unchanged ServiceOSDRequest/helper scenarios with actual SDK JSON/gzip and BCL request/header objects. Explicit HTTP/request/reader/cancellation factories preserve source construction/scope/disposal failure boundaries; no successful transport is invented. Adaptive timeout uses source unchecked length arithmetic. UTF16 canonicalizer/error-map types and field order preserved. This controller is NOT yet the live osd_request default; next work binds native stream HTTP/reader/timer adapters and validates actual wire/timeouts/cancellation before switching it.

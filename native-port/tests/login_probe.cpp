@@ -26,36 +26,64 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "opensim/services/login_service.hpp"
+#include "opensim/framework/text.hpp"
 #include <iostream>
 using namespace opensim;
 using network::Value;
-class Echo final:public services::ILoginService {
+class Echo final : public services::ILoginService {
 public:
-    Value login(const services::LoginRequest& r)override{
-        return Value::object({{"first",Value(r.first)},{"last",Value(r.last)},{"passwd",Value(r.password)},
-            {"start",Value(r.start)},{"scope_id",Value(r.scope)},{"version",Value(r.version)},
-            {"channel",Value(r.channel)},{"mac",Value(r.mac)},{"id0",Value(r.id0)},{"ip",Value(r.remote_ip)}});
+    Value login(const services::LoginRequest& r) override {
+        return Value::object({{"first", Value(r.first)},
+                              {"last", Value(r.last)},
+                              {"passwd", Value(r.password)},
+                              {"start", Value(r.start)},
+                              {"scope_id", Value(r.scope)},
+                              {"version", Value(r.version)},
+                              {"channel", Value(r.channel)},
+                              {"mac", Value(r.mac)},
+                              {"id0", Value(r.id0)},
+                              {"ip", Value(r.remote_ip)}});
     }
-    Value set_level(std::string_view first,std::string_view last,std::string_view password,int level)override{
-        return Value::object({{"first",Value(std::string(first))},{"last",Value(std::string(last))},
-            {"passwd",Value(std::string(password))},{"level",Value(level)},{"success",Value(true)}});
+    Value set_level(std::string_view first, std::string_view last, std::string_view password,
+                    int level) override {
+        return Value::object({{"first", Value(std::string(first))},
+                              {"last", Value(std::string(last))},
+                              {"passwd", Value(std::string(password))},
+                              {"level", Value(level)},
+                              {"success", Value(true)}});
     }
 };
-int main(){
-    Echo echo;services::LoginHandlers handlers(echo);
+int main() {
+    Echo echo;
+    services::LoginHandlers handlers(echo);
     std::string line;
-    while(std::getline(std::cin,line)){
-        try{
-            auto separator=line.find('\t');auto mode=line.substr(0,separator),body=line.substr(separator+1);
+    while (std::getline(std::cin, line)) {
+        try {
+            auto separator = line.find('\t');
+            auto mode = line.substr(0, separator), body = line.substr(separator + 1);
             Value reply;
-            if(mode=="failure")reply=services::login_failure(body);
-            else if(mode=="llsd")reply=handlers.llsd_login(network::parse_llsd_xml(body),"127.0.0.1");
-            else{
-                auto call=network::parse_xml_rpc(body);const Value empty;
-                auto& input=call.parameters.empty()?empty:call.parameters.front();
-                reply=mode=="level"?handlers.set_level(input):handlers.xml_rpc_login(input,"127.0.0.1");
+            if (mode == "failure")
+                reply = services::login_failure(body);
+            else if (mode == "levelraw") {
+                std::u16string text;
+                for (std::size_t i = 0; i < body.size(); i += 4)
+                    text.push_back(static_cast<char16_t>(std::stoul(body.substr(i, 4), nullptr, 16)));
+                reply = handlers.set_level(Value::object({{"first", Value("Test")},
+                                                          {"last", Value("User")},
+                                                          {"passwd", Value("secret")},
+                                                          {"level", Value(framework::utf8(text))}}));
+            } else if (mode == "llsd")
+                reply = handlers.llsd_login(network::parse_llsd_xml(body), "127.0.0.1");
+            else {
+                auto call = network::parse_xml_rpc(body);
+                const Value empty;
+                auto& input = call.parameters.empty() ? empty : call.parameters.front();
+                reply =
+                    mode == "level" ? handlers.set_level(input) : handlers.xml_rpc_login(input, "127.0.0.1");
             }
-            std::cout<<network::xml_rpc_response(reply)<<'\n';
-        }catch(const std::exception&){std::cout<<"EXCEPTION\n";}
+            std::cout << network::xml_rpc_response(reply) << '\n';
+        } catch (const std::exception&) {
+            std::cout << "EXCEPTION\n";
+        }
     }
 }

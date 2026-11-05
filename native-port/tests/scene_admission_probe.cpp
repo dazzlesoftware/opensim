@@ -8,15 +8,301 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-using namespace opensim;using network::Value;using framework::Uuid;
-std::string hex(std::string_view s){std::string out;const char* h="0123456789abcdef";for(unsigned char c:s){out+=h[c>>4];out+=h[c&15];}return out;}
-std::string decode(std::string_view s){std::string out;for(std::size_t i=0;i<s.size();i+=2)out+=static_cast<char>(std::stoi(std::string(s.substr(i,2)),nullptr,16));return out;}
-Uuid id(int n){return Uuid("00000000-0000-0000-0000-00000000000"+std::to_string(n));}
-std::string bits(float f){std::ostringstream out;out<<std::hex<<std::setfill('0')<<std::setw(8)<<(std::isnan(f)?0x7fc00000u:std::bit_cast<std::uint32_t>(f));return out.str();}
+using namespace opensim;
+using network::Value;
+using framework::Uuid;
+std::string hex(std::string_view s) {
+    std::string out;
+    const char* h = "0123456789abcdef";
+    for (unsigned char c : s) {
+        out += h[c >> 4];
+        out += h[c & 15];
+    }
+    return out;
+}
+std::string decode(std::string_view s) {
+    std::string out;
+    for (std::size_t i = 0; i < s.size(); i += 2)
+        out += static_cast<char>(std::stoi(std::string(s.substr(i, 2)), nullptr, 16));
+    return out;
+}
+Uuid id(int n) {
+    return Uuid("00000000-0000-0000-0000-00000000000" + std::to_string(n));
+}
+std::string bits(float f) {
+    std::ostringstream out;
+    out << std::hex << std::setfill('0') << std::setw(8)
+        << (std::isnan(f) ? 0x7fc00000u : std::bit_cast<std::uint32_t>(f));
+    return out.str();
+}
 struct Backend;
-struct Context{Value command;std::string trace;Backend* backend=nullptr;int sleeps=0;bool flag(const char* k,bool f=false)const{return command.contains(k)?network::osd_boolean(command.get(k)):f;}int number(const char* k,int f=0)const{return command.contains(k)?network::osd_integer(command.get(k)):f;}std::string text(const char* k,std::string f="")const{return command.contains(k)?network::osd_string(command.get(k)):f;}void log(std::string op,std::string detail=""){trace+=op+":"+hex(detail)+";";if(text("failure")==op)throw std::runtime_error(op);}};
-struct Presence:services::AdmissionPresence{Context& ctx;bool dead=false,is_child=true,not_close=false;services::AdmissionPresenceState lifecycle=services::AdmissionPresenceState::running;std::uint32_t flags=0;explicit Presence(Context& c):ctx(c){auto mode=ctx.text("presence");is_child=mode!="root"&&mode!="removing_root";dead=mode=="deleted";if(mode=="preremove")lifecycle=services::AdmissionPresenceState::pre_remove;else if(mode.starts_with("removing"))lifecycle=services::AdmissionPresenceState::removing;else if(mode=="removed")lifecycle=services::AdmissionPresenceState::removed;}Uuid agent_id()const override{return id(7);}bool deleted()const override{return dead;}bool child()const override{return is_child;}services::AdmissionPresenceState state()const override{return lifecycle;}void state(services::AdmissionPresenceState v)override{ctx.log("state",std::to_string(static_cast<int>(v)));lifecycle=v;}void do_not_close_after_teleport(bool v)override{ctx.log("not-close",v?"1":"0");not_close=v;}bool has_client()const override{return ctx.flag("client",true);}void teleport_flags(std::uint32_t v)override{ctx.log("presence-flags",std::to_string(v));flags=v;}void adjust_known_seeds()override{ctx.log("adjust");}};
-struct Caps:services::AdmissionCaps{Context& ctx;explicit Caps(Context& c):ctx(c){}void set_agent_caps_seeds(const std::shared_ptr<framework::AgentCircuitData>& a)override;void create_caps(const Uuid& a,std::uint32_t c)override{ctx.log("create-caps",a.str()+":"+std::to_string(c));}void activate_caps(std::uint32_t c)override{ctx.log("activate",std::to_string(c));}};
-struct Backend:services::SceneAdmissionBackend{Context& ctx;services::AccessRegion info;framework::AgentCircuitManager circuits;std::shared_ptr<framework::AgentCircuitData> input;std::shared_ptr<Presence> actor;std::shared_ptr<Caps> module;std::recursive_mutex remove_mutex,new_mutex;explicit Backend(Context& c):ctx(c){ctx.backend=this;info.id=id(9);info.name="Region";info.size_x=static_cast<std::uint32_t>(ctx.number("size_x",256));info.size_y=static_cast<std::uint32_t>(ctx.number("size_y",256));input=std::make_shared<framework::AgentCircuitData>();input->agent_id=id(7);input->session_id=id(8);input->circuit_code=123;input->first_name="Test";input->last_name="User";input->caps_path="initial";input->start_position={1,2,30};input->teleport_flags=17;if(ctx.command.contains("position")){auto& v=ctx.command.get("position").array;input->start_position={static_cast<float>(network::osd_real(v.at(0))),static_cast<float>(network::osd_real(v.at(1))),static_cast<float>(network::osd_real(v.at(2)))};}if(ctx.flag("old_circuit")){auto old=std::make_shared<framework::AgentCircuitData>();old->agent_id=id(7);old->circuit_code=99;circuits.add_new_circuit(old);}if(!ctx.text("presence").empty()&&ctx.text("presence")!="none")actor=std::make_shared<Presence>(ctx);if(ctx.flag("caps",true))module=std::make_shared<Caps>(ctx);}services::AccessRegion& region()override{return info;}std::recursive_mutex& remove_client_mutex()override{return remove_mutex;}std::recursive_mutex& new_user_mutex()override{return new_mutex;}std::string viewer_name(const std::shared_ptr<framework::AgentCircuitData>& a)override{ctx.log("viewer");if(!a)throw std::invalid_argument("Null circuit");return ctx.text("viewer","Viewer 1");}std::string lower_current_culture(const std::string& text)override{auto s=text;for(auto& c:s)if(c>='A'&&c<='Z')c+=32;return s;}void log_incoming(const std::shared_ptr<framework::AgentCircuitData>&,std::uint32_t,const services::GridRegion*,const std::string&)override{ctx.log("incoming");}bool logins_enabled()const override{return ctx.flag("enabled",true);}std::vector<std::optional<std::string>> list(const char* key)const{std::vector<std::optional<std::string>> result;for(const auto& n:ctx.command.get(key).array)result.push_back(n.kind==Value::Kind::Undefined?std::nullopt:std::optional<std::string>(network::osd_string(n)));return result;}std::vector<std::optional<std::string>> allowed_viewers()const override{return list("allowed");}std::vector<std::optional<std::string>> banned_viewers()const override{return list("banned");}std::shared_ptr<services::AdmissionPresence> presence(const Uuid& a)override{ctx.log("presence",a.str());return actor;}bool in_transit(const Uuid& a)override{ctx.log("transit",a.str());return ctx.flag("transit");}void sleep(int n)override{ctx.log("sleep",std::to_string(n));++ctx.sleeps;if(ctx.number("after")>0&&ctx.sleeps>=ctx.number("after")){if(ctx.flag("delete_after"))actor->dead=true;else actor->lifecycle=services::AdmissionPresenceState::running;}}bool telehub_allow_landmarks()const override{return ctx.flag("landmarks");}bool check_land_access(const Uuid& a,bool n,bool h,bool c,const framework::Vector3& p,std::string& reason)override{ctx.log("land",a.str()+":"+(n?"1":"0")+":"+(h?"1":"0")+":"+(c?"1":"0")+":"+bits(p.x)+":"+bits(p.y));reason=ctx.flag("land_deny")?"land-denied":"";return !ctx.flag("land_deny");}void remove_circuit(const std::shared_ptr<framework::AgentCircuitData>& a)override{ctx.log("remove",std::to_string(a->circuit_code));circuits.remove_circuit(a);}void close_agent(const Uuid& a,bool force)override{ctx.log("close",a.str()+":"+(force?"1":"0"));if(actor)actor->dead=true;}void remove_cached_account(const Uuid& a)override{ctx.log("cache-module");if(ctx.flag("cache",true))ctx.log("cache-remove",a.str());}void add_circuit(const std::shared_ptr<framework::AgentCircuitData>& a)override{ctx.log("add",std::to_string(a->circuit_code)+":"+std::to_string(a->teleport_flags));circuits.add_new_circuit(a);}bool has_presence_service()const override{ctx.log("presence-module");return ctx.flag("presence_service",true);}std::optional<services::AdmissionGridPresence> grid_presence(const Uuid& a)override{ctx.log("grid-presence",a.str());if(ctx.flag("missing_grid"))return {};return services::AdmissionGridPresence{ctx.flag("wrong_grid")?id(9).str():id(7).str()};}bool see_into_region()const override{return ctx.flag("see",true);}bool authorize_user(const std::shared_ptr<framework::AgentCircuitData>& a,bool bypass,std::string& reason)override{ctx.log("authorize",a->agent_id.str()+":"+(bypass?"1":"0"));reason=ctx.flag("auth_deny")?"auth-denied":"";return !ctx.flag("auth_deny");}std::shared_ptr<services::AdmissionCaps> caps()override{return module;}void cache_user_name(const std::shared_ptr<framework::AgentCircuitData>& a)override{ctx.log("name",a->agent_id.str());}};
-void Caps::set_agent_caps_seeds(const std::shared_ptr<framework::AgentCircuitData>& a){ctx.log("seeds",a->agent_id.str());a->caps_path="seeded";if(ctx.flag("reset_caps"))ctx.backend->module.reset();}
-int main(){std::string line;while(std::getline(std::cin,line)){Context ctx{network::parse_osd_json(decode(line))};Backend backend(ctx);services::SceneAdmission admission(backend);std::string reason="before",result;try{auto circuit=ctx.flag("null_agent")?nullptr:backend.input;bool ok=ctx.flag("verify_only")?admission.verify_user_presence(circuit,reason):admission.new_user_connection(circuit,static_cast<std::uint32_t>(ctx.number("flags")),nullptr,reason,ctx.flag("require_presence",true));result=ok?"1":"0";}catch(const std::exception&){result="EX";}auto& a=*backend.input;auto sp=backend.actor;std::cout<<result<<"|"<<hex(reason)<<"|"<<hex(ctx.trace)<<"|"<<bits(a.start_position.x)<<":"<<bits(a.start_position.y)<<"|"<<a.teleport_flags<<"|"<<hex(a.caps_path.value_or(""))<<"|"<<backend.circuits.get_agent_circuits().size()<<":"<<(backend.circuits.get_agent_circuit_data(id(7))==backend.input)<<"|"<<(sp?std::to_string(static_cast<int>(sp->lifecycle))+":"+(sp->dead?"1":"0")+":"+(sp->not_close?"1":"0")+":"+std::to_string(sp->flags):"-")<<"|"<<(backend.module!=nullptr)<<"\n";}}
+struct Context {
+    Value command;
+    std::string trace;
+    Backend* backend = nullptr;
+    int sleeps = 0;
+    bool flag(const char* k, bool f = false) const {
+        return command.contains(k) ? network::osd_boolean(command.get(k)) : f;
+    }
+    int number(const char* k, int f = 0) const {
+        return command.contains(k) ? network::osd_integer(command.get(k)) : f;
+    }
+    std::string text(const char* k, std::string f = "") const {
+        return command.contains(k) ? network::osd_string(command.get(k)) : f;
+    }
+    void log(std::string op, std::string detail = "") {
+        trace += op + ":" + hex(detail) + ";";
+        if (text("failure") == op)
+            throw std::runtime_error(op);
+    }
+};
+struct Presence : services::AdmissionPresence {
+    Context& ctx;
+    bool dead = false, is_child = true, not_close = false;
+    services::AdmissionPresenceState lifecycle = services::AdmissionPresenceState::running;
+    std::uint32_t flags = 0;
+    explicit Presence(Context& c) : ctx(c) {
+        auto mode = ctx.text("presence");
+        is_child = mode != "root" && mode != "removing_root";
+        dead = mode == "deleted";
+        if (mode == "preremove")
+            lifecycle = services::AdmissionPresenceState::pre_remove;
+        else if (mode.starts_with("removing"))
+            lifecycle = services::AdmissionPresenceState::removing;
+        else if (mode == "removed")
+            lifecycle = services::AdmissionPresenceState::removed;
+    }
+    Uuid agent_id() const override {
+        return id(7);
+    }
+    bool deleted() const override {
+        return dead;
+    }
+    bool child() const override {
+        return is_child;
+    }
+    services::AdmissionPresenceState state() const override {
+        return lifecycle;
+    }
+    void state(services::AdmissionPresenceState v) override {
+        ctx.log("state", std::to_string(static_cast<int>(v)));
+        lifecycle = v;
+    }
+    void do_not_close_after_teleport(bool v) override {
+        ctx.log("not-close", v ? "1" : "0");
+        not_close = v;
+    }
+    bool has_client() const override {
+        return ctx.flag("client", true);
+    }
+    void teleport_flags(std::uint32_t v) override {
+        ctx.log("presence-flags", std::to_string(v));
+        flags = v;
+    }
+    void adjust_known_seeds() override {
+        ctx.log("adjust");
+    }
+};
+struct Caps : services::AdmissionCaps {
+    Context& ctx;
+    explicit Caps(Context& c) : ctx(c) {
+    }
+    void set_agent_caps_seeds(const std::shared_ptr<framework::AgentCircuitData>& a) override;
+    void create_caps(const Uuid& a, std::uint32_t c) override {
+        ctx.log("create-caps", a.str() + ":" + std::to_string(c));
+    }
+    void activate_caps(std::uint32_t c) override {
+        ctx.log("activate", std::to_string(c));
+    }
+};
+struct Backend : services::SceneAdmissionBackend {
+    Context& ctx;
+    services::AccessRegion info;
+    framework::AgentCircuitManager circuits;
+    std::shared_ptr<framework::AgentCircuitData> input;
+    std::shared_ptr<Presence> actor;
+    std::shared_ptr<Caps> module;
+    std::recursive_mutex remove_mutex, new_mutex;
+    explicit Backend(Context& c) : ctx(c) {
+        ctx.backend = this;
+        info.id = id(9);
+        info.name = "Region";
+        info.size_x = static_cast<std::uint32_t>(ctx.number("size_x", 256));
+        info.size_y = static_cast<std::uint32_t>(ctx.number("size_y", 256));
+        input = std::make_shared<framework::AgentCircuitData>();
+        input->agent_id = id(7);
+        input->session_id = id(8);
+        input->circuit_code = 123;
+        input->first_name = "Test";
+        input->last_name = "User";
+        input->caps_path = "initial";
+        input->start_position = {1, 2, 30};
+        input->teleport_flags = 17;
+        if (ctx.command.contains("position")) {
+            auto& v = ctx.command.get("position").array;
+            input->start_position = {static_cast<float>(network::osd_real(v.at(0))),
+                                     static_cast<float>(network::osd_real(v.at(1))),
+                                     static_cast<float>(network::osd_real(v.at(2)))};
+        }
+        if (ctx.flag("old_circuit")) {
+            auto old = std::make_shared<framework::AgentCircuitData>();
+            old->agent_id = id(7);
+            old->circuit_code = 99;
+            circuits.add_new_circuit(old);
+        }
+        if (!ctx.text("presence").empty() && ctx.text("presence") != "none")
+            actor = std::make_shared<Presence>(ctx);
+        if (ctx.flag("caps", true))
+            module = std::make_shared<Caps>(ctx);
+    }
+    services::AccessRegion& region() override {
+        return info;
+    }
+    std::recursive_mutex& remove_client_mutex() override {
+        return remove_mutex;
+    }
+    std::recursive_mutex& new_user_mutex() override {
+        return new_mutex;
+    }
+    std::string viewer_name(const std::shared_ptr<framework::AgentCircuitData>& a) override {
+        ctx.log("viewer");
+        if (!a)
+            throw std::invalid_argument("Null circuit");
+        return ctx.text("viewer", "Viewer 1");
+    }
+    std::string lower_current_culture(const std::string& text) override {
+        auto s = text;
+        for (auto& c : s)
+            if (c >= 'A' && c <= 'Z')
+                c += 32;
+        return s;
+    }
+    void log_incoming(const std::shared_ptr<framework::AgentCircuitData>&, std::uint32_t,
+                      const services::GridRegion*, const std::string&) override {
+        ctx.log("incoming");
+    }
+    bool logins_enabled() const override {
+        return ctx.flag("enabled", true);
+    }
+    std::vector<std::optional<std::string>> list(const char* key) const {
+        std::vector<std::optional<std::string>> result;
+        for (const auto& n : ctx.command.get(key).array)
+            result.push_back(n.kind == Value::Kind::Undefined
+                                 ? std::nullopt
+                                 : std::optional<std::string>(network::osd_string(n)));
+        return result;
+    }
+    std::vector<std::optional<std::string>> allowed_viewers() const override {
+        return list("allowed");
+    }
+    std::vector<std::optional<std::string>> banned_viewers() const override {
+        return list("banned");
+    }
+    std::shared_ptr<services::AdmissionPresence> presence(const Uuid& a) override {
+        ctx.log("presence", a.str());
+        return actor;
+    }
+    bool in_transit(const Uuid& a) override {
+        ctx.log("transit", a.str());
+        return ctx.flag("transit");
+    }
+    void sleep(int n) override {
+        ctx.log("sleep", std::to_string(n));
+        ++ctx.sleeps;
+        if (ctx.number("after") > 0 && ctx.sleeps >= ctx.number("after")) {
+            if (ctx.flag("delete_after"))
+                actor->dead = true;
+            else
+                actor->lifecycle = services::AdmissionPresenceState::running;
+        }
+    }
+    bool telehub_allow_landmarks() const override {
+        return ctx.flag("landmarks");
+    }
+    bool check_land_access(const Uuid& a, bool n, bool h, bool c, const framework::Vector3& p,
+                           std::string& reason) override {
+        ctx.log("land", a.str() + ":" + (n ? "1" : "0") + ":" + (h ? "1" : "0") + ":" + (c ? "1" : "0") +
+                            ":" + bits(p.x) + ":" + bits(p.y));
+        reason = ctx.flag("land_deny") ? "land-denied" : "";
+        return !ctx.flag("land_deny");
+    }
+    void remove_circuit(const std::shared_ptr<framework::AgentCircuitData>& a) override {
+        ctx.log("remove", std::to_string(a->circuit_code));
+        circuits.remove_circuit(a);
+    }
+    void close_agent(const Uuid& a, bool force) override {
+        ctx.log("close", a.str() + ":" + (force ? "1" : "0"));
+        if (actor)
+            actor->dead = true;
+    }
+    void remove_cached_account(const Uuid& a) override {
+        ctx.log("cache-module");
+        if (ctx.flag("cache", true))
+            ctx.log("cache-remove", a.str());
+    }
+    void add_circuit(const std::shared_ptr<framework::AgentCircuitData>& a) override {
+        ctx.log("add", std::to_string(a->circuit_code) + ":" + std::to_string(a->teleport_flags));
+        circuits.add_new_circuit(a);
+    }
+    bool has_presence_service() const override {
+        ctx.log("presence-module");
+        return ctx.flag("presence_service", true);
+    }
+    std::optional<services::AdmissionGridPresence> grid_presence(const Uuid& a) override {
+        ctx.log("grid-presence", a.str());
+        if (ctx.flag("missing_grid"))
+            return {};
+        return services::AdmissionGridPresence{ctx.flag("wrong_grid") ? id(9).str() : id(7).str()};
+    }
+    bool see_into_region() const override {
+        return ctx.flag("see", true);
+    }
+    bool authorize_user(const std::shared_ptr<framework::AgentCircuitData>& a, bool bypass,
+                        std::string& reason) override {
+        ctx.log("authorize", a->agent_id.str() + ":" + (bypass ? "1" : "0"));
+        reason = ctx.flag("auth_deny") ? "auth-denied" : "";
+        return !ctx.flag("auth_deny");
+    }
+    std::shared_ptr<services::AdmissionCaps> caps() override {
+        return module;
+    }
+    void cache_user_name(const std::shared_ptr<framework::AgentCircuitData>& a) override {
+        ctx.log("name", a->agent_id.str());
+    }
+};
+void Caps::set_agent_caps_seeds(const std::shared_ptr<framework::AgentCircuitData>& a) {
+    ctx.log("seeds", a->agent_id.str());
+    a->caps_path = "seeded";
+    if (ctx.flag("reset_caps"))
+        ctx.backend->module.reset();
+}
+int main() {
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        Context ctx{network::parse_osd_json(decode(line))};
+        Backend backend(ctx);
+        services::SceneAdmission admission(backend);
+        std::string reason = "before", result;
+        try {
+            auto circuit = ctx.flag("null_agent") ? nullptr : backend.input;
+            bool ok =
+                ctx.flag("verify_only")
+                    ? admission.verify_user_presence(circuit, reason)
+                    : admission.new_user_connection(circuit, static_cast<std::uint32_t>(ctx.number("flags")),
+                                                    nullptr, reason, ctx.flag("require_presence", true));
+            result = ok ? "1" : "0";
+        } catch (const std::exception&) {
+            result = "EX";
+        }
+        auto& a = *backend.input;
+        auto sp = backend.actor;
+        std::cout << result << "|" << hex(reason) << "|" << hex(ctx.trace) << "|" << bits(a.start_position.x)
+                  << ":" << bits(a.start_position.y) << "|" << a.teleport_flags << "|"
+                  << hex(a.caps_path.value_or("")) << "|" << backend.circuits.get_agent_circuits().size()
+                  << ":" << (backend.circuits.get_agent_circuit_data(id(7)) == backend.input) << "|"
+                  << (sp ? std::to_string(static_cast<int>(sp->lifecycle)) + ":" + (sp->dead ? "1" : "0") +
+                               ":" + (sp->not_close ? "1" : "0") + ":" + std::to_string(sp->flags)
+                         : "-")
+                  << "|" << (backend.module != nullptr) << "\n";
+    }
+}

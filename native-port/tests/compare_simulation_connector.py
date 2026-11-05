@@ -20,6 +20,8 @@ def main():
  commands=['Q '+str(profile)+' '+reply for profile in range(64) for reply in [*[h(x) for x in replies],'throw']]
  commands += ['A '+str(profile)+' '+first+' '+second for profile in range(32) for first,second in [(h(x),h(y)) for x,y in [(replies[8],replies[9]),({'success':True,**replies[8]},replies[9]),({}, {'success':True,**replies[8]}),({'success':True,'_Result':False}, {'success':True,**replies[9]}),({},{}),({'Message':'first'}, {'Message':'last'})]]+ [('throw',h({})),(h({}),'throw')]]
  canonical=['true','TRUE','false','False',' true ','null','[]','1','{"success":true}','{"reason":"denied","success":false}','{"x":""}','not json','<llsd><map><key>success</key><boolean>true</boolean></map></llsd>']
+ for value in ['true','false','{"x":1,"s":"é中😀"}','{"\\ud800":1,"\\udc00":2}','<llsd><map><key>success</key><boolean>true</boolean></map></llsd>',"<? llsd/notation ?>{'success':true,'reason':'notation'}\0\0\0",'<? llsd/binary ?>{\x00\x00\x00\x00}']:
+  canonical.extend([value,value.upper(),value.lower(),"\0"+value,"\ufeff"+value])
  commands += ['C 0 '+s.encode().hex() for s in canonical]
  rows=[]
  for cmd in [[a.dotnet,str(w/'app/SimulationConnector.dll')],[a.native]]:
@@ -33,5 +35,7 @@ def main():
  diffs=[{'profile':c,'source':normalized(x),'native':normalized(y)} for c,x,y in zip(commands,*rows) if normalized(x)!=normalized(y)]
  (w/'simulation-connector-parity-results.json').write_text(json.dumps({'passed':not diffs,'observations':len(commands),'sourceHashes':{s:hashlib.sha256((ROOT/s).read_bytes()).hexdigest() for s in [source_path,util,'OpenSim/Framework/AgentCircuitData.cs']},'differences':diffs[:3]},indent=2)+'\n',encoding='utf-8')
  if diffs:raise AssertionError(json.dumps(diffs[:1],indent=2)[:8000])
+ gatekeeper=subprocess.run([a.native],input='G 0\n',capture_output=True,text=True,check=True,timeout=10)
+ assert gatekeeper.stdout.strip()=='http://127.0.0.1:9000/base/foreignagent/00000000-0000-0000-0000-000000000007/',gatekeeper.stdout
  print(f'PASS: {len(commands)} simulation connector source observations')
 if __name__=='__main__':main()

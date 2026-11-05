@@ -1,6 +1,7 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #pragma once
+#include "opensim/framework/invariant_datetime_context.hpp"
 #include "opensim/services/flotsam_file_store.hpp"
 #include <cstdint>
 namespace opensim::services {
@@ -24,8 +25,11 @@ public:
  void touch(const std::filesystem::path&)const noexcept;
  void note(const std::filesystem::path&,int milliseconds)const;
 private:
- std::shared_ptr<FlotsamAccessEntries> entries_;SetTime set_time_;
+    std::shared_ptr<FlotsamAccessEntries> entries_;
+    SetTime set_time_;
 };
+// Source File.SetLastAccessTime(path, DateTime.Now), retaining one runtime owner.
+FlotsamFileAccess::SetTime native_flotsam_access_time_setter(std::shared_ptr<framework::NativeInvariantDateTimeContext> datetime={});
 void native_flotsam_set_access_time(const std::filesystem::path&);
 void attach_flotsam_file_access(const std::shared_ptr<FlotsamFileBackend>&,
  const std::shared_ptr<FlotsamFileAccess>&);

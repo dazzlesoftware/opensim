@@ -8,15 +8,291 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-using namespace opensim;using network::Value;using framework::Uuid;using framework::Vector3;
-std::string hex(std::string_view s){std::string out;const char* h="0123456789abcdef";for(unsigned char c:s){out+=h[c>>4];out+=h[c&15];}return out;}
-std::string decode(std::string_view s){std::string out;for(std::size_t i=0;i<s.size();i+=2)out+=static_cast<char>(std::stoi(std::string(s.substr(i,2)),nullptr,16));return out;}
-Uuid id(int n){return Uuid("00000000-0000-0000-0000-00000000000"+std::to_string(n));}
-std::string bits(float f){std::ostringstream out;out<<std::hex<<std::setfill('0')<<std::setw(8)<<(std::isnan(f)?0x7fc00000u:std::bit_cast<std::uint32_t>(f));return out.str();}
-struct Context{Value command;std::string trace;int gods=0,lands=0;bool flag(const char* key,bool fallback=false)const{return command.contains(key)?network::osd_boolean(command.get(key)):fallback;}int number(const char* key,int fallback=0)const{return command.contains(key)?network::osd_integer(command.get(key)):fallback;}void log(std::string op,std::string value=""){trace+=op+":"+hex(value)+";";if(network::osd_string(command.get("failure"))==op)throw std::runtime_error(op);}};
-struct Parcel:services::AccessParcel{Context& ctx;int mode;bool nearest;Parcel(Context& c,int m,bool n=false):ctx(c),mode(m),nearest(n){}bool banned(const Uuid& a)override{ctx.log("banned",a.str());return mode==2||mode==4;}bool restricted(const Uuid& a)override{ctx.log("restricted",a.str());return mode==3||mode==4;}bool banned_or_restricted(const Uuid& a)override{ctx.log("either",a.str());return mode>=2;}std::optional<services::AccessPoint> nearest_point(const Vector3& p)override{ctx.log("point",bits(p.x)+":"+bits(p.y));auto v=ctx.command.get("point").view();if(v.kind!=Value::Kind::Array)return {};return services::AccessPoint{static_cast<float>(network::osd_real(v.array.at(0))),static_cast<float>(network::osd_real(v.array.at(1)))};}};
-struct Estate:services::AccessEstate{Context& ctx;explicit Estate(Context& c):ctx(c){}bool banned(const Uuid& a,int flags)override{ctx.log("estate-ban",a.str()+":"+std::to_string(flags));return ctx.flag("estate_banned");}bool public_access()const override{ctx.log("public");return ctx.flag("public",true);}bool has_access(const Uuid& a)override{ctx.log("estate-access",a.str());return ctx.flag("access");}std::optional<std::vector<Uuid>> groups()const override{ctx.log("estate-groups");auto value=ctx.command.get("estate_groups").view();if(value.kind!=Value::Kind::Array)return {};std::vector<Uuid> result;for(auto& n:value.array)result.push_back(id(network::osd_integer(n)));return result;}bool allow_direct_teleport()const override{ctx.log("direct");return ctx.flag("direct",true);}};
-struct Hub:services::AccessTelehub{Context& ctx;explicit Hub(Context& c):ctx(c){}Vector3 position()const override{ctx.log("hub-position");return {10,20,30};}framework::Quaternion rotation()const override{ctx.log("hub-rotation");return {0,0,0,1};}};
-struct Spawn:services::AccessSpawnPoint{Context& ctx;Value value;int index;Spawn(Context& c,Value v,int n):ctx(c),value(std::move(v)),index(n){}Vector3 location(const Vector3&,const framework::Quaternion&)const override{ctx.log("spawn",std::to_string(index));return {static_cast<float>(network::osd_real(value.array.at(0))),static_cast<float>(network::osd_real(value.array.at(1))),static_cast<float>(network::osd_real(value.array.at(2)))};}};
-struct Backend:services::SceneAccessBackend{Context& ctx;services::AccessRegion info;std::shared_ptr<framework::AgentCircuitData> existing;Backend(Context& c):ctx(c){info.id=id(9);info.scope=id(8);info.name=ctx.flag("null_name")?std::nullopt:std::optional<std::string>("Region");info.size_x=static_cast<std::uint32_t>(ctx.number("size_x",256));info.size_y=static_cast<std::uint32_t>(ctx.number("size_y",256));info.agent_limit=ctx.number("limit",100);if(!ctx.flag("null_estate"))info.estate=std::make_shared<Estate>(ctx);if(ctx.flag("hub"))info.telehub=id(6);if(ctx.flag("circuit")){existing=std::make_shared<framework::AgentCircuitData>();existing->agent_id=id(ctx.number("circuit_agent",7));if(!ctx.flag("null_names")){existing->first_name="Existing";existing->last_name="Agent";}}}services::AccessRegion& region()override{return info;}bool is_god(const Uuid& a)override{ctx.log("god",a.str());++ctx.gods;return ctx.flag("god")||(ctx.number("god_after")>0&&ctx.gods>=ctx.number("god_after"));}bool is_estate_manager(const Uuid& a)override{ctx.log("manager",a.str());return ctx.flag("manager");}bool strict_access_control()const override{return ctx.flag("strict",true);}bool allow_avatar_crossing()const override{return ctx.flag("cross",true);}std::shared_ptr<framework::AgentCircuitData> circuit(const Uuid& a)override{ctx.log("circuit",a.str());return existing;}bool has_authorization_service()const override{return ctx.flag("auth");}bool authorize_region(const std::shared_ptr<framework::AgentCircuitData>& a,const Uuid& r,std::string& reason)override{ctx.log("authorize",a->agent_id.str()+":"+(a->first_name?hex(*a->first_name):"-")+":"+(a->last_name?hex(*a->last_name):"-")+":"+r.str()+":"+(a==existing?"1":"0"));reason="auth-reason";return !ctx.flag("auth_deny");}int user_flags(const Uuid& a)override{ctx.log("flags",a.str());return ctx.number("flags",42);}bool has_groups_module()const override{return ctx.flag("groups");}std::optional<std::vector<std::optional<Uuid>>> memberships(const Uuid& a)override{ctx.log("memberships",a.str());auto value=ctx.command.get("memberships").view();if(value.kind!=Value::Kind::Array)return {};std::vector<std::optional<Uuid>> result;for(const auto& n:value.array)result.push_back(n.kind==Value::Kind::Undefined?std::nullopt:std::optional<Uuid>(id(network::osd_integer(n))));return result;}void recalculate_stats()override{ctx.log("recalculate");}int root_agents()override{ctx.log("roots");return ctx.number("roots");}int root_npcs()override{ctx.log("npcs");return ctx.number("npcs");}std::shared_ptr<services::AccessTelehub> telehub(const Uuid& a)override{ctx.log("telehub",a.str());return ctx.flag("missing_hub")?nullptr:std::make_shared<Hub>(ctx);}std::vector<std::shared_ptr<services::AccessSpawnPoint>> spawn_points()override{ctx.log("spawns");std::vector<std::shared_ptr<services::AccessSpawnPoint>> result;int n=0;for(const auto& v:ctx.command.get("spawns").array)result.push_back(std::make_shared<Spawn>(ctx,v,n++));return result;}std::shared_ptr<services::AccessParcel> parcel(float x,float y)override{ctx.log("land",bits(x)+":"+bits(y));auto& values=ctx.command.get("lands").array;int mode=values.empty()?1:network::osd_integer(values.at(std::min<std::size_t>(ctx.lands,values.size()-1)));++ctx.lands;return mode?std::make_shared<Parcel>(ctx,mode):nullptr;}std::shared_ptr<services::AccessParcel> nearest_allowed_parcel(const Uuid& a,float x,float y)override{ctx.log("nearest",a.str()+":"+bits(x)+":"+bits(y));return ctx.flag("nearest")?std::make_shared<Parcel>(ctx,1,true):nullptr;}};
-int main(){std::string line;while(std::getline(std::cin,line)){Context ctx{network::parse_osd_json(decode(line))};Backend backend(ctx);services::SceneAccess access(backend);Uuid agent=ctx.flag("service_agent")?Uuid("6571e388-6218-4574-87db-f9379718315e"):id(7);Vector3 position{1,2,30};if(ctx.command.contains("position")){auto& v=ctx.command.get("position").array;position={static_cast<float>(network::osd_real(v.at(0))),static_cast<float>(network::osd_real(v.at(1))),static_cast<float>(network::osd_real(v.at(2)))};}float x=position.x,y=position.y;std::string reason="before",result;std::vector<Uuid> features{id(8)};try{bool ok;auto op=network::osd_string(ctx.command.get("op"));if(op=="authorize"){auto circuit=backend.existing;if(!circuit){circuit=std::make_shared<framework::AgentCircuitData>();circuit->agent_id=agent;circuit->first_name="";circuit->last_name="";}ok=access.authorize_user(ctx.flag("null_agent")?nullptr:circuit,ctx.flag("bypass"),reason);}else if(op=="land")ok=access.check_land_position_access(agent,ctx.flag("teleport",true),ctx.flag("check_hub",true),ctx.flag("check_count",true),position,reason);else if(op=="restrictions")ok=access.test_land_restrictions(agent,reason,x,y);else ok=access.query_access(agent,std::nullopt,ctx.flag("teleport",true),position,&features,reason);result=ok?"1":"0";}catch(const std::exception&){result="EX";}std::cout<<result<<"|"<<hex(reason)<<"|"<<hex(ctx.trace)<<"|"<<bits(x)<<":"<<bits(y)<<"|"<<features.size()<<"\n";}}
+using namespace opensim;
+using network::Value;
+using framework::Uuid;
+using framework::Vector3;
+std::string hex(std::string_view s) {
+    std::string out;
+    const char* h = "0123456789abcdef";
+    for (unsigned char c : s) {
+        out += h[c >> 4];
+        out += h[c & 15];
+    }
+    return out;
+}
+std::string decode(std::string_view s) {
+    std::string out;
+    for (std::size_t i = 0; i < s.size(); i += 2)
+        out += static_cast<char>(std::stoi(std::string(s.substr(i, 2)), nullptr, 16));
+    return out;
+}
+Uuid id(int n) {
+    return Uuid("00000000-0000-0000-0000-00000000000" + std::to_string(n));
+}
+std::string bits(float f) {
+    std::ostringstream out;
+    out << std::hex << std::setfill('0') << std::setw(8)
+        << (std::isnan(f) ? 0x7fc00000u : std::bit_cast<std::uint32_t>(f));
+    return out.str();
+}
+struct Context {
+    Value command;
+    std::string trace;
+    int gods = 0, lands = 0;
+    bool flag(const char* key, bool fallback = false) const {
+        return command.contains(key) ? network::osd_boolean(command.get(key)) : fallback;
+    }
+    int number(const char* key, int fallback = 0) const {
+        return command.contains(key) ? network::osd_integer(command.get(key)) : fallback;
+    }
+    void log(std::string op, std::string value = "") {
+        trace += op + ":" + hex(value) + ";";
+        if (network::osd_string(command.get("failure")) == op)
+            throw std::runtime_error(op);
+    }
+};
+struct Parcel : services::AccessParcel {
+    Context& ctx;
+    int mode;
+    bool nearest;
+    Parcel(Context& c, int m, bool n = false) : ctx(c), mode(m), nearest(n) {
+    }
+    bool banned(const Uuid& a) override {
+        ctx.log("banned", a.str());
+        return mode == 2 || mode == 4;
+    }
+    bool restricted(const Uuid& a) override {
+        ctx.log("restricted", a.str());
+        return mode == 3 || mode == 4;
+    }
+    bool banned_or_restricted(const Uuid& a) override {
+        ctx.log("either", a.str());
+        return mode >= 2;
+    }
+    std::optional<services::AccessPoint> nearest_point(const Vector3& p) override {
+        ctx.log("point", bits(p.x) + ":" + bits(p.y));
+        auto v = ctx.command.get("point").view();
+        if (v.kind != Value::Kind::Array)
+            return {};
+        return services::AccessPoint{static_cast<float>(network::osd_real(v.array.at(0))),
+                                     static_cast<float>(network::osd_real(v.array.at(1)))};
+    }
+};
+struct Estate : services::AccessEstate {
+    Context& ctx;
+    explicit Estate(Context& c) : ctx(c) {
+    }
+    bool banned(const Uuid& a, int flags) override {
+        ctx.log("estate-ban", a.str() + ":" + std::to_string(flags));
+        return ctx.flag("estate_banned");
+    }
+    bool public_access() const override {
+        ctx.log("public");
+        return ctx.flag("public", true);
+    }
+    bool has_access(const Uuid& a) override {
+        ctx.log("estate-access", a.str());
+        return ctx.flag("access");
+    }
+    std::optional<std::vector<Uuid>> groups() const override {
+        ctx.log("estate-groups");
+        auto value = ctx.command.get("estate_groups").view();
+        if (value.kind != Value::Kind::Array)
+            return {};
+        std::vector<Uuid> result;
+        for (auto& n : value.array)
+            result.push_back(id(network::osd_integer(n)));
+        return result;
+    }
+    bool allow_direct_teleport() const override {
+        ctx.log("direct");
+        return ctx.flag("direct", true);
+    }
+};
+struct Hub : services::AccessTelehub {
+    Context& ctx;
+    explicit Hub(Context& c) : ctx(c) {
+    }
+    Vector3 position() const override {
+        ctx.log("hub-position");
+        return {10, 20, 30};
+    }
+    framework::Quaternion rotation() const override {
+        ctx.log("hub-rotation");
+        return {0, 0, 0, 1};
+    }
+};
+struct Spawn : services::AccessSpawnPoint {
+    Context& ctx;
+    Value value;
+    int index;
+    Spawn(Context& c, Value v, int n) : ctx(c), value(std::move(v)), index(n) {
+    }
+    Vector3 location(const Vector3&, const framework::Quaternion&) const override {
+        ctx.log("spawn", std::to_string(index));
+        return {static_cast<float>(network::osd_real(value.array.at(0))),
+                static_cast<float>(network::osd_real(value.array.at(1))),
+                static_cast<float>(network::osd_real(value.array.at(2)))};
+    }
+};
+struct Backend : services::SceneAccessBackend {
+    Context& ctx;
+    services::AccessRegion info;
+    std::shared_ptr<framework::AgentCircuitData> existing;
+    Backend(Context& c) : ctx(c) {
+        info.id = id(9);
+        info.scope = id(8);
+        info.name = ctx.flag("null_name") ? std::nullopt : std::optional<std::string>("Region");
+        info.size_x = static_cast<std::uint32_t>(ctx.number("size_x", 256));
+        info.size_y = static_cast<std::uint32_t>(ctx.number("size_y", 256));
+        info.agent_limit = ctx.number("limit", 100);
+        if (!ctx.flag("null_estate"))
+            info.estate = std::make_shared<Estate>(ctx);
+        if (ctx.flag("hub"))
+            info.telehub = id(6);
+        if (ctx.flag("circuit")) {
+            existing = std::make_shared<framework::AgentCircuitData>();
+            existing->agent_id = id(ctx.number("circuit_agent", 7));
+            if (!ctx.flag("null_names")) {
+                existing->first_name = "Existing";
+                existing->last_name = "Agent";
+            }
+        }
+    }
+    services::AccessRegion& region() override {
+        return info;
+    }
+    bool is_god(const Uuid& a) override {
+        ctx.log("god", a.str());
+        ++ctx.gods;
+        return ctx.flag("god") || (ctx.number("god_after") > 0 && ctx.gods >= ctx.number("god_after"));
+    }
+    bool is_estate_manager(const Uuid& a) override {
+        ctx.log("manager", a.str());
+        return ctx.flag("manager");
+    }
+    bool strict_access_control() const override {
+        return ctx.flag("strict", true);
+    }
+    bool allow_avatar_crossing() const override {
+        return ctx.flag("cross", true);
+    }
+    std::shared_ptr<framework::AgentCircuitData> circuit(const Uuid& a) override {
+        ctx.log("circuit", a.str());
+        return existing;
+    }
+    bool has_authorization_service() const override {
+        return ctx.flag("auth");
+    }
+    bool authorize_region(const std::shared_ptr<framework::AgentCircuitData>& a, const Uuid& r,
+                          std::string& reason) override {
+        ctx.log("authorize", a->agent_id.str() + ":" + (a->first_name ? hex(*a->first_name) : "-") + ":" +
+                                 (a->last_name ? hex(*a->last_name) : "-") + ":" + r.str() + ":" +
+                                 (a == existing ? "1" : "0"));
+        reason = "auth-reason";
+        return !ctx.flag("auth_deny");
+    }
+    int user_flags(const Uuid& a) override {
+        ctx.log("flags", a.str());
+        return ctx.number("flags", 42);
+    }
+    bool has_groups_module() const override {
+        return ctx.flag("groups");
+    }
+    std::optional<std::vector<std::optional<Uuid>>> memberships(const Uuid& a) override {
+        ctx.log("memberships", a.str());
+        auto value = ctx.command.get("memberships").view();
+        if (value.kind != Value::Kind::Array)
+            return {};
+        std::vector<std::optional<Uuid>> result;
+        for (const auto& n : value.array)
+            result.push_back(n.kind == Value::Kind::Undefined
+                                 ? std::nullopt
+                                 : std::optional<Uuid>(id(network::osd_integer(n))));
+        return result;
+    }
+    void recalculate_stats() override {
+        ctx.log("recalculate");
+    }
+    int root_agents() override {
+        ctx.log("roots");
+        return ctx.number("roots");
+    }
+    int root_npcs() override {
+        ctx.log("npcs");
+        return ctx.number("npcs");
+    }
+    std::shared_ptr<services::AccessTelehub> telehub(const Uuid& a) override {
+        ctx.log("telehub", a.str());
+        return ctx.flag("missing_hub") ? nullptr : std::make_shared<Hub>(ctx);
+    }
+    std::vector<std::shared_ptr<services::AccessSpawnPoint>> spawn_points() override {
+        ctx.log("spawns");
+        std::vector<std::shared_ptr<services::AccessSpawnPoint>> result;
+        int n = 0;
+        for (const auto& v : ctx.command.get("spawns").array)
+            result.push_back(std::make_shared<Spawn>(ctx, v, n++));
+        return result;
+    }
+    std::shared_ptr<services::AccessParcel> parcel(float x, float y) override {
+        ctx.log("land", bits(x) + ":" + bits(y));
+        auto& values = ctx.command.get("lands").array;
+        int mode = values.empty()
+                       ? 1
+                       : network::osd_integer(values.at(std::min<std::size_t>(ctx.lands, values.size() - 1)));
+        ++ctx.lands;
+        return mode ? std::make_shared<Parcel>(ctx, mode) : nullptr;
+    }
+    std::shared_ptr<services::AccessParcel> nearest_allowed_parcel(const Uuid& a, float x, float y) override {
+        ctx.log("nearest", a.str() + ":" + bits(x) + ":" + bits(y));
+        return ctx.flag("nearest") ? std::make_shared<Parcel>(ctx, 1, true) : nullptr;
+    }
+};
+int main() {
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        Context ctx{network::parse_osd_json(decode(line))};
+        Backend backend(ctx);
+        services::SceneAccess access(backend);
+        Uuid agent = ctx.flag("service_agent") ? Uuid("6571e388-6218-4574-87db-f9379718315e") : id(7);
+        Vector3 position{1, 2, 30};
+        if (ctx.command.contains("position")) {
+            auto& v = ctx.command.get("position").array;
+            position = {static_cast<float>(network::osd_real(v.at(0))),
+                        static_cast<float>(network::osd_real(v.at(1))),
+                        static_cast<float>(network::osd_real(v.at(2)))};
+        }
+        float x = position.x, y = position.y;
+        std::string reason = "before", result;
+        std::vector<Uuid> features{id(8)};
+        try {
+            bool ok;
+            auto op = network::osd_string(ctx.command.get("op"));
+            if (op == "authorize") {
+                auto circuit = backend.existing;
+                if (!circuit) {
+                    circuit = std::make_shared<framework::AgentCircuitData>();
+                    circuit->agent_id = agent;
+                    circuit->first_name = "";
+                    circuit->last_name = "";
+                }
+                ok = access.authorize_user(ctx.flag("null_agent") ? nullptr : circuit, ctx.flag("bypass"),
+                                           reason);
+            } else if (op == "land")
+                ok = access.check_land_position_access(agent, ctx.flag("teleport", true),
+                                                       ctx.flag("check_hub", true),
+                                                       ctx.flag("check_count", true), position, reason);
+            else if (op == "restrictions")
+                ok = access.test_land_restrictions(agent, reason, x, y);
+            else
+                ok = access.query_access(agent, std::nullopt, ctx.flag("teleport", true), position, &features,
+                                         reason);
+            result = ok ? "1" : "0";
+        } catch (const std::exception&) {
+            result = "EX";
+        }
+        std::cout << result << "|" << hex(reason) << "|" << hex(ctx.trace) << "|" << bits(x) << ":" << bits(y)
+                  << "|" << features.size() << "\n";
+    }
+}

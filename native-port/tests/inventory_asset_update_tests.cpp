@@ -5,35 +5,354 @@
 #include <iostream>
 #include <filesystem>
 #include "opensim/services/asset_store.hpp"
-using namespace opensim;using namespace scene;
+using namespace opensim;
+using namespace scene;
 namespace {
-framework::Uuid id(int n){auto s=std::to_string(n);return framework::Uuid("11223344-5566-7788-99aa-"+std::string(12-s.size(),'0')+s);}
-std::string hex(const std::optional<std::string>& s){if(!s)return "NULL";std::string out;for(unsigned char c:*s){out+="0123456789abcdef"[c>>4];out+="0123456789abcdef"[c&15];}return out;}
-std::string bytes(framework::AssetBytes data){return data?hex(std::string(data->begin(),data->end())):"NULL";}
-std::string dump(InventoryAssetItem i){if(!i)return "NULL";return i->id.str()+":"+i->owner.str()+":"+i->asset_id.str()+":"+hex(i->name)+":"+hex(i->description)+":"+std::to_string(i->inventory_type)+":"+std::to_string(i->asset_type)+":"+std::to_string(static_cast<std::uint32_t>(i->current_permissions));}
-std::string dump(std::shared_ptr<framework::AssetBase> a){return a?a->full_id().str()+":"+std::to_string(a->type())+":"+bytes(a->data):"NULL";}
-std::string probe(int kind,int mode,int inv,int type,int failure){auto bit=[&](int n){return(mode&n)!=0;};std::string trace;auto step=[&](int n,std::string s){trace+='|'+s;if(n==failure)throw std::runtime_error("injected");};auto item=std::make_shared<services::InventoryItem>();item->id=id(2);item->owner=id(bit(2)?9:1);item->asset_id=id(4);item->name=bit(32768)?"脚本 😃":"Stored item";item->description="Description";item->inventory_type=inv;item->asset_type=type;item->current_permissions=bit(16)?0:-1;framework::AssetBytes data=bit(16384)?nullptr:std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{65,0,255});std::shared_ptr<framework::AssetBase> asset;if(!bit(8192)){asset=std::make_shared<framework::AssetBase>(id(7),std::string{},99,std::string{});asset->data=data;}int stores=0;
- auto mutation=[&]{if(bit(1048576)){item->name="Changed";item->description="";item->asset_type=255;item->inventory_type=26;item->current_permissions=0;item->owner=id(9);}};
- InventoryAssetUpdateBackend b;b.item=[&](auto a,auto key){step(1,"GET:"+a.str()+":"+key.str());return bit(1)?InventoryAssetItem{}:item;};b.edit_notecard=[&](auto key,auto obj,auto a){step(2,"NOTE:"+key.str()+":"+obj.str()+":"+a.str());mutation();return !bit(4);};b.edit_script=[&](auto key,auto obj,auto a){step(3,"SCRIPT:"+key.str()+":"+obj.str()+":"+a.str());mutation();return !bit(8);};b.asset_permissions=[&](auto a,auto key){step(11,"PERM:"+a.str()+":"+key.str());return 0;};
- b.create_asset=[&](const auto& input,auto data,auto creator){step(4,"CREATE:"+hex(input.name)+":"+hex(input.description)+":"+std::to_string(input.asset_type)+":"+bytes(data)+":"+creator.str());if(bit(524288)){item->name="Mutation";item->asset_type=3;item->owner=id(9);item->asset_id=id(5);}if(bit(4096)){asset.reset();return asset;}asset=std::make_shared<framework::AssetBase>(id(7),input.name,static_cast<std::int8_t>(input.asset_type),creator.str());asset->data=data?data:std::make_shared<std::vector<std::uint8_t>>(1);return asset;};
- b.store=[&](auto value)->std::optional<std::string>{auto stage=++stores;step(5,"STORE:"+std::to_string(stage)+":"+dump(value)+":"+item->asset_id.str());if(stage==2&&failure==13)throw std::runtime_error("injected second store");if(bit(65536)){value->full_id(id(9));value->type(-1);}if(bit(2097152)&&value->data&&!value->data->empty())value->data->at(0)=99;auto flags=stage==1?32:256;if(bit(flags))return "";if(bit(flags*2))return framework::Uuid{}.str();if(bit(flags*4))return {};return bit(4194304)?framework::Uuid{}.str()+" ":bit(8388608)?" ":"not-a-uuid";};
- b.update=[&](auto value){step(6,"UPDATE:"+dump(value));if(bit(131072)){asset->full_id(id(8));value->asset_id=id(6);}return !bit(2048);};b.agent_alert=[&](auto a,const auto& text,bool modal){step(7,"AGENT:"+a.str()+":"+hex(text)+":"+std::to_string(modal));};b.alert=[&](auto a,const auto& text){step(8,"ALERT:"+a.str()+":"+hex(text));if(bit(262144))asset->full_id(id(10));};b.warn=[&](const auto&s){step(9,"WARN:"+hex(s));};b.error=[&](const auto&s){step(10,"ERROR:"+hex(s));};b.console=[&](const auto&s){step(12,"CONSOLE:"+hex(s));};std::string status="OK",result="NONE";try{InventoryAssetUpdateController controller(std::move(b));if(kind==0)result=controller.caps_update(id(1),id(2),data).str();else result=controller.update(id(1),bit(1)?InventoryAssetItem{}:item,asset)?"TRUE":"FALSE";}catch(...){status="THROW";}return status+":"+result+":"+dump(item)+":"+dump(asset)+":"+bytes(data)+trace;
+framework::Uuid id(int n) {
+    auto s = std::to_string(n);
+    return framework::Uuid("11223344-5566-7788-99aa-" + std::string(12 - s.size(), '0') + s);
 }
-void persistence(){
- auto require=[](bool b,const char*s){if(!b)throw std::runtime_error(s);};auto directory=std::filesystem::temp_directory_path()/("opensim-inventory-asset-controller-"+framework::Uuid::random().str());require(std::filesystem::create_directory(directory),"unique test directory");struct Cleanup{std::filesystem::path path;~Cleanup(){if(path.parent_path()==std::filesystem::temp_directory_path()&&path.filename().string().starts_with("opensim-inventory-asset-controller-")){std::error_code e;std::filesystem::remove_all(path,e);}}}cleanup{directory};auto path=[](const std::filesystem::path& p){auto u=p.u8string();return std::string(reinterpret_cast<const char*>(u.data()),u.size());};framework::Uuid retained;const std::vector<std::uint8_t> payload{'N',0,0xff,'Z'};
- {
-  services::InventoryFolderStore folders(path(directory/"inventory.db"),true);services::InventoryService inventory(folders);inventory.create_user_inventory(id(1));auto root=inventory.root(id(1));require(bool(root),"real user inventory root");services::InventoryItem initial;initial.id=id(2);initial.owner=id(1);initial.creator_id=id(3).str();initial.name="Stored notecard";initial.description="Stored description";initial.parent=root->id;initial.asset_id=id(4);initial.asset_type=initial.inventory_type=7;initial.current_permissions=0;require(inventory.add_item(initial),"real initial inventory item");auto asset_store=std::make_shared<services::SqliteAssetStore>(path(directory/"assets.db"),true);services::StoredAssetService assets(asset_store);auto old=create_inventory_asset(initial,std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{'O','l','d'}),id(3));old->full_id(id(4));require(assets.store(old)==id(4).str(),"real original asset");int failures=0,stores=0,updates=0;bool permitted=true;InventoryAssetItem live;std::vector<std::string> alerts;std::shared_ptr<framework::AssetBase> first;
-  InventoryAssetUpdateBackend b;b.item=[&](auto owner,auto key){auto result=inventory.item(owner,key);live=result?std::make_shared<services::InventoryItem>(*result):nullptr;return live;};b.edit_notecard=b.edit_script=[&](auto,auto,auto){return permitted;};b.asset_permissions=[&](auto owner,auto asset){return inventory.asset_permissions(owner,asset);};b.create_asset=create_inventory_asset;b.store=[&](auto asset)->std::optional<std::string>{++stores;if(stores==1)first=asset;else require(first==asset,"retry reuses original asset object");if(failures>0){--failures;return framework::Uuid{}.str();}return assets.store(asset);};b.update=[&](auto item){++updates;return inventory.update_item(*item);};b.agent_alert=[&](auto,const auto& text,bool modal){require(!modal,"source permission alert is nonmodal");alerts.push_back("AGENT:"+text);};b.alert=[&](auto,const auto& text){alerts.push_back(text);};b.console=[](const auto&){};InventoryAssetUpdateController controller(b);
-  auto bytes=std::make_shared<std::vector<std::uint8_t>>(payload);auto result=controller.caps_update(id(1),id(2),bytes);require(!result.is_zero()&&result!=id(4)&&stores==1&&updates==1,"real successful asset edit");require(inventory.item(id(1),id(2))->asset_id==result&&*assets.get_data(result.str())==payload,"exact new persisted inventory reference and raw asset bytes");auto written=assets.get_asset(result.str());require(written->creator_id()==id(1).str()&&written->description()==initial.description&&written->type()==7,"asset metadata creator uses editing actor");require(*assets.get_data(id(4).str())==std::vector<std::uint8_t>({'O','l','d'})&&alerts==std::vector<std::string>{"Notecard updated"},"original asset retained and source success alert");
-  retained=result;stores=updates=0;alerts.clear();failures=2;result=controller.caps_update(id(1),id(2),bytes);require(result.is_zero()&&stores==2&&updates==0&&alerts==std::vector<std::string>{"Update failed"},"real controller retries failure once without item update");require(live&&live->asset_id!=retained&&inventory.item(id(1),id(2))->asset_id==retained&&!assets.get_asset(live->asset_id.str()),"failed store retains source in-memory mutation but leaves actual database unchanged");
-  stores=updates=0;alerts.clear();failures=1;result=controller.caps_update(id(1),id(2),bytes);require(!result.is_zero()&&stores==2&&updates==1&&inventory.item(id(1),id(2))->asset_id==result&&*assets.get_data(result.str())==payload,"actual second-attempt store persists once");retained=result;
-  stores=updates=0;alerts.clear();permitted=false;result=controller.caps_update(id(1),id(2),bytes);require(result.is_zero()&&stores==0&&updates==0&&alerts==std::vector<std::string>{"AGENT:Insufficient permissions to edit notecard"}&&inventory.item(id(1),id(2))->asset_id==retained,"permission rejection before actual persistence");permitted=true;
-  auto generic=std::make_shared<services::InventoryItem>(*inventory.item(id(1),id(2)));auto detached=create_inventory_asset(*generic,std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{'G'}),id(1));stores=updates=0;alerts.clear();require(controller.update(id(1),generic,detached)&&stores==1&&updates==1,"actual generic asset update");require(inventory.item(id(1),id(2))->asset_id==retained&&assets.get_asset(detached->id())&&alerts.empty(),"generic source method stores supplied asset without inventing an item AssetID assignment");
- }
- {
-  services::InventoryFolderStore folders(path(directory/"inventory.db"));services::InventoryService inventory(folders);services::StoredAssetService assets(std::make_shared<services::SqliteAssetStore>(path(directory/"assets.db")));require(inventory.item(id(1),id(2))->asset_id==retained&&*assets.get_data(retained.str())==payload,"real asset and inventory references survive service restart");
- }
+std::string hex(const std::optional<std::string> &s) {
+    if (!s)
+        return "NULL";
+    std::string out;
+    for (unsigned char c : *s) {
+        out += "0123456789abcdef"[c >> 4];
+        out += "0123456789abcdef"[c & 15];
+    }
+    return out;
+}
+std::string bytes(framework::AssetBytes data) {
+    return data ? hex(std::string(data->begin(), data->end())) : "NULL";
+}
+std::string dump(InventoryAssetItem i) {
+    if (!i)
+        return "NULL";
+    return i->id.str() + ":" + i->owner.str() + ":" + i->asset_id.str() + ":" + hex(i->name) + ":" +
+           hex(i->description) + ":" + std::to_string(i->inventory_type) + ":" +
+           std::to_string(i->asset_type) + ":" +
+           std::to_string(static_cast<std::uint32_t>(i->current_permissions));
+}
+std::string dump(std::shared_ptr<framework::AssetBase> a) {
+    return a ? a->full_id().str() + ":" + std::to_string(a->type()) + ":" + bytes(a->data) : "NULL";
+}
+std::string probe(int kind, int mode, int inv, int type, int failure) {
+    auto bit = [&](int n) { return (mode & n) != 0; };
+    std::string trace;
+    auto step = [&](int n, std::string s) {
+        trace += '|' + s;
+        if (n == failure)
+            throw std::runtime_error("injected");
+    };
+    auto item = std::make_shared<services::InventoryItem>();
+    item->id = id(2);
+    item->owner = id(bit(2) ? 9 : 1);
+    item->asset_id = id(4);
+    item->name = bit(32768) ? "脚本 😃" : "Stored item";
+    item->description = "Description";
+    item->inventory_type = inv;
+    item->asset_type = type;
+    item->current_permissions = bit(16) ? 0 : -1;
+    framework::AssetBytes data =
+        bit(16384)
+            ? nullptr
+            : std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{65, 0, 255});
+    std::shared_ptr<framework::AssetBase> asset;
+    if (!bit(8192)) {
+        asset = std::make_shared<framework::AssetBase>(id(7), std::string{}, 99, std::string{});
+        asset->data = data;
+    }
+    int stores = 0;
+    auto mutation = [&] {
+        if (bit(1048576)) {
+            item->name = "Changed";
+            item->description = "";
+            item->asset_type = 255;
+            item->inventory_type = 26;
+            item->current_permissions = 0;
+            item->owner = id(9);
+        }
+    };
+    InventoryAssetUpdateBackend b;
+    b.item = [&](auto a, auto key) {
+        step(1, "GET:" + a.str() + ":" + key.str());
+        return bit(1) ? InventoryAssetItem{} : item;
+    };
+    b.edit_notecard = [&](auto key, auto obj, auto a) {
+        step(2, "NOTE:" + key.str() + ":" + obj.str() + ":" + a.str());
+        mutation();
+        return !bit(4);
+    };
+    b.edit_script = [&](auto key, auto obj, auto a) {
+        step(3, "SCRIPT:" + key.str() + ":" + obj.str() + ":" + a.str());
+        mutation();
+        return !bit(8);
+    };
+    b.asset_permissions = [&](auto a, auto key) {
+        step(11, "PERM:" + a.str() + ":" + key.str());
+        return 0;
+    };
+    b.create_asset = [&](const auto &input, auto data, auto creator) {
+        step(4, "CREATE:" + hex(input.name) + ":" + hex(input.description) + ":" +
+                    std::to_string(input.asset_type) + ":" + bytes(data) + ":" + creator.str());
+        if (bit(524288)) {
+            item->name = "Mutation";
+            item->asset_type = 3;
+            item->owner = id(9);
+            item->asset_id = id(5);
+        }
+        if (bit(4096)) {
+            asset.reset();
+            return asset;
+        }
+        asset = std::make_shared<framework::AssetBase>(
+            id(7), input.name, static_cast<std::int8_t>(input.asset_type), creator.str());
+        asset->data = data ? data : std::make_shared<std::vector<std::uint8_t>>(1);
+        return asset;
+    };
+    b.store = [&](auto value) -> std::optional<std::string> {
+        auto stage = ++stores;
+        step(5, "STORE:" + std::to_string(stage) + ":" + dump(value) + ":" + item->asset_id.str());
+        if (stage == 2 && failure == 13)
+            throw std::runtime_error("injected second store");
+        if (bit(65536)) {
+            value->full_id(id(9));
+            value->type(-1);
+        }
+        if (bit(2097152) && value->data && !value->data->empty())
+            value->data->at(0) = 99;
+        auto flags = stage == 1 ? 32 : 256;
+        if (bit(flags))
+            return "";
+        if (bit(flags * 2))
+            return framework::Uuid{}.str();
+        if (bit(flags * 4))
+            return {};
+        return bit(4194304) ? framework::Uuid{}.str() + " " : bit(8388608) ? " " : "not-a-uuid";
+    };
+    b.update = [&](auto value) {
+        step(6, "UPDATE:" + dump(value));
+        if (bit(131072)) {
+            asset->full_id(id(8));
+            value->asset_id = id(6);
+        }
+        return !bit(2048);
+    };
+    b.agent_alert = [&](auto a, const auto &text, bool modal) {
+        step(7, "AGENT:" + a.str() + ":" + hex(text) + ":" + std::to_string(modal));
+    };
+    b.alert = [&](auto a, const auto &text) {
+        step(8, "ALERT:" + a.str() + ":" + hex(text));
+        if (bit(262144))
+            asset->full_id(id(10));
+    };
+    b.warn = [&](const auto &s) { step(9, "WARN:" + hex(s)); };
+    b.error = [&](const auto &s) { step(10, "ERROR:" + hex(s)); };
+    b.console = [&](const auto &s) { step(12, "CONSOLE:" + hex(s)); };
+    std::string status = "OK", result = "NONE";
+    try {
+        InventoryAssetUpdateController controller(std::move(b));
+        if (kind == 0)
+            result = controller.caps_update(id(1), id(2), data).str();
+        else
+            result = controller.update(id(1), bit(1) ? InventoryAssetItem{} : item, asset) ? "TRUE" : "FALSE";
+    } catch (...) {
+        status = "THROW";
+    }
+    return status + ":" + result + ":" + dump(item) + ":" + dump(asset) + ":" + bytes(data) + trace;
+}
+void persistence() {
+    auto require = [](bool b, const char *s) {
+        if (!b)
+            throw std::runtime_error(s);
+    };
+    auto directory = std::filesystem::temp_directory_path() /
+                     ("opensim-inventory-asset-controller-" + framework::Uuid::random().str());
+    require(std::filesystem::create_directory(directory), "unique test directory");
+    struct Cleanup {
+        std::filesystem::path path;
+        ~Cleanup() {
+            if (path.parent_path() == std::filesystem::temp_directory_path() &&
+                path.filename().string().starts_with("opensim-inventory-asset-controller-")) {
+                std::error_code e;
+                std::filesystem::remove_all(path, e);
+            }
+        }
+    } cleanup{directory};
+    auto path = [](const std::filesystem::path &p) {
+        auto u = p.u8string();
+        return std::string(reinterpret_cast<const char *>(u.data()), u.size());
+    };
+    framework::Uuid retained;
+    const std::vector<std::uint8_t> payload{'N', 0, 0xff, 'Z'};
+    {
+        services::InventoryFolderStore folders(path(directory / "inventory.db"), true);
+        services::InventoryService inventory(folders);
+        inventory.create_user_inventory(id(1));
+        auto root = inventory.root(id(1));
+        require(bool(root), "real user inventory root");
+        services::InventoryItem initial;
+        initial.id = id(2);
+        initial.owner = id(1);
+        initial.creator_id = id(3).str();
+        initial.name = "Stored notecard";
+        initial.description = "Stored description";
+        initial.parent = root->id;
+        initial.asset_id = id(4);
+        initial.asset_type = initial.inventory_type = 7;
+        initial.current_permissions = 0;
+        require(inventory.add_item(initial), "real initial inventory item");
+        auto asset_store = std::make_shared<services::SqliteAssetStore>(path(directory / "assets.db"), true);
+        services::StoredAssetService assets(asset_store);
+        auto old = create_inventory_asset(
+            initial,
+            std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{'O', 'l', 'd'}),
+            id(3));
+        old->full_id(id(4));
+        require(assets.store(old) == id(4).str(), "real original asset");
+        int failures = 0, stores = 0, updates = 0;
+        bool permitted = true;
+        InventoryAssetItem live;
+        std::vector<std::string> alerts;
+        std::shared_ptr<framework::AssetBase> first;
+        InventoryAssetUpdateBackend b;
+        b.item = [&](auto owner, auto key) {
+            auto result = inventory.item(owner, key);
+            live = result ? std::make_shared<services::InventoryItem>(*result) : nullptr;
+            return live;
+        };
+        b.edit_notecard = b.edit_script = [&](auto, auto, auto) { return permitted; };
+        b.asset_permissions = [&](auto owner, auto asset) {
+            return inventory.asset_permissions(owner, asset);
+        };
+        b.create_asset = create_inventory_asset;
+        b.store = [&](auto asset) -> std::optional<std::string> {
+            ++stores;
+            if (stores == 1)
+                first = asset;
+            else
+                require(first == asset, "retry reuses original asset object");
+            if (failures > 0) {
+                --failures;
+                return framework::Uuid{}.str();
+            }
+            return assets.store(asset);
+        };
+        b.update = [&](auto item) {
+            ++updates;
+            return inventory.update_item(*item);
+        };
+        b.agent_alert = [&](auto, const auto &text, bool modal) {
+            require(!modal, "source permission alert is nonmodal");
+            alerts.push_back("AGENT:" + text);
+        };
+        b.alert = [&](auto, const auto &text) { alerts.push_back(text); };
+        b.console = [](const auto &) {};
+        InventoryAssetUpdateController controller(b);
+        auto bytes = std::make_shared<std::vector<std::uint8_t>>(payload);
+        auto result = controller.caps_update(id(1), id(2), bytes);
+        require(!result.is_zero() && result != id(4) && stores == 1 && updates == 1,
+                "real successful asset edit");
+        require(inventory.item(id(1), id(2))->asset_id == result && *assets.get_data(result.str()) == payload,
+                "exact new persisted inventory reference and raw asset bytes");
+        auto written = assets.get_asset(result.str());
+        require(written->creator_id() == id(1).str() && written->description() == initial.description &&
+                    written->type() == 7,
+                "asset metadata creator uses editing actor");
+        require(*assets.get_data(id(4).str()) == std::vector<std::uint8_t>({'O', 'l', 'd'}) &&
+                    alerts == std::vector<std::string>{"Notecard updated"},
+                "original asset retained and source success alert");
+        retained = result;
+        stores = updates = 0;
+        alerts.clear();
+        failures = 2;
+        result = controller.caps_update(id(1), id(2), bytes);
+        require(result.is_zero() && stores == 2 && updates == 0 &&
+                    alerts == std::vector<std::string>{"Update failed"},
+                "real controller retries failure once without item update");
+        require(live && live->asset_id != retained && inventory.item(id(1), id(2))->asset_id == retained &&
+                    !assets.get_asset(live->asset_id.str()),
+                "failed store retains source in-memory mutation but leaves actual database unchanged");
+        stores = updates = 0;
+        alerts.clear();
+        failures = 1;
+        result = controller.caps_update(id(1), id(2), bytes);
+        require(!result.is_zero() && stores == 2 && updates == 1 &&
+                    inventory.item(id(1), id(2))->asset_id == result &&
+                    *assets.get_data(result.str()) == payload,
+                "actual second-attempt store persists once");
+        retained = result;
+        stores = updates = 0;
+        alerts.clear();
+        permitted = false;
+        result = controller.caps_update(id(1), id(2), bytes);
+        require(result.is_zero() && stores == 0 && updates == 0 &&
+                    alerts == std::vector<std::string>{"AGENT:Insufficient permissions to edit notecard"} &&
+                    inventory.item(id(1), id(2))->asset_id == retained,
+                "permission rejection before actual persistence");
+        permitted = true;
+        auto generic = std::make_shared<services::InventoryItem>(*inventory.item(id(1), id(2)));
+        auto detached = create_inventory_asset(
+            *generic, std::make_shared<std::vector<std::uint8_t>>(std::initializer_list<std::uint8_t>{'G'}),
+            id(1));
+        stores = updates = 0;
+        alerts.clear();
+        require(controller.update(id(1), generic, detached) && stores == 1 && updates == 1,
+                "actual generic asset update");
+        require(inventory.item(id(1), id(2))->asset_id == retained && assets.get_asset(detached->id()) &&
+                    alerts.empty(),
+                "generic source method stores supplied asset without inventing an item AssetID assignment");
+    }
+    {
+        services::InventoryFolderStore folders(path(directory / "inventory.db"));
+        services::InventoryService inventory(folders);
+        services::StoredAssetService assets(
+            std::make_shared<services::SqliteAssetStore>(path(directory / "assets.db")));
+        require(inventory.item(id(1), id(2))->asset_id == retained &&
+                    *assets.get_data(retained.str()) == payload,
+                "real asset and inventory references survive service restart");
+    }
 }
 
 }
-int main(int argc,char**argv){try{if(argc>1&&std::string_view(argv[1])=="--probe"){int k,m,i,t,f;while(std::cin>>k>>m>>i>>t>>f)std::cout<<probe(k,m,i,t,f)<<'\n';return 0;}int n=0;auto check=[&](bool b,const char*s){++n;if(!b)throw std::runtime_error(s);};check(probe(0,32|256,7,7,0).find("|UPDATE:")==std::string::npos,"failed stores skip item update");check(probe(0,2048,7,7,0).starts_with("OK:"+id(7).str()+":"),"update false does not undo successful asset result");check(probe(0,0,96,7,0).find("|PERM:")==std::string::npos,"source animation constructor creates no referenced animations");check(probe(1,0,7,7,0).find("UPDATE:"+id(2).str()+":"+id(1).str()+":"+id(4).str())!=std::string::npos,"generic update does not assign item asset ID");services::InventoryItem item;item.asset_type=255;item.name="Name";item.description="Description";auto asset=create_inventory_asset(item,{},id(1));check(!asset->full_id().is_zero()&&asset->type()==-1&&asset->data&&*asset->data==std::vector<std::uint8_t>{0}&&asset->description()=="Description","real asset factory defaults");persistence();std::cout<<"PASS: "<<n<<" inventory asset update checks and real SQLite asset/inventory persistence/retry/restart\n";return 0;}catch(const std::exception&e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(int argc, char **argv) {
+    try {
+        if (argc > 1 && std::string_view(argv[1]) == "--probe") {
+            int k, m, i, t, f;
+            while (std::cin >> k >> m >> i >> t >> f)
+                std::cout << probe(k, m, i, t, f) << '\n';
+            return 0;
+        }
+        int n = 0;
+        auto check = [&](bool b, const char *s) {
+            ++n;
+            if (!b)
+                throw std::runtime_error(s);
+        };
+        check(probe(0, 32 | 256, 7, 7, 0).find("|UPDATE:") == std::string::npos,
+              "failed stores skip item update");
+        check(probe(0, 2048, 7, 7, 0).starts_with("OK:" + id(7).str() + ":"),
+              "update false does not undo successful asset result");
+        check(probe(0, 0, 96, 7, 0).find("|PERM:") == std::string::npos,
+              "source animation constructor creates no referenced animations");
+        check(probe(1, 0, 7, 7, 0).find("UPDATE:" + id(2).str() + ":" + id(1).str() + ":" + id(4).str()) !=
+                  std::string::npos,
+              "generic update does not assign item asset ID");
+        services::InventoryItem item;
+        item.asset_type = 255;
+        item.name = "Name";
+        item.description = "Description";
+        auto asset = create_inventory_asset(item, {}, id(1));
+        check(!asset->full_id().is_zero() && asset->type() == -1 && asset->data &&
+                  *asset->data == std::vector<std::uint8_t>{0} && asset->description() == "Description",
+              "real asset factory defaults");
+        persistence();
+        std::cout
+            << "PASS: " << n
+            << " inventory asset update checks and real SQLite asset/inventory persistence/retry/restart\n";
+        return 0;
+    } catch (const std::exception &e) {
+        std::cerr << e.what() << '\n';
+        return 1;
+    }
+}

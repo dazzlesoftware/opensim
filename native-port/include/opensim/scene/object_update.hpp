@@ -11,10 +11,11 @@ struct ObjectUpdateOptions {
  framework::Uuid recipient;
  // Host clears its one-shot CreateSelected state after emitting to the owner.
  bool create_selected=false;
+ bool disable_facelights = false;
 };
-// Plain, single-root PCode.Prim projection of active CreatePrimUpdateBlock.
+// PCode.Prim projection of CreatePrimUpdateBlock for world prims and attachments.
 // Caller provides permissions-generated flags and source pseudo CRC when known.
-// Attachments/vegetation require their own object models and are rejected here.
 network::lludp::Packet object_update(const SceneObject& object,std::uint64_t region_handle,
  float time_dilation,const ObjectUpdateOptions& options={});
+network::lludp::Packet object_terse_update(const SceneObject& object, std::uint64_t region_handle);
 }

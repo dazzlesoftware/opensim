@@ -7,11 +7,14 @@
 #include <vector>
 namespace opensim::framework {
 class UnicodeRegex {
-public:
- explicit UnicodeRegex(const std::string& pattern);
- ~UnicodeRegex();
- std::optional<std::vector<std::string>> match(const std::string& text);
-private:struct State;std::unique_ptr<State> state_;
+  public:
+    explicit UnicodeRegex(const std::string& pattern);
+    ~UnicodeRegex();
+    std::optional<std::vector<std::string>> match(const std::string& text);
+
+  private:
+    struct State;
+    std::unique_ptr<State> state_;
 };
 std::string stream_reader_text(const std::string& bytes);
 }

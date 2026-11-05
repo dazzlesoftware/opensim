@@ -34,6 +34,7 @@ def main():
   check(request(json.dumps(base).encode(),target='/agent/00000000-0000-0000-0000-000000000000/',headers={'X-SecondLife-Shard':'fixture'})[0]==200,'PUT keeps source zero-path-ID and shard non-return behavior')
   for client,kind,key in [(a.data_client,'data','data_updates'),(a.position_client,'position','position_updates')]:
    before=stats()[key];run=subprocess.run([client,url],capture_output=True,text=True,timeout=30);check(run.returncode==0 and json.loads(run.stdout)=={'first':True,'second':True,'failed':0},kind+' native outgoing client accepts native PUT replies');check(stats()[key]==before+2,kind+' native-to-native compressed update handoff occurs twice')
+  check(stats()['data_active_group']=='00000000-0000-0000-0000-000000000008','active group survives native compressed PUT and destination decoding')
   check(request(method='GET',target='/ready')[0]==503,'controlled update receiver does not claim scene readiness')
  finally:
   if process.poll() is None:process.stdin.write('quit\n');process.stdin.flush()

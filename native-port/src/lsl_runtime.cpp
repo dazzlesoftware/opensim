@@ -2,136 +2,7770 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/script/lsl_runtime.hpp"
 #include "opensim/scene/script_control.hpp"
+#include "opensim/framework/text.hpp"
+#include "opensim/framework/identity.hpp"
+#include "opensim/framework/sha1.hpp"
+#include "opensim/framework/dotnet_regex_interpreter.hpp"
+#include "opensim/framework/culture_sort.hpp"
+#include "opensim/framework/execution_stack.hpp"
+#include "opensim/network/osd_value.hpp"
+#include "opensim/network/osd_json.hpp"
+#include "opensim/framework/culture_sort.hpp"
+#include "opensim/framework/culture_prefix.hpp"
+#include "opensim/framework/config_uri_escape.hpp"
+#include "opensim/framework/config_uri_unescape.hpp"
+#include "opensim/framework/sdk_uuid.hpp"
 #include <bit>
 #include <chrono>
+#include <cstdio>
+#include <ctime>
 #include <deque>
 #include <limits>
 #include <map>
+#include <random>
 #include <stdexcept>
+#include <type_traits>
+#include <utility>
 #include <algorithm>
+#include <array>
+#include <charconv>
+#include <cmath>
+#include <initializer_list>
+#include <ranges>
 namespace opensim::script {
 namespace {
-enum class Kind {End,Name,Integer,String,Symbol};
-enum class Type {Integer,String};
-struct Token {Kind kind;std::string text;std::int32_t integer=0;std::size_t line=1,column=1;};
-struct CompileFailure {LslDiagnostic diagnostic;};
-[[noreturn]] void fail(const Token& t,std::string message){throw CompileFailure{{t.line,t.column,std::move(message)}};}
-std::size_t utf16_length(std::string_view text){std::size_t n=0;for(unsigned char c:text)if((c&0xc0)!=0x80)n+=c>=0xf0?2:1;return n;}
+enum class Kind { End, Name, Integer, Float, String, Symbol };
+enum class Type { Integer, Float, String, Key, Vector, Rotation, List };
+bool numeric(Type type) {
+    return type == Type::Integer || type == Type::Float;
+}
+struct Token {
+    Kind kind;
+    std::string text;
+    std::int32_t integer = 0;
+    std::size_t line = 1, column = 1;
+    double real = 0;
+};
+struct CompileFailure {
+    LslDiagnostic diagnostic;
+};
+[[noreturn]] void fail(const Token& t, std::string message) {
+    throw CompileFailure{{t.line, t.column, std::move(message)}};
+}
+std::size_t utf16_length(std::string_view text) {
+    std::size_t n = 0;
+    for (unsigned char c : text)
+        if ((c & 0xc0) != 0x80)
+            n += c >= 0xf0 ? 2 : 1;
+    return n;
+}
 class Lexer {
- std::string_view source;std::size_t pos=0,line=1,column=1;
- char take(){char c=source[pos++];if(c=='\n'){line++;column=1;}else column++;return c;}
-public:
- explicit Lexer(std::string_view s):source(s){}
- Token next(){
-  for(;;){while(pos<source.size()&&static_cast<unsigned char>(source[pos])<=32)take();
-   if(source.substr(pos,2)=="//"){while(pos<source.size()&&take()!='\n'){}continue;}
-   if(source.substr(pos,2)=="/*"){take();take();while(pos<source.size()&&source.substr(pos,2)!="*/")take();if(pos<source.size()){take();take();}continue;}break;}
-  Token t{Kind::End,"",0,line,column};if(pos==source.size())return t;char c=take();
-  if((c>='A'&&c<='Z')||(c>='a'&&c<='z')||c=='_'){
-   t.kind=Kind::Name;t.text+=c;while(pos<source.size()){c=source[pos];if(!((c>='A'&&c<='Z')||(c>='a'&&c<='z')||(c>='0'&&c<='9')||c=='_'))break;t.text+=take();}if(t.text.size()>255)fail(t,"name too long, max 255");return t;}
-  if(c>='0'&&c<='9'){
-   t.kind=Kind::Integer;std::uint32_t value=c-'0',base=10;if(c=='0'&&pos<source.size()&&(source[pos]=='x'||source[pos]=='X')){take();base=16;value=0;}
-   while(pos<source.size()){unsigned char d=source[pos];if((d=='x'||d=='X')&&value==0&&base==10){take();base=16;continue;}unsigned n=d>='0'&&d<='9'?d-'0':d>='a'&&d<='f'?d-'a'+10:d>='A'&&d<='F'?d-'A'+10:99;if(n>=base)break;take();auto v=std::uint64_t(value)*base+n;if(v>0xffffffffull)fail(t,"integer overflow");value=static_cast<std::uint32_t>(v);}
-   t.integer=std::bit_cast<std::int32_t>(value);return t;}
-  if(c=='"'){
-   t.kind=Kind::String;auto begin=pos-1;bool escaped=false,closed=false;
-   while(pos<source.size()){c=take();if(c=='\\'&&!escaped){escaped=true;continue;}if(c=='"'&&!escaped){closed=true;break;}if(escaped&&c=='n')t.text+='\n';else if(escaped&&c=='t')t.text+="    ";else t.text+=c;escaped=false;}
-   if(!closed)fail(t,"unterminated string");if(utf16_length(source.substr(begin,pos-begin-1))>4096)fail(t,"string too long, max 4096");return t;}
-  if(std::string_view("{}(),;+-").find(c)!=std::string_view::npos){t.kind=Kind::Symbol;t.text+=c;return t;}
-  fail(t,"unsupported token in native LSL subset");
- }
+    std::string_view source;
+    std::size_t pos = 0, line = 1, column = 1;
+    char take() {
+        char c = source[pos++];
+        if (c == '\n') {
+            line++;
+            column = 1;
+        } else
+            column++;
+        return c;
+    }
+
+  public:
+    explicit Lexer(std::string_view s) : source(s) {
+    }
+    Token next() {
+        for (;;) {
+            while (pos < source.size() && static_cast<unsigned char>(source[pos]) <= 32)
+                take();
+            if (source.substr(pos, 2) == "//") {
+                while (pos < source.size() && take() != '\n') {
+                }
+                continue;
+            }
+            if (source.substr(pos, 2) == "/*") {
+                take();
+                take();
+                while (pos < source.size() && source.substr(pos, 2) != "*/")
+                    take();
+                if (pos < source.size()) {
+                    take();
+                    take();
+                }
+                continue;
+            }
+            break;
+        }
+        Token t{Kind::End, "", 0, line, column};
+        if (pos == source.size())
+            return t;
+        char c = take();
+        if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_') {
+            t.kind = Kind::Name;
+            t.text += c;
+            while (pos < source.size()) {
+                c = source[pos];
+                if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_'))
+                    break;
+                t.text += take();
+            }
+            if (t.text.size() > 255)
+                fail(t, "name too long, max 255");
+            return t;
+        }
+        if ((c >= '0' && c <= '9') || c == '.') {
+            const auto* first = source.data() + pos - 1;
+            const auto parsed = std::from_chars(first, source.data() + source.size(), t.real);
+            if (std::string_view(first, parsed.ptr - first).find_first_of(".eE") != std::string_view::npos) {
+                if (parsed.ec != std::errc{})
+                    fail(t, "floating-point literal out of range");
+                while (source.data() + pos < parsed.ptr)
+                    take();
+                t.kind = Kind::Float;
+                return t;
+            }
+        }
+        if (c >= '0' && c <= '9') {
+            t.kind = Kind::Integer;
+            std::uint32_t value = c - '0', base = 10;
+            if (c == '0' && pos < source.size() && (source[pos] == 'x' || source[pos] == 'X')) {
+                take();
+                base = 16;
+                value = 0;
+            }
+            while (pos < source.size()) {
+                unsigned char d = source[pos];
+                if ((d == 'x' || d == 'X') && value == 0 && base == 10) {
+                    take();
+                    base = 16;
+                    continue;
+                }
+                unsigned n = d >= '0' && d <= '9'   ? d - '0'
+                             : d >= 'a' && d <= 'f' ? d - 'a' + 10
+                             : d >= 'A' && d <= 'F' ? d - 'A' + 10
+                                                    : 99;
+                if (n >= base)
+                    break;
+                take();
+                auto v = std::uint64_t(value) * base + n;
+                if (v > 0xffffffffull)
+                    fail(t, "integer overflow");
+                value = static_cast<std::uint32_t>(v);
+            }
+            t.integer = std::bit_cast<std::int32_t>(value);
+            return t;
+        }
+        if (c == '"') {
+            t.kind = Kind::String;
+            auto begin = pos - 1;
+            bool escaped = false, closed = false;
+            while (pos < source.size()) {
+                c = take();
+                if (c == '\\' && !escaped) {
+                    escaped = true;
+                    continue;
+                }
+                if (c == '"' && !escaped) {
+                    closed = true;
+                    break;
+                }
+                if (escaped && c == 'n')
+                    t.text += '\n';
+                else if (escaped && c == 't')
+                    t.text += "    ";
+                else
+                    t.text += c;
+                escaped = false;
+            }
+            if (!closed)
+                fail(t, "unterminated string");
+            if (utf16_length(source.substr(begin, pos - begin - 1)) > 4096)
+                fail(t, "string too long, max 4096");
+            return t;
+        }
+        if ((c == '&' || c == '|') && pos < source.size() && source[pos] == c) {
+            t.kind = Kind::Symbol;
+            t.text += c;
+            t.text += take();
+            if (pos < source.size() && source[pos] == c)
+                t.text += take();
+            return t;
+        }
+        if (std::string_view("{}[](),;+-<>*/%=!&|^~@.").find(c) != std::string_view::npos) {
+            t.kind = Kind::Symbol;
+            t.text += c;
+            if (std::string_view("<>+-").find(c) != std::string_view::npos && pos < source.size() &&
+                source[pos] == c)
+                t.text += take();
+            const bool shift = t.text == "<<" || t.text == ">>";
+            if ((shift || (t.text.size() == 1 &&
+                           std::string_view("<>=!+-*/%&|^").find(c) != std::string_view::npos)) &&
+                pos < source.size() && source[pos] == '=')
+                t.text += take();
+            return t;
+        }
+        fail(t, "unsupported token in native LSL subset");
+    }
 };
 struct Expression {
- enum class Op {Literal,Parameter,Negate,Add,Subtract,StringCast};
- Op op=Op::Literal;unsigned height=1;Type type=Type::Integer;LslValue value=std::int32_t(0);std::unique_ptr<Expression> left,right;
+    enum class Op {
+        Literal,
+        ListLiteral,
+        ListLength,
+        ListStatistics,
+        ListSort,
+        ListRandomize,
+        ListSlice,
+        ListStrided,
+        ListInsert,
+        ListReplace,
+        ListDelete,
+        ListString,
+        ListKey,
+        ListInteger,
+        ListFloat,
+        ListVector,
+        ListRotation,
+        ListEntryType,
+        CsvToList,
+        ParseString,
+        ParseStringKeepNulls,
+        ListJoin,
+        ListToJson,
+        JsonToList,
+        JsonLookup,
+        JsonSet,
+        ListFind,
+        ListFindStrided,
+        VectorLiteral,
+        Component,
+        ColorConversion,
+        VectorMagnitude,
+        VectorNormalize,
+        VectorDistance,
+        AxisAngleToRotation,
+        RotationToAxis,
+        RotationToAngle,
+        RotationAngleBetween,
+        RotationBasis,
+        RotationBetweenVectors,
+        EulerToRotation,
+        RotationToEuler,
+        AxesToRotation,
+        Floor,
+        Ceil,
+        Round,
+        Abs,
+        Fabs,
+        Sqrt,
+        Pow,
+        SetMemoryLimit,
+        GetUsedMemory,
+        GetFreeMemory,
+        RequestUrl,
+        RequestSecureUrl,
+        ReleaseUrl,
+        FreeUrls,
+        HttpHeader,
+        HttpResponse,
+        HttpContentType,
+        ModPow,
+        Sin,
+        Cos,
+        Tan,
+        Asin,
+        Acos,
+        Atan2,
+        Log,
+        Log10,
+        Frand,
+        Local,
+        ObjectPosition,
+        ObjectRootPosition,
+        ObjectLocalPosition,
+        GeometricCenter,
+        ObjectLocalRotation,
+        ObjectRootRotation,
+        ObjectWorldRotation,
+        ObjectVelocity,
+        ObjectOmega,
+        ObjectAcceleration,
+        ObjectScale,
+        ObjectName,
+        ObjectDescription,
+        StartString,
+        StartParameter,
+        ScriptPermissions,
+        ScriptPermissionsKey,
+        AnimationState,
+        AnimationList,
+        AnimationOverride,
+        LinksetDataRead,
+        LinksetDataWrite,
+        LinksetDataCount,
+        LinksetDataAvailable,
+        LinksetDataList,
+        LinksetDataFind,
+        LinksetDataCountFound,
+        LinksetDataDeleteFound,
+        InventoryType,
+        ScriptRunning,
+        InventoryDescription,
+        InventoryCreator,
+        InventoryAcquireTime,
+        InventoryKey,
+        InventoryPermission,
+        ObjectPermission,
+        ObjectLinkKey,
+        SitTargetAvatar,
+        SitFlags,
+        SitActiveRange,
+        StandTarget,
+        InventoryNumber,
+        InventoryName,
+        ScriptName,
+        RegionName,
+        RegionAgentCount,
+        RegionFlags,
+        ParcelFlags,
+        LandOwnerAt,
+        OverMyLand,
+        ScriptDanger,
+        ParcelDetails,
+        AgentList,
+        RegionAgentNames,
+        AgentIpAddress,
+        DrawingCommand,
+        ApparentSunHour,
+        ApparentTime,
+        ApparentTimeString,
+        SunParameter,
+        EnvironmentQuery,
+        ReplaceRegionEnvironment,
+        ReplaceParcelEnvironment,
+        ReplaceAgentEnvironment,
+        RegionCorner,
+        RegionTimeDilation,
+        RegionFPS,
+        ObjectKey,
+        CreatorKey,
+        GenerateKey,
+        OwnerKey,
+        LookupOwnerKey,
+        SameGroup,
+        AgentSize,
+        KeyToName,
+        NameToKey,
+        Username,
+        DisplayName,
+        RequestUsername,
+        RequestDisplayName,
+        RequestUserKey,
+        NotecardLineSync,
+        NotecardLine,
+        NotecardLineCount,
+        RequestInventoryData,
+        RequestAgentData,
+        RequestSimulatorData,
+        AgentLanguage,
+        AttachmentPoint,
+        AttachedList,
+        LinkNumber,
+        LinkKey,
+        LinkName,
+        LinkSides,
+        PrimCount,
+        ObjectPrimCount,
+        DetectedKey,
+        DetectedName,
+        DetectedOwner,
+        DetectedType,
+        DetectedPosition,
+        DetectedVelocity,
+        DetectedGrab,
+        DetectedRotation,
+        DetectedGroup,
+        DetectedLinkNumber,
+        DetectedTouchFace,
+        DetectedTouchPos,
+        DetectedTouchNormal,
+        DetectedTouchBinormal,
+        DetectedTouchST,
+        DetectedTouchUV,
+        Assign,
+        Update,
+        Negate,
+        Not,
+        BitNot,
+        BitAnd,
+        BitOr,
+        BitXor,
+        ShiftLeft,
+        ShiftRight,
+        And,
+        Or,
+        ShortAnd,
+        ShortOr,
+        Add,
+        Subtract,
+        Multiply,
+        Divide,
+        Remainder,
+        Equal,
+        NotEqual,
+        Less,
+        LessEqual,
+        Greater,
+        GreaterEqual,
+        StringCast,
+        VectorCast,
+        RotationCast,
+        EncodeBase64,
+        DecodeBase64,
+        XorBase64,
+        EncodeInteger64,
+        DecodeInteger64,
+        Md5,
+        Sha1,
+        Sha256,
+        ComputeHash,
+        Hmac,
+        EscapeUrl,
+        UnescapeUrl,
+        Upper,
+        Lower,
+        Char,
+        Ord,
+        Hash,
+        StringTrim,
+        GetSubstring,
+        DeleteSubstring,
+        InsertString,
+        ReplaceSubstring,
+        SubstringIndex,
+        StringLength,
+        Water,
+        Ground,
+        GroundNormal,
+        GroundSlope,
+        GroundContour,
+        Cloud,
+        UnixTime,
+        Date,
+        Timestamp,
+        GmtClock,
+        Wallclock,
+        TimeOfDay,
+        Elapsed,
+        ElapsedReset
+    };
+    Op op = Op::Literal;
+    unsigned height = 1;
+    std::size_t slot = 0;
+    bool global = false;
+    int delta = 0;
+    bool postfix = false;
+    Type type = Type::Integer;
+    LslValue value = std::int32_t(0);
+    std::unique_ptr<Expression> left, right, z, w;
+    std::vector<std::unique_ptr<Expression>> elements;
 };
-struct Instruction {bool owner=false;std::unique_ptr<Expression> channel,text;};
-struct Handler {std::string parameter;std::vector<Instruction> instructions;};
-std::int32_t wrap(std::uint32_t n){return std::bit_cast<std::int32_t>(n);}
-LslValue evaluate(const Expression& e,const LslEvent& event){
- switch(e.op){
- case Expression::Op::Literal:return e.value;
- case Expression::Op::Parameter:return event.arguments.at(0);
- case Expression::Op::Negate:return wrap(0u-static_cast<std::uint32_t>(std::get<std::int32_t>(evaluate(*e.left,event))));
- case Expression::Op::StringCast:{auto v=evaluate(*e.left,event);if(auto i=std::get_if<std::int32_t>(&v))return std::to_string(*i);return v;}
- case Expression::Op::Add:case Expression::Op::Subtract:{auto a=evaluate(*e.left,event),b=evaluate(*e.right,event);if(e.type==Type::String)return std::get<std::string>(a)+std::get<std::string>(b);auto x=static_cast<std::uint32_t>(std::get<std::int32_t>(a)),y=static_cast<std::uint32_t>(std::get<std::int32_t>(b));return wrap(e.op==Expression::Op::Add?x+y:x-y);}}
- throw std::logic_error("invalid native LSL expression");
+enum class DrawingFormat { Arguments, LineFrom, Polygon, Color, DeprecatedColor };
+struct DrawingCommand {
+    std::string_view function;
+    std::string_view prefix;
+    std::initializer_list<Type> parameters;
+    std::string_view suffix = "; ";
+    DrawingFormat format = DrawingFormat::Arguments;
+};
+const DrawingCommand drawing_commands[] = {
+    {"osDrawResetTransform", "ResetTransf", {}, ";"},
+    {"osDrawRotationTransform", "RotTransf ", {Type::Float}, ";"},
+    {"osDrawScaleTransform", "ScaleTransf ", {Type::Float, Type::Float}, ";"},
+    {"osDrawTranslationTransform", "TransTransf ", {Type::Float, Type::Float}, ";"},
+    {"osMovePen", "MoveTo ", {Type::Integer, Type::Integer}, ";"},
+    {"osDrawLine", "LineTo ", {Type::Integer, Type::Integer}},
+    {"osDrawLine", "MoveTo ", {Type::Integer, Type::Integer, Type::Integer, Type::Integer},
+     "; ", DrawingFormat::LineFrom},
+    {"osDrawText", "Text ", {Type::String}},
+    {"osDrawEllipse", "Ellipse ", {Type::Integer, Type::Integer}},
+    {"osDrawFilledEllipse", "FillEllipse ", {Type::Integer, Type::Integer}},
+    {"osDrawRectangle", "Rectangle ", {Type::Integer, Type::Integer}},
+    {"osDrawFilledRectangle", "FillRectangle ", {Type::Integer, Type::Integer}},
+    {"osDrawPolygon", "Polygon ", {Type::List, Type::List}, "; ", DrawingFormat::Polygon},
+    {"osDrawFilledPolygon", "FillPolygon ", {Type::List, Type::List}, "; ", DrawingFormat::Polygon},
+    {"osSetFontSize", "FontSize ", {Type::Integer}},
+    {"osSetFontName", "FontName ", {Type::String}},
+    {"osSetPenSize", "PenSize ", {Type::Integer}},
+    {"osSetPenColor", "PenColor ", {Type::String}},
+    {"osSetPenColor", "PenColor ", {Type::Vector}, "; ", DrawingFormat::Color},
+    {"osSetPenColor", "PenColor ", {Type::Vector, Type::Float}, "; ", DrawingFormat::Color},
+    {"osSetPenColour", "PenColour ", {Type::String}, "; ", DrawingFormat::DeprecatedColor},
+    {"osSetPenCap", "PenCap ", {Type::String, Type::String}},
+    {"osDrawImage", "Image ", {Type::Integer, Type::Integer, Type::String}},
+};
+bool is_drawing_function(std::string_view name) {
+    return name.starts_with("os") && std::ranges::any_of(drawing_commands, [name](const auto& command) {
+        return command.function == name;
+    });
 }
+bool is_environment_query(std::string_view name) {
+    return name == "osGetCurrentSunHour" || name == "osGetApparentTime" ||
+           name == "osGetApparentRegionTime" || name == "osGetApparentTimeString" ||
+           name == "osGetApparentRegionTimeString" || name == "osGetSunParam" || name == "osSunGetParam";
 }
-class LslProgram {public:std::map<std::string,Handler> handlers;std::uint64_t event_mask=0;};
+enum class EnvironmentField { DayLength, DayOffset, SunDirection, MoonDirection, SunRotation, MoonRotation };
+struct LslEnvironmentQuery {
+    std::string_view name;
+    EnvironmentField field;
+    Type type;
+    bool region;
+};
+constexpr LslEnvironmentQuery lsl_environment_queries[] = {
+    {"llGetDayLength", EnvironmentField::DayLength, Type::Integer, false},
+    {"llGetRegionDayLength", EnvironmentField::DayLength, Type::Integer, true},
+    {"llGetDayOffset", EnvironmentField::DayOffset, Type::Integer, false},
+    {"llGetRegionDayOffset", EnvironmentField::DayOffset, Type::Integer, true},
+    {"llGetSunDirection", EnvironmentField::SunDirection, Type::Vector, false},
+    {"llGetRegionSunDirection", EnvironmentField::SunDirection, Type::Vector, true},
+    {"llGetMoonDirection", EnvironmentField::MoonDirection, Type::Vector, false},
+    {"llGetRegionMoonDirection", EnvironmentField::MoonDirection, Type::Vector, true},
+    {"llGetSunRotation", EnvironmentField::SunRotation, Type::Rotation, false},
+    {"llGetRegionSunRotation", EnvironmentField::SunRotation, Type::Rotation, true},
+    {"llGetMoonRotation", EnvironmentField::MoonRotation, Type::Rotation, false},
+    {"llGetRegionMoonRotation", EnvironmentField::MoonRotation, Type::Rotation, true},
+};
+bool writable(const Expression& e) {
+    return e.op == Expression::Op::Local ||
+           (e.op == Expression::Op::Component && e.left->op == Expression::Op::Local);
+}
+std::unique_ptr<Expression> copy_target(const Expression& e) {
+    auto copy = std::make_unique<Expression>();
+    copy->op = e.op;
+    copy->type = e.type;
+    copy->height = e.height;
+    copy->slot = e.slot;
+    copy->global = e.global;
+    if (e.left)
+        copy->left = copy_target(*e.left);
+    return copy;
+}
+std::optional<Type> spatial_binary_type(Expression::Op op, Type left, Type right) {
+    using Op = Expression::Op;
+    if (left == Type::Vector && right == Type::Rotation && (op == Op::Multiply || op == Op::Divide))
+        return Type::Vector;
+    if (left == Type::Rotation && right == Type::Rotation) {
+        if (op == Op::Equal || op == Op::NotEqual)
+            return Type::Integer;
+        if (op == Op::Add || op == Op::Subtract || op == Op::Multiply || op == Op::Divide)
+            return Type::Rotation;
+    }
+    if (left == Type::Vector && right == Type::Vector) {
+        if (op == Op::Add || op == Op::Subtract || op == Op::Remainder)
+            return Type::Vector;
+        if (op == Op::Multiply)
+            return Type::Float;
+        if (op == Op::Equal || op == Op::NotEqual)
+            return Type::Integer;
+    } else if ((left == Type::Vector && numeric(right)) || (right == Type::Vector && numeric(left))) {
+        if (op == Op::Multiply || (op == Op::Divide && left == Type::Vector))
+            return Type::Vector;
+    }
+    return {};
+}
+LslValue default_value(Type type) {
+    switch (type) {
+    case Type::Integer:
+        return std::int32_t{0};
+    case Type::Float:
+        return 0.;
+    case Type::Rotation:
+        return LslRotation{};
+    case Type::Vector:
+        return framework::Vector3d{};
+    case Type::List:
+        return std::make_shared<const LslList>();
+    default:
+        return std::string{};
+    }
+}
+struct Instruction {
+    bool owner = false;
+    bool sound = false;
+    bool play_sound = false;
+    bool trigger_sound = false;
+    bool collision_sound = false;
+    std::uint8_t sound_sync_flags = 0;
+    bool set_metadata = false;
+    bool description = false;
+    bool discard = false;
+    bool global = false;
+    bool reset_time = false;
+    bool reset_linkset_data = false;
+    bool start_animation = false;
+    std::unique_ptr<Expression> animation_avatar;
+    bool reset_script = false;
+    std::unique_ptr<Expression> unsit_avatar;
+    std::unique_ptr<Expression> force_sit_avatar;
+    std::unique_ptr<Expression> force_sit_target;
+    std::unique_ptr<Expression> region_water_height;
+    bool estate_sun = false;
+    std::unique_ptr<Expression> sun_use_estate, sun_fixed, sun_hour;
+    std::unique_ptr<Expression> sit_target_link, sit_target_position, sit_target_rotation;
+    std::unique_ptr<Expression> sit_range_link, sit_range_value;
+    std::unique_ptr<Expression> stand_target_link, stand_target_value;
+    std::unique_ptr<Expression> sit_flags_link, sit_flags_value;
+    std::unique_ptr<Expression> seat_camera_link, seat_camera_eye, seat_camera_at, seat_camera_mouselook;
+    std::unique_ptr<Expression> script_control_name, script_control_run;
+    bool return_event = false;
+    bool jump_when_true = false;
+    std::string target_state;
+    std::unique_ptr<Expression> channel, text, condition, permission_agent, permission_mask, animation_name,
+        override_state, override_animation, sleep, timer, event_delay, scale, click_action, pass_touches,
+        allow_inventory_drop, text_color,
+        text_alpha, sound_gain, adjust_sound_gain, sound_radius, preload_sound, sound_queueing, sound_min,
+        sound_max, pay_price, pay_buttons;
+    std::optional<bool> sit_label;
+    std::optional<LslParcelListAction> parcel_list_action;
+    bool parcel_ban_list = false;
+    std::unique_ptr<Expression> parcel_agent, parcel_hours;
+    std::optional<std::size_t> jump, store;
+    Type store_type = Type::Integer;
+    std::array<std::unique_ptr<Expression>, 3> omega;
+};
+struct Handler {
+    std::string parameter;
+    std::vector<Type> local_types;
+    std::vector<Instruction> instructions;
+};
+std::int32_t wrap(std::uint32_t n) {
+    return std::bit_cast<std::int32_t>(n);
+}
+std::string utc_text(std::int64_t ticks, bool timestamp) {
+    using namespace std::chrono;
+    using Ticks = duration<std::int64_t, std::ratio<1, 10000000>>;
+    const sys_time<Ticks> instant{Ticks{ticks - 621355968000000000LL}};
+    const auto day = floor<days>(instant);
+    const year_month_day date{day};
+    const hh_mm_ss time{instant - day};
+    char result[40];
+    std::snprintf(result, sizeof result, "%04d-%02u-%02u", int(date.year()), unsigned(date.month()),
+                  unsigned(date.day()));
+    if (timestamp) {
+        std::snprintf(result + 10, sizeof result - 10, "T%02d:%02d:%02d.%07dZ", int(time.hours().count()),
+                      int(time.minutes().count()), int(time.seconds().count()),
+                      int(time.subseconds().count()));
+    }
+    return result;
+}
+double seconds_of_day(std::int64_t ticks, bool local) {
+    using namespace std::chrono;
+    using Ticks = duration<std::int64_t, std::ratio<1, 10000000>>;
+    const sys_time<Ticks> instant{Ticks{ticks - 621355968000000000LL}};
+    if (!local)
+        return duration<double>(instant - floor<days>(instant)).count();
+
+    const auto whole = floor<seconds>(instant);
+    const auto epoch = static_cast<std::time_t>(whole.time_since_epoch().count());
+    std::tm time{};
+#ifdef _WIN32
+    if (localtime_s(&time, &epoch) != 0)
+        throw std::runtime_error("LSL local time is out of range");
+#else
+    if (!localtime_r(&epoch, &time))
+        throw std::runtime_error("LSL local time is out of range");
+#endif
+    return time.tm_hour * 3600 + time.tm_min * 60 + time.tm_sec + duration<double>(instant - whole).count();
+}
+std::int64_t ticks();
+std::string sha256_text(std::string_view text, bool sha224 = false) {
+    constexpr std::array<std::uint32_t, 64> constants{
+        0x428a2f98u, 0x71374491u, 0xb5c0fbcfu, 0xe9b5dba5u, 0x3956c25bu, 0x59f111f1u, 0x923f82a4u,
+        0xab1c5ed5u, 0xd807aa98u, 0x12835b01u, 0x243185beu, 0x550c7dc3u, 0x72be5d74u, 0x80deb1feu,
+        0x9bdc06a7u, 0xc19bf174u, 0xe49b69c1u, 0xefbe4786u, 0x0fc19dc6u, 0x240ca1ccu, 0x2de92c6fu,
+        0x4a7484aau, 0x5cb0a9dcu, 0x76f988dau, 0x983e5152u, 0xa831c66du, 0xb00327c8u, 0xbf597fc7u,
+        0xc6e00bf3u, 0xd5a79147u, 0x06ca6351u, 0x14292967u, 0x27b70a85u, 0x2e1b2138u, 0x4d2c6dfcu,
+        0x53380d13u, 0x650a7354u, 0x766a0abbu, 0x81c2c92eu, 0x92722c85u, 0xa2bfe8a1u, 0xa81a664bu,
+        0xc24b8b70u, 0xc76c51a3u, 0xd192e819u, 0xd6990624u, 0xf40e3585u, 0x106aa070u, 0x19a4c116u,
+        0x1e376c08u, 0x2748774cu, 0x34b0bcb5u, 0x391c0cb3u, 0x4ed8aa4au, 0x5b9cca4fu, 0x682e6ff3u,
+        0x748f82eeu, 0x78a5636fu, 0x84c87814u, 0x8cc70208u, 0x90befffau, 0xa4506cebu, 0xbef9a3f7u,
+        0xc67178f2u,
+    };
+    std::array<std::uint32_t, 8> state{0x6a09e667u, 0xbb67ae85u, 0x3c6ef372u, 0xa54ff53au,
+                                       0x510e527fu, 0x9b05688cu, 0x1f83d9abu, 0x5be0cd19u};
+    if (sha224)
+        state = {0xc1059ed8u, 0x367cd507u, 0x3070dd17u, 0xf70e5939u,
+                 0xffc00b31u, 0x68581511u, 0x64f98fa7u, 0xbefa4fa4u};
+    const auto compress = [&](std::string_view block) {
+        std::array<std::uint32_t, 64> words{};
+        for (std::size_t i = 0; i < 16; ++i)
+            for (std::size_t byte = 0; byte < 4; ++byte)
+                words[i] = (words[i] << 8) | static_cast<unsigned char>(block[4 * i + byte]);
+        for (std::size_t i = 16; i < words.size(); ++i) {
+            const auto x = words[i - 15], y = words[i - 2];
+            const auto low = std::rotr(x, 7) ^ std::rotr(x, 18) ^ (x >> 3);
+            const auto high = std::rotr(y, 17) ^ std::rotr(y, 19) ^ (y >> 10);
+            words[i] = words[i - 16] + low + words[i - 7] + high;
+        }
+        auto [a, b, c, d, e, f, g, h] = state;
+        for (std::size_t i = 0; i < words.size(); ++i) {
+            const auto high = std::rotr(e, 6) ^ std::rotr(e, 11) ^ std::rotr(e, 25);
+            const auto choice = (e & f) ^ (~e & g);
+            const auto t1 = h + high + choice + constants[i] + words[i];
+            const auto low = std::rotr(a, 2) ^ std::rotr(a, 13) ^ std::rotr(a, 22);
+            const auto majority = (a & b) ^ (a & c) ^ (b & c);
+            h = g;
+            g = f;
+            f = e;
+            e = d + t1;
+            d = c;
+            c = b;
+            b = a;
+            a = t1 + low + majority;
+        }
+        const std::array working{a, b, c, d, e, f, g, h};
+        for (std::size_t i = 0; i < state.size(); ++i)
+            state[i] += working[i];
+    };
+    const auto bits = static_cast<std::uint64_t>(text.size()) * 8;
+    while (text.size() >= 64) {
+        compress(text.substr(0, 64));
+        text.remove_prefix(64);
+    }
+    std::array<char, 128> tail{};
+    std::copy(text.begin(), text.end(), tail.begin());
+    tail[text.size()] = static_cast<char>(0x80);
+    const std::size_t size = text.size() < 56 ? 64 : 128;
+    for (std::size_t i = 0; i < 8; ++i)
+        tail[size - 1 - i] = static_cast<char>((bits >> (8 * i)) & 0xff);
+    for (std::size_t i = 0; i < size; i += 64)
+        compress(std::string_view(tail.data() + i, 64));
+    constexpr std::string_view digits = "0123456789abcdef";
+    std::string result;
+    result.reserve(64);
+    for (auto word : state)
+        for (int shift = 28; shift >= 0; shift -= 4)
+            result += digits[(word >> shift) & 15];
+    if (sha224)
+        result.resize(56);
+    return result;
+}
+std::string sha512_text(std::string_view text, bool sha384 = false) {
+    constexpr std::array<std::uint64_t, 80> constants{
+        0x428a2f98d728ae22ull, 0x7137449123ef65cdull, 0xb5c0fbcfec4d3b2full, 0xe9b5dba58189dbbcull,
+        0x3956c25bf348b538ull, 0x59f111f1b605d019ull, 0x923f82a4af194f9bull, 0xab1c5ed5da6d8118ull,
+        0xd807aa98a3030242ull, 0x12835b0145706fbeull, 0x243185be4ee4b28cull, 0x550c7dc3d5ffb4e2ull,
+        0x72be5d74f27b896full, 0x80deb1fe3b1696b1ull, 0x9bdc06a725c71235ull, 0xc19bf174cf692694ull,
+        0xe49b69c19ef14ad2ull, 0xefbe4786384f25e3ull, 0x0fc19dc68b8cd5b5ull, 0x240ca1cc77ac9c65ull,
+        0x2de92c6f592b0275ull, 0x4a7484aa6ea6e483ull, 0x5cb0a9dcbd41fbd4ull, 0x76f988da831153b5ull,
+        0x983e5152ee66dfabull, 0xa831c66d2db43210ull, 0xb00327c898fb213full, 0xbf597fc7beef0ee4ull,
+        0xc6e00bf33da88fc2ull, 0xd5a79147930aa725ull, 0x06ca6351e003826full, 0x142929670a0e6e70ull,
+        0x27b70a8546d22ffcull, 0x2e1b21385c26c926ull, 0x4d2c6dfc5ac42aedull, 0x53380d139d95b3dfull,
+        0x650a73548baf63deull, 0x766a0abb3c77b2a8ull, 0x81c2c92e47edaee6ull, 0x92722c851482353bull,
+        0xa2bfe8a14cf10364ull, 0xa81a664bbc423001ull, 0xc24b8b70d0f89791ull, 0xc76c51a30654be30ull,
+        0xd192e819d6ef5218ull, 0xd69906245565a910ull, 0xf40e35855771202aull, 0x106aa07032bbd1b8ull,
+        0x19a4c116b8d2d0c8ull, 0x1e376c085141ab53ull, 0x2748774cdf8eeb99ull, 0x34b0bcb5e19b48a8ull,
+        0x391c0cb3c5c95a63ull, 0x4ed8aa4ae3418acbull, 0x5b9cca4f7763e373ull, 0x682e6ff3d6b2b8a3ull,
+        0x748f82ee5defb2fcull, 0x78a5636f43172f60ull, 0x84c87814a1f0ab72ull, 0x8cc702081a6439ecull,
+        0x90befffa23631e28ull, 0xa4506cebde82bde9ull, 0xbef9a3f7b2c67915ull, 0xc67178f2e372532bull,
+        0xca273eceea26619cull, 0xd186b8c721c0c207ull, 0xeada7dd6cde0eb1eull, 0xf57d4f7fee6ed178ull,
+        0x06f067aa72176fbaull, 0x0a637dc5a2c898a6ull, 0x113f9804bef90daeull, 0x1b710b35131c471bull,
+        0x28db77f523047d84ull, 0x32caab7b40c72493ull, 0x3c9ebe0a15c9bebcull, 0x431d67c49c100d4cull,
+        0x4cc5d4becb3e42b6ull, 0x597f299cfc657e2aull, 0x5fcb6fab3ad6faecull, 0x6c44198c4a475817ull};
+    std::array<std::uint64_t, 8> state{0x6a09e667f3bcc908ull, 0xbb67ae8584caa73bull, 0x3c6ef372fe94f82bull,
+                                       0xa54ff53a5f1d36f1ull, 0x510e527fade682d1ull, 0x9b05688c2b3e6c1full,
+                                       0x1f83d9abfb41bd6bull, 0x5be0cd19137e2179ull};
+    if (sha384)
+        state = {0xcbbb9d5dc1059ed8ull, 0x629a292a367cd507ull, 0x9159015a3070dd17ull, 0x152fecd8f70e5939ull,
+                 0x67332667ffc00b31ull, 0x8eb44a8768581511ull, 0xdb0c2e0d64f98fa7ull, 0x47b5481dbefa4fa4ull};
+    const auto compress = [&](std::string_view block) {
+        std::array<std::uint64_t, 80> words{};
+        for (std::size_t i = 0; i < 16; ++i)
+            for (std::size_t byte = 0; byte < 8; ++byte)
+                words[i] = (words[i] << 8) | static_cast<unsigned char>(block[8 * i + byte]);
+        for (std::size_t i = 16; i < words.size(); ++i) {
+            const auto x = words[i - 15], y = words[i - 2];
+            const auto low = std::rotr(x, 1) ^ std::rotr(x, 8) ^ (x >> 7);
+            const auto high = std::rotr(y, 19) ^ std::rotr(y, 61) ^ (y >> 6);
+            words[i] = words[i - 16] + low + words[i - 7] + high;
+        }
+        auto [a, b, c, d, e, f, g, h] = state;
+        for (std::size_t i = 0; i < words.size(); ++i) {
+            const auto high = std::rotr(e, 14) ^ std::rotr(e, 18) ^ std::rotr(e, 41);
+            const auto choice = (e & f) ^ (~e & g);
+            const auto t1 = h + high + choice + constants[i] + words[i];
+            const auto low = std::rotr(a, 28) ^ std::rotr(a, 34) ^ std::rotr(a, 39);
+            const auto majority = (a & b) ^ (a & c) ^ (b & c);
+            h = g;
+            g = f;
+            f = e;
+            e = d + t1;
+            d = c;
+            c = b;
+            b = a;
+            a = t1 + low + majority;
+        }
+        const std::array working{a, b, c, d, e, f, g, h};
+        for (std::size_t i = 0; i < state.size(); ++i)
+            state[i] += working[i];
+    };
+    const auto bits = static_cast<std::uint64_t>(text.size()) * 8;
+    while (text.size() >= 128) {
+        compress(text.substr(0, 128));
+        text.remove_prefix(128);
+    }
+    std::array<char, 256> tail{};
+    std::copy(text.begin(), text.end(), tail.begin());
+    tail[text.size()] = static_cast<char>(0x80);
+    const std::size_t size = text.size() < 112 ? 128 : 256;
+    for (std::size_t i = 0; i < 8; ++i)
+        tail[size - 1 - i] = static_cast<char>((bits >> (8 * i)) & 0xff);
+    for (std::size_t i = 0; i < size; i += 128)
+        compress(std::string_view(tail.data() + i, 128));
+    constexpr std::string_view digits = "0123456789abcdef";
+    std::string result;
+    result.reserve(128);
+    for (auto word : state)
+        for (int shift = 60; shift >= 0; shift -= 4)
+            result += digits[(word >> shift) & 15];
+    if (sha384)
+        result.resize(96);
+    return result;
+}
+std::string replace_substring(const std::string& source, const std::string& pattern,
+                              const std::string& replacement, std::int32_t count) {
+    using namespace framework;
+    if (source.empty() || pattern.empty() || count == std::numeric_limits<std::int32_t>::min())
+        return source;
+    try {
+        const auto units = [](std::string_view text) {
+            return std::make_shared<const std::u16string>(utf16_replacing(text));
+        };
+        const auto input = units(source), expression = units(pattern);
+        if (input->size() > static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max()))
+            return source;
+        const auto length = static_cast<std::int32_t>(input->size());
+        const bool reverse = count < 0;
+        const auto options = 512 | (reverse ? 64 : 0);
+        const auto culture = []() { return std::u16string{}; };
+        const auto stack = []() { return sufficient_execution_stack(); };
+        auto parsed = dotnet_regex_parse(expression, options, culture, stack);
+        const auto rules = dotnet_regex_parse_replacement(
+            units(replacement), options, parsed.capture_number_sparse_mapping, parsed.capture_count,
+            parsed.capture_name_to_number, culture, stack);
+        DotnetRegexInterpreter regex(std::move(parsed), expression, stack);
+        struct Edit {
+            std::int32_t index, length;
+            std::u16string text;
+        };
+        std::vector<Edit> edits;
+        auto position = reverse ? length : 0;
+        int previous = -1;
+        auto remaining = count == 0 ? std::numeric_limits<std::int32_t>::max() : std::abs(count);
+        while (remaining-- > 0) {
+            const auto match = regex.scan(input, 0, length, position, previous,
+                                          DotnetRegexRunnerMode::FullMatchRequired, 100000);
+            if (!match.success)
+                break;
+            Edit edit{match.index, match.length, {}};
+            for (const auto rule : rules.rules) {
+                if (rule >= 0) {
+                    edit.text += *rules.strings.at(rule);
+                    continue;
+                }
+                const auto slot = -5 - rule;
+                if (slot == -1)
+                    edit.text.append(*input, 0, match.index);
+                else if (slot == -2)
+                    edit.text.append(*input, match.index + match.length);
+                else if (slot == -4)
+                    edit.text += *input;
+                else if (!match.groups.empty()) {
+                    const auto group = slot == -3 ? match.groups.size() - 1 : static_cast<std::size_t>(slot);
+                    if (group < match.groups.size() && match.groups[group].success)
+                        edit.text.append(*input, match.groups[group].index, match.groups[group].length);
+                }
+            }
+            edits.push_back(std::move(edit));
+            position = match.text_position;
+            previous = match.length;
+        }
+        if (reverse)
+            std::reverse(edits.begin(), edits.end());
+        std::u16string result;
+        std::size_t cursor = 0;
+        for (const auto& edit : edits) {
+            result.append(*input, cursor, edit.index - cursor);
+            result += edit.text;
+            cursor = static_cast<std::size_t>(edit.index) + edit.length;
+        }
+        result.append(*input, cursor);
+        return utf8(result);
+    } catch (const std::exception&) {
+        return source;
+    }
+}
+bool truth(const LslValue& value, Type type) {
+    if (type == Type::Key) {
+        framework::Uuid id;
+        return framework::try_parse_sdk_uuid(std::get<std::string>(value), id) && !id.is_zero();
+    }
+    return std::visit(
+        [](const auto& item) {
+            if constexpr (std::is_same_v<std::decay_t<decltype(item)>, std::string>)
+                return !item.empty();
+            else if constexpr (std::is_same_v<std::decay_t<decltype(item)>, framework::Vector3d>)
+                return item.x != 0 || item.y != 0 || item.z != 0;
+            else if constexpr (std::is_same_v<std::decay_t<decltype(item)>, std::shared_ptr<const LslList>>)
+                return !item->items.empty();
+            else if constexpr (std::is_same_v<std::decay_t<decltype(item)>, LslRotation>)
+                return item != LslRotation{};
+            else
+                return item != 0;
+        },
+        value);
+}
+void append_list_range(LslList& result, const LslList& list, std::int64_t first, std::int64_t last) {
+    first = std::max<std::int64_t>(0, first);
+    last = std::min(static_cast<std::int64_t>(list.items.size()), last);
+    if (first < last)
+        result.items.insert(result.items.end(), list.items.begin() + first, list.items.begin() + last);
+}
+void append_list_slice(LslList& result, const LslList& list, std::int64_t start, std::int64_t end) {
+    const auto size = static_cast<std::int64_t>(list.items.size());
+    if (start < 0)
+        start += size;
+    if (end < 0)
+        end += size;
+    if (start <= end)
+        append_list_range(result, list, start, end + 1);
+    else if (start < 0)
+        append_list_range(result, list, 0, size);
+    else {
+        append_list_range(result, list, 0, end + 1);
+        append_list_range(result, list, start, size);
+    }
+}
+std::int32_t list_integer(const LslValue& item) {
+    if (const auto* value = std::get_if<std::int32_t>(&item))
+        return *value;
+    if (const auto* value = std::get_if<double>(&item)) {
+        const auto truncated = std::trunc(*value);
+        if (!std::isfinite(truncated) || truncated < -2147483648. || truncated >= 2147483648.)
+            return std::numeric_limits<std::int32_t>::min();
+        return static_cast<std::int32_t>(truncated);
+    }
+    const auto* text = std::get_if<std::string>(&item);
+    if (!text)
+        return 0;
+    std::string_view digits = *text;
+    const auto start = digits.find_first_not_of(' ');
+    if (start == digits.npos)
+        return 0;
+    digits.remove_prefix(start);
+    const bool hex = digits.starts_with("0x") || digits.starts_with("0X");
+    const bool negative = digits.starts_with("-");
+    if (hex)
+        digits.remove_prefix(2);
+    else if (negative || digits.starts_with("+"))
+        digits.remove_prefix(1);
+    std::uint32_t number = 0;
+    const auto parsed = std::from_chars(digits.data(), digits.data() + digits.size(), number, hex ? 16 : 10);
+    if (parsed.ec == std::errc::result_out_of_range || (!hex && number > 2147483647u))
+        return -1;
+    if (parsed.ec != std::errc{})
+        return 0;
+    if (hex)
+        return wrap(number);
+    return negative ? -static_cast<std::int32_t>(number) : static_cast<std::int32_t>(number);
+}
+double list_float(const LslValue& item) {
+    if (const auto* value = std::get_if<double>(&item))
+        return *value;
+    if (const auto* value = std::get_if<std::int32_t>(&item))
+        return *value;
+    const auto* text = std::get_if<std::string>(&item);
+    if (!text)
+        return 0.;
+    framework::Uuid key;
+    if (framework::try_parse_sdk_uuid(*text, key))
+        return list_integer(item);
+    const auto units = framework::utf16_replacing(*text);
+    std::size_t index = 0;
+    while (index < units.size() && framework::unicode_whitespace(units[index]))
+        ++index;
+    const auto start = index;
+    if (index < units.size() && units[index] == u'-')
+        ++index;
+    if (index < units.size() && units[index] == u'+')
+        ++index;
+    const auto digit = [](char16_t c) { return c >= u'0' && c <= u'9'; };
+    const auto integer_start = index;
+    while (index < units.size() && (digit(units[index]) || units[index] == u','))
+        ++index;
+    if (index == integer_start)
+        return 0.;
+    if (index < units.size() && units[index] == u'.') {
+        ++index;
+        while (index < units.size() && digit(units[index]))
+            ++index;
+    }
+    double value = 0.;
+    return network::try_parse_invariant_real(
+               framework::utf8(std::u16string_view(units).substr(start, index - start)), value)
+               ? value
+               : 0.;
+}
+framework::Vector3d list_vector(const LslValue& item) {
+    if (const auto* vector = std::get_if<framework::Vector3d>(&item))
+        return *vector;
+    const auto* text = std::get_if<std::string>(&item);
+    if (!text || text->size() < 5)
+        return {};
+    std::string_view input = *text;
+    const auto opening = input.find_first_of("<,");
+    if (opening == input.npos)
+        return {};
+    if (input[opening] == '<')
+        input.remove_prefix(opening + 1);
+    framework::Vector3d result;
+    for (auto* component : {&result.x, &result.y}) {
+        const auto comma = input.find(',');
+        if (comma == input.npos || !network::try_parse_invariant_real(input.substr(0, comma), *component))
+            return {};
+        input.remove_prefix(comma + 1);
+    }
+    if (!network::try_parse_invariant_real(input.substr(0, input.find('>')), result.z))
+        return {};
+    return result;
+}
+LslRotation list_rotation(const LslValue& item) {
+    if (const auto* rotation = std::get_if<LslRotation>(&item))
+        return *rotation;
+    const auto* text = std::get_if<std::string>(&item);
+    if (!text || framework::utf16(*text).size() < 7)
+        return {};
+    std::string_view input = *text;
+    const auto opening = input.find_first_of("<,");
+    if (opening == input.npos)
+        return {};
+    if (input[opening] == '<')
+        input.remove_prefix(opening + 1);
+    LslRotation result;
+    for (auto* component : {&result.x, &result.y, &result.z}) {
+        const auto comma = input.find(',');
+        if (comma == input.npos || !network::try_parse_invariant_real(input.substr(0, comma), *component))
+            return {};
+        input.remove_prefix(comma + 1);
+    }
+    if (!network::try_parse_invariant_real(input.substr(0, input.find('>')), result.w))
+        return {};
+    return result;
+}
+std::optional<LslAvatarName> parse_avatar_name(std::string_view text) {
+    const auto name = framework::utf16_replacing(text);
+    const auto first_start = name.find_first_not_of(u' ');
+    if (first_start == std::u16string::npos)
+        return {};
+    const auto first_end = name.find_first_of(u" .@", first_start);
+    if (first_end == std::u16string::npos || first_end == first_start || name[first_end] == u'@')
+        return {};
+    const auto first = name.substr(first_start, first_end - first_start);
+    auto last_start = name.find_first_not_of(u' ', first_end + 1);
+    if (last_start == std::u16string::npos)
+        return {};
+
+    const bool first_separator_is_dot = name[first_end] == u'.';
+    for (auto index = last_start; index < name.size(); ++index) {
+        if (name[index] == u'.') {
+            if (first_separator_is_dot || index + 1 == name.size())
+                return {};
+            last_start = index + 1;
+        } else if (name[index] == u'@') {
+            const auto server_start = name.find_first_not_of(u' ', index + 1);
+            if (server_start == std::u16string::npos || name.size() - server_start < 3)
+                return {};
+            auto last_end = index;
+            while (last_end > last_start && name[last_end - 1] == u' ')
+                --last_end;
+            if (last_end == last_start)
+                return {};
+            const auto last = name.substr(last_start, last_end - last_start);
+            auto server_end = name.size();
+            while (server_end > server_start && framework::unicode_whitespace(name[server_end - 1]))
+                --server_end;
+            return LslAvatarName{framework::utf8(first), framework::utf8(last),
+                                 framework::utf8(name.substr(server_start, server_end - server_start))};
+        }
+    }
+    auto last_end = name.size();
+    while (last_end > last_start && framework::unicode_whitespace(name[last_end - 1]))
+        --last_end;
+    if (last_end == last_start)
+        return {};
+    return LslAvatarName{framework::utf8(first),
+                         framework::utf8(name.substr(last_start, last_end - last_start)), {}};
+}
+
+std::string username_from_name(std::string_view text) {
+    auto name = framework::utf16_replacing(text);
+    const auto first_end = std::find_if(name.begin(), name.end(), framework::unicode_whitespace);
+    if (first_end != name.end()) {
+        const auto second_end = std::find_if(first_end + 1, name.end(), framework::unicode_whitespace);
+        if (std::u16string(first_end + 1, second_end) == u"Resident")
+            name.erase(first_end, name.end());
+        else
+            std::replace(name.begin(), name.end(), u' ', u'.');
+    }
+    return framework::utf8(framework::invariant_lower_utf16(name));
+}
+
+std::string value_text(const LslValue& v) {
+    if (auto i = std::get_if<std::int32_t>(&v))
+        return std::to_string(*i);
+    if (auto real = std::get_if<double>(&v)) {
+        char buffer[384];
+        const auto result = std::to_chars(buffer, buffer + sizeof buffer, *real, std::chars_format::fixed, 6);
+        return std::string(buffer, result.ptr);
+    }
+    if (const auto* vector = std::get_if<framework::Vector3d>(&v)) {
+        std::string result = "<";
+        for (double component : {vector->x, vector->y, vector->z}) {
+            if (result.size() > 1)
+                result += ", ";
+            char buffer[384];
+            const auto converted =
+                std::to_chars(buffer, buffer + sizeof buffer, component, std::chars_format::fixed, 6);
+            result.append(buffer, converted.ptr);
+        }
+        return result + ">";
+    }
+    if (const auto* rotation = std::get_if<LslRotation>(&v))
+        return "<" + value_text(rotation->x) + ", " + value_text(rotation->y) + ", " +
+               value_text(rotation->z) + ", " + value_text(rotation->w) + ">";
+    return std::get<std::string>(v);
+}
+std::string drawing_number(double value) {
+    if (std::isnan(value))
+        return "NaN";
+    if (std::isinf(value))
+        return std::signbit(value) ? "-Infinity" : "Infinity";
+
+    // .NET's custom numeric format rounds the 15 significant decimal digits
+    // of a double, then rounds again at the sixth fractional digit.
+    char buffer[32];
+    const auto encoded = std::to_chars(buffer, buffer + sizeof buffer, std::abs(value),
+                                       std::chars_format::scientific, 14);
+    const std::string scientific(buffer, encoded.ptr);
+    const auto exponent_marker = scientific.find('e');
+    auto digits = scientific.substr(0, exponent_marker);
+    std::erase(digits, '.');
+    const int keep = std::stoi(scientific.substr(exponent_marker + 1)) + 7;
+    const auto retained = static_cast<std::size_t>(std::max(keep, 0));
+    const bool round_up = keep >= 0 && retained < digits.size() && digits[retained] >= '5';
+    digits.resize(retained, '0');
+    if (round_up) {
+        auto digit = digits.rbegin();
+        while (digit != digits.rend() && *digit == '9') {
+            *digit = '0';
+            ++digit;
+        }
+        if (digit == digits.rend())
+            digits.insert(0, 1, '1');
+        else
+            ++*digit;
+    }
+    if (digits.size() < 7)
+        digits.insert(0, 7 - digits.size(), '0');
+    digits.insert(digits.size() - 6, 1, '.');
+    if (std::signbit(value))
+        digits.insert(0, 1, '-');
+    return digits;
+}
+std::string drawing_coordinate(const LslValue& value) {
+    if (const auto* real = std::get_if<double>(&value))
+        return drawing_number(*real);
+    if (const auto* vector = std::get_if<framework::Vector3d>(&value))
+        return "<" + drawing_number(vector->x) + ", " + drawing_number(vector->y) + ", " +
+               drawing_number(vector->z) + ">";
+    if (const auto* rotation = std::get_if<LslRotation>(&value))
+        return "<" + drawing_number(rotation->x) + ", " + drawing_number(rotation->y) + ", " +
+               drawing_number(rotation->z) + ", " + drawing_number(rotation->w) + ">";
+    return value_text(value);
+}
+std::string json_marker(char16_t marker) {
+    return framework::utf8(std::u16string_view(&marker, 1));
+}
+std::string quote_lsl_json(std::string_view input) {
+    std::string result(1, '"');
+    constexpr std::string_view hex = "0123456789ABCDEF";
+    for (unsigned char ch : input) {
+        switch (ch) {
+        case '"':
+        case '\\':
+        case '/':
+            result += '\\';
+            result += static_cast<char>(ch);
+            break;
+        case '\b':
+            result += "\\b";
+            break;
+        case '\t':
+            result += "\\t";
+            break;
+        case '\n':
+            result += "\\n";
+            break;
+        case '\f':
+            result += "\\f";
+            break;
+        case '\r':
+            result += "\\r";
+            break;
+        default:
+            if (ch < 32) {
+                result += "\\u00";
+                result += hex[ch >> 4];
+                result += hex[ch & 15];
+            } else
+                result += static_cast<char>(ch);
+        }
+    }
+    return result + '"';
+}
+std::string lsl_json_item(const LslValue& item) {
+    if (const auto* real = std::get_if<double>(&item)) {
+        if (std::isinf(*real))
+            return "\"Inf\"";
+        if (std::isnan(*real))
+            return "\"NaN\"";
+        char buffer[64];
+        const auto result = std::to_chars(buffer, buffer + sizeof buffer, *real);
+        return {buffer, result.ptr};
+    }
+    if (std::holds_alternative<std::int32_t>(item))
+        return value_text(item);
+    if (const auto* text = std::get_if<std::string>(&item)) {
+        auto units = framework::utf16(*text);
+        std::u16string_view trimmed = units;
+        while (!trimmed.empty() && framework::unicode_whitespace(trimmed.front()))
+            trimmed.remove_prefix(1);
+        while (!trimmed.empty() && framework::unicode_whitespace(trimmed.back()))
+            trimmed.remove_suffix(1);
+        const auto value = framework::utf8(trimmed);
+        if (!value.empty() && (value.front() == '{' || value.front() == '['))
+            return value;
+        if (value == "true" || value == json_marker(0xFDD6))
+            return "true";
+        if (value == "false" || value == json_marker(0xFDD7))
+            return "false";
+        if (value == "null" || value == json_marker(0xFDD5))
+            return "null";
+        return quote_lsl_json(value);
+    }
+    if (std::holds_alternative<std::shared_ptr<const LslList>>(item))
+        return {};
+    return quote_lsl_json(value_text(item));
+}
+std::string compute_hash(std::string_view source, std::string_view algorithm) {
+    const auto* bytes = reinterpret_cast<const std::uint8_t*>(source.data());
+    if (algorithm == "md5")
+        return framework::md5(std::string(source));
+    if (algorithm == "sha1")
+        return framework::sha1_hex({bytes, source.size()});
+    if (algorithm == "md5_sha1")
+        return framework::md5(std::string(source)) + framework::sha1_hex({bytes, source.size()});
+    if (algorithm == "sha224" || algorithm == "sha256")
+        return sha256_text(source, algorithm == "sha224");
+    if (algorithm == "sha384" || algorithm == "sha512")
+        return sha512_text(source, algorithm == "sha384");
+    return {};
+}
+std::string digest_bytes(std::string_view hex) {
+    std::string result;
+    const auto digit = [](char c) { return c <= '9' ? c - '0' : c - 'a' + 10; };
+    for (std::size_t i = 0; i < hex.size(); i += 2)
+        result += static_cast<char>(digit(hex[i]) * 16 + digit(hex[i + 1]));
+    return result;
+}
+template <class Value> decltype(auto) component_at(Value& value, std::size_t slot) {
+    if (auto* rotation = std::get_if<LslRotation>(&value))
+        return (slot == 0 ? rotation->x : slot == 1 ? rotation->y : slot == 2 ? rotation->z : rotation->w);
+    auto& vector = std::get<framework::Vector3d>(value);
+    return (slot == 0 ? vector.x : slot == 1 ? vector.y : vector.z);
+}
+class OsslPermissionError final : public std::runtime_error {
+public:
+    explicit OsslPermissionError(const std::string& reason) : std::runtime_error("OSSL Permission Error: " + reason) {}
+};
+class OsslRuntimeError final : public std::runtime_error {
+public:
+    explicit OsslRuntimeError(const std::string& reason) : std::runtime_error("OSSL Runtime Error: " + reason) {}
+};
+
+struct Evaluator {
+    std::vector<LslValue>& locals;
+    std::vector<LslValue>& globals;
+    LslValue& variable(const Expression& e) const {
+        return (e.global ? globals : locals).at(e.slot);
+    }
+    const LslEvent* event;
+    const LslContext& context;
+    const LslHost& host;
+    double& writable_component(const Expression& target) const {
+        return component_at(variable(*target.left), target.slot);
+    }
+    std::int64_t& timer_start;
+    std::function<void(std::int32_t)> delay;
+    std::function<std::int32_t()> heap_bytes_used;
+    std::function<void(const LslValue&, const LslValue&, Type, bool)> check_heap_store;
+    void check_ossl_permission(std::string_view function) const {
+        const auto reason = host.ossl_permission_error
+            ? host.ossl_permission_error(context.object, context.item, function)
+            : std::string(function) + " permission denied";
+        if (!reason.empty())
+            throw OsslPermissionError(reason);
+    }
+    void check_safe_ossl_permission() const {
+        if (!host.ossl_enabled)
+            throw OsslRuntimeError("permission denied. All unsafe OSSL funtions disabled");
+    }
+    void script_error(std::string message) const {
+        LslChat chat{LslChatType::Debug, std::numeric_limits<std::int32_t>::max(),
+                     framework::truncate_utf16(message, 1023), context};
+        if (host.chat)
+            host.chat(chat);
+        if (host.listener)
+            host.listener(chat);
+        delay(1000);
+    }
+    std::int64_t timer_now() const {
+        return host.monotonic_ticks ? host.monotonic_ticks() : ticks();
+    }
+    std::string evaluate_drawing_command(const Expression& e) const {
+        std::array<LslValue, 5> arguments;
+        for (std::size_t i = e.elements.size(); i > 0; --i)
+            arguments[i - 1] = evaluate(*e.elements[i - 1]);
+        check_safe_ossl_permission();
+
+        const auto& command = drawing_commands[e.slot];
+        auto result = std::get<std::string>(std::move(arguments[0]));
+        result += command.prefix;
+        if (command.format == DrawingFormat::Polygon) {
+            using List = std::shared_ptr<const LslList>;
+            const auto& x = std::get<List>(arguments[1])->items;
+            const auto& y = std::get<List>(arguments[2])->items;
+            if (x.size() < 3 || x.size() != y.size())
+                return {};
+            for (std::size_t i = 0; i < x.size(); ++i) {
+                if (i != 0)
+                    result += ',';
+                result += drawing_coordinate(x[i]) + ',' + drawing_coordinate(y[i]);
+            }
+        } else if (command.format == DrawingFormat::Color) {
+            const auto& color = std::get<framework::Vector3d>(arguments[1]);
+            const auto append_hex = [&](double component) {
+                constexpr std::string_view hex = "0123456789abcdef";
+                const auto value = static_cast<float>(component);
+                unsigned byte = 0;
+                if (value >= 1.f)
+                    byte = 255;
+                else if (value > 0.f)
+                    byte = static_cast<unsigned>(value * 255.f);
+                result += hex[byte >> 4];
+                result += hex[byte & 15];
+            };
+            if (e.elements.size() == 2)
+                result += "FF";
+            else
+                append_hex(list_float(arguments[2]));
+            for (double component : {color.x, color.y, color.z})
+                append_hex(component);
+        } else {
+            if (command.format == DrawingFormat::DeprecatedColor)
+                script_error("Use of function osSetPenColour is deprecated. Use osSetPenColor instead.");
+            for (std::size_t i = 1; i < e.elements.size(); ++i) {
+                if (command.format == DrawingFormat::LineFrom && i == 3)
+                    result += "; LineTo ";
+                else if (i > 1)
+                    result += ',';
+                const auto type = command.parameters.begin()[i - 1];
+                result += type == Type::Float ? drawing_number(list_float(arguments[i])) : value_text(arguments[i]);
+            }
+        }
+        result += command.suffix;
+        return result;
+    }
+    LslValue evaluate(const Expression& e) const {
+
+        switch (e.op) {
+        case Expression::Op::Literal:
+            return e.value;
+        case Expression::Op::ListLiteral: {
+            auto list = std::make_shared<LslList>();
+            list->items.resize(e.elements.size());
+            for (std::size_t i = e.elements.size(); i > 0; --i)
+                list->items[i - 1] = evaluate(*e.elements[i - 1]);
+            return std::shared_ptr<const LslList>(std::move(list));
+        }
+        case Expression::Op::ListInsert: {
+            std::int64_t index = std::get<std::int32_t>(evaluate(*e.z));
+            const auto source = std::get<std::shared_ptr<const LslList>>(evaluate(*e.right));
+            const auto destination = std::get<std::shared_ptr<const LslList>>(evaluate(*e.left));
+            const auto size = static_cast<std::int64_t>(destination->items.size());
+            if (index < 0)
+                index += size;
+            index = std::clamp(index, std::int64_t{0}, size);
+            auto result = std::make_shared<LslList>();
+            append_list_range(*result, *destination, 0, index);
+            append_list_range(*result, *source, 0, static_cast<std::int64_t>(source->items.size()));
+            append_list_range(*result, *destination, index, size);
+            return std::shared_ptr<const LslList>(std::move(result));
+        }
+        case Expression::Op::ListReplace: {
+            std::int64_t end = std::get<std::int32_t>(evaluate(*e.w));
+            std::int64_t start = std::get<std::int32_t>(evaluate(*e.z));
+            const auto source = std::get<std::shared_ptr<const LslList>>(evaluate(*e.right));
+            const auto destination = std::get<std::shared_ptr<const LslList>>(evaluate(*e.left));
+            const auto size = static_cast<std::int64_t>(destination->items.size());
+            if (start < 0)
+                start += size;
+            if (end < 0)
+                end += size;
+            auto result = std::make_shared<LslList>();
+            if (start > end)
+                append_list_slice(*result, *destination, end + 1, start - 1);
+            else if (start > 0)
+                append_list_range(*result, *destination, 0, start);
+            if (start >= 0 || start > end)
+                append_list_range(*result, *source, 0, static_cast<std::int64_t>(source->items.size()));
+            if (start <= end && end + 1 < size)
+                append_list_slice(*result, *destination, end + 1, -1);
+            return std::shared_ptr<const LslList>(std::move(result));
+        }
+        case Expression::Op::JsonSet: {
+            using Value = network::Value;
+            using Kind = Value::Kind;
+            const auto replacement = std::get<std::string>(evaluate(*e.z));
+            const auto path = std::get<std::shared_ptr<const LslList>>(evaluate(*e.right));
+            const auto input = std::get<std::string>(evaluate(*e.left));
+            const auto invalid = json_marker(0xFDD0);
+            const bool erase = replacement == json_marker(0xFDD8);
+            Value item(replacement);
+            if (replacement == "null" || replacement == json_marker(0xFDD5))
+                item = Value{};
+            else if (replacement == "true" || replacement == json_marker(0xFDD6))
+                item = Value(true);
+            else if (replacement == "false" || replacement == json_marker(0xFDD7))
+                item = Value(false);
+            else {
+                double parsed;
+                if (network::try_parse_invariant_real(replacement, parsed)) {
+                    const float number = static_cast<float>(parsed);
+                    if (number >= -2147483648.0 && number < 2147483648.0 && std::trunc(number) == number &&
+                        replacement.find('.') == std::string::npos)
+                        item = Value(static_cast<std::int32_t>(number));
+                    else {
+                        item.kind = Kind::Real;
+                        item.real =
+                            static_cast<float>(std::nearbyint(static_cast<double>(number) * 1e6) / 1e6);
+                    }
+                }
+            }
+            try {
+                Value document;
+                if (input.empty())
+                    document.kind = Kind::Array;
+                else
+                    document = network::parse_osd_json(input);
+                const bool implicit = path->items.empty();
+                const LslValue zero = std::int32_t{0};
+                auto* node = &document;
+                for (std::size_t i = 0; i < (implicit ? 1 : path->items.size()); ++i) {
+                    const auto& part = implicit ? zero : path->items[i];
+                    const auto* index = std::get_if<std::int32_t>(&part);
+                    const auto* key = std::get_if<std::string>(&part);
+                    const bool last = implicit || i + 1 == path->items.size();
+                    if (!index && !key)
+                        return invalid;
+                    if (node->kind == Kind::Array && key && *key != "-1") {
+                        if (node->array.size() >= 2) {
+                            if (erase)
+                                return invalid;
+                            break;
+                        }
+                        *node = Value::object({});
+                    } else if (node->kind == Kind::Map && index) {
+                        if (*index != 0) {
+                            if (erase)
+                                return invalid;
+                            break;
+                        }
+                        *node = Value{};
+                        node->kind = Kind::Array;
+                    } else if (node->kind != Kind::Array && node->kind != Kind::Map) {
+                        if (node->kind == Kind::Undefined && i != 0)
+                            return invalid;
+                        *node = Value{};
+                        node->kind = index || *key == "-1" ? Kind::Array : Kind::Map;
+                    }
+                    if (node->kind == Kind::Array) {
+                        const auto size = node->array.size();
+                        if (index && (*index < 0 || static_cast<std::size_t>(*index) > size))
+                            return invalid;
+                        const auto position = index ? static_cast<std::size_t>(*index) : size;
+                        if (erase && last) {
+                            if (position == size)
+                                return invalid;
+                            node->array.erase(node->array.begin() + position);
+                            break;
+                        }
+                        if (position == size) {
+                            if (erase)
+                                return invalid;
+                            node->array.emplace_back();
+                            if (!last) {
+                                const auto* next = std::get_if<std::string>(&path->items[i + 1]);
+                                node->array.back().kind = next && *next != "-1" ? Kind::Map : Kind::Array;
+                            }
+                        }
+                        node = &node->array[position];
+                    } else {
+                        if (erase && last) {
+                            if (!node->map.erase(*key))
+                                return invalid;
+                            std::erase(node->map_order, *key);
+                            break;
+                        }
+                        if (!node->contains(*key)) {
+                            if (erase)
+                                return invalid;
+                            Value child;
+                            if (!last) {
+                                const auto* next = std::get_if<std::string>(&path->items[i + 1]);
+                                child.kind = next && *next != "-1" ? Kind::Map : Kind::Array;
+                            }
+                            node->set(*key, std::move(child));
+                        }
+                        node = &node->map.at(*key);
+                    }
+                    if (last)
+                        *node = std::move(item);
+                }
+                const auto output = network::osd_json(document, true);
+                return implicit ? output.substr(1, output.size() - 2) : output;
+            } catch (const std::exception&) {
+                return invalid;
+            }
+        }
+        case Expression::Op::JsonLookup: {
+            const auto path = std::get<std::shared_ptr<const LslList>>(evaluate(*e.right));
+            const auto input = std::get<std::string>(evaluate(*e.left));
+            const auto invalid = json_marker(0xFDD0);
+            if (input.empty())
+                return invalid;
+            using Kind = network::Value::Kind;
+            const bool container = input.front() == '[' || input.front() == '{';
+            if (!container && !path->items.empty())
+                return invalid;
+            network::Value document;
+            try {
+                document = network::parse_osd_json(container ? input : "[" + input + "]");
+            } catch (const std::exception&) {
+                return invalid;
+            }
+            if (!container && (document.kind != Kind::Array || document.array.empty()))
+                return invalid;
+            const auto* value = container ? &document : &document.array.front();
+            for (const auto& part : path->items) {
+                if (value->kind == Kind::Array) {
+                    const auto* index = std::get_if<std::int32_t>(&part);
+                    if (!index || *index < 0 || static_cast<std::size_t>(*index) >= value->array.size())
+                        return invalid;
+                    value = &value->array[*index];
+                } else if (value->kind == Kind::Map) {
+                    const auto* key = std::get_if<std::string>(&part);
+                    if (!key || !value->contains(*key))
+                        return invalid;
+                    value = &value->get(*key);
+                } else
+                    return invalid;
+            }
+            const bool type = e.slot != 0;
+            switch (value->kind) {
+            case Kind::Array:
+                return type ? json_marker(0xFDD2) : network::osd_json(*value, true);
+            case Kind::Map:
+                return type ? json_marker(0xFDD1) : network::osd_json(*value, true);
+            case Kind::Boolean:
+                return json_marker(value->boolean ? 0xFDD6 : 0xFDD7);
+            case Kind::NullReference:
+            case Kind::Undefined:
+                return json_marker(0xFDD5);
+            case Kind::Integer:
+                return type ? json_marker(0xFDD3) : std::to_string(value->integer);
+            case Kind::Long:
+                return type ? json_marker(0xFDD3) : std::to_string(value->long_value);
+            case Kind::Real: {
+                if (type)
+                    return json_marker(0xFDD3);
+                if (!std::isfinite(value->real))
+                    return network::osd_string(*value);
+                auto result = value_text(value->real);
+                while (result.back() == '0' && result[result.size() - 2] != '.')
+                    result.pop_back();
+                return result;
+            }
+            case Kind::String: {
+                const auto text = network::osd_string(*value);
+                if (!type || text == json_marker(0xFDD5) || text == json_marker(0xFDD6) ||
+                    text == json_marker(0xFDD7))
+                    return text;
+                return json_marker(0xFDD4);
+            }
+            default:
+                return invalid;
+            }
+        }
+        case Expression::Op::JsonToList: {
+            const auto input = std::get<std::string>(evaluate(*e.left));
+            auto result = std::make_shared<LslList>();
+            if (input.empty())
+                return std::shared_ptr<const LslList>(std::move(result));
+            using Kind = network::Value::Kind;
+            network::Value document;
+            try {
+                document = input.front() == '[' || input.front() == '{' ? network::parse_osd_json(input)
+                                                                        : network::Value(input);
+            } catch (const std::exception&) {
+                document = network::Value(input);
+            }
+            const auto append = [&](const network::Value& value) {
+                switch (value.kind) {
+                case Kind::Integer:
+                    result->items.emplace_back(value.integer);
+                    break;
+                case Kind::Real:
+                    result->items.emplace_back(value.real);
+                    break;
+                case Kind::String:
+                    result->items.emplace_back(network::osd_string(value));
+                    break;
+                case Kind::Boolean:
+                    result->items.emplace_back(json_marker(value.boolean ? 0xFDD6 : 0xFDD7));
+                    break;
+                case Kind::NullReference:
+                case Kind::Undefined:
+                    result->items.emplace_back(json_marker(0xFDD5));
+                    break;
+                case Kind::Array:
+                case Kind::Map:
+                    result->items.emplace_back(network::osd_json(value, true));
+                    break;
+                default:
+                    throw std::invalid_argument("unsupported LSL JSON value");
+                }
+            };
+            try {
+                if (document.kind == Kind::Array) {
+                    for (const auto& value : document.array)
+                        append(value);
+                } else if (document.kind == Kind::Map) {
+                    for (const auto& key : document.ordered_keys()) {
+                        result->items.emplace_back(key);
+                        append(document.get(key));
+                    }
+                } else
+                    append(document);
+            } catch (const std::exception&) {
+                result->items = {json_marker(0xFDD0)};
+            }
+            return std::shared_ptr<const LslList>(std::move(result));
+        }
+        case Expression::Op::ListToJson: {
+            const auto list = std::get<std::shared_ptr<const LslList>>(evaluate(*e.right));
+            const auto type = std::get<std::string>(evaluate(*e.left));
+            const bool object = type == json_marker(0xFDD1);
+            if (!object && type != json_marker(0xFDD2))
+                return json_marker(0xFDD0);
+            if (object && list->items.size() % 2 != 0)
+                return json_marker(0xFDD0);
+            std::string result(1, object ? '{' : '[');
+            for (std::size_t i = 0; i < list->items.size(); ++i) {
+                if (i != 0)
+                    result += ',';
+                if (object) {
+                    const auto* key = std::get_if<std::string>(&list->items[i++]);
+                    if (!key)
+                        return json_marker(0xFDD0);
+                    result += quote_lsl_json(*key);
+                    result += ':';
+                }
+                const auto value = lsl_json_item(list->items[i]);
+                if (value.empty())
+                    return json_marker(0xFDD0);
+                result += value;
+            }
+            return result + (object ? '}' : ']');
+        }
+        case Expression::Op::ListRandomize: {
+            const auto stride =
+                static_cast<std::size_t>(std::max(1, std::get<std::int32_t>(evaluate(*e.right))));
+            const auto list = std::get<std::shared_ptr<const LslList>>(evaluate(*e.left));
+            const auto size = list->items.size();
+            if (size <= stride || size % stride != 0)
+                return list;
+            auto result = std::make_shared<LslList>(*list);
+            auto& items = result->items;
+            thread_local std::mt19937_64 engine{std::random_device{}()};
+            for (auto chunk = size / stride - 1; chunk > 0; --chunk) {
+                const auto other = std::uniform_int_distribution<std::size_t>(0, chunk)(engine);
+                if (other != chunk)
+                    std::swap_ranges(items.begin() + chunk * stride, items.begin() + (chunk + 1) * stride,
+                                     items.begin() + other * stride);
+            }
+            return std::shared_ptr<const LslList>(std::move(result));
+        }
+        case Expression::Op::ListSort: {
+            const bool ascending = std::get<std::int32_t>(evaluate(*e.z)) == 1;
+            std::int64_t offset = e.w ? std::get<std::int32_t>(evaluate(*e.w)) : 0;
+            const auto stride = std::max<std::int64_t>(1, std::get<std::int32_t>(evaluate(*e.right)));
+            const auto list = std::get<std::shared_ptr<const LslList>>(evaluate(*e.left));
+            if (offset < 0)
+                offset += stride;
+            if (offset < 0 || offset >= stride)
+                return std::make_shared<const LslList>();
+            const auto size = static_cast<std::int64_t>(list->items.size());
+            if (size <= stride || size % stride != 0)
+                return list;
+            auto result = std::make_shared<LslList>(*list);
+            auto& items = result->items;
+            const auto less = [](const LslValue& a, const LslValue& b) {
+                if (const auto* integer = std::get_if<std::int32_t>(&a))
+                    return *integer < std::get<std::int32_t>(b);
+                if (const auto* real = std::get_if<double>(&a))
+                    return *real < std::get<double>(b);
+                if (const auto* string = std::get_if<std::string>(&a))
+                    return framework::utf16(*string) < framework::utf16(std::get<std::string>(b));
+                if (const auto* vector = std::get_if<framework::Vector3d>(&a)) {
+                    const auto squared = [](const auto& v) { return v.x * v.x + v.y * v.y + v.z * v.z; };
+                    return squared(*vector) < squared(std::get<framework::Vector3d>(b));
+                }
+                return false;
+            };
+            for (std::int64_t first = 0; first < size - stride; first += stride) {
+                for (auto next = first + stride; next < size; next += stride) {
+                    const auto& a = items[first + offset];
+                    const auto& b = items[next + offset];
+                    if (a.index() == b.index() && (ascending ? less(b, a) : less(a, b)))
+                        std::swap_ranges(items.begin() + first, items.begin() + first + stride,
+                                         items.begin() + next);
+                }
+            }
+            return std::shared_ptr<const LslList>(std::move(result));
+        }
+        case Expression::Op::ListStatistics: {
+            const auto list = std::get<std::shared_ptr<const LslList>>(evaluate(*e.right));
+            const auto operation = std::get<std::int32_t>(evaluate(*e.left));
+            std::vector<double> values;
+            double minimum = std::numeric_limits<double>::infinity(), maximum = -minimum;
+            double sum = 0, squares = 0, product = 1, reciprocals = 0;
+            for (const auto& item : list->items) {
+                if (std::holds_alternative<std::shared_ptr<const LslList>>(item))
+                    continue;
+                double number;
+                if (!network::try_parse_invariant_real(value_text(item), number))
+                    continue;
+                values.push_back(number);
+                minimum = std::min(minimum, number);
+                maximum = std::max(maximum, number);
+                sum += number;
+                squares += number * number;
+                product *= number;
+                reciprocals += 1.0 / number;
+            }
+            const auto count = static_cast<double>(values.size());
+            const auto mean = sum / count;
+            switch (operation) {
+            case 0:
+                return maximum / minimum;
+            case 1:
+                return minimum;
+            case 2:
+                return maximum;
+            case 3:
+                return mean;
+            case 4: {
+                if (values.empty())
+                    throw std::runtime_error("median requires numeric list entries");
+                std::sort(values.begin(), values.end(),
+                          [](double a, double b) { return std::isnan(a) ? !std::isnan(b) : a < b; });
+                const auto middle = values.size() / 2;
+                return values.size() % 2 ? values[middle] : (values[middle - 1] + values[middle]) / 2.0;
+            }
+            case 5:
+                return std::sqrt((squares - count * std::pow(mean, 2)) / (count - 1.0));
+            case 6:
+                return sum;
+            case 7:
+                return squares;
+            case 8:
+                return count;
+            case 9:
+                return std::exp(std::log(product) / count);
+            case 100:
+                return count / reciprocals;
+            default:
+                return 0.0;
+            }
+        }
+        case Expression::Op::ListStrided: {
+            std::int64_t offset =
+                e.elements.empty() ? 0 : std::get<std::int32_t>(evaluate(*e.elements.front()));
+            const auto stride = std::max<std::int64_t>(1, std::get<std::int32_t>(evaluate(*e.w)));
+            std::int64_t end = std::get<std::int32_t>(evaluate(*e.z));
+            std::int64_t start = std::get<std::int32_t>(evaluate(*e.right));
+            const auto list = std::get<std::shared_ptr<const LslList>>(evaluate(*e.left));
+            const auto size = static_cast<std::int64_t>(list->items.size());
+            if (start < 0)
+                start = std::max<std::int64_t>(0, start + size);
+            if (end < 0)
+                end = std::max<std::int64_t>(0, end + size);
+            if (start > end) {
+                start = 0;
+                end = size - 1;
+            } else
+                end = std::min(end, size - 1);
+            if (offset < 0)
+                offset += stride;
+            if (offset < 0 || offset >= stride)
+                return std::make_shared<const LslList>();
+            start = ((start + stride - 1) / stride) * stride + offset;
+            auto result = std::make_shared<LslList>();
+            for (auto index = start; index <= end; index += stride)
+                result->items.push_back(list->items[index]);
+            return std::shared_ptr<const LslList>(std::move(result));
+        }
+        case Expression::Op::ListSlice:
+        case Expression::Op::ListDelete: {
+            std::int64_t end = std::get<std::int32_t>(evaluate(*e.z));
+            std::int64_t start = std::get<std::int32_t>(evaluate(*e.right));
+            const auto list = std::get<std::shared_ptr<const LslList>>(evaluate(*e.left));
+            const auto size = static_cast<std::int64_t>(list->items.size());
+            auto result = std::make_shared<LslList>();
+            if (e.op == Expression::Op::ListDelete) {
+                start = std::max<std::int64_t>(0, start < 0 ? start + size : start);
+                end = std::max<std::int64_t>(0, end < 0 ? end + size : end);
+                if (start > end)
+                    append_list_range(*result, *list, end + 1, start);
+                else {
+                    append_list_range(*result, *list, 0, start);
+                    append_list_range(*result, *list, end + 1, size);
+                }
+            } else
+                append_list_slice(*result, *list, start, end);
+            return std::shared_ptr<const LslList>(std::move(result));
+        }
+        case Expression::Op::ListFind:
+        case Expression::Op::ListFindStrided: {
+            const bool strided = e.op == Expression::Op::ListFindStrided;
+            const auto stride =
+                strided ? std::max(1, std::get<std::int32_t>(evaluate(*e.elements.front()))) : 1;
+            std::int64_t end = strided ? std::get<std::int32_t>(evaluate(*e.w)) : 0;
+            std::int64_t instance = e.z ? std::get<std::int32_t>(evaluate(*e.z)) : 0;
+            const auto pattern = std::get<std::shared_ptr<const LslList>>(evaluate(*e.right));
+            const auto source = std::get<std::shared_ptr<const LslList>>(evaluate(*e.left));
+            const auto size = static_cast<std::int64_t>(source->items.size());
+            if (size == 0)
+                return std::int32_t(!strided && e.z && pattern->items.empty() ? 0 : -1);
+            if (pattern->items.empty()) {
+                if (strided)
+                    return std::int32_t{0};
+                if (instance < 0)
+                    instance += size;
+                return std::int32_t(instance >= 0 && instance < size ? instance : -1);
+            }
+            const auto last = size - static_cast<std::int64_t>(pattern->items.size());
+            if (last < 0)
+                return std::int32_t{-1};
+            const auto equal = [](const LslValue& a, const LslValue& b) {
+                return !std::holds_alternative<std::shared_ptr<const LslList>>(a) && a == b;
+            };
+            if (strided) {
+                auto start = instance;
+                if (start < 0)
+                    start += size;
+                if (start < 0 || start >= size)
+                    return std::int32_t{-1};
+                if (end < 0)
+                    end += size - static_cast<std::int64_t>(pattern->items.size()) + 1;
+                else if (end >= size)
+                    end = last;
+                for (auto index = start; index <= end; index += stride) {
+                    std::size_t matched = 0;
+                    while (matched < pattern->items.size() &&
+                           equal(pattern->items[matched], source->items.at(index + matched)))
+                        ++matched;
+                    if (matched == pattern->items.size())
+                        return static_cast<std::int32_t>(index);
+                }
+                return std::int32_t{-1};
+            }
+            const bool reverse = instance < 0;
+            if (reverse)
+                instance = -instance - 1;
+            for (auto index = reverse ? last : 0; index >= 0 && index <= last; index += reverse ? -1 : 1) {
+                if (std::equal(pattern->items.begin(), pattern->items.end(), source->items.begin() + index,
+                               equal) &&
+                    instance-- == 0)
+                    return static_cast<std::int32_t>(index);
+            }
+            return std::int32_t{-1};
+        }
+        case Expression::Op::CsvToList: {
+            const auto input = framework::utf16_replacing(std::get<std::string>(evaluate(*e.left)));
+            auto list = std::make_shared<LslList>();
+            const auto append = [&](std::u16string_view field) {
+                while (!field.empty() && framework::unicode_whitespace(field.front()))
+                    field.remove_prefix(1);
+                while (!field.empty() && framework::unicode_whitespace(field.back()))
+                    field.remove_suffix(1);
+                list->items.emplace_back(framework::utf8(field));
+            };
+            std::size_t depth = 0, start = 0;
+            for (std::size_t i = 0; i < input.size(); ++i) {
+                if (input[i] == u'<')
+                    ++depth;
+                else if (input[i] == u'>' && depth)
+                    --depth;
+                else if (input[i] == u',' && !depth) {
+                    append(std::u16string_view(input).substr(start, i - start));
+                    start = i + 1;
+                }
+            }
+            append(std::u16string_view(input).substr(start));
+            return std::shared_ptr<const LslList>(std::move(list));
+        }
+        case Expression::Op::ParseString:
+        case Expression::Op::ParseStringKeepNulls: {
+            const auto input = framework::utf16_replacing(std::get<std::string>(evaluate(*e.left)));
+            const auto separators = std::get<std::shared_ptr<const LslList>>(evaluate(*e.right));
+            const auto spacers = std::get<std::shared_ptr<const LslList>>(evaluate(*e.z));
+            auto result = std::make_shared<LslList>();
+            if (input.empty())
+                return std::shared_ptr<const LslList>(std::move(result));
+
+            struct Delimiter {
+                std::u16string text;
+                std::size_t next_match;
+                bool retain;
+            };
+            std::vector<Delimiter> delimiters;
+            const auto collect = [&](const LslList& list, bool retain) {
+                for (const auto& item : list.items) {
+                    auto text = framework::utf16_replacing(value_text(item));
+                    if (!text.empty()) {
+                        const auto match = input.find(text);
+                        if (match != std::u16string::npos)
+                            delimiters.push_back({std::move(text), match, retain});
+                    }
+                }
+            };
+            collect(*separators, false);
+            collect(*spacers, true);
+
+            const bool keep_nulls = e.op == Expression::Op::ParseStringKeepNulls;
+            const std::u16string_view source(input);
+            std::size_t start = 0;
+            while (true) {
+                const Delimiter* first = nullptr;
+                auto end = source.size();
+                for (auto& delimiter : delimiters) {
+                    if (delimiter.next_match < start)
+                        delimiter.next_match = source.find(delimiter.text, start);
+                    // Equal positions preserve list order, with separators ahead of spacers.
+                    if (delimiter.next_match < end) {
+                        end = delimiter.next_match;
+                        first = &delimiter;
+                        if (end == start)
+                            break;
+                    }
+                }
+                if (keep_nulls || end > start)
+                    result->items.emplace_back(framework::utf8(source.substr(start, end - start)));
+                if (!first)
+                    break;
+                if (first->retain)
+                    result->items.emplace_back(framework::utf8(first->text));
+                start = end + first->text.size();
+            }
+            return std::shared_ptr<const LslList>(std::move(result));
+        }
+        case Expression::Op::ListJoin: {
+            const auto separator = e.right ? std::get<std::string>(evaluate(*e.right)) : std::string(", ");
+            const auto list = std::get<std::shared_ptr<const LslList>>(evaluate(*e.left));
+            std::string result;
+            for (std::size_t i = 0; i < list->items.size(); ++i) {
+                if (i != 0)
+                    result += separator;
+                result += value_text(list->items[i]);
+            }
+            return result;
+        }
+        case Expression::Op::ListString:
+        case Expression::Op::ListKey:
+        case Expression::Op::ListInteger:
+        case Expression::Op::ListFloat:
+        case Expression::Op::ListVector:
+        case Expression::Op::ListRotation:
+        case Expression::Op::ListEntryType: {
+            std::int64_t index = std::get<std::int32_t>(evaluate(*e.right));
+            const auto list = std::get<std::shared_ptr<const LslList>>(evaluate(*e.left));
+            const auto size = static_cast<std::int64_t>(list->items.size());
+            if (index < 0)
+                index += size;
+            const bool entry_type = e.op == Expression::Op::ListEntryType;
+            if (index < 0 || index >= size) {
+                if (e.op == Expression::Op::ListFloat)
+                    return 0.;
+                if (e.op == Expression::Op::ListRotation)
+                    return LslRotation{};
+                if (e.op == Expression::Op::ListVector)
+                    return framework::Vector3d{};
+                if (entry_type || e.op == Expression::Op::ListInteger)
+                    return std::int32_t{0};
+                return std::string{};
+            }
+            const auto& item = list->items[index];
+            if (e.op == Expression::Op::ListInteger)
+                return list_integer(item);
+            if (e.op == Expression::Op::ListFloat)
+                return list_float(item);
+            if (e.op == Expression::Op::ListVector)
+                return list_vector(item);
+            if (e.op == Expression::Op::ListRotation)
+                return list_rotation(item);
+            if (entry_type) {
+                if (std::holds_alternative<std::int32_t>(item))
+                    return std::int32_t{1};
+                if (std::holds_alternative<double>(item))
+                    return std::int32_t{2};
+                if (const auto* text = std::get_if<std::string>(&item)) {
+                    framework::Uuid key;
+                    return std::int32_t(framework::try_parse_sdk_uuid(*text, key) ? 4 : 3);
+                }
+                if (std::holds_alternative<LslRotation>(item))
+                    return std::int32_t{6};
+                if (std::holds_alternative<framework::Vector3d>(item))
+                    return std::int32_t{5};
+                return std::int32_t{7};
+            }
+            if (e.op == Expression::Op::ListKey && !std::holds_alternative<std::string>(item))
+                return std::string{};
+            return value_text(item);
+        }
+        case Expression::Op::ListLength:
+            return static_cast<std::int32_t>(
+                std::get<std::shared_ptr<const LslList>>(evaluate(*e.left))->items.size());
+        case Expression::Op::VectorLiteral: {
+            const auto component = [&](const Expression& operand) {
+                const auto value = evaluate(operand);
+                if (const auto* real = std::get_if<double>(&value))
+                    return *real;
+                return static_cast<double>(std::get<std::int32_t>(value));
+            };
+            const auto w = e.w ? component(*e.w) : 1.;
+            const auto z = component(*e.z);
+            const auto y = component(*e.right);
+            const auto x = component(*e.left);
+            if (e.w)
+                return LslRotation{x, y, z, w};
+            return framework::Vector3d{x, y, z};
+        }
+        case Expression::Op::Component: {
+            const auto value = evaluate(*e.left);
+            return component_at(value, e.slot);
+        }
+        case Expression::Op::AxisAngleToRotation: {
+            const auto angle = evaluate(*e.right);
+            const auto half =
+                (std::holds_alternative<double>(angle) ? std::get<double>(angle)
+                                                       : static_cast<double>(std::get<std::int32_t>(angle))) *
+                0.5;
+            auto axis = std::get<framework::Vector3d>(evaluate(*e.left));
+            const auto squared = axis.x * axis.x + axis.y * axis.y + axis.z * axis.z;
+            if (squared > std::numeric_limits<float>::denorm_min()) {
+                const auto scale = 1.0 / std::sqrt(squared);
+                axis = {axis.x * scale, axis.y * scale, axis.z * scale};
+            } else
+                axis = {};
+            const auto sine = std::sin(half);
+            return LslRotation{axis.x * sine, axis.y * sine, axis.z * sine, std::cos(half)};
+        }
+        case Expression::Op::AxesToRotation: {
+            const auto up = std::get<framework::Vector3d>(evaluate(*e.z));
+            const auto left = std::get<framework::Vector3d>(evaluate(*e.right));
+            const auto forward = std::get<framework::Vector3d>(evaluate(*e.left));
+            const auto trace = forward.x + left.y + up.z + 1.0;
+            if (trace >= 1.0) {
+                const auto scale = 0.5 / std::sqrt(trace);
+                return LslRotation{(left.z - up.y) * scale, (up.x - forward.z) * scale,
+                                   (forward.y - left.x) * scale, 0.25 / scale};
+            }
+            const auto largest = left.y > up.z ? left.y : up.z;
+            if (largest < forward.x) {
+                const auto root = std::sqrt(forward.x - (left.y + up.z) + 1.0);
+                const auto scale = 0.5 / root;
+                return LslRotation{root * 0.5, (forward.y + left.x) * scale, (up.x + forward.z) * scale,
+                                   (left.z - up.y) * scale};
+            }
+            if (largest == left.y) {
+                const auto root = std::sqrt(left.y - (up.z + forward.x) + 1.0);
+                const auto scale = 0.5 / root;
+                return LslRotation{(forward.y + left.x) * scale, root * 0.5, (left.z + up.y) * scale,
+                                   (up.x - forward.z) * scale};
+            }
+            const auto root = std::sqrt(up.z - (forward.x + left.y) + 1.0);
+            const auto scale = 0.5 / root;
+            return LslRotation{(up.x + forward.z) * scale, (left.z + up.y) * scale, root * 0.5,
+                               (forward.y - left.x) * scale};
+        }
+        case Expression::Op::EulerToRotation: {
+            const auto [x, y, z] = std::get<framework::Vector3d>(evaluate(*e.left));
+            const auto sx = std::sin(x * 0.5), cx = std::cos(x * 0.5);
+            const auto sy = std::sin(y * 0.5), cy = std::cos(y * 0.5);
+            const auto sz = std::sin(z * 0.5), cz = std::cos(z * 0.5);
+            return LslRotation{sx * cy * cz + cx * sy * sz, cx * sy * cz - sx * cy * sz,
+                               sx * sy * cz + cx * cy * sz, cx * cy * cz - sx * sy * sz};
+        }
+        case Expression::Op::RotationToEuler: {
+            const auto [x, y, z, w] = std::get<LslRotation>(evaluate(*e.left));
+            const auto xx = x * x, yy = y * y, zz = z * z, ww = w * w;
+            const auto norm = xx + zz + yy + ww;
+            const auto test = x * z + y * w;
+            const auto threshold = 0.49999 * norm;
+            constexpr double half_pi = 1.57079632679489661923;
+            if (test > threshold)
+                return framework::Vector3d{0, half_pi, 2 * std::atan2(x, w)};
+            if (test < -threshold)
+                return framework::Vector3d{0, -half_pi, -2 * std::atan2(x, w)};
+            return framework::Vector3d{std::atan2(2 * x * w - 2 * z * y, -xx + zz - yy + ww),
+                                       std::asin(2 * test / norm),
+                                       std::atan2(2 * z * w - 2 * x * y, xx - zz - yy + ww)};
+        }
+        case Expression::Op::RotationBetweenVectors: {
+            auto b = std::get<framework::Vector3d>(evaluate(*e.right));
+            auto a = std::get<framework::Vector3d>(evaluate(*e.left));
+            const auto dot = [](const auto& lhs, const auto& rhs) {
+                return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z;
+            };
+            const auto normalize = [&](const framework::Vector3d& v) {
+                const auto squared = dot(v, v);
+                if (!(squared > std::numeric_limits<float>::denorm_min()))
+                    return framework::Vector3d{};
+                const auto scale = 1.0 / std::sqrt(squared);
+                return framework::Vector3d{v.x * scale, v.y * scale, v.z * scale};
+            };
+            if (dot(a, a) < 1e-12 || dot(b, b) < 1e-12)
+                return LslRotation{};
+            a = normalize(a);
+            b = normalize(b);
+            const auto cosine = dot(a, b);
+            if (cosine > 0.99999)
+                return LslRotation{};
+            if (cosine < -0.99999) {
+                const auto projection = a.x / dot(a, a);
+                const framework::Vector3d axis{1.0 - projection * a.x, 0.0 - projection * a.y,
+                                               0.0 - projection * a.z};
+                if (dot(axis, axis) < 1e-12)
+                    return LslRotation{0, 0, 1, 0};
+                return LslRotation{static_cast<float>(axis.x), static_cast<float>(axis.y),
+                                   static_cast<float>(axis.z), 0};
+            }
+            const auto axis =
+                normalize({a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x});
+            const auto half = std::acos(cosine) * 0.5;
+            const auto sine = std::sin(half);
+            return LslRotation{axis.x * sine, axis.y * sine, axis.z * sine, std::cos(half)};
+        }
+        case Expression::Op::RotationBasis: {
+            auto [x, y, z, w] = std::get<LslRotation>(evaluate(*e.left));
+            const auto squared = x * x + y * y + z * z + w * w;
+            if (std::abs(1.0 - squared) > 0.000001) {
+                const auto scale = 1.0 / std::sqrt(squared);
+                x *= scale;
+                y *= scale;
+                z *= scale;
+                w *= scale;
+            }
+            if (e.slot == 0)
+                return framework::Vector3d{x * x - y * y - z * z + w * w, 2 * (x * y + z * w),
+                                           2 * (x * z - y * w)};
+            if (e.slot == 1)
+                return framework::Vector3d{2 * (x * y - z * w), -x * x + y * y - z * z + w * w,
+                                           2 * (x * w + y * z)};
+            return framework::Vector3d{2 * (x * z + y * w), 2 * (-x * w + y * z),
+                                       -x * x - y * y + z * z + w * w};
+        }
+        case Expression::Op::RotationAngleBetween: {
+            const auto b = std::get<LslRotation>(evaluate(*e.right));
+            const auto a = std::get<LslRotation>(evaluate(*e.left));
+            const auto dot = [](const LslRotation& lhs, const LslRotation& rhs) {
+                return lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z + lhs.w * rhs.w;
+            };
+            const auto lengths = dot(a, a) * dot(b, b);
+            if (lengths == 0.0)
+                return 0.0;
+            const auto product = dot(a, b);
+            const auto quotient = product * product / lengths;
+            return quotient >= 1.0 ? 0.0 : std::acos(2.0 * quotient - 1.0);
+        }
+        case Expression::Op::RotationToAxis:
+        case Expression::Op::RotationToAngle: {
+            auto [x, y, z, w] = std::get<LslRotation>(evaluate(*e.left));
+            const auto squared = x * x + y * y + z * z + w * w;
+            if (squared < std::numeric_limits<float>::denorm_min()) {
+                x = y = z = 0.;
+                w = 1.;
+            } else {
+                const auto scale = 1.0 / std::sqrt(squared);
+                x *= scale;
+                y *= scale;
+                z *= scale;
+                w *= scale;
+            }
+            if (e.op == Expression::Op::RotationToAngle) {
+                constexpr double pi = 3.14159265358979323846;
+                const auto angle = 2.0 * std::acos(w);
+                return angle > pi ? 2.0 * pi - angle : angle;
+            }
+            const auto sine = std::sqrt(1.0 - w * w);
+            if (sine < 1e-8)
+                return framework::Vector3d{};
+            const auto scale = (w < 0 ? -1.0 : 1.0) / sine;
+            return framework::Vector3d{x * scale, y * scale, z * scale};
+        }
+        case Expression::Op::ColorConversion: {
+            const auto vector = std::get<framework::Vector3d>(evaluate(*e.left));
+            const auto convert = [to_linear = e.slot != 0](float channel) {
+                if (to_linear)
+                    return channel < 0.04045f ? channel * 0.07739938f
+                                              : std::pow((channel + 0.055f) / 1.055f, 2.4f);
+                return channel <= 0.0031308f ? channel * 12.92f
+                                             : 1.055f * std::pow(channel, 0.4166667f) - 0.055f;
+            };
+            return framework::Vector3d{convert(static_cast<float>(vector.x)),
+                                       convert(static_cast<float>(vector.y)),
+                                       convert(static_cast<float>(vector.z))};
+        }
+        case Expression::Op::VectorMagnitude:
+        case Expression::Op::VectorNormalize:
+        case Expression::Op::VectorDistance: {
+            using Op = Expression::Op;
+            const auto other =
+                e.right ? std::get<framework::Vector3d>(evaluate(*e.right)) : framework::Vector3d{};
+            auto vector = std::get<framework::Vector3d>(evaluate(*e.left));
+            if (e.op == Op::VectorDistance) {
+                vector.x -= other.x;
+                vector.y -= other.y;
+                vector.z -= other.z;
+            }
+            const auto squared = vector.x * vector.x + vector.y * vector.y + vector.z * vector.z;
+            if (e.op != Op::VectorNormalize)
+                return std::sqrt(squared);
+            if (!(squared > std::numeric_limits<float>::denorm_min()))
+                return framework::Vector3d{};
+            const auto scale = 1. / std::sqrt(squared);
+            return framework::Vector3d{vector.x * scale, vector.y * scale, vector.z * scale};
+        }
+        case Expression::Op::Abs: {
+            const auto value = std::get<std::int32_t>(evaluate(*e.left));
+            return value == std::numeric_limits<std::int32_t>::min() ? value : std::abs(value);
+        }
+        case Expression::Op::SetMemoryLimit:
+            evaluate(*e.left);
+            return std::int32_t{0};
+        case Expression::Op::GetUsedMemory:
+            return heap_bytes_used();
+        case Expression::Op::GetFreeMemory:
+            return wrap(static_cast<std::uint32_t>(host.heap_limit_bytes) -
+                        static_cast<std::uint32_t>(heap_bytes_used()));
+        case Expression::Op::RequestUrl:
+        case Expression::Op::RequestSecureUrl: {
+            const bool secure = e.op == Expression::Op::RequestSecureUrl;
+            bool allow_xss = false;
+            if (e.left) {
+                const auto options = std::get<std::shared_ptr<const LslList>>(evaluate(*e.left));
+                const auto function = secure ? "osRequestSecureURL" : "osRequestURL";
+                check_ossl_permission(function);
+                allow_xss = std::any_of(options->items.begin(), options->items.end(), [](const auto& option) {
+                    const auto* name = std::get_if<std::string>(&option);
+                    return name && *name == "allowXss";
+                });
+            }
+            return (host.request_url
+                        ? host.request_url(context.object, context.item, secure, allow_xss)
+                        : framework::Uuid{}).str();
+        }
+        case Expression::Op::ReleaseUrl: {
+            const auto url = std::get<std::string>(evaluate(*e.left));
+            if (host.release_url)
+                host.release_url(context.item, url);
+            return std::int32_t{0};
+        }
+        case Expression::Op::FreeUrls:
+            return host.free_urls ? host.free_urls() : std::int32_t{0};
+        case Expression::Op::HttpHeader:
+        case Expression::Op::HttpResponse: {
+            const bool respond = e.op == Expression::Op::HttpResponse;
+            auto text = std::get<std::string>(evaluate(respond ? *e.z : *e.right));
+            const auto status = respond ? std::get<std::int32_t>(evaluate(*e.right)) : 0;
+            const auto key = std::get<std::string>(evaluate(*e.left));
+            framework::Uuid request;
+            const bool valid = framework::try_parse_sdk_uuid(key, request);
+            if (!respond)
+                return valid && host.http_header ? host.http_header(context.item, request, text) : std::string{};
+            if (valid && host.http_response)
+                host.http_response(context.item, request, status, std::move(text));
+            return std::int32_t{0};
+        }
+        case Expression::Op::HttpContentType: {
+            const auto type = std::get<std::int32_t>(evaluate(*e.right));
+            const auto key = std::get<std::string>(evaluate(*e.left));
+            framework::Uuid request;
+            if (host.http_content_type && framework::try_parse_sdk_uuid(key, request) && !request.is_zero())
+                host.http_content_type(context.object, context.item, request, type);
+            return std::int32_t{0};
+        }
+        case Expression::Op::ModPow: {
+            const auto modulus = std::get<std::int32_t>(evaluate(*e.z));
+            const auto exponent = std::get<std::int32_t>(evaluate(*e.right));
+            const auto base = std::get<std::int32_t>(evaluate(*e.left));
+            if (modulus == 0)
+                throw std::runtime_error("Attempted to divide by zero.");
+            const auto power = std::pow(static_cast<double>(base), static_cast<double>(exponent));
+            constexpr double upper_bound = 9223372036854775808.0;
+            const auto dividend = power >= -upper_bound && power < upper_bound
+                                      ? static_cast<std::int64_t>(power)
+                                      : std::numeric_limits<std::int64_t>::min();
+            if (dividend == std::numeric_limits<std::int64_t>::min() && modulus == -1)
+                throw std::runtime_error("Arithmetic operation resulted in an overflow.");
+            const auto requested = 1000.f * host.script_delay_factor;
+            if (requested >= 10 && requested < 2147483648.f)
+                delay(static_cast<std::int32_t>(requested));
+            return static_cast<std::int32_t>(dividend % modulus);
+        }
+        case Expression::Op::Fabs:
+        case Expression::Op::Sqrt:
+        case Expression::Op::Sin:
+        case Expression::Op::Cos:
+        case Expression::Op::Tan:
+        case Expression::Op::Asin:
+        case Expression::Op::Acos:
+        case Expression::Op::Atan2:
+        case Expression::Op::Log:
+        case Expression::Op::Log10:
+        case Expression::Op::Frand:
+        case Expression::Op::Pow: {
+            const auto number = [&](const Expression& operand) {
+                const auto value = evaluate(operand);
+                if (const auto* real = std::get_if<double>(&value))
+                    return *real;
+                return double(std::get<std::int32_t>(value));
+            };
+            using Op = Expression::Op;
+            if (e.right) {
+                const auto right = number(*e.right);
+                const auto left = number(*e.left);
+                return e.op == Op::Pow ? std::pow(left, right) : std::atan2(left, right);
+            }
+            const auto value = number(*e.left);
+            switch (e.op) {
+            case Op::Sin:
+                return std::sin(value);
+            case Op::Cos:
+                return std::cos(value);
+            case Op::Tan:
+                return std::tan(value);
+            case Op::Asin:
+                return std::asin(value);
+            case Op::Acos:
+                return std::acos(value);
+            case Op::Log:
+                return std::log(value);
+            case Op::Log10:
+                return std::log10(value);
+            case Op::Frand: {
+                thread_local std::mt19937_64 engine{std::random_device{}()};
+                const auto fraction = static_cast<double>(engine() >> 11) * 0x1p-53;
+                return fraction * value;
+            }
+            case Op::Sqrt:
+                return std::sqrt(value);
+            default:
+                return std::abs(value);
+            }
+        }
+        case Expression::Op::Floor:
+        case Expression::Op::Ceil:
+        case Expression::Op::Round: {
+            const auto value = evaluate(*e.left);
+            const auto number = std::holds_alternative<double>(value) ? std::get<double>(value)
+                                                                      : double(std::get<std::int32_t>(value));
+            const auto rounded = e.op == Expression::Op::Floor  ? std::floor(number)
+                                 : e.op == Expression::Op::Ceil ? std::ceil(number)
+                                                                : std::round(number);
+            if (!std::isfinite(rounded) || rounded < -2147483648. || rounded >= 2147483648.)
+                return std::numeric_limits<std::int32_t>::min();
+            return static_cast<std::int32_t>(rounded);
+        }
+        case Expression::Op::Local:
+            return variable(e);
+        case Expression::Op::InventoryNumber:
+        case Expression::Op::InventoryName: {
+            const auto index = e.right ? std::get<std::int32_t>(evaluate(*e.right)) : 0;
+            const auto type = std::get<std::int32_t>(evaluate(*e.left));
+            if (!host.inventory_names)
+                throw std::runtime_error("LSL host inventory enumeration callback is required");
+            auto names = host.inventory_names(context.object, type);
+            if (e.op == Expression::Op::InventoryNumber)
+                return static_cast<std::int32_t>(names.size());
+            if (names.empty())
+                return std::string{};
+            if (index < 0)
+                throw std::out_of_range("Inventory index is out of range");
+            if (static_cast<std::size_t>(index) >= names.size())
+                return std::string{};
+            std::sort(names.begin(), names.end(),
+                      [](const auto& a, const auto& b) { return framework::invariant_compare(a, b) < 0; });
+            return names[index];
+        }
+        case Expression::Op::InventoryPermission:
+        case Expression::Op::ObjectPermission: {
+            std::optional<std::uint32_t> permission;
+            if (e.op == Expression::Op::InventoryPermission) {
+                const auto selector = std::get<std::int32_t>(evaluate(*e.right));
+                const auto name = std::get<std::string>(evaluate(*e.left));
+                if (!host.inventory_permission)
+                    throw std::runtime_error("LSL host inventory permission callback is required");
+                permission = host.inventory_permission(context.object, name, selector);
+            } else {
+                const auto selector = std::get<std::int32_t>(evaluate(*e.left));
+                if (host.object_permission)
+                    permission = host.object_permission(context.object, selector);
+            }
+            if (!permission)
+                return std::int32_t{-1};
+            constexpr std::uint32_t full_permissions = 0x8e000;
+            const auto mask = *permission & full_permissions;
+            return static_cast<std::int32_t>(mask == full_permissions ? 0x7fffffff : mask);
+        }
+        case Expression::Op::ObjectLinkKey: {
+            const auto number = std::get<std::int32_t>(evaluate(*e.right));
+            const auto text = std::get<std::string>(evaluate(*e.left));
+            framework::Uuid id;
+            if (!host.link_key || !framework::try_parse_sdk_uuid(text, id) || id.is_zero())
+                return framework::Uuid{}.str();
+            return host.link_key(id, number).str();
+        }
+        case Expression::Op::SitTargetAvatar: {
+            const auto link = e.left ? std::get<std::int32_t>(evaluate(*e.left)) : -4;
+            if (!host.sit_target_avatar || (link < 1 && link != -4))
+                return framework::Uuid{}.str();
+            return host.sit_target_avatar(context.object, link).str();
+        }
+        case Expression::Op::SitFlags: {
+            const auto link = std::get<std::int32_t>(evaluate(*e.left));
+            return host.sit_flags ? host.sit_flags(context.object, link) : std::int32_t{0};
+        }
+        case Expression::Op::SitActiveRange: {
+            const auto link = e.left ? std::get<std::int32_t>(evaluate(*e.left)) : -4;
+            return host.sit_active_range ? double(host.sit_active_range(context.object, link))
+                                         : double(std::numeric_limits<std::int32_t>::min());
+        }
+        case Expression::Op::StandTarget: {
+            const auto link = e.left ? std::get<std::int32_t>(evaluate(*e.left)) : -4;
+            return host.stand_target ? host.stand_target(context.object, link) : framework::Vector3d{};
+        }
+        case Expression::Op::InventoryDescription:
+        case Expression::Op::InventoryCreator:
+        case Expression::Op::InventoryAcquireTime: {
+            using Op = Expression::Op;
+            const auto name = std::get<std::string>(evaluate(*e.left));
+            if (!host.inventory_metadata)
+                throw std::runtime_error("LSL host inventory metadata callback is required");
+            if (auto item = host.inventory_metadata(context.object, name)) {
+                if (e.op == Op::InventoryDescription)
+                    return std::move(item->description);
+                if (e.op == Op::InventoryCreator)
+                    return item->creator.str();
+                auto timestamp =
+                    utc_text(621355968000000000LL + std::int64_t(item->creation_date) * 10000000, true);
+                timestamp.resize(19);
+                return timestamp + 'Z';
+            }
+            script_error(e.op == Op::InventoryDescription
+                             ? "llGetInventoryDesc: Item " + name + " not found"
+                             : std::string(e.op == Op::InventoryCreator ? "llGetInventoryCreator"
+                                                                        : "llGetInventoryAcquireTime") +
+                                   ": Can't find item '" + name + "'");
+            return std::string{};
+        }
+        case Expression::Op::InventoryKey:
+        case Expression::Op::InventoryType: {
+            const auto name = std::get<std::string>(evaluate(*e.left));
+            if (e.op == Expression::Op::InventoryKey) {
+                if (!host.inventory_key)
+                    throw std::runtime_error("LSL host inventory key callback is required");
+                return host.inventory_key(context.object, name).str();
+            }
+            if (!host.inventory_type)
+                throw std::runtime_error("LSL host inventory callback is required");
+            return host.inventory_type(context.object, name);
+        }
+        case Expression::Op::ScriptName:
+            return context.script_name;
+        case Expression::Op::ScriptRunning: {
+            const auto name = std::get<std::string>(evaluate(*e.left));
+            const auto item = host.find_script ? host.find_script(context.object, name) : framework::Uuid{};
+            if (item.is_zero())
+                script_error("llGetScriptState: Can't find script '" + name + "'");
+            return std::int32_t(!item.is_zero() && host.script_running && host.script_running(item));
+        }
+        case Expression::Op::ObjectName:
+            return context.object_name;
+        case Expression::Op::ObjectDescription:
+            return context.object_description;
+        case Expression::Op::StartString:
+            return context.start_string;
+        case Expression::Op::StartParameter:
+            return context.start_parameter;
+        case Expression::Op::AnimationOverride: {
+            const auto state = std::get<std::string>(evaluate(*e.left));
+            return host.animation_override ? host.animation_override(context.item, state) : std::string{};
+        }
+        case Expression::Op::AnimationState: {
+            framework::Uuid agent;
+            const auto key = std::get<std::string>(evaluate(*e.left));
+            if (!host.avatar_movement_state || !framework::try_parse_sdk_uuid(key, agent) || agent.is_zero())
+                return std::string{};
+            return host.avatar_movement_state(agent);
+        }
+        case Expression::Op::AnimationList: {
+            framework::Uuid agent;
+            LslList result;
+            const auto key = std::get<std::string>(evaluate(*e.left));
+            if (host.avatar_animations && framework::try_parse_sdk_uuid(key, agent) && !agent.is_zero())
+                for (const auto id : host.avatar_animations(agent))
+                    result.items.emplace_back(id.str());
+            return std::make_shared<const LslList>(std::move(result));
+        }
+        case Expression::Op::ScriptPermissions:
+        case Expression::Op::ScriptPermissionsKey: {
+            const auto permissions = host.script_permissions
+                                         ? host.script_permissions(context.object, context.item)
+                                         : std::pair<framework::Uuid, std::int32_t>{};
+            if (e.op == Expression::Op::ScriptPermissionsKey)
+                return permissions.first.str();
+            return permissions.second;
+        }
+        case Expression::Op::LinksetDataList:
+        case Expression::Op::LinksetDataFind:
+        case Expression::Op::LinksetDataCountFound:
+        case Expression::Op::LinksetDataDeleteFound: {
+            const bool count_only = e.op == Expression::Op::LinksetDataCountFound;
+            const bool deleting = e.op == Expression::Op::LinksetDataDeleteFound;
+            const bool filtered = e.op != Expression::Op::LinksetDataList;
+            const auto pattern = filtered ? std::get<std::string>(evaluate(*e.left)) : std::string{};
+            const auto start =
+                count_only || deleting ? 0 : std::max(0, std::get<std::int32_t>(evaluate(*e.right)));
+            const auto count = count_only || deleting ? 0 : std::get<std::int32_t>(evaluate(*e.z));
+            auto keys =
+                host.linkset_data_keys ? host.linkset_data_keys(context.object) : std::vector<std::string>{};
+            if (filtered) {
+                try {
+                    if (pattern.empty())
+                        keys.clear();
+                    else if (!keys.empty()) {
+                        const auto expression =
+                            std::make_shared<const std::u16string>(framework::utf16_replacing(pattern));
+                        const auto culture = []() { return std::u16string{}; };
+                        const auto stack = []() { return framework::sufficient_execution_stack(); };
+                        auto parsed = framework::dotnet_regex_parse(expression, 512, culture, stack);
+                        framework::DotnetRegexInterpreter regex(std::move(parsed), expression, stack);
+                        std::erase_if(keys, [&](const auto& key) {
+                            const auto input =
+                                std::make_shared<const std::u16string>(framework::utf16_replacing(key));
+                            return !regex
+                                        .scan(input, 0, static_cast<std::int32_t>(input->size()), 0, -1,
+                                              framework::DotnetRegexRunnerMode::FullMatchRequired, 100000)
+                                        .success;
+                        });
+                    }
+                } catch (const std::exception&) {
+                    keys.clear();
+                }
+            }
+            if (count_only)
+                return static_cast<std::int32_t>(keys.size());
+            if (deleting) {
+                const auto password = std::get<std::string>(evaluate(*e.right));
+                return std::make_shared<const LslList>(
+                    host.linkset_data_delete_keys
+                        ? host.linkset_data_delete_keys(context.object, keys, password)
+                        : LslList{{0, 0}});
+            }
+            std::stable_sort(keys.begin(), keys.end(), [](const auto& left, const auto& right) {
+                return framework::invariant_compare(left, right) < 0;
+            });
+            LslList result;
+            const auto first = std::min(static_cast<std::size_t>(start), keys.size());
+            const auto size = count < 1 ? keys.size() - first
+                                        : std::min(static_cast<std::size_t>(count), keys.size() - first);
+            for (auto i = first; i < first + size; ++i)
+                result.items.emplace_back(std::move(keys[i]));
+            return std::make_shared<const LslList>(std::move(result));
+        }
+        case Expression::Op::LinksetDataCount:
+        case Expression::Op::LinksetDataAvailable: {
+            const bool available = e.op == Expression::Op::LinksetDataAvailable;
+            return host.linkset_data_size ? host.linkset_data_size(context.object, available)
+                                          : std::int32_t(available ? 32 * 1024 : 0);
+        }
+        case Expression::Op::LinksetDataWrite: {
+            auto key = std::get<std::string>(evaluate(*e.left));
+            auto value = e.right ? std::get<std::string>(evaluate(*e.right)) : std::string{};
+            auto pass = e.z ? std::get<std::string>(evaluate(*e.z)) : std::string{};
+            return host.linkset_data_write
+                       ? host.linkset_data_write(context.object, std::move(key), std::move(value),
+                                                 std::move(pass), bool(e.z))
+                       : std::int32_t{4};
+        }
+        case Expression::Op::LinksetDataRead: {
+            const auto key = std::get<std::string>(evaluate(*e.left));
+            const auto pass = e.right ? std::get<std::string>(evaluate(*e.right)) : std::string{};
+            return host.linkset_data_read ? host.linkset_data_read(context.object, key, pass) : std::string{};
+        }
+        case Expression::Op::RegionTimeDilation:
+            return double(context.time_dilation);
+        case Expression::Op::RegionFPS:
+            return host.region_fps ? double(host.region_fps()) : 0.;
+        case Expression::Op::RegionName:
+            return context.region_name;
+        case Expression::Op::ParcelDetails: {
+            const auto selectors = std::get<std::shared_ptr<const LslList>>(evaluate(*e.right));
+            const auto position = std::get<framework::Vector3d>(evaluate(*e.left));
+            if (!host.parcel_details)
+                return std::make_shared<const LslList>(LslList{{std::int32_t{0}}});
+            return std::make_shared<const LslList>(host.parcel_details(
+                {float(position.x), float(position.y), float(position.z)}, context.group, *selectors));
+        }
+        case Expression::Op::ScriptDanger: {
+            const auto position = std::get<framework::Vector3d>(evaluate(*e.left));
+            return std::int32_t(
+                !host.script_danger ||
+                host.script_danger({float(position.x), float(position.y), float(position.z)}, context.group));
+        }
+        case Expression::Op::ParcelFlags: {
+            const auto position = std::get<framework::Vector3d>(evaluate(*e.left));
+            return host.parcel_flags
+                       ? host.parcel_flags({float(position.x), float(position.y), float(position.z)})
+                       : std::int32_t{0};
+        }
+        case Expression::Op::LandOwnerAt: {
+            const auto position = std::get<framework::Vector3d>(evaluate(*e.left));
+            if (host.parcel_owner) {
+                const auto owner = host.parcel_owner({float(position.x), float(position.y), 0.f});
+                if (owner)
+                    return owner->str();
+            }
+            return framework::Uuid{}.str();
+        }
+        case Expression::Op::OverMyLand: {
+            const auto text = std::get<std::string>(evaluate(*e.left));
+            framework::Uuid id;
+            if (!framework::try_parse_sdk_uuid(text, id) || id.is_zero() ||
+                !host.entity_position || !host.parcel_owner)
+                return std::int32_t{0};
+            try {
+                if (const auto position = host.entity_position(id))
+                    return std::int32_t(host.parcel_owner(*position) == context.owner);
+            } catch (...) {
+                // The original returns false if the entity or land lookup fails.
+            }
+            return std::int32_t{0};
+        }
+        case Expression::Op::AgentList: {
+            evaluate(*e.right);
+            const auto scope = std::get<std::int32_t>(evaluate(*e.left)) & ~0x4000000;
+            auto result = std::make_shared<LslList>();
+            if (scope != 1 && scope != 2 && scope != 4)
+                result->items.emplace_back(std::string("INVALID_SCOPE"));
+            else if (host.region_agents) {
+                for (const auto& id : host.region_agents(scope, context.position))
+                    result->items.emplace_back(id.str());
+            }
+            return std::shared_ptr<const LslList>(std::move(result));
+        }
+        case Expression::Op::RegionAgentNames: {
+            check_ossl_permission("osGetAgents");
+            auto result = std::make_shared<LslList>();
+            if (host.region_agent_names) {
+                for (auto& name : host.region_agent_names())
+                    result->items.emplace_back(std::move(name));
+            }
+            return std::shared_ptr<const LslList>(std::move(result));
+        }
+        case Expression::Op::ApparentSunHour:
+        case Expression::Op::ApparentTime:
+        case Expression::Op::ApparentTimeString: {
+            const bool format24 = e.left && std::get<std::int32_t>(evaluate(*e.left)) != 0;
+            check_safe_ossl_permission();
+            const auto fraction = host.region_day_fraction ? host.region_day_fraction() : 0.f;
+            if (e.op == Expression::Op::ApparentTime)
+                return static_cast<double>(86400.f * fraction);
+            auto hours = 24.f * fraction;
+            if (e.op == Expression::Op::ApparentSunHour)
+                return static_cast<double>(hours);
+            const auto whole = [](float value) {
+                return std::isfinite(value) ? static_cast<int>(value) : std::numeric_limits<int>::min();
+            };
+            const auto hour = whole(hours);
+            auto minutes = (hours - hour) * 60.f;
+            const auto minute = whole(minutes);
+            const auto second = whole((minutes - minute) * 60.f);
+            char text[64];
+            if (format24)
+                std::snprintf(text, sizeof text, "%02d:%02d:%02d", hour, minute, second);
+            else
+                std::snprintf(text, sizeof text, "%d:%02d:%02d %s", hour > 12 ? hour - 12 : hour,
+                              minute, second, hour >= 12 ? "PM" : "AM");
+            return std::string(text);
+        }
+        case Expression::Op::SunParameter: {
+            const auto parameter = std::get<std::string>(evaluate(*e.left));
+            if (e.slot != 0) {
+                check_ossl_permission("osSunGetParam");
+                script_error("Use of function osSunGetParam is deprecated. Use osGetSunParam instead.");
+            } else {
+                check_safe_ossl_permission();
+            }
+            const auto name = framework::invariant_lower_utf16(framework::utf16(parameter));
+            if (name == u"day_length")
+                return static_cast<double>(host.environment_timing ? host.environment_timing(context.position, false).first
+                                                                    : 14400);
+            if (name == u"year_length")
+                return 365.;
+            if (name == u"update_interval")
+                return 0.1;
+            if (name == u"day_time_sun_hour_scale")
+                return 1.;
+            return 0.;
+        }
+        case Expression::Op::EnvironmentQuery: {
+            const auto& query = lsl_environment_queries[e.slot];
+            if (query.type == Type::Integer) {
+                const auto [length, offset] = host.environment_timing
+                    ? host.environment_timing(context.position, query.region)
+                    : std::pair<std::int32_t, std::int32_t>{14400, 57600};
+                return query.field == EnvironmentField::DayLength ? length : offset;
+            }
+            const bool moon = query.field == EnvironmentField::MoonDirection ||
+                              query.field == EnvironmentField::MoonRotation;
+            const auto rotation = host.environment_rotation
+                ? host.environment_rotation(context.position, query.region, moon) : std::nullopt;
+            if (query.type == Type::Rotation)
+                return rotation.value_or(LslRotation{});
+            if (!rotation)
+                return framework::Vector3d{};
+            auto x = static_cast<float>(rotation->x), y = static_cast<float>(rotation->y);
+            auto z = static_cast<float>(rotation->z), w = static_cast<float>(rotation->w);
+            const auto length = std::sqrt(x*x + y*y + z*z + w*w);
+            if (length <= 1e-7f)
+                return framework::Vector3d{1, 0, 0};
+            const auto inverse = 1.f / length;
+            x *= inverse;
+            y *= inverse;
+            z *= inverse;
+            w *= inverse;
+            return framework::Vector3d{2.f * (x*x + w*w) - 1.f, 2.f * (x*y + z*w), 2.f * (x*z - y*w)};
+        }
+        case Expression::Op::ReplaceAgentEnvironment: {
+            const auto cycle = std::get<std::string>(evaluate(*e.elements[2]));
+            const auto transition = std::get<std::int32_t>(evaluate(*e.elements[1]));
+            const auto avatar = std::get<std::string>(evaluate(*e.elements[0]));
+            return host.replace_agent_environment
+                ? host.replace_agent_environment(context.object, context.item, avatar, transition, cycle)
+                : std::int32_t{-2};
+        }
+        case Expression::Op::ReplaceParcelEnvironment: {
+            const auto cycle = std::get<std::string>(evaluate(*e.elements[1]));
+            const auto transition = std::get<std::int32_t>(evaluate(*e.elements[0]));
+            return host.replace_parcel_environment ? host.replace_parcel_environment(context.object, transition, cycle)
+                                                    : std::int32_t{-1};
+        }
+        case Expression::Op::ReplaceRegionEnvironment: {
+            LslRegionEnvironmentEdit update;
+            for (std::size_t i = update.altitudes.size(); i > 0; --i)
+                update.altitudes[i - 1] = list_float(evaluate(*e.elements[i + 3]));
+            update.day_offset = list_float(evaluate(*e.elements[3]));
+            update.day_length = list_float(evaluate(*e.elements[2]));
+            update.day_cycle = std::get<std::string>(evaluate(*e.elements[1]));
+            update.transition = std::get<std::int32_t>(evaluate(*e.elements[0]));
+            return host.replace_region_environment ? host.replace_region_environment(context.object, update)
+                                                   : std::int32_t{-3};
+        }
+        case Expression::Op::DrawingCommand:
+            return evaluate_drawing_command(e);
+        case Expression::Op::AgentIpAddress: {
+            const auto key = std::get<std::string>(evaluate(*e.left));
+            check_ossl_permission("osGetAgentIP");
+            framework::Uuid agent;
+            if (!host.avatar_ip_address || !framework::try_parse_sdk_uuid(key, agent))
+                return std::string{};
+            return host.avatar_ip_address(context.object, agent);
+        }
+        case Expression::Op::SameGroup: {
+            const auto text = std::get<std::string>(evaluate(*e.left));
+            framework::Uuid id;
+            if (!framework::try_parse_sdk_uuid(text, id) || id.is_zero())
+                return std::int32_t{0};
+            if (id == context.group || (id == context.object && context.attachment_point == 0))
+                return std::int32_t{1};
+            if (host.object_group) {
+                if (const auto group = host.object_group(id))
+                    return std::int32_t(*group == context.group);
+            }
+            return std::int32_t{0};
+        }
+        case Expression::Op::AgentLanguage: {
+            const auto text = std::get<std::string>(evaluate(*e.left));
+            framework::Uuid id;
+            if (!host.agent_language)
+                script_error("llGetAgentLanguage: No AgentPreferencesService present");
+            else if (framework::try_parse_sdk_uuid(text, id) && !id.is_zero())
+                return host.agent_language(id);
+            return std::string("en-us");
+        }
+        case Expression::Op::RequestAgentData: {
+            const auto text = std::get<std::string>(evaluate(*e.left));
+            const auto selector = std::get<std::int32_t>(evaluate(*e.right));
+            if (selector < 1 || selector > 8)
+                return std::string{};
+            framework::Uuid id;
+            if (!framework::try_parse_sdk_uuid(text, id) || id.is_zero()) {
+                script_error("llRequestAgentData: Invalid UUID passed to llRequestAgentData.");
+                return std::string{};
+            }
+            if (selector == 5 || selector == 6 || !host.request_agent_data)
+                return std::string{};
+            const auto query = host.request_agent_data(context.object, context.item, id, selector);
+            const auto requested_delay = 100.f * host.script_delay_factor;
+            if (requested_delay >= 10 && requested_delay < 2147483648.f)
+                delay(static_cast<std::int32_t>(requested_delay));
+            return query.str();
+        }
+        case Expression::Op::RequestSimulatorData:
+        case Expression::Op::RequestInventoryData: {
+            auto name = std::get<std::string>(evaluate(*e.left));
+            framework::Uuid query;
+            if (e.op == Expression::Op::RequestSimulatorData) {
+                const auto selector = std::get<std::int32_t>(evaluate(*e.right));
+                if (host.request_simulator_data)
+                    query = host.request_simulator_data(context.object, context.item, std::move(name), selector);
+            } else if (host.request_inventory_data) {
+                query = host.request_inventory_data(context.object, context.item, std::move(name));
+            }
+            const auto requested_delay = 1000.f * host.script_delay_factor;
+            if (requested_delay >= 10 && requested_delay < 2147483648.f)
+                delay(static_cast<std::int32_t>(requested_delay));
+            return query.str();
+        }
+        case Expression::Op::NotecardLineSync:
+        case Expression::Op::NotecardLine:
+        case Expression::Op::NotecardLineCount: {
+            using Op = Expression::Op;
+            const auto name = std::get<std::string>(evaluate(*e.left));
+            std::optional<std::int32_t> line;
+            if (e.right)
+                line = std::get<std::int32_t>(evaluate(*e.right));
+            const bool sync = e.op == Op::NotecardLineSync;
+            constexpr auto nak = "\n\x15\n";
+            if (sync && *line < 0)
+                return std::string(nak);
+            framework::Uuid parsed;
+            std::optional<framework::Uuid> asset;
+            if (framework::try_parse_sdk_uuid(name, parsed))
+                asset = parsed;
+            else if (host.notecard_asset)
+                asset = host.notecard_asset(context.object, name, sync);
+            if (!asset || (!sync && asset->is_zero())) {
+                const auto api = sync ? "llGetNotecardLineSync"
+                                     : e.right ? "llGetNotecardLine" : "llGetNumberOfNotecardLines";
+                script_error(std::string(api) + ": Can't find notecard '" + name + "'");
+                return sync ? std::string(nak) : framework::Uuid{}.str();
+            }
+            if (sync)
+                return host.cached_notecard_line ? host.cached_notecard_line(*asset, *line) : std::string(nak);
+            if (!host.request_notecard)
+                return framework::Uuid{}.str();
+            const auto query = host.request_notecard(context.object, context.item, *asset, line);
+            const auto requested_delay = 100.f * host.script_delay_factor;
+            if (requested_delay >= 10 && requested_delay < 2147483648.f)
+                delay(static_cast<std::int32_t>(requested_delay));
+            return query.str();
+        }
+        case Expression::Op::RequestUsername:
+        case Expression::Op::RequestDisplayName: {
+            const auto text = std::get<std::string>(evaluate(*e.left));
+            framework::Uuid id;
+            if (!framework::try_parse_sdk_uuid(text, id) || id.is_zero() || !host.request_identity_name)
+                return std::string{};
+            const bool username = e.op == Expression::Op::RequestUsername;
+            const auto [query, immediate] = host.request_identity_name(
+                context.object, context.item, id, username ? username_from_name : nullptr);
+            const auto requested_delay = 100.f * host.script_delay_factor;
+            if (username && !immediate && requested_delay >= 10 && requested_delay < 2147483648.f)
+                delay(static_cast<std::int32_t>(requested_delay));
+            return query.str();
+        }
+        case Expression::Op::KeyToName:
+        case Expression::Op::Username:
+        case Expression::Op::DisplayName: {
+            using Op = Expression::Op;
+            const auto text = std::get<std::string>(evaluate(*e.left));
+            framework::Uuid id;
+            if (!framework::try_parse_sdk_uuid(text, id) || id.is_zero())
+                return std::string{};
+            auto name = host.avatar_name ? host.avatar_name(id) : std::nullopt;
+            if (!name && e.op != Op::DisplayName && host.object_name)
+                name = host.object_name(id);
+            if (!name)
+                return std::string{};
+            return e.op == Op::Username ? username_from_name(*name) : *name;
+        }
+        case Expression::Op::RequestUserKey:
+        case Expression::Op::NameToKey: {
+            auto name = parse_avatar_name(std::get<std::string>(evaluate(*e.left)));
+            if (!name)
+                return framework::Uuid{}.str();
+            if (e.op == Expression::Op::NameToKey && host.avatar_key_by_name)
+                return host.avatar_key_by_name(name->scene_name()).str();
+            if (e.op == Expression::Op::RequestUserKey && host.request_identity_key) {
+                const auto [query, immediate] = host.request_identity_key(
+                    context.object, context.item, std::move(*name));
+                const auto requested_delay = 100.f * host.script_delay_factor;
+                if (!immediate && requested_delay >= 10 && requested_delay < 2147483648.f)
+                    delay(static_cast<std::int32_t>(requested_delay));
+                return query.str();
+            }
+            return framework::Uuid{}.str();
+        }
+        case Expression::Op::AgentSize: {
+            const auto text = std::get<std::string>(evaluate(*e.left));
+            framework::Uuid id;
+            if (!host.agent_size || !framework::try_parse_sdk_uuid(text, id) || id.is_zero())
+                return framework::Vector3d{};
+            const auto size = host.agent_size(id);
+            return framework::Vector3d{size.x, size.y, size.z};
+        }
+        case Expression::Op::LookupOwnerKey: {
+            const auto text = std::get<std::string>(evaluate(*e.left));
+            framework::Uuid id;
+            if (!framework::try_parse_sdk_uuid(text, id))
+                return framework::Uuid{}.str();
+            if (id == context.object && !id.is_zero())
+                return context.owner.str();
+            if (!id.is_zero() && host.object_owner) {
+                if (const auto owner = host.object_owner(id))
+                    return owner->str();
+            }
+            return text;
+        }
+        case Expression::Op::AttachedList: {
+            const auto text = std::get<std::string>(evaluate(*e.left));
+            framework::Uuid id;
+            if (host.attached_list && framework::try_parse_sdk_uuid(text, id) && !id.is_zero())
+                return std::make_shared<const LslList>(host.attached_list(id));
+            auto result = std::make_shared<LslList>();
+            result->items.emplace_back(std::string("NOT_FOUND"));
+            return std::shared_ptr<const LslList>(std::move(result));
+        }
+        case Expression::Op::ObjectPrimCount: {
+            const auto text = std::get<std::string>(evaluate(*e.left));
+            framework::Uuid id;
+            if (host.prim_count && framework::try_parse_sdk_uuid(text, id) && !id.is_zero())
+                return host.prim_count(id, false);
+            return std::int32_t{0};
+        }
+        case Expression::Op::PrimCount:
+            return host.prim_count ? host.prim_count(context.object, true) : std::int32_t{1};
+        case Expression::Op::LinkSides: {
+            const auto number = e.left ? std::get<std::int32_t>(evaluate(*e.left)) : -4;
+            if (!host.face_count)
+                return std::int32_t{0};
+            if (number == -4)
+                return host.face_count(context.object);
+            if (number >= 0 && host.link_key) {
+                const auto id = host.link_key(context.object, number);
+                if (!id.is_zero())
+                    return host.face_count(id);
+            }
+            return std::int32_t{0};
+        }
+        case Expression::Op::LinkName: {
+            const auto number = std::get<std::int32_t>(evaluate(*e.left));
+            if (number == -4)
+                return context.object_name;
+            if (number >= 0 && host.link_key && host.object_name) {
+                const auto id = host.link_key(context.object, number);
+                if (!id.is_zero()) {
+                    if (const auto name = host.object_name(id))
+                        return *name;
+                    if (host.avatar_name)
+                        if (const auto name = host.avatar_name(id))
+                            return *name;
+                }
+            }
+            return framework::Uuid{}.str();
+        }
+        case Expression::Op::LinkKey: {
+            const auto number = std::get<std::int32_t>(evaluate(*e.left));
+            if (number == -4)
+                return context.object.str();
+            if (number >= 0 && host.link_key)
+                return host.link_key(context.object, number).str();
+            return framework::Uuid{}.str();
+        }
+        case Expression::Op::LinkNumber:
+            return host.link_number ? host.link_number(context.object) : std::int32_t{0};
+        case Expression::Op::AttachmentPoint:
+            return context.attachment_point;
+        case Expression::Op::RegionFlags:
+            return host.region_flags ? host.region_flags() : std::int32_t{67108864};
+        case Expression::Op::RegionAgentCount:
+            return host.region_agent_count ? host.region_agent_count() : std::int32_t{0};
+        case Expression::Op::RegionCorner:
+            return context.region_corner;
+        case Expression::Op::ObjectVelocity:
+        case Expression::Op::ObjectOmega:
+        case Expression::Op::ObjectAcceleration: {
+            const auto& vector = e.op == Expression::Op::ObjectVelocity ? context.velocity
+                                 : e.op == Expression::Op::ObjectOmega  ? context.omega
+                                                                        : context.acceleration;
+            return framework::Vector3d{vector.x, vector.y, vector.z};
+        }
+        case Expression::Op::ObjectScale:
+            return framework::Vector3d{context.object_scale.x, context.object_scale.y,
+                                       context.object_scale.z};
+        case Expression::Op::ObjectWorldRotation: {
+            const auto root = context.root_rotation.value_or(context.local_rotation);
+            if (!context.root_position)
+                return root;
+            const auto& local = context.local_rotation;
+            return LslRotation{root.w * local.x + root.x * local.w + root.y * local.z - root.z * local.y,
+                               root.w * local.y + root.y * local.w + root.z * local.x - root.x * local.z,
+                               root.w * local.z + root.z * local.w + root.x * local.y - root.y * local.x,
+                               root.w * local.w - root.x * local.x - root.y * local.y - root.z * local.z};
+        }
+        case Expression::Op::ObjectRootRotation:
+            return context.root_rotation.value_or(context.local_rotation);
+        case Expression::Op::ObjectLocalRotation:
+            return context.local_rotation;
+        case Expression::Op::GeometricCenter: {
+            const auto center =
+                host.geometric_center ? host.geometric_center(context.object) : framework::Vector3{};
+            return framework::Vector3d{center.x, center.y, center.z};
+        }
+        case Expression::Op::ObjectLocalPosition: {
+            const auto& position = (context.attachment_point || context.root_position)
+                                       ? context.attachment_offset
+                                       : context.position;
+            return framework::Vector3d{position.x, position.y, position.z};
+        }
+        case Expression::Op::ObjectRootPosition: {
+            const auto position = context.root_position.value_or(context.position);
+            return framework::Vector3d{position.x, position.y, position.z};
+        }
+        case Expression::Op::ObjectPosition:
+            return framework::Vector3d{context.position.x, context.position.y, context.position.z};
+        case Expression::Op::ObjectKey:
+            return context.object.str();
+        case Expression::Op::GenerateKey:
+            return framework::Uuid::random().str();
+        case Expression::Op::CreatorKey:
+            return context.creator.str();
+        case Expression::Op::OwnerKey:
+            return context.owner.str();
+        case Expression::Op::DetectedKey:
+        case Expression::Op::DetectedName:
+        case Expression::Op::DetectedOwner:
+        case Expression::Op::DetectedType:
+        case Expression::Op::DetectedPosition:
+        case Expression::Op::DetectedVelocity:
+        case Expression::Op::DetectedGrab:
+        case Expression::Op::DetectedRotation:
+        case Expression::Op::DetectedGroup:
+        case Expression::Op::DetectedLinkNumber:
+        case Expression::Op::DetectedTouchFace:
+        case Expression::Op::DetectedTouchPos:
+        case Expression::Op::DetectedTouchNormal:
+        case Expression::Op::DetectedTouchBinormal:
+        case Expression::Op::DetectedTouchST:
+        case Expression::Op::DetectedTouchUV: {
+            const auto index = std::get<std::int32_t>(evaluate(*e.left));
+            const auto* detector =
+                event && index >= 0 && static_cast<std::size_t>(index) < event->detectors.size()
+                    ? &event->detectors[index]
+                    : nullptr;
+            using Op = Expression::Op;
+            const LslDetector missing;
+            const auto& data = detector ? *detector : missing;
+            switch (e.op) {
+            case Op::DetectedKey:
+                return detector ? data.key.str() : std::string{};
+            case Op::DetectedName:
+                return data.name;
+            case Op::DetectedOwner:
+                return detector ? data.owner.str() : std::string{};
+            case Op::DetectedType:
+                return data.type;
+            case Op::DetectedPosition:
+                return data.position;
+            case Op::DetectedVelocity:
+                return data.velocity;
+            case Op::DetectedGrab:
+                return data.grab;
+            case Op::DetectedRotation:
+                return data.rotation;
+            case Op::DetectedGroup:
+                return std::int32_t(detector && data.group == context.group);
+            case Op::DetectedLinkNumber:
+                return data.link_number;
+            case Op::DetectedTouchFace:
+                return data.touch_face;
+            case Op::DetectedTouchPos:
+                return data.touch_pos;
+            case Op::DetectedTouchNormal:
+                return data.touch_normal;
+            case Op::DetectedTouchBinormal:
+                return data.touch_binormal;
+            case Op::DetectedTouchST:
+                return data.touch_st;
+            default:
+                return data.touch_uv;
+            }
+        }
+        case Expression::Op::Assign: {
+            auto value = evaluate(*e.right);
+            if (e.type == Type::Float) {
+                if (const auto* integer = std::get_if<std::int32_t>(&value))
+                    value = double(*integer);
+            }
+            if (e.left->op == Expression::Op::Component)
+                writable_component(*e.left) = std::get<double>(value);
+            else {
+                auto& slot = variable(*e.left);
+                check_heap_store(slot, value, e.left->type, e.left->global);
+                slot = value;
+            }
+            return value;
+        }
+        case Expression::Op::Update: {
+            if (e.left->op == Expression::Op::Component) {
+                auto& component = writable_component(*e.left);
+                const auto previous = component;
+                component += e.delta;
+                return e.postfix ? previous : component;
+            }
+            auto& variable = this->variable(*e.left);
+            const auto previous = variable;
+            if (auto* integer = std::get_if<std::int32_t>(&variable))
+                *integer = wrap(static_cast<std::uint32_t>(*integer) + static_cast<std::uint32_t>(e.delta));
+            else
+                std::get<double>(variable) += e.delta;
+            return e.postfix ? previous : variable;
+        }
+        case Expression::Op::UnixTime:
+            if (!host.unix_time)
+                throw std::runtime_error("LSL host Unix time callback is required");
+            return host.unix_time();
+        case Expression::Op::Date:
+        case Expression::Op::Timestamp:
+            if (!host.clock_ticks)
+                throw std::runtime_error("LSL host clock callback is required");
+            return utc_text(host.clock_ticks(), e.op == Expression::Op::Timestamp);
+        case Expression::Op::GmtClock:
+        case Expression::Op::Wallclock:
+        case Expression::Op::TimeOfDay: {
+            if (!host.clock_ticks)
+                throw std::runtime_error("LSL host clock callback is required");
+            const auto seconds = seconds_of_day(host.clock_ticks(), e.op != Expression::Op::GmtClock);
+            return e.op == Expression::Op::TimeOfDay ? std::fmod(seconds, 14400.) : seconds;
+        }
+        case Expression::Op::Elapsed:
+        case Expression::Op::ElapsedReset: {
+            const auto current = timer_now();
+            const auto milliseconds = (current - timer_start) / 10000;
+            const auto remainder = (current - timer_start) % 10000;
+            if (e.op == Expression::Op::ElapsedReset)
+                timer_start = current;
+            const bool round_up = remainder > 5000 || (remainder == 5000 && milliseconds % 2 != 0);
+            return (milliseconds + round_up) / 1000.;
+        }
+        case Expression::Op::Water:
+        case Expression::Op::Cloud:
+        case Expression::Op::Ground: {
+            const auto offset = std::get<framework::Vector3d>(evaluate(*e.left));
+            if (e.op == Expression::Op::Water)
+                return host.region_water_height ? host.region_water_height() : context.water_height;
+            if (e.op == Expression::Op::Cloud)
+                return 0.;
+            if (!host.ground_height)
+                throw std::runtime_error("LSL host ground height callback is required");
+            return double(host.ground_height(context.position.x + static_cast<float>(offset.x),
+                                             context.position.y + static_cast<float>(offset.y)));
+        }
+        case Expression::Op::GroundNormal:
+        case Expression::Op::GroundSlope:
+        case Expression::Op::GroundContour: {
+            using Op = Expression::Op;
+            const auto offset = std::get<framework::Vector3d>(evaluate(*e.left));
+            if (!host.ground_normal)
+                throw std::runtime_error("LSL host ground normal callback is required");
+            const auto normal = host.ground_normal(context.position.x, context.position.y,
+                                                   static_cast<float>(offset.x), static_cast<float>(offset.y));
+            if (e.op == Op::GroundNormal)
+                return framework::Vector3d{normal.x, normal.y, normal.z};
+
+            const double x = normal.x;
+            const double y = normal.y;
+            const float z = static_cast<float>((x * x + y * y) / -normal.z);
+            const float squared_length = normal.x * normal.x + normal.y * normal.y + z * z;
+            // OpenMetaverse.Vector3.Normalize zeros vectors below this squared magnitude.
+            if (squared_length < 1e-6f)
+                return framework::Vector3d{};
+            const float inverse_length = 1.f / std::sqrt(squared_length);
+            if (e.op == Op::GroundContour)
+                return framework::Vector3d{-normal.y * inverse_length, normal.x * inverse_length, 0.};
+            return framework::Vector3d{normal.x * inverse_length, normal.y * inverse_length, z * inverse_length};
+        }
+        case Expression::Op::Not:
+            return std::int32_t(!truth(evaluate(*e.left), e.left->type));
+        case Expression::Op::BitNot:
+            return ~std::get<std::int32_t>(evaluate(*e.left));
+        case Expression::Op::BitAnd:
+        case Expression::Op::BitOr:
+        case Expression::Op::BitXor:
+        case Expression::Op::ShiftLeft:
+        case Expression::Op::ShiftRight: {
+            using Op = Expression::Op;
+            const auto right = std::get<std::int32_t>(evaluate(*e.right));
+            const auto left = std::get<std::int32_t>(evaluate(*e.left));
+            const auto shift = static_cast<std::uint32_t>(right) & 31u;
+            if (e.op == Op::BitAnd)
+                return left & right;
+            if (e.op == Op::BitOr)
+                return left | right;
+            if (e.op == Op::BitXor)
+                return left ^ right;
+            if (e.op == Op::ShiftRight)
+                return left >> shift;
+            return wrap(static_cast<std::uint32_t>(left) << shift);
+        }
+        case Expression::Op::ShortAnd:
+            return std::int32_t(truth(evaluate(*e.left), e.left->type) &&
+                                truth(evaluate(*e.right), e.right->type));
+        case Expression::Op::ShortOr:
+            return std::int32_t(truth(evaluate(*e.left), e.left->type) ||
+                                truth(evaluate(*e.right), e.right->type));
+        case Expression::Op::And:
+        case Expression::Op::Or: {
+            const bool right = truth(evaluate(*e.right), e.right->type);
+            const bool left = truth(evaluate(*e.left), e.left->type);
+            return std::int32_t(e.op == Expression::Op::And ? (left && right) : (left || right));
+        }
+        case Expression::Op::Negate: {
+            const auto value = evaluate(*e.left);
+            if (const auto* vector = std::get_if<framework::Vector3d>(&value))
+                return framework::Vector3d{-vector->x, -vector->y, -vector->z};
+            if (const auto* real = std::get_if<double>(&value))
+                return -*real;
+            return wrap(0u - static_cast<std::uint32_t>(std::get<std::int32_t>(value)));
+        }
+        case Expression::Op::EncodeInteger64: {
+            const auto value = static_cast<std::uint32_t>(std::get<std::int32_t>(evaluate(*e.left)));
+            auto bytes = std::make_shared<std::vector<std::uint8_t>>();
+            for (int shift = 24; shift >= 0; shift -= 8)
+                bytes->push_back(static_cast<std::uint8_t>(value >> shift));
+            return network::binary_base64(network::osd_from_binary(bytes));
+        }
+        case Expression::Op::DecodeInteger64: {
+            const auto text = framework::utf16_replacing(std::get<std::string>(evaluate(*e.left)));
+            if (text.size() < 2 || text.size() > 8)
+                return std::int32_t{0};
+            constexpr std::u16string_view alphabet =
+                u"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+            const auto digit = [&](std::size_t i) -> std::optional<std::uint32_t> {
+                if (i >= text.size())
+                    return {};
+                const auto index = alphabet.find(text[i]);
+                if (index == alphabet.npos)
+                    return {};
+                return static_cast<std::uint32_t>(index);
+            };
+            const auto a = digit(0), b = digit(1);
+            if (!a || !b)
+                return std::int32_t{0};
+            auto value = *a << 26;
+            if (text.size() == 2)
+                return wrap(value | ((*b & 0x30) << 20));
+            const auto c = digit(2);
+            if (!c)
+                return wrap(value);
+            value |= *b << 20;
+            if (text.size() == 3)
+                return wrap(value | ((*c & 0x3c) << 14));
+            const auto d = digit(3);
+            if (!d)
+                return wrap(value);
+            value |= (*c << 14) | (*d << 8);
+            const auto e5 = digit(4), f = digit(5);
+            if (e5 && f)
+                value |= (*e5 << 2) | (*f >> 4);
+            return wrap(value);
+        }
+        case Expression::Op::EncodeBase64: {
+            const auto text = std::get<std::string>(evaluate(*e.left));
+            const auto bytes = std::make_shared<std::vector<std::uint8_t>>(text.begin(), text.end());
+            return network::binary_base64(network::osd_from_binary(bytes));
+        }
+        case Expression::Op::XorBase64: {
+            auto key = std::get<std::string>(evaluate(*e.right));
+            auto source = std::get<std::string>(evaluate(*e.left));
+            if (e.slot == 2) {
+                const auto requested = 300.f * host.script_delay_factor;
+                if (requested >= 10 && requested < 2147483648.f)
+                    delay(static_cast<std::int32_t>(requested));
+            }
+            if (source.empty() || key.empty())
+                return source;
+            if (e.slot == 1) {
+                const auto truncate = [](std::string& text) {
+                    constexpr std::string_view alphabet =
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+                    const auto end = text.find_first_not_of(alphabet);
+                    if (end != std::string::npos)
+                        text.resize(end);
+                    const auto remainder = text.size() % 4;
+                    if (remainder == 1)
+                        text.pop_back();
+                    else if (remainder > 1)
+                        text.append(4 - remainder, '=');
+                };
+                truncate(source);
+                if (source.empty())
+                    return source;
+                truncate(key);
+                if (key.empty())
+                    return source;
+            } else if (framework::utf16(key).size() % 4 != 0) {
+                const auto last = key.find_last_not_of('=');
+                if (last == std::string::npos && e.slot != 2)
+                    return source;
+                key.resize(last == std::string::npos ? 0 : last + 1);
+                const auto remainder = framework::utf16(key).size() % 4;
+                if (remainder == 1) {
+                    auto units = framework::utf16(key);
+                    units.pop_back();
+                    key = framework::utf8(units);
+                } else if (remainder > 1)
+                    key.append(4 - remainder, '=');
+            }
+            const auto decode = [](const std::string& text) {
+                network::Value encoded(text);
+                encoded.kind = network::Value::Kind::Binary;
+                return network::osd_binary(encoded);
+            };
+            try {
+                auto bytes = decode(source);
+                const auto mask = decode(key);
+                if (e.slot == 2) {
+                    constexpr std::string_view alphabet =
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+                    const auto source_size = source.find_last_not_of('=') + 1;
+                    const auto key_size = key.find_last_not_of('=') + 1;
+                    if (source_size && key_size == 0)
+                        throw std::runtime_error("empty Base64 XOR mask");
+                    const auto digit = [&](char ch) {
+                        const auto value = alphabet.find(ch);
+                        return value == std::string_view::npos ? std::size_t{0} : value;
+                    };
+                    const auto source_units = framework::utf16(source);
+                    const auto key_units = framework::utf16(key);
+                    std::string result;
+                    for (std::size_t i = 0; i < source_size; ++i)
+                        result += alphabet[digit(static_cast<char>(source_units[i])) ^
+                                           digit(static_cast<char>(key_units[i % key_size]))];
+                    result.append(source.size() - source_size, '=');
+                    return result;
+                }
+                if (mask->empty())
+                    return source;
+                for (std::size_t i = 0; i < bytes->size(); ++i)
+                    (*bytes)[i] ^= (*mask)[i % mask->size()];
+                return network::binary_base64(network::osd_from_binary(bytes));
+            } catch (const std::invalid_argument&) {
+                return std::string{};
+            }
+        }
+        case Expression::Op::DecodeBase64: {
+            network::Value encoded(std::get<std::string>(evaluate(*e.left)));
+            encoded.kind = network::Value::Kind::Binary;
+            try {
+                const auto bytes = network::osd_binary(encoded);
+                return framework::utf8(framework::utf16_replacing(std::string(bytes->begin(), bytes->end())));
+            } catch (const std::invalid_argument&) {
+                return std::string{};
+            }
+        }
+        case Expression::Op::ComputeHash:
+        case Expression::Op::Hmac: {
+            const bool hmac = e.op == Expression::Op::Hmac;
+            const auto algorithm = std::get<std::string>(evaluate(hmac ? *e.z : *e.right));
+            const auto source = std::get<std::string>(evaluate(hmac ? *e.right : *e.left));
+            if (!hmac)
+                return compute_hash(source, algorithm);
+            auto key = std::get<std::string>(evaluate(*e.left));
+            if (key.empty() || source.empty() || algorithm == "md5_sha1")
+                return std::string{};
+            const std::size_t block_size = algorithm == "sha384" || algorithm == "sha512" ? 128 : 64;
+            // OpenSimulator's SHA-224 implementation retains the first block of a long key.
+            if (key.size() > block_size && algorithm != "sha224")
+                key = digest_bytes(compute_hash(key, algorithm));
+            key.resize(block_size, 0);
+            auto inner = key;
+            for (std::size_t i = 0; i < block_size; ++i) {
+                inner[i] ^= 0x36;
+                key[i] ^= 0x5c;
+            }
+            const auto digest = compute_hash(inner + source, algorithm);
+            return digest.empty() ? std::string{} : compute_hash(key + digest_bytes(digest), algorithm);
+        }
+        case Expression::Op::Md5: {
+            const auto nonce = std::get<std::int32_t>(evaluate(*e.right));
+            const auto source = std::get<std::string>(evaluate(*e.left));
+            return framework::md5(source + ":" + std::to_string(nonce));
+        }
+        case Expression::Op::Sha256:
+            return sha256_text(std::get<std::string>(evaluate(*e.left)));
+        case Expression::Op::Sha1: {
+            const auto source = std::get<std::string>(evaluate(*e.left));
+            return framework::sha1_hex({reinterpret_cast<const std::uint8_t*>(source.data()), source.size()});
+        }
+        case Expression::Op::EscapeUrl:
+        case Expression::Op::UnescapeUrl: {
+            const auto units = framework::utf16_replacing(std::get<std::string>(evaluate(*e.left)));
+            if (e.op == Expression::Op::EscapeUrl)
+                return framework::utf8(
+                    framework::config_uri_escape(units, false, framework::ConfigUriEscapeSet::Unreserved));
+            constexpr int unescape_all = 2 | 8;
+            return framework::utf8(
+                framework::config_uri_unescape(units, 0xffff, 0xffff, 0xffff, unescape_all, false, false));
+        }
+        case Expression::Op::Upper:
+        case Expression::Op::Lower: {
+            const auto units = framework::utf16_replacing(std::get<std::string>(evaluate(*e.left)));
+            return framework::utf8(e.op == Expression::Op::Upper ? framework::invariant_upper_utf16(units)
+                                                                 : framework::invariant_lower_utf16(units));
+        }
+        case Expression::Op::Char: {
+            const auto code = std::get<std::int32_t>(evaluate(*e.left));
+            if (code == 0)
+                return std::string{};
+            if (code < 0 || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff))
+                return framework::utf8(u"\ufffd");
+            if (code <= 0xffff)
+                return framework::utf8(std::u16string(1, static_cast<char16_t>(code)));
+            return framework::utf8(
+                std::u16string{static_cast<char16_t>(0xd800 + ((code - 0x10000) >> 10)),
+                               static_cast<char16_t>(0xdc00 + ((code - 0x10000) & 0x3ff))});
+        }
+        case Expression::Op::Hash: {
+            const auto units = framework::utf16(std::get<std::string>(evaluate(*e.left)));
+            std::uint32_t hash = 0;
+            for (std::size_t i = 0; i < units.size(); ++i) {
+                std::uint32_t code = units[i];
+                if (code >= 0xd800 && code <= 0xdbff) {
+                    if (++i == units.size() || units[i] < 0xdc00 || units[i] > 0xdfff)
+                        return std::int32_t{0};
+                    code = 0x10000 + ((code - 0xd800) << 10) + (units[i] - 0xdc00);
+                } else if (code >= 0xdc00 && code <= 0xdfff)
+                    return std::int32_t{0};
+                hash = hash * 65599u + code;
+            }
+            return wrap(hash);
+        }
+        case Expression::Op::Ord: {
+            std::int64_t index = std::get<std::int32_t>(evaluate(*e.right));
+            const auto units = framework::utf16_replacing(std::get<std::string>(evaluate(*e.left)));
+            const auto size = static_cast<std::int64_t>(units.size());
+            if (index < 0)
+                index += size;
+            if (index < 0 || index >= size)
+                return std::int32_t{0};
+            const auto unit = units[index];
+            if (unit < 0xd800 || unit > 0xdfff)
+                return static_cast<std::int32_t>(unit);
+            if (unit >= 0xdc00)
+                --index;
+            if (index < 0 || index + 1 >= size)
+                return std::int32_t{0};
+            const auto high = units[index], low = units[index + 1];
+            if (high < 0xd800 || high > 0xdbff || low < 0xdc00 || low > 0xdfff)
+                return std::int32_t{0};
+            return std::int32_t(0x10000 + ((high - 0xd800) << 10) + (low - 0xdc00));
+        }
+        case Expression::Op::StringTrim: {
+            const auto mode = std::get<std::int32_t>(evaluate(*e.right));
+            const auto text = std::get<std::string>(evaluate(*e.left));
+            if (mode < 1 || mode > 3)
+                return text;
+            const auto units = framework::utf16_replacing(text);
+            std::size_t first = 0, last = units.size();
+            if (mode & 1)
+                while (first < last && framework::unicode_whitespace(units[first]))
+                    ++first;
+            if (mode & 2)
+                while (last > first && framework::unicode_whitespace(units[last - 1]))
+                    --last;
+            return framework::utf8(std::u16string_view(units).substr(first, last - first));
+        }
+        case Expression::Op::ReplaceSubstring: {
+            const auto count = std::get<std::int32_t>(evaluate(*e.w));
+            const auto replacement = std::get<std::string>(evaluate(*e.z));
+            const auto pattern = std::get<std::string>(evaluate(*e.right));
+            const auto source = std::get<std::string>(evaluate(*e.left));
+            return replace_substring(source, pattern, replacement, count);
+        }
+        case Expression::Op::InsertString: {
+            const auto inserted = std::get<std::string>(evaluate(*e.z));
+            std::int64_t index = std::get<std::int32_t>(evaluate(*e.right));
+            const auto destination = std::get<std::string>(evaluate(*e.left));
+            if (inserted.empty())
+                return destination;
+            auto units = framework::utf16_replacing(destination);
+            const auto size = static_cast<std::int64_t>(units.size());
+            const bool from_end = index < 0;
+            if (from_end)
+                index += size;
+            if (index >= 0 && index < size && units[index] >= 0xdc00 && units[index] <= 0xdfff)
+                index += from_end ? -1 : 1;
+            units.insert(static_cast<std::size_t>(std::clamp(index, std::int64_t{0}, size)),
+                         framework::utf16_replacing(inserted));
+            return framework::utf8(units);
+        }
+        case Expression::Op::GetSubstring:
+        case Expression::Op::DeleteSubstring: {
+            std::int64_t end = std::get<std::int32_t>(evaluate(*e.z));
+            std::int64_t start = std::get<std::int32_t>(evaluate(*e.right));
+            auto source = framework::utf16_replacing(std::get<std::string>(evaluate(*e.left)));
+            const auto size = static_cast<std::int64_t>(source.size());
+            if (start < 0)
+                start += size;
+            if (end < 0)
+                end += size;
+            const bool remove = e.op == Expression::Op::DeleteSubstring;
+            if (start <= end) {
+                if (end < 0 || start >= size)
+                    return remove ? framework::utf8(source) : std::string{};
+                const auto first = std::max<std::int64_t>(0, start);
+                const auto count = std::min(end, size - 1) - first + 1;
+                if (remove) {
+                    source.erase(first, count);
+                    return framework::utf8(source);
+                }
+                return framework::utf8(source.substr(first, count));
+            }
+            if (start < 0 || end >= size)
+                return remove ? std::string{} : framework::utf8(source);
+            const auto tail = std::min(start, size);
+            if (remove) {
+                const auto first = end > 0 ? end + 1 : 0;
+                return framework::utf8(source.substr(first, tail - first));
+            }
+            return framework::utf8(source.substr(0, std::max<std::int64_t>(end + 1, 0)) +
+                                   source.substr(tail));
+        }
+        case Expression::Op::SubstringIndex: {
+            const auto pattern = std::get<std::string>(evaluate(*e.right));
+            const auto source = std::get<std::string>(evaluate(*e.left));
+            if (source.empty())
+                return std::int32_t{-1};
+            if (pattern.empty())
+                return std::int32_t{0};
+            return static_cast<std::int32_t>(framework::invariant_index_of(
+                framework::utf16_replacing(source), framework::utf16_replacing(pattern)));
+        }
+        case Expression::Op::StringLength: {
+            const auto value = std::get<std::string>(evaluate(*e.left));
+            return static_cast<std::int32_t>(framework::utf16_replacing(value).size());
+        }
+        case Expression::Op::VectorCast:
+            return list_vector(evaluate(*e.left));
+        case Expression::Op::RotationCast:
+            return list_rotation(evaluate(*e.left));
+        case Expression::Op::StringCast:
+            return value_text(evaluate(*e.left));
+        case Expression::Op::Equal:
+        case Expression::Op::NotEqual:
+        case Expression::Op::Less:
+        case Expression::Op::LessEqual:
+        case Expression::Op::Greater:
+        case Expression::Op::GreaterEqual: {
+            using Op = Expression::Op;
+            const auto right = evaluate(*e.right);
+            const auto left = evaluate(*e.left);
+            if (const auto* rotation = std::get_if<LslRotation>(&left)) {
+                const bool equal = *rotation == std::get<LslRotation>(right);
+                return std::int32_t(e.op == Op::Equal ? equal : !equal);
+            }
+            if (const auto* vector = std::get_if<framework::Vector3d>(&left)) {
+                const bool equal = *vector == std::get<framework::Vector3d>(right);
+                return std::int32_t(e.op == Op::Equal ? equal : !equal);
+            }
+            if (const auto* list = std::get_if<std::shared_ptr<const LslList>>(&left)) {
+                const auto left_length = static_cast<std::uint32_t>((*list)->items.size());
+                const auto right_length =
+                    static_cast<std::uint32_t>(std::get<std::shared_ptr<const LslList>>(right)->items.size());
+                return e.op == Op::Equal ? std::int32_t(left_length == right_length)
+                                         : wrap(left_length - right_length);
+            }
+            const auto compare = [&](const auto& x, const auto& y) {
+                switch (e.op) {
+                case Op::Equal:
+                    return std::int32_t(x == y);
+                case Op::NotEqual:
+                    return std::int32_t(x != y);
+                case Op::Less:
+                    return std::int32_t(x < y);
+                case Op::LessEqual:
+                    return std::int32_t(x <= y);
+                case Op::Greater:
+                    return std::int32_t(x > y);
+                default:
+                    return std::int32_t(x >= y);
+                }
+            };
+            if (const auto* text = std::get_if<std::string>(&left))
+                return compare(framework::utf16_replacing(*text),
+                               framework::utf16_replacing(std::get<std::string>(right)));
+            const auto number = [](const LslValue& value) {
+                if (const auto* real = std::get_if<double>(&value))
+                    return *real;
+                return static_cast<double>(std::get<std::int32_t>(value));
+            };
+            return compare(number(left), number(right));
+        }
+        case Expression::Op::Add:
+        case Expression::Op::Subtract:
+        case Expression::Op::Multiply:
+        case Expression::Op::Divide:
+        case Expression::Op::Remainder: {
+            using Op = Expression::Op;
+            const auto right = evaluate(*e.right);
+            const auto left = evaluate(*e.left);
+            if (e.type == Type::List) {
+                auto result = std::make_shared<LslList>();
+                const auto append = [&](const LslValue& value) {
+                    if (const auto* list = std::get_if<std::shared_ptr<const LslList>>(&value))
+                        result->items.insert(result->items.end(), (*list)->items.begin(),
+                                             (*list)->items.end());
+                    else
+                        result->items.push_back(value);
+                };
+                append(left);
+                append(right);
+                return std::shared_ptr<const LslList>(std::move(result));
+            }
+            if (e.type == Type::Rotation) {
+                const auto b = std::get<LslRotation>(left);
+                auto a = std::get<LslRotation>(right);
+                if (e.op == Op::Add)
+                    return LslRotation{b.x + a.x, b.y + a.y, b.z + a.z, b.w + a.w};
+                if (e.op == Op::Subtract)
+                    return LslRotation{b.x - a.x, b.y - a.y, b.z - a.z, b.w - a.w};
+                if (e.op == Op::Divide) {
+                    a.x = -a.x;
+                    a.y = -a.y;
+                    a.z = -a.z;
+                }
+                // LSL composition multiplies the right quaternion by the left quaternion.
+                return LslRotation{a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
+                                   a.w * b.y + a.y * b.w + a.z * b.x - a.x * b.z,
+                                   a.w * b.z + a.z * b.w + a.x * b.y - a.y * b.x,
+                                   a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z};
+            }
+            const auto* a = std::get_if<framework::Vector3d>(&left);
+            const auto* b = std::get_if<framework::Vector3d>(&right);
+            if (const auto* rotation = std::get_if<LslRotation>(&right); a && rotation) {
+                const auto [x, y, z, w] = *rotation;
+                const auto scalar = e.op == Op::Divide ? -w : w;
+                const auto rx = scalar * a->x + y * a->z - z * a->y;
+                const auto ry = scalar * a->y + z * a->x - x * a->z;
+                const auto rz = scalar * a->z + x * a->y - y * a->x;
+                return framework::Vector3d{a->x + 2.0 * (rz * y - ry * z), a->y + 2.0 * (rx * z - rz * x),
+                                           a->z + 2.0 * (ry * x - rx * y)};
+            }
+            if (a && b) {
+                if (e.op == Op::Add)
+                    return framework::Vector3d{a->x + b->x, a->y + b->y, a->z + b->z};
+                if (e.op == Op::Subtract)
+                    return framework::Vector3d{a->x - b->x, a->y - b->y, a->z - b->z};
+                if (e.op == Op::Multiply)
+                    return a->x * b->x + a->y * b->y + a->z * b->z;
+                return framework::Vector3d{a->y * b->z - a->z * b->y, a->z * b->x - a->x * b->z,
+                                           a->x * b->y - a->y * b->x};
+            }
+            if (a || b) {
+                const auto& vector = a ? *a : *b;
+                const auto& scalar = a ? right : left;
+                const auto scale = std::holds_alternative<double>(scalar)
+                                       ? std::get<double>(scalar)
+                                       : double(std::get<std::int32_t>(scalar));
+                if (e.op == Op::Multiply)
+                    return framework::Vector3d{vector.x * scale, vector.y * scale, vector.z * scale};
+                if (scale == 0.)
+                    throw std::runtime_error("Vector division by zero");
+                const framework::Vector3d result{vector.x / scale, vector.y / scale, vector.z / scale};
+                if (!std::isfinite(result.x) || !std::isfinite(result.y) || !std::isfinite(result.z))
+                    throw std::runtime_error("Vector division by zero");
+                return result;
+            }
+            if (e.type == Type::String)
+                return std::get<std::string>(left) + std::get<std::string>(right);
+            if (e.type == Type::Float) {
+                const auto numeric = [](const LslValue& value) {
+                    if (const auto* real = std::get_if<double>(&value))
+                        return *real;
+                    return static_cast<double>(std::get<std::int32_t>(value));
+                };
+                const auto x = numeric(left), y = numeric(right);
+                if (e.op == Op::Add)
+                    return x + y;
+                if (e.op == Op::Subtract)
+                    return x - y;
+                if (e.op == Op::Multiply)
+                    return x * y;
+                if (y == 0.)
+                    throw std::runtime_error("Division by Zero");
+                const auto result = e.op == Op::Divide ? x / y : std::fmod(x, y);
+                if (!std::isfinite(result))
+                    throw std::runtime_error("Division by Zero");
+                return result;
+            }
+            const std::int64_t x = std::get<std::int32_t>(left), y = std::get<std::int32_t>(right);
+            if (e.op == Op::Add)
+                return wrap(static_cast<std::uint32_t>(x + y));
+            if (e.op == Op::Subtract)
+                return wrap(static_cast<std::uint32_t>(x - y));
+            if (e.op == Op::Multiply)
+                return wrap(static_cast<std::uint32_t>(x * y));
+            if (y == 0)
+                throw std::runtime_error("Division by Zero");
+            return wrap(static_cast<std::uint32_t>(e.op == Op::Divide ? x / y : x % y));
+        }
+        }
+        throw std::logic_error("invalid native LSL expression");
+    }
+};
+}
+struct ScriptState {
+    std::map<std::string, Handler> handlers;
+    std::uint64_t event_mask = 0;
+};
+class LslProgram {
+  public:
+    std::map<std::string, ScriptState> states;
+    std::vector<Instruction> globals;
+};
 namespace {
 class Parser {
- Lexer lexer;Token token;Handler* handler=nullptr;std::size_t depth=0;
- void advance(){token=lexer.next();}
- bool is(std::string_view text)const{return token.text==text&&token.kind!=Kind::String;}
- void require(std::string_view text){if(!is(text))fail(token,"expected "+std::string(text));advance();}
- struct Depth {Parser& p;explicit Depth(Parser& v):p(v){if(++p.depth>128)fail(p.token,"native LSL nesting limit exceeded");}~Depth(){--p.depth;}};
- std::unique_ptr<Expression> unary(){Depth guard(*this);auto e=std::make_unique<Expression>();
-  if(is("-")||is("+")){bool minus=is("-");advance();auto value=unary();if(value->type!=Type::Integer)fail(token,"unary +/- requires integer");if(!minus)return value;if(value->height>=128)fail(token,"native LSL expression depth exceeded");e->height=value->height+1;e->op=Expression::Op::Negate;e->left=std::move(value);return e;}
-  if(is("(")){advance();if(is("string")){advance();require(")");e->op=Expression::Op::StringCast;e->type=Type::String;e->left=unary();if(e->left->height>=128)fail(token,"native LSL expression depth exceeded");e->height=e->left->height+1;return e;}auto value=expression();require(")");return value;}
-  if(token.kind==Kind::Integer){e->value=token.integer;advance();return e;}
-  if(token.kind==Kind::String){e->type=Type::String;e->value=token.text;advance();return e;}
-  if(token.kind==Kind::Name&&handler&&!handler->parameter.empty()&&token.text==handler->parameter){e->op=Expression::Op::Parameter;advance();return e;}
-  fail(token,"unsupported expression or undefined name");
- }
- std::unique_ptr<Expression> expression(){auto left=unary();std::size_t count=0;while(is("+")||is("-")){if(++count>128)fail(token,"native LSL expression limit exceeded");bool plus=is("+");auto at=token;advance();auto right=unary();if(left->type!=right->type||(!plus&&left->type!=Type::Integer))fail(at,"operator operand type mismatch");auto e=std::make_unique<Expression>();e->type=left->type;e->height=std::max(left->height,right->height)+1;if(e->height>128)fail(at,"native LSL expression depth exceeded");e->op=plus?Expression::Op::Add:Expression::Op::Subtract;e->left=std::move(left);e->right=std::move(right);left=std::move(e);}return left;}
- void block(){Depth guard(*this);require("{");while(!is("}")){if(token.kind==Kind::End)fail(token,"eof parsing event body");if(is("{")){block();continue;}if(is(";")){advance();continue;}
-   Instruction ins;if(is("llSay"))ins.owner=false;else if(is("llOwnerSay"))ins.owner=true;else fail(token,"unsupported statement/API in native LSL subset");advance();require("(");
-   if(!ins.owner){ins.channel=expression();if(ins.channel->type!=Type::Integer)fail(token,"llSay channel must be integer");require(",");}
-   ins.text=expression();if(ins.text->type!=Type::String)fail(token,"chat text must be string");require(")");require(";");handler->instructions.push_back(std::move(ins));
-  }require("}");}
-public:
- explicit Parser(std::string_view s):lexer(s){advance();}
- std::shared_ptr<LslProgram> parse(){auto program=std::make_shared<LslProgram>();require("default");require("{");while(!is("}")){
-  if(token.kind!=Kind::Name)fail(token,"expected event handler");auto event=token.text;auto at=token;if(event!="state_entry"&&event!="touch_start"&&event!="touch"&&event!="touch_end")fail(at,"unsupported event in native LSL subset");advance();if(program->handlers.contains(event))fail(at,"duplicate event handler");auto [it,inserted]=program->handlers.emplace(event,Handler{});handler=&it->second;require("(");
-  if(event!="state_entry"){require("integer");if(token.kind!=Kind::Name)fail(token,"expected event parameter name");if(std::string_view(" default do else float for if integer list jump key return rotation state string vector while llSay llOwnerSay ").find(" "+token.text+" ")!=std::string_view::npos)fail(token,"unsupported/reserved event parameter name");handler->parameter=token.text;advance();}require(")");block();handler=nullptr;program->event_mask|=event=="state_entry"?1ull<<30:event=="touch_start"?1ull<<21:event=="touch"?1ull<<3:1ull<<29;
- }require("}");if(token.kind!=Kind::End)fail(token,"unsupported declaration after default state");program->handlers.try_emplace("state_entry");return program;}
+    Lexer lexer;
+    Token token;
+    Handler* handler = nullptr;
+    std::size_t depth = 0;
+    struct Local {
+        Type type;
+        std::size_t slot;
+        bool global = false;
+    };
+    std::vector<std::map<std::string, Local>> scopes;
+    std::optional<Local> local(const std::string& name) const {
+        for (auto scope = scopes.rbegin(); scope != scopes.rend(); ++scope) {
+            const auto found = scope->find(name);
+            if (found != scope->end())
+                return found->second;
+        }
+        return {};
+    }
+    struct Label {
+        std::size_t instruction, block;
+    };
+    struct PendingJump {
+        Token name;
+        std::size_t instruction;
+        std::vector<std::size_t> blocks;
+    };
+    std::map<std::string, Label> labels;
+    std::vector<PendingJump> jumps;
+    std::vector<Token> state_targets;
+    std::vector<std::size_t> blocks;
+    std::size_t next_block = 0;
+    void resolve_jumps() {
+        for (const auto& jump : jumps) {
+            const auto label = labels.find(jump.name.text);
+            if (label == labels.end())
+                fail(jump.name, "undefined label");
+            if (std::find(jump.blocks.begin(), jump.blocks.end(), label->second.block) == jump.blocks.end())
+                fail(jump.name, "no lateral jumps allowed");
+            handler->instructions[jump.instruction].jump = label->second.instruction;
+        }
+        labels.clear();
+        jumps.clear();
+    }
+    void advance() {
+        token = lexer.next();
+    }
+    bool is(std::string_view text) const {
+        return token.text == text && token.kind != Kind::String;
+    }
+    void require(std::string_view text) {
+        if (!is(text))
+            fail(token, "expected " + std::string(text));
+        advance();
+    }
+    struct Depth {
+        Parser& p;
+        explicit Depth(Parser& v) : p(v) {
+            if (++p.depth > 128)
+                fail(p.token, "native LSL nesting limit exceeded");
+        }
+        ~Depth() {
+            --p.depth;
+        }
+    };
+    bool update_operator() const {
+        return is("++") || is("--");
+    }
+    std::unique_ptr<Expression> update(std::unique_ptr<Expression> target, int delta, bool postfix) {
+        if (!writable(*target) || !numeric(target->type))
+            fail(token, "increment and decrement require a writable numeric value");
+        auto e = std::make_unique<Expression>();
+        e->op = Expression::Op::Update;
+        e->type = target->type;
+        e->delta = delta;
+        e->postfix = postfix;
+        e->height = target->height + 1;
+        if (e->height > 128)
+            fail(token, "native LSL expression depth exceeded");
+        e->left = std::move(target);
+        return e;
+    }
+    std::unique_ptr<Expression> component_access(std::unique_ptr<Expression> value) {
+        if (!is("."))
+            return value;
+        const bool rotation = value->type == Type::Rotation;
+        if (value->type != Type::Vector && !rotation)
+            fail(token, "component access requires a vector or rotation");
+        advance();
+        if (!is("x") && !is("y") && !is("z") && !(rotation && is("s")))
+            fail(token, rotation ? "expected rotation component x, y, z, or s"
+                                 : "expected vector component x, y, or z");
+        auto component = std::make_unique<Expression>();
+        component->op = Expression::Op::Component;
+        component->type = Type::Float;
+        component->slot = is("x") ? 0 : is("y") ? 1 : is("z") ? 2 : 3;
+        component->height = value->height + 1;
+        if (component->height > 128)
+            fail(token, "native LSL expression depth exceeded");
+        component->left = std::move(value);
+        advance();
+        return component;
+    }
+    std::unique_ptr<Expression> unary() {
+        Depth guard(*this);
+        auto e = std::make_unique<Expression>();
+        if (update_operator()) {
+            const int delta = is("++") ? 1 : -1;
+            advance();
+            return update(unary(), delta, false);
+        }
+        if (is("!") || is("~")) {
+            const bool bitwise = is("~");
+            advance();
+            e->op = bitwise ? Expression::Op::BitNot : Expression::Op::Not;
+            e->left = unary();
+            if (bitwise && e->left->type != Type::Integer)
+                fail(token, "bitwise complement requires integer");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("-") || is("+")) {
+            bool minus = is("-");
+            advance();
+            auto value = unary();
+            if (!numeric(value->type) && value->type != Type::Vector)
+                fail(token, "unary +/- requires numeric value");
+            if (!minus)
+                return value;
+            if (value->height >= 128)
+                fail(token, "native LSL expression depth exceeded");
+            e->height = value->height + 1;
+            e->op = Expression::Op::Negate;
+            e->type = value->type;
+            e->left = std::move(value);
+            return e;
+        }
+        if (is("(")) {
+            advance();
+            if (is("string") || is("key") || is("vector") || is("rotation") || is("quaternion")) {
+                const bool rotation = is("rotation") || is("quaternion");
+                const bool vector = is("vector");
+                e->type = rotation    ? Type::Rotation
+                          : vector    ? Type::Vector
+                          : is("key") ? Type::Key
+                                      : Type::String;
+                e->op = rotation ? Expression::Op::RotationCast
+                        : vector ? Expression::Op::VectorCast
+                                 : Expression::Op::StringCast;
+                advance();
+                require(")");
+                e->left = unary();
+                if ((rotation || vector) && e->left->type != Type::String && e->left->type != e->type)
+                    fail(token, rotation ? "rotation cast requires a string or rotation"
+                                         : "vector cast requires a string or vector");
+                if (e->left->type == Type::List)
+                    fail(token, "unsupported list cast");
+                if (e->left->height >= 128)
+                    fail(token, "native LSL expression depth exceeded");
+                e->height = e->left->height + 1;
+                return e;
+            }
+            auto value = expression();
+            require(")");
+            return component_access(std::move(value));
+        }
+        if (is("[")) {
+            advance();
+            e->op = Expression::Op::ListLiteral;
+            e->type = Type::List;
+            if (!is("]")) {
+                for (;;) {
+                    auto element = expression();
+                    if (element->type == Type::List)
+                        fail(token, "nested lists are unsupported");
+                    e->height = std::max(e->height, element->height + 1);
+                    if (e->height > 128)
+                        fail(token, "native LSL expression depth exceeded");
+                    e->elements.push_back(std::move(element));
+                    if (!is(","))
+                        break;
+                    advance();
+                }
+            }
+            require("]");
+            return e;
+        }
+        if (is("llListReplaceList") || is("llListInsertList")) {
+            const bool insert = is("llListInsertList");
+            e->op = insert ? Expression::Op::ListInsert : Expression::Op::ListReplace;
+            e->type = Type::List;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(",");
+            e->z = expression();
+            if (!insert) {
+                require(",");
+                e->w = expression();
+            }
+            require(")");
+            if (e->left->type != Type::List || e->right->type != Type::List || e->z->type != Type::Integer ||
+                (e->w && e->w->type != Type::Integer))
+                fail(token, "list replacement requires two lists and integer bounds");
+            e->height =
+                1 + std::max({e->left->height, e->right->height, e->z->height, e->w ? e->w->height : 0u});
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llList2List") || is("llDeleteSubList") || is("llList2ListStrided") ||
+            is("llList2ListSlice")) {
+            const bool slice = is("llList2ListSlice");
+            const bool strided = slice || is("llList2ListStrided");
+            e->op = strided             ? Expression::Op::ListStrided
+                    : is("llList2List") ? Expression::Op::ListSlice
+                                        : Expression::Op::ListDelete;
+            e->type = Type::List;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(",");
+            e->z = expression();
+            if (strided) {
+                require(",");
+                e->w = expression();
+                if (e->w->type != Type::Integer)
+                    fail(token, "list stride requires an integer");
+            }
+            if (slice) {
+                require(",");
+                auto offset = expression();
+                if (offset->type != Type::Integer)
+                    fail(token, "list stride offset requires an integer");
+                e->elements.push_back(std::move(offset));
+            }
+            require(")");
+            if (e->left->type != Type::List || e->right->type != Type::Integer || e->z->type != Type::Integer)
+                fail(token, "list ranges require a list and integer bounds");
+            e->height = 1 + std::max({e->left->height, e->right->height, e->z->height,
+                                      e->w ? e->w->height : 0u, slice ? e->elements.front()->height : 0u});
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llListFindStrided")) {
+            e->op = Expression::Op::ListFindStrided;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(",");
+            e->z = expression();
+            require(",");
+            e->w = expression();
+            require(",");
+            auto stride = expression();
+            require(")");
+            if (e->left->type != Type::List || e->right->type != Type::List || e->z->type != Type::Integer ||
+                e->w->type != Type::Integer || stride->type != Type::Integer)
+                fail(token, "llListFindStrided requires two lists and three integers");
+            e->height =
+                1 + std::max({e->left->height, e->right->height, e->z->height, e->w->height, stride->height});
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            e->elements.push_back(std::move(stride));
+            return e;
+        }
+        if (is("llListFindList") || is("llListFindListNext")) {
+            const bool next = is("llListFindListNext");
+            e->op = Expression::Op::ListFind;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            if (next) {
+                require(",");
+                e->z = expression();
+                if (e->z->type != Type::Integer)
+                    fail(token, "list search occurrence requires an integer");
+            }
+            require(")");
+            if (e->left->type != Type::List || e->right->type != Type::List)
+                fail(token, "llListFindList requires two lists");
+            e->height = 1 + std::max({e->left->height, e->right->height, e->z ? e->z->height : 0u});
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llList2CSV") || is("llCSV2List")) {
+            const bool decode = is("llCSV2List");
+            e->op = decode ? Expression::Op::CsvToList : Expression::Op::ListJoin;
+            e->type = decode ? Type::List : Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            const auto type = e->left->type;
+            if (decode ? (type != Type::String && type != Type::Key) : type != Type::List)
+                fail(token, "invalid CSV argument");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llParseString2List") || is("llParseStringKeepNulls")) {
+            using Op = Expression::Op;
+            e->op = is("llParseStringKeepNulls") ? Op::ParseStringKeepNulls : Op::ParseString;
+            e->type = Type::List;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(",");
+            e->z = expression();
+            require(")");
+            if ((e->left->type != Type::String && e->left->type != Type::Key) ||
+                e->right->type != Type::List || e->z->type != Type::List)
+                fail(token, "string parsing requires text, a separator list, and a spacer list");
+            e->height = 1 + std::max({e->left->height, e->right->height, e->z->height});
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llDumpList2String")) {
+            e->op = Expression::Op::ListJoin;
+            e->type = Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if (e->left->type != Type::List ||
+                (e->right->type != Type::String && e->right->type != Type::Key))
+                fail(token, "llDumpList2String requires a list and text separator");
+            e->height = 1 + std::max(e->left->height, e->right->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llList2String") || is("llList2Key") || is("llGetListEntryType") || is("llList2Integer") ||
+            is("llList2Float") || is("llList2Vector") || is("llList2Rot")) {
+            const bool key = is("llList2Key");
+            const bool entry_type = is("llGetListEntryType");
+            const bool integer = is("llList2Integer");
+            const bool real = is("llList2Float");
+            const bool vector = is("llList2Vector");
+            const bool rotation = is("llList2Rot");
+            e->op = rotation     ? Expression::Op::ListRotation
+                    : vector     ? Expression::Op::ListVector
+                    : real       ? Expression::Op::ListFloat
+                    : integer    ? Expression::Op::ListInteger
+                    : entry_type ? Expression::Op::ListEntryType
+                    : key        ? Expression::Op::ListKey
+                                 : Expression::Op::ListString;
+            e->type = rotation                  ? Type::Rotation
+                      : vector                  ? Type::Vector
+                      : real                    ? Type::Float
+                      : (entry_type || integer) ? Type::Integer
+                      : key                     ? Type::Key
+                                                : Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if (e->left->type != Type::List || e->right->type != Type::Integer)
+                fail(token, "list access requires a list and integer index");
+            e->height = 1 + std::max(e->left->height, e->right->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return component_access(std::move(e));
+        }
+        if (is("llJsonSetValue")) {
+            e->op = Expression::Op::JsonSet;
+            e->type = Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(",");
+            e->z = expression();
+            require(")");
+            if ((e->left->type != Type::String && e->left->type != Type::Key) ||
+                e->right->type != Type::List || (e->z->type != Type::String && e->z->type != Type::Key))
+                fail(token, "llJsonSetValue requires text, a list path and replacement text");
+            e->height = 1 + std::max({e->left->height, e->right->height, e->z->height});
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llJsonGetValue") || is("llJsonValueType")) {
+            e->slot = is("llJsonValueType");
+            e->op = Expression::Op::JsonLookup;
+            e->type = Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if ((e->left->type != Type::String && e->left->type != Type::Key) || e->right->type != Type::List)
+                fail(token, "JSON lookup requires text and a list path");
+            e->height = 1 + std::max(e->left->height, e->right->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llJson2List")) {
+            e->op = Expression::Op::JsonToList;
+            e->type = Type::List;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::String && e->left->type != Type::Key)
+                fail(token, "llJson2List requires text");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llList2Json")) {
+            e->op = Expression::Op::ListToJson;
+            e->type = Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if (e->left->type != Type::String || e->right->type != Type::List)
+                fail(token, "llList2Json requires a string type and list");
+            e->height = 1 + std::max(e->left->height, e->right->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llListRandomize")) {
+            e->op = Expression::Op::ListRandomize;
+            e->type = Type::List;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if (e->left->type != Type::List || e->right->type != Type::Integer)
+                fail(token, "llListRandomize requires a list and integer stride");
+            e->height = 1 + std::max(e->left->height, e->right->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llListSort") || is("llListSortStrided")) {
+            const bool indexed = is("llListSortStrided");
+            e->op = Expression::Op::ListSort;
+            e->type = Type::List;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(",");
+            if (indexed) {
+                e->w = expression();
+                require(",");
+            }
+            e->z = expression();
+            require(")");
+            if (e->left->type != Type::List || e->right->type != Type::Integer ||
+                e->z->type != Type::Integer || (e->w && e->w->type != Type::Integer))
+                fail(token, "list sorting requires a list and integer arguments");
+            e->height =
+                1 + std::max({e->left->height, e->right->height, e->z->height, e->w ? e->w->height : 0u});
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llListStatistics")) {
+            e->op = Expression::Op::ListStatistics;
+            e->type = Type::Float;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if (e->left->type != Type::Integer || e->right->type != Type::List)
+                fail(token, "llListStatistics requires an integer operation and a list");
+            e->height = 1 + std::max(e->left->height, e->right->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetListLength")) {
+            e->op = Expression::Op::ListLength;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::List)
+                fail(token, "llGetListLength requires a list");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("ZERO_ROTATION")) {
+            e->type = Type::Rotation;
+            e->value = LslRotation{};
+            advance();
+            return e;
+        }
+        if (is("ZERO_VECTOR")) {
+            e->type = Type::Vector;
+            e->value = framework::Vector3d{};
+            advance();
+            return e;
+        }
+        if (is("<")) {
+            advance();
+            e->op = Expression::Op::VectorLiteral;
+            e->type = Type::Vector;
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(",");
+            e->z = expression(0, true);
+            if (is(",")) {
+                advance();
+                e->w = expression(0, true);
+                e->type = Type::Rotation;
+            }
+            require(">");
+            if (!numeric(e->left->type) || !numeric(e->right->type) || !numeric(e->z->type) ||
+                (e->w && !numeric(e->w->type)))
+                fail(token, "vector and rotation components must be numeric");
+            e->height = std::max({e->left->height, e->right->height, e->z->height}) + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (token.kind == Kind::Float) {
+            e->type = Type::Float;
+            e->value = token.real;
+            advance();
+            return e;
+        }
+        if (token.kind == Kind::Integer) {
+            e->value = token.integer;
+            advance();
+            return e;
+        }
+        if (token.kind == Kind::String) {
+            e->type = Type::String;
+            e->value = token.text;
+            advance();
+            return e;
+        }
+        using Op = Expression::Op;
+        struct DetectorFunction {
+            std::string_view name;
+            Op op;
+            Type type;
+        };
+        static constexpr DetectorFunction detector_functions[] = {
+            {"llDetectedKey", Op::DetectedKey, Type::Key},
+            {"llDetectedName", Op::DetectedName, Type::String},
+            {"llDetectedOwner", Op::DetectedOwner, Type::Key},
+            {"llDetectedType", Op::DetectedType, Type::Integer},
+            {"llDetectedPos", Op::DetectedPosition, Type::Vector},
+            {"llDetectedVel", Op::DetectedVelocity, Type::Vector},
+            {"llDetectedGrab", Op::DetectedGrab, Type::Vector},
+            {"llDetectedRot", Op::DetectedRotation, Type::Rotation},
+            {"llDetectedGroup", Op::DetectedGroup, Type::Integer},
+            {"llDetectedLinkNumber", Op::DetectedLinkNumber, Type::Integer},
+            {"llDetectedTouchFace", Op::DetectedTouchFace, Type::Integer},
+            {"llDetectedTouchPos", Op::DetectedTouchPos, Type::Vector},
+            {"llDetectedTouchNormal", Op::DetectedTouchNormal, Type::Vector},
+            {"llDetectedTouchBinormal", Op::DetectedTouchBinormal, Type::Vector},
+            {"llDetectedTouchST", Op::DetectedTouchST, Type::Vector},
+            {"llDetectedTouchUV", Op::DetectedTouchUV, Type::Vector}};
+        for (const auto& [name, op, type] : detector_functions) {
+            if (!is(name))
+                continue;
+            e->op = op;
+            e->type = type;
+            advance();
+            require("(");
+            e->left = expression();
+            if (e->left->type != Type::Integer)
+                fail(token, "detector index must be integer");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            require(")");
+            return component_access(std::move(e));
+        }
+        if (token.kind == Kind::Name && is_drawing_function(token.text)) {
+            const auto function = token;
+            advance();
+            require("(");
+            do {
+                if (e->elements.size() == 5)
+                    fail(function, "too many drawing command arguments");
+                auto argument = expression();
+                e->height = std::max(e->height, argument->height + 1);
+                if (e->height > 128)
+                    fail(function, "native LSL expression depth exceeded");
+                e->elements.push_back(std::move(argument));
+                if (!is(","))
+                    break;
+                advance();
+            } while (true);
+            require(")");
+            const auto accepts = [](Type parameter, Type argument) {
+                return parameter == argument || (parameter == Type::String && argument == Type::Key) ||
+                       (parameter == Type::Float && argument == Type::Integer);
+            };
+            const auto command = std::ranges::find_if(drawing_commands, [&](const auto& candidate) {
+                return candidate.function == function.text &&
+                       candidate.parameters.size() + 1 == e->elements.size() &&
+                       accepts(Type::String, e->elements.front()->type) &&
+                       std::ranges::equal(candidate.parameters, e->elements | std::views::drop(1),
+                                          [&](Type parameter, const auto& argument) {
+                                              return accepts(parameter, argument->type);
+                                          });
+            });
+            if (command == std::end(drawing_commands))
+                fail(function, "invalid drawing command arguments");
+            e->slot = static_cast<std::size_t>(command - std::begin(drawing_commands));
+            e->op = Op::DrawingCommand;
+            e->type = Type::String;
+            return e;
+        }
+        if (is("llReplaceSubString")) {
+            e->op = Op::ReplaceSubstring;
+            e->type = Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(",");
+            e->z = expression();
+            require(",");
+            e->w = expression();
+            require(")");
+            const auto text = [](Type type) { return type == Type::String || type == Type::Key; };
+            if (!text(e->left->type) || !text(e->right->type) || !text(e->z->type) ||
+                e->w->type != Type::Integer)
+                fail(token, "substring replacement requires text arguments and integer count");
+            e->height = 1 + std::max({e->left->height, e->right->height, e->z->height, e->w->height});
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetSubString") || is("llDeleteSubString") || is("llInsertString")) {
+            const bool insert = is("llInsertString");
+            e->op = insert ? Op::InsertString : is("llGetSubString") ? Op::GetSubstring : Op::DeleteSubstring;
+            e->type = Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(",");
+            e->z = expression();
+            require(")");
+            const auto text = [](Type type) { return type == Type::String || type == Type::Key; };
+            if (!text(e->left->type) || e->right->type != Type::Integer ||
+                (insert ? !text(e->z->type) : e->z->type != Type::Integer))
+                fail(token, "invalid string range arguments");
+            e->height = 1 + std::max({e->left->height, e->right->height, e->z->height});
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llIntegerToBase64") || is("llBase64ToInteger")) {
+            const bool encode = is("llIntegerToBase64");
+            e->op = encode ? Op::EncodeInteger64 : Op::DecodeInteger64;
+            e->type = encode ? Type::String : Type::Integer;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            const auto type = e->left->type;
+            if (encode ? type != Type::Integer : (type != Type::String && type != Type::Key))
+                fail(token, "invalid integer Base64 argument");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llXorBase64StringsCorrect") || is("llXorBase64") || is("llXorBase64Strings")) {
+            e->slot = is("llXorBase64Strings") ? 2 : is("llXorBase64") ? 1 : 0;
+            e->op = Op::XorBase64;
+            e->type = Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            const auto text = [](Type type) { return type == Type::String || type == Type::Key; };
+            if (!text(e->left->type) || !text(e->right->type))
+                fail(token, "Base64 XOR requires two strings");
+            e->height = 1 + std::max(e->left->height, e->right->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llComputeHash") || is("llHMAC")) {
+            const bool hmac = is("llHMAC");
+            e->op = hmac ? Op::Hmac : Op::ComputeHash;
+            e->type = Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            if (hmac) {
+                require(",");
+                e->z = expression();
+            }
+            require(")");
+            const auto text = [](Type type) { return type == Type::String || type == Type::Key; };
+            if (!text(e->left->type) || !text(e->right->type) || (hmac && !text(e->z->type)))
+                fail(token, "hash function requires string arguments");
+            e->height = 1 + std::max({e->left->height, e->right->height, hmac ? e->z->height : 0u});
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llMD5String") || is("llSHA1String") || is("llSHA256String")) {
+            const bool md5 = is("llMD5String");
+            e->op = md5 ? Op::Md5 : is("llSHA1String") ? Op::Sha1 : Op::Sha256;
+            e->type = Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            if (md5) {
+                require(",");
+                e->right = expression();
+            }
+            require(")");
+            if ((e->left->type != Type::String && e->left->type != Type::Key) ||
+                (e->right && e->right->type != Type::Integer))
+                fail(token, "invalid string hash arguments");
+            e->height = 1 + std::max(e->left->height, e->right ? e->right->height : 0u);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llHash")) {
+            e->op = Op::Hash;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::String && e->left->type != Type::Key)
+                fail(token, "llHash requires text");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llChar") || is("llOrd")) {
+            const bool ordinal = is("llOrd");
+            e->op = ordinal ? Op::Ord : Op::Char;
+            e->type = ordinal ? Type::Integer : Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            if (ordinal) {
+                require(",");
+                e->right = expression();
+            }
+            require(")");
+            if (ordinal ? ((e->left->type != Type::String && e->left->type != Type::Key) ||
+                           e->right->type != Type::Integer)
+                        : e->left->type != Type::Integer)
+                fail(token, "invalid Unicode query arguments");
+            e->height = 1 + std::max(e->left->height, e->right ? e->right->height : 0u);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llStringTrim")) {
+            e->op = Op::StringTrim;
+            e->type = Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if ((e->left->type != Type::String && e->left->type != Type::Key) ||
+                e->right->type != Type::Integer)
+                fail(token, "string trim requires text and an integer mode");
+            e->height = 1 + std::max(e->left->height, e->right->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llSubStringIndex")) {
+            e->op = Op::SubstringIndex;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            const auto text = [](Type type) { return type == Type::String || type == Type::Key; };
+            if (!text(e->left->type) || !text(e->right->type))
+                fail(token, "substring search requires text");
+            e->height = 1 + std::max(e->left->height, e->right->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llStringLength") || is("llToUpper") || is("llToLower") || is("llEscapeURL") ||
+            is("llUnescapeURL") || is("llStringToBase64") || is("llBase64ToString")) {
+            const bool length = is("llStringLength");
+            e->op = length                   ? Op::StringLength
+                    : is("llToUpper")        ? Op::Upper
+                    : is("llToLower")        ? Op::Lower
+                    : is("llEscapeURL")      ? Op::EscapeUrl
+                    : is("llUnescapeURL")    ? Op::UnescapeUrl
+                    : is("llStringToBase64") ? Op::EncodeBase64
+                                             : Op::DecodeBase64;
+            e->type = length ? Type::Integer : Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::String && e->left->type != Type::Key)
+                fail(token, "string query requires text");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGenerateKey")) {
+            e->op = Op::GenerateKey;
+            e->type = Type::Key;
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
+        if (is("llSameGroup")) {
+            e->op = Expression::Op::SameGroup;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::String && e->left->type != Type::Key)
+                fail(token, "llSameGroup requires text");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llRequestAgentData") || is("llRequestSimulatorData")) {
+            e->op = is("llRequestAgentData") ? Expression::Op::RequestAgentData
+                                             : Expression::Op::RequestSimulatorData;
+            e->type = Type::Key;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if ((e->left->type != Type::String && e->left->type != Type::Key) ||
+                e->right->type != Type::Integer)
+                fail(token, "data request requires text and an integer selector");
+            e->height = 1 + std::max(e->left->height, e->right->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llRequestInventoryData")) {
+            e->op = Expression::Op::RequestInventoryData;
+            e->type = Type::Key;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::String && e->left->type != Type::Key)
+                fail(token, "llRequestInventoryData requires an inventory name");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetNotecardLineSync") || is("llGetNotecardLine") || is("llGetNumberOfNotecardLines")) {
+            using Op = Expression::Op;
+            const bool sync = is("llGetNotecardLineSync");
+            const bool count = is("llGetNumberOfNotecardLines");
+            e->op = sync ? Op::NotecardLineSync : count ? Op::NotecardLineCount : Op::NotecardLine;
+            e->type = sync ? Type::String : Type::Key;
+            advance();
+            require("(");
+            e->left = expression();
+            if (!count) {
+                require(",");
+                e->right = expression();
+            }
+            require(")");
+            if ((e->left->type != Type::String && e->left->type != Type::Key) ||
+                (e->right && e->right->type != Type::Integer))
+                fail(token, "notecard query requires a name or key and an integer line when applicable");
+            e->height = 1 + std::max(e->left->height, e->right ? e->right->height : 0u);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llKey2Name") || is("llName2Key") || is("llGetUsername") || is("llGetDisplayName") ||
+            is("llRequestUsername") || is("llRequestDisplayName") || is("llRequestUserKey")) {
+            using Op = Expression::Op;
+            const bool name_to_key = is("llName2Key");
+            const bool request_username = is("llRequestUsername");
+            const bool request_display = is("llRequestDisplayName");
+            const bool request_key = is("llRequestUserKey");
+            e->op = name_to_key             ? Op::NameToKey
+                    : request_key          ? Op::RequestUserKey
+                    : request_username     ? Op::RequestUsername
+                    : request_display      ? Op::RequestDisplayName
+                    : is("llKey2Name")      ? Op::KeyToName
+                    : is("llGetUsername")   ? Op::Username
+                                            : Op::DisplayName;
+            e->type = name_to_key || request_username || request_display || request_key ? Type::Key : Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::String && e->left->type != Type::Key)
+                fail(token, "name lookup requires text");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetOwnerKey") || is("llGetAgentSize") || is("llGetAgentLanguage")) {
+            const bool size = is("llGetAgentSize");
+            const bool language = is("llGetAgentLanguage");
+            e->op = language ? Op::AgentLanguage : size ? Op::AgentSize : Op::LookupOwnerKey;
+            e->type = language ? Type::String : size ? Type::Vector : Type::Key;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::String && e->left->type != Type::Key)
+                fail(token, size ? "llGetAgentSize requires a key" : "llGetOwnerKey requires text");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return component_access(std::move(e));
+        }
+        if (is("llGetKey") || is("llGetCreator") || is("llGetOwner")) {
+            e->op = is("llGetKey")       ? Expression::Op::ObjectKey
+                    : is("llGetCreator") ? Expression::Op::CreatorKey
+                                         : Expression::Op::OwnerKey;
+            e->type = Type::Key;
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
+        if (is("llGetInventoryNumber") || is("llGetInventoryName")) {
+            const bool name = is("llGetInventoryName");
+            e->op = name ? Op::InventoryName : Op::InventoryNumber;
+            e->type = name ? Type::String : Type::Integer;
+            advance();
+            require("(");
+            e->left = expression();
+            if (name) {
+                require(",");
+                e->right = expression();
+            }
+            require(")");
+            if (e->left->type != Type::Integer || (e->right && e->right->type != Type::Integer))
+                fail(token, "inventory type and index require integers");
+            e->height = 1 + std::max(e->left->height, e->right ? e->right->height : 0u);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetInventoryPermMask") || is("llGetObjectLinkKey")) {
+            const bool link = is("llGetObjectLinkKey");
+            e->op = link ? Op::ObjectLinkKey : Op::InventoryPermission;
+            e->type = link ? Type::Key : Type::Integer;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if ((e->left->type != Type::String && e->left->type != Type::Key) ||
+                e->right->type != Type::Integer)
+                fail(token, link ? "llGetObjectLinkKey requires a key and integer link number"
+                                 : "inventory permission query requires a name and integer mask selector");
+            e->height = 1 + std::max(e->left->height, e->right->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetObjectPermMask")) {
+            e->op = Op::ObjectPermission;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Integer)
+                fail(token, "llGetObjectPermMask requires an integer mask selector");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetScriptState")) {
+            e->op = Op::ScriptRunning;
+            e->type = Type::Integer;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::String && e->left->type != Type::Key)
+                fail(token, "script name requires text");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetInventoryType") || is("llGetInventoryKey") || is("llGetInventoryDesc") ||
+            is("llGetInventoryCreator") || is("llGetInventoryAcquireTime")) {
+            const bool key = is("llGetInventoryKey");
+            const bool description = is("llGetInventoryDesc");
+            const bool creator = is("llGetInventoryCreator");
+            const bool acquire_time = is("llGetInventoryAcquireTime");
+            e->op = creator        ? Op::InventoryCreator
+                    : acquire_time ? Op::InventoryAcquireTime
+                    : description  ? Op::InventoryDescription
+                    : key          ? Op::InventoryKey
+                                   : Op::InventoryType;
+            e->type = description || acquire_time ? Type::String : key || creator ? Type::Key : Type::Integer;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::String && e->left->type != Type::Key)
+                fail(token, "inventory name requires text");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llLinksetDataWrite") || is("llLinksetDataWriteProtected") || is("llLinksetDataDelete") ||
+            is("llLinksetDataDeleteProtected")) {
+            const bool write = is("llLinksetDataWrite") || is("llLinksetDataWriteProtected");
+            const bool protected_call =
+                is("llLinksetDataWriteProtected") || is("llLinksetDataDeleteProtected");
+            e->op = Op::LinksetDataWrite;
+            e->type = Type::Integer;
+            advance();
+            require("(");
+            e->left = expression();
+            if (write) {
+                require(",");
+                e->right = expression();
+            }
+            if (protected_call) {
+                require(",");
+                e->z = expression();
+            }
+            require(")");
+            for (const auto* argument : {e->left.get(), e->right.get(), e->z.get()}) {
+                if (!argument)
+                    continue;
+                if (argument->type != Type::String)
+                    fail(token, "Linkset data mutation requires string arguments");
+                e->height = std::max(e->height, 1 + argument->height);
+            }
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llLinksetDataDeleteFound")) {
+            e->op = Op::LinksetDataDeleteFound;
+            e->type = Type::List;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if (e->left->type != Type::String || e->right->type != Type::String)
+                fail(token, "Linkset data bulk deletion requires a pattern and password");
+            e->height = 1 + std::max(e->left->height, e->right->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llLinksetDataListKeys") || is("llLinksetDataFindKeys") || is("llLinksetDataCountFound")) {
+            const bool count = is("llLinksetDataCountFound");
+            const bool filtered = !is("llLinksetDataListKeys");
+            e->op = count ? Op::LinksetDataCountFound : filtered ? Op::LinksetDataFind : Op::LinksetDataList;
+            e->type = count ? Type::Integer : Type::List;
+            advance();
+            require("(");
+            if (filtered) {
+                e->left = expression();
+                if (e->left->type != Type::String)
+                    fail(token, "Linkset data pattern must be a string");
+                if (!count)
+                    require(",");
+            }
+            if (!count) {
+                e->right = expression();
+                require(",");
+                e->z = expression();
+                if (e->right->type != Type::Integer || e->z->type != Type::Integer)
+                    fail(token, "Linkset data pagination requires integers");
+            }
+            require(")");
+            for (const auto* argument : {e->left.get(), e->right.get(), e->z.get()})
+                if (argument)
+                    e->height = std::max(e->height, 1 + argument->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llLinksetDataCountKeys") || is("llLinksetDataAvailable")) {
+            e->op = is("llLinksetDataAvailable") ? Op::LinksetDataAvailable : Op::LinksetDataCount;
+            e->type = Type::Integer;
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
+        if (is("llLinksetDataRead") || is("llLinksetDataReadProtected")) {
+            const bool protected_read = is("llLinksetDataReadProtected");
+            e->op = Op::LinksetDataRead;
+            e->type = Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            if (protected_read) {
+                require(",");
+                e->right = expression();
+            }
+            require(")");
+            if (e->left->type != Type::String || (e->right && e->right->type != Type::String))
+                fail(token, "Linkset data read requires string arguments");
+            e->height = 1 + std::max(e->left->height, e->right ? e->right->height : 0);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetAnimationOverride")) {
+            e->op = Op::AnimationOverride;
+            e->type = Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::String)
+                fail(token, "Animation override requires a movement state string");
+            e->height = 1 + e->left->height;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetAnimationList") || is("llGetAnimation")) {
+            const bool list = is("llGetAnimationList");
+            e->op = list ? Op::AnimationList : Op::AnimationState;
+            e->type = list ? Type::List : Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Key && e->left->type != Type::String)
+                fail(token, "Animation list requires an agent key");
+            e->height = 1 + e->left->height;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetPermissions") || is("llGetPermissionsKey")) {
+            const bool key = is("llGetPermissionsKey");
+            e->op = key ? Op::ScriptPermissionsKey : Op::ScriptPermissions;
+            e->type = key ? Type::Key : Type::Integer;
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
+        if (is("llGetStartString") || is("llGetStartParameter")) {
+            const bool string_parameter = is("llGetStartString");
+            e->op = string_parameter ? Op::StartString : Op::StartParameter;
+            e->type = string_parameter ? Type::String : Type::Integer;
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
+        if (is("llGetObjectName") || is("llGetObjectDesc") || is("llGetScriptName")) {
+            e->op = is("llGetObjectName")   ? Op::ObjectName
+                    : is("llGetScriptName") ? Op::ScriptName
+                                            : Op::ObjectDescription;
+            e->type = Type::String;
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
+        if (is("llGetVel") || is("llGetOmega") || is("llGetAccel")) {
+            e->op = is("llGetVel")     ? Op::ObjectVelocity
+                    : is("llGetOmega") ? Op::ObjectOmega
+                                       : Op::ObjectAcceleration;
+            e->type = Type::Vector;
+            advance();
+            require("(");
+            require(")");
+            return component_access(std::move(e));
+        }
+        if (is("llGetEnergy")) {
+            e->type = Type::Float;
+            e->value = 1.;
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
+        if (is("URL_REQUEST_GRANTED") || is("URL_REQUEST_DENIED")) {
+            e->type = Type::String;
+            e->value = token.text;
+            advance();
+            return e;
+        }
+        if (is("llRequestURL") || is("llRequestSecureURL") || is("llGetFreeURLs") ||
+            is("osRequestURL") || is("osRequestSecureURL")) {
+            const bool free = is("llGetFreeURLs");
+            const bool extended = is("osRequestURL") || is("osRequestSecureURL");
+            const bool secure = is("llRequestSecureURL") || is("osRequestSecureURL");
+            e->type = free ? Type::Integer : Type::Key;
+            e->op = free ? Op::FreeUrls : secure ? Op::RequestSecureUrl : Op::RequestUrl;
+            advance();
+            require("(");
+            if (extended) {
+                e->left = expression();
+                if (e->left->type != Type::List)
+                    fail(token, "OSSL URL options must be a list");
+            }
+            require(")");
+            return e;
+        }
+        if (is("llReleaseURL") || is("llGetHTTPHeader") || is("llHTTPResponse") || is("llSetContentType")) {
+            const bool release = is("llReleaseURL");
+            const bool respond = is("llHTTPResponse");
+            const bool content_type = is("llSetContentType");
+            e->op = release ? Op::ReleaseUrl : respond ? Op::HttpResponse
+                    : content_type ? Op::HttpContentType : Op::HttpHeader;
+            e->type = release || respond || content_type ? Type::Integer : Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            if (!release) {
+                require(",");
+                e->right = expression();
+                if (respond) {
+                    require(",");
+                    e->z = expression();
+                }
+            }
+            require(")");
+            if ((e->left->type != Type::Key && e->left->type != Type::String) ||
+                (respond && (e->right->type != Type::Integer || e->z->type != Type::String)) ||
+                (!release && !respond && e->right->type != (content_type ? Type::Integer : Type::String)))
+                fail(token, "invalid inbound HTTP arguments");
+            return e;
+        }
+        if (is("llGetFreeMemory") || is("llGetUsedMemory")) {
+            e->op = is("llGetFreeMemory") ? Op::GetFreeMemory : Op::GetUsedMemory;
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
+        if (is("llGetMemoryLimit") || is("llGetSPMaxMemory")) {
+            e->value = std::int32_t{65536};
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
+        if (is("llSetMemoryLimit")) {
+            e->op = Op::SetMemoryLimit;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Integer)
+                fail(token, "llSetMemoryLimit requires an integer");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetParcelDetails")) {
+            e->op = Expression::Op::ParcelDetails;
+            e->type = Type::List;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if (e->left->type != Type::Vector || e->right->type != Type::List)
+                fail(token, "llGetParcelDetails requires a vector and list");
+            e->height = 1 + std::max(e->left->height, e->right->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetParcelFlags") || is("llScriptDanger") || is("llGetLandOwnerAt") || is("llOverMyLand")) {
+            using Op = Expression::Op;
+            const bool over_my_land = is("llOverMyLand");
+            const bool land_owner = is("llGetLandOwnerAt");
+            e->op = over_my_land ? Op::OverMyLand : land_owner ? Op::LandOwnerAt
+                          : is("llScriptDanger") ? Op::ScriptDanger : Op::ParcelFlags;
+            e->type = land_owner ? Type::Key : Type::Integer;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (over_my_land && e->left->type != Type::String && e->left->type != Type::Key)
+                fail(token, "llOverMyLand requires a key");
+            if (!over_my_land && e->left->type != Type::Vector)
+                fail(token, "parcel query requires a vector");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("osGetAgents")) {
+            advance();
+            require("(");
+            require(")");
+            e->op = Op::RegionAgentNames;
+            e->type = Type::List;
+            return e;
+        }
+        if (is("osReplaceAgentEnvironment")) {
+            advance();
+            require("(");
+            for (std::size_t i = 0; i < 3; ++i) {
+                if (i != 0)
+                    require(",");
+                auto argument = expression();
+                const auto type = argument->type;
+                if (i == 1 ? type != Type::Integer : type != Type::String && type != Type::Key)
+                    fail(token, "Invalid agent environment replacement argument");
+                e->height = std::max(e->height, argument->height + 1);
+                if (e->height > 128)
+                    fail(token, "native LSL expression depth exceeded");
+                e->elements.push_back(std::move(argument));
+            }
+            require(")");
+            e->op = Op::ReplaceAgentEnvironment;
+            e->type = Type::Integer;
+            return e;
+        }
+        if (is("osReplaceRegionEnvironment") || is("osReplaceParcelEnvironment")) {
+            const bool parcel = is("osReplaceParcelEnvironment");
+            advance();
+            require("(");
+            const std::size_t count = parcel ? 2 : 7;
+            for (std::size_t i = 0; i < count; ++i) {
+                if (i != 0)
+                    require(",");
+                auto argument = expression();
+                const auto type = argument->type;
+                if ((i == 0 && type != Type::Integer) ||
+                    (i == 1 && type != Type::String && type != Type::Key) ||
+                    (i >= 2 && !numeric(type)))
+                    fail(token, "Invalid environment replacement argument");
+                e->height = std::max(e->height, argument->height + 1);
+                if (e->height > 128)
+                    fail(token, "native LSL expression depth exceeded");
+                e->elements.push_back(std::move(argument));
+            }
+            require(")");
+            e->op = parcel ? Op::ReplaceParcelEnvironment : Op::ReplaceRegionEnvironment;
+            e->type = Type::Integer;
+            return e;
+        }
+        if (token.kind == Kind::Name && is_environment_query(token.text)) {
+            const bool time_string = is("osGetApparentTimeString") || is("osGetApparentRegionTimeString");
+            const bool sun_parameter = is("osGetSunParam") || is("osSunGetParam");
+            e->op = time_string ? Op::ApparentTimeString : sun_parameter ? Op::SunParameter
+                  : is("osGetCurrentSunHour") ? Op::ApparentSunHour : Op::ApparentTime;
+            e->type = time_string ? Type::String : Type::Float;
+            e->slot = is("osSunGetParam") ? 1 : 0;
+            advance();
+            require("(");
+            if (time_string || sun_parameter) {
+                e->left = expression();
+                if (time_string && e->left->type != Type::Integer)
+                    fail(token, "Apparent time format flag must be an integer");
+                if (sun_parameter && e->left->type != Type::String && e->left->type != Type::Key)
+                    fail(token, "Sun parameter name must be a string");
+                e->height = e->left->height + 1;
+                if (e->height > 128)
+                    fail(token, "native LSL expression depth exceeded");
+            }
+            require(")");
+            return e;
+        }
+        if (token.kind == Kind::Name && token.text.starts_with("llGet")) {
+            const auto query = std::ranges::find(lsl_environment_queries, token.text, &LslEnvironmentQuery::name);
+            if (query != std::end(lsl_environment_queries)) {
+                advance();
+                require("(");
+                require(")");
+                e->op = Op::EnvironmentQuery;
+                e->type = query->type;
+                e->slot = static_cast<std::size_t>(query - std::begin(lsl_environment_queries));
+                return e;
+            }
+        }
+        if (is("osGetAgentIP")) {
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::String && e->left->type != Type::Key)
+                fail(token, "osGetAgentIP requires an avatar key");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            e->op = Op::AgentIpAddress;
+            e->type = Type::String;
+            return e;
+        }
+        if (is("llGetAgentList")) {
+            e->op = Expression::Op::AgentList;
+            e->type = Type::List;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if (e->left->type != Type::Integer || e->right->type != Type::List)
+                fail(token, "llGetAgentList requires an integer scope and list options");
+            e->height = 1 + std::max(e->left->height, e->right->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetNumberOfSides")) {
+            e->op = Op::LinkSides;
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
+        if (is("llGetLinkNumberOfSides")) {
+            e->op = Op::LinkSides;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Integer)
+                fail(token, "llGetLinkNumberOfSides requires an integer");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetLinkSitFlags")) {
+            e->op = Op::SitFlags;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Integer)
+                fail(token, "llGetLinkSitFlags requires an integer link number");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llAvatarOnSitTarget") || is("llAvatarOnLinkSitTarget") ||
+            is("osGetSitActiveRange") || is("osGetLinkSitActiveRange") ||
+            is("osGetStandTarget") || is("osGetLinkStandTarget")) {
+            const bool stand = is("osGetStandTarget") || is("osGetLinkStandTarget");
+            const bool range = is("osGetSitActiveRange") || is("osGetLinkSitActiveRange");
+            const bool linked = is("llAvatarOnLinkSitTarget") || is("osGetLinkSitActiveRange") ||
+                                is("osGetLinkStandTarget");
+            e->op = stand ? Op::StandTarget : range ? Op::SitActiveRange : Op::SitTargetAvatar;
+            e->type = stand ? Type::Vector : range ? Type::Float : Type::Key;
+            advance();
+            require("(");
+            if (linked) {
+                e->left = expression();
+                if (e->left->type != Type::Integer)
+                    fail(token, "sit query requires an integer link number");
+                e->height = e->left->height + 1;
+                if (e->height > 128)
+                    fail(token, "native LSL expression depth exceeded");
+            }
+            require(")");
+            return e;
+        }
+        if (is("llGetLinkKey") || is("llGetLinkName")) {
+            const bool name = is("llGetLinkName");
+            e->op = name ? Op::LinkName : Op::LinkKey;
+            e->type = name ? Type::String : Type::Key;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Integer)
+                fail(token, name ? "llGetLinkName requires an integer" : "llGetLinkKey requires an integer");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetAttachedList") || is("llGetObjectPrimCount")) {
+            const bool list = is("llGetAttachedList");
+            e->op = list ? Op::AttachedList : Op::ObjectPrimCount;
+            e->type = list ? Type::List : Type::Integer;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Key && e->left->type != Type::String)
+                fail(token,
+                     list ? "llGetAttachedList requires a key" : "llGetObjectPrimCount requires a key");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetAttached") || is("llGetLinkNumber") || is("llGetNumberOfPrims")) {
+            e->op = is("llGetAttached")     ? Op::AttachmentPoint
+                    : is("llGetLinkNumber") ? Op::LinkNumber
+                                            : Op::PrimCount;
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
+        if (is("llGetRegionAgentCount") || is("llGetRegionFlags")) {
+            e->op = is("llGetRegionFlags") ? Expression::Op::RegionFlags : Expression::Op::RegionAgentCount;
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
+        if (is("llGetRegionTimeDilation") || is("llGetRegionFPS")) {
+            e->op = is("llGetRegionFPS") ? Op::RegionFPS : Op::RegionTimeDilation;
+            e->type = Type::Float;
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
+        if (is("llGetLocalRot") || is("llGetRot") || is("llGetRootRotation")) {
+            e->op = is("llGetLocalRot") ? Op::ObjectLocalRotation
+                    : is("llGetRot")    ? Op::ObjectWorldRotation
+                                        : Op::ObjectRootRotation;
+            e->type = Type::Rotation;
+            advance();
+            require("(");
+            require(")");
+            return component_access(std::move(e));
+        }
+        if (is("llGetGeometricCenter")) {
+            e->op = Op::GeometricCenter;
+            e->type = Type::Vector;
+            advance();
+            require("(");
+            require(")");
+            return component_access(std::move(e));
+        }
+        if (is("llGetPos") || is("llGetRootPosition") || is("llGetLocalPos") || is("llGetScale") ||
+            is("llGetRegionName") || is("llGetRegionCorner")) {
+            const bool name = is("llGetRegionName");
+            e->op = name                      ? Op::RegionName
+                    : is("llGetRegionCorner") ? Op::RegionCorner
+                    : is("llGetScale")        ? Op::ObjectScale
+                    : is("llGetLocalPos")     ? Op::ObjectLocalPosition
+                    : is("llGetRootPosition") ? Op::ObjectRootPosition
+                                              : Op::ObjectPosition;
+            e->type = name ? Type::String : Type::Vector;
+            advance();
+            require("(");
+            require(")");
+            return component_access(std::move(e));
+        }
+        if (is("llModPow")) {
+            e->op = Op::ModPow;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(",");
+            e->z = expression();
+            require(")");
+            if (e->left->type != Type::Integer || e->right->type != Type::Integer ||
+                e->z->type != Type::Integer)
+                fail(token, "llModPow requires three integer arguments");
+            e->height = 1 + std::max({e->left->height, e->right->height, e->z->height});
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        static constexpr std::pair<std::string_view, Op> scalar_math[] = {
+            {"llAbs", Op::Abs},    {"llFabs", Op::Fabs},   {"llSqrt", Op::Sqrt}, {"llPow", Op::Pow},
+            {"llSin", Op::Sin},    {"llCos", Op::Cos},     {"llTan", Op::Tan},   {"llAsin", Op::Asin},
+            {"llAcos", Op::Acos},  {"llAtan2", Op::Atan2}, {"llLog", Op::Log},   {"llLog10", Op::Log10},
+            {"llFrand", Op::Frand}};
+        for (const auto& [name, op] : scalar_math) {
+            if (!is(name))
+                continue;
+            const bool integer = op == Op::Abs;
+            const bool binary = op == Op::Pow || op == Op::Atan2;
+            e->op = op;
+            e->type = integer ? Type::Integer : Type::Float;
+            advance();
+            require("(");
+            e->left = expression();
+            if (binary) {
+                require(",");
+                e->right = expression();
+            }
+            require(")");
+            if ((integer && e->left->type != Type::Integer) || !numeric(e->left->type) ||
+                (e->right && !numeric(e->right->type)))
+                fail(token, "invalid math argument type");
+            e->height = 1 + std::max(e->left->height, e->right ? e->right->height : 0u);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llFloor") || is("llCeil") || is("llRound")) {
+            e->op = is("llFloor") ? Op::Floor : is("llCeil") ? Op::Ceil : Op::Round;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (!numeric(e->left->type))
+                fail(token, "rounding requires a numeric argument");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llAxes2Rot")) {
+            e->op = Op::AxesToRotation;
+            e->type = Type::Rotation;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(",");
+            e->z = expression();
+            require(")");
+            if (e->left->type != Type::Vector || e->right->type != Type::Vector || e->z->type != Type::Vector)
+                fail(token, "llAxes2Rot requires three vectors");
+            e->height = 1 + std::max({e->left->height, e->right->height, e->z->height});
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return component_access(std::move(e));
+        }
+        if (is("llEuler2Rot") || is("llRot2Euler")) {
+            const bool to_rotation = is("llEuler2Rot");
+            e->op = to_rotation ? Op::EulerToRotation : Op::RotationToEuler;
+            e->type = to_rotation ? Type::Rotation : Type::Vector;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != (to_rotation ? Type::Vector : Type::Rotation))
+                fail(token,
+                     to_rotation ? "llEuler2Rot requires a vector" : "llRot2Euler requires a rotation");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return component_access(std::move(e));
+        }
+        if (is("llRotBetween")) {
+            e->op = Op::RotationBetweenVectors;
+            e->type = Type::Rotation;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if (e->left->type != Type::Vector || e->right->type != Type::Vector)
+                fail(token, "llRotBetween requires two vectors");
+            e->height = 1 + std::max(e->left->height, e->right->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return component_access(std::move(e));
+        }
+        if (is("llRot2Fwd") || is("llRot2Left") || is("llRot2Up")) {
+            e->op = Op::RotationBasis;
+            e->type = Type::Vector;
+            e->slot = is("llRot2Fwd") ? 0 : is("llRot2Left") ? 1 : 2;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Rotation)
+                fail(token, "rotation direction requires a rotation");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return component_access(std::move(e));
+        }
+        if (is("llAxisAngle2Rot") || is("llRot2Axis") || is("llRot2Angle") || is("llAngleBetween")) {
+            const bool from_axis = is("llAxisAngle2Rot");
+            const bool to_axis = is("llRot2Axis");
+            const bool between = is("llAngleBetween");
+            e->op = from_axis ? Op::AxisAngleToRotation
+                    : to_axis ? Op::RotationToAxis
+                    : between ? Op::RotationAngleBetween
+                              : Op::RotationToAngle;
+            e->type = from_axis ? Type::Rotation : to_axis ? Type::Vector : Type::Float;
+            advance();
+            require("(");
+            e->left = expression();
+            if (from_axis) {
+                require(",");
+                e->right = expression();
+                if (e->left->type != Type::Vector || !numeric(e->right->type))
+                    fail(token, "llAxisAngle2Rot requires a vector and numeric angle");
+            } else {
+                if (between) {
+                    require(",");
+                    e->right = expression();
+                }
+                if (e->left->type != Type::Rotation || (between && e->right->type != Type::Rotation))
+                    fail(token, "rotation query requires rotation arguments");
+            }
+            require(")");
+            e->height = 1 + std::max(e->left->height, e->right ? e->right->height : 0u);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return component_access(std::move(e));
+        }
+        if (is("llLinear2sRGB") || is("llsRGB2Linear")) {
+            e->op = Op::ColorConversion;
+            e->type = Type::Vector;
+            e->slot = is("llsRGB2Linear");
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Vector)
+                fail(token, "color conversion requires a vector");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return component_access(std::move(e));
+        }
+        if (is("llVecMag") || is("llVecNorm") || is("llVecDist")) {
+            const bool distance = is("llVecDist");
+            const bool normalize = is("llVecNorm");
+            e->op = distance ? Op::VectorDistance : normalize ? Op::VectorNormalize : Op::VectorMagnitude;
+            e->type = normalize ? Type::Vector : Type::Float;
+            advance();
+            require("(");
+            e->left = expression();
+            if (distance) {
+                require(",");
+                e->right = expression();
+            }
+            require(")");
+            if (e->left->type != Type::Vector || (e->right && e->right->type != Type::Vector))
+                fail(token, "vector query requires vector arguments");
+            e->height = 1 + std::max(e->left->height, e->right ? e->right->height : 0u);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return component_access(std::move(e));
+        }
+        if (is("llGetTime") || is("llGetAndResetTime")) {
+            e->op = is("llGetTime") ? Expression::Op::Elapsed : Expression::Op::ElapsedReset;
+            e->type = Type::Float;
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
+        if (is("llGetGMTclock") || is("llGetWallclock") || is("llGetTimeOfDay")) {
+            e->op = is("llGetGMTclock")    ? Expression::Op::GmtClock
+                    : is("llGetWallclock") ? Expression::Op::Wallclock
+                                           : Expression::Op::TimeOfDay;
+            e->type = Type::Float;
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
+        if (is("llGetDate") || is("llGetTimestamp")) {
+            e->op = is("llGetDate") ? Expression::Op::Date : Expression::Op::Timestamp;
+            e->type = Type::String;
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
+        if (is("llGetUnixTime")) {
+            advance();
+            require("(");
+            require(")");
+            e->op = Expression::Op::UnixTime;
+            return e;
+        }
+        if (is("llWater") || is("llGround") || is("llCloud") ||
+            is("llGroundNormal") || is("llGroundSlope") || is("llGroundContour")) {
+            e->type = Type::Float;
+            if (is("llGround"))
+                e->op = Op::Ground;
+            else if (is("llCloud"))
+                e->op = Op::Cloud;
+            else if (is("llWater"))
+                e->op = Op::Water;
+            else {
+                e->type = Type::Vector;
+                if (is("llGroundNormal"))
+                    e->op = Op::GroundNormal;
+                else if (is("llGroundSlope"))
+                    e->op = Op::GroundSlope;
+                else
+                    e->op = Op::GroundContour;
+            }
+            advance();
+            require("(");
+            e->left = expression();
+            if (e->left->type != Type::Vector)
+                fail(token, "terrain query requires a vector");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            require(")");
+            return e;
+        }
+        if (is("JSON_APPEND")) {
+            e->type = Type::String;
+            e->value = std::string("-1");
+            advance();
+            return e;
+        }
+        constexpr std::string_view json_constants[] = {"JSON_INVALID", "JSON_OBJECT", "JSON_ARRAY",
+                                                       "JSON_NUMBER",  "JSON_STRING", "JSON_NULL",
+                                                       "JSON_TRUE",    "JSON_FALSE",  "JSON_DELETE"};
+        for (std::size_t i = 0; i < std::size(json_constants); ++i) {
+            if (token.text != json_constants[i] || token.kind != Kind::Name)
+                continue;
+            e->type = Type::String;
+            e->value = json_marker(static_cast<char16_t>(0xFDD0 + i));
+            advance();
+            return e;
+        }
+        if (is("EOF") || is("NAK")) {
+            e->type = Type::String;
+            e->value = std::string(is("EOF") ? "\n\n\n" : "\n\x15\n");
+            advance();
+            return e;
+        }
+        if (is("NULL_KEY")) {
+            e->type = Type::Key;
+            e->value = framework::Uuid{}.str();
+            advance();
+            return e;
+        }
+        static constexpr std::pair<std::string_view, float> math_constants[] = {
+            {"PI", 3.14159274f},        {"TWO_PI", 6.28318548f},
+            {"PI_BY_TWO", 1.57079637f}, {"DEG_TO_RAD", 0.01745329238f},
+            {"RAD_TO_DEG", 57.29578f},  {"SQRT2", 1.414213538f}};
+        for (const auto& [name, value] : math_constants) {
+            if (!is(name))
+                continue;
+            e->type = Type::Float;
+            e->value = double(value);
+            advance();
+            return e;
+        }
+        static constexpr std::pair<std::string_view, std::int32_t> integer_constants[] = {
+            {"CONTENT_TYPE_TEXT", 0}, {"CONTENT_TYPE_HTML", 1}, {"CONTENT_TYPE_XML", 2},
+            {"CONTENT_TYPE_XHTML", 3}, {"CONTENT_TYPE_ATOM", 4}, {"CONTENT_TYPE_JSON", 5},
+            {"CONTENT_TYPE_LLSD", 6}, {"CONTENT_TYPE_FORM", 7}, {"CONTENT_TYPE_RSS", 8},
+            {"FALSE", 0},
+            {"TRUE", 1},
+            {"LINK_SET", -1},
+            {"LINK_ALL_OTHERS", -2},
+            {"LINK_ALL_CHILDREN", -3},
+            {"LINK_THIS", -4},
+            {"SIT_FLAG_SIT_TARGET", 0x01},
+            {"SIT_FLAG_ALLOW_UNSIT", 0x02},
+            {"SIT_FLAG_SCRIPTED_ONLY", 0x04},
+            {"SIT_FLAG_NO_COLLIDE", 0x10},
+            {"SIT_FLAG_NO_DAMAGE", 0x20},
+            {"SIT_FLAG_OPENSIMFORCED", 0x32},
+            {"LINK_ROOT", 1},
+            {"PAY_HIDE", -1},
+            {"PAY_DEFAULT", -2},
+            {"PERMISSION_DEBIT", 0x02},
+            {"PERMISSION_TAKE_CONTROLS", 0x04},
+            {"PERMISSION_REMAP_CONTROLS", 0x08},
+            {"PERMISSION_TRIGGER_ANIMATION", 0x010},
+            {"PERMISSION_ATTACH", 0x20},
+            {"PERMISSION_RELEASE_OWNERSHIP", 0x40},
+            {"PERMISSION_CHANGE_LINKS", 0x80},
+            {"PERMISSION_CHANGE_JOINTS", 0x100},
+            {"PERMISSION_CHANGE_PERMISSIONS", 0x200},
+            {"PERMISSION_TRACK_CAMERA", 0x400},
+            {"PERMISSION_CONTROL_CAMERA", 0x800},
+            {"PERMISSION_TELEPORT", 0x1000},
+            {"PERMISSION_SILENT_ESTATE_MANAGEMENT", 0x4000},
+            {"PERMISSION_OVERRIDE_ANIMATIONS", 0x8000},
+            {"PERMISSION_RETURN_OBJECTS", 0x10000},
+            {"LINKSETDATA_RESET", 0},
+            {"LINKSETDATA_UPDATE", 1},
+            {"LINKSETDATA_DELETE", 2},
+            {"LINKSETDATA_MULTIDELETE", 3},
+            {"LINKSETDATA_OK", 0},
+            {"LINKSETDATA_EMEMORY", 1},
+            {"LINKSETDATA_ENOKEY", 2},
+            {"LINKSETDATA_EPROTECTED", 3},
+            {"LINKSETDATA_NOTFOUND", 4},
+            {"LINKSETDATA_NOUPDATE", 5},
+            {"TYPE_INVALID", 0},
+            {"TYPE_INTEGER", 1},
+            {"TYPE_FLOAT", 2},
+            {"TYPE_STRING", 3},
+            {"PARCEL_DETAILS_PRIM_CAPACITY", 7},
+            {"PARCEL_DETAILS_PRIM_USED", 8},
+            {"PARCEL_DETAILS_SCRIPT_DANGER", 13},
+            {"PARCEL_DETAILS_GEOMETRICCENTER", 66},
+            {"PARCEL_DETAILS_SEE_AVATARS", 6},
+            {"PARCEL_DETAILS_DWELL", 64},
+            {"PARCEL_DETAILS_GETCLAIMDATE", 65},
+            {"PARCEL_DETAILS_LANDING_POINT", 9},
+            {"PARCEL_DETAILS_LANDING_LOOKAT", 10},
+            {"PARCEL_DETAILS_TP_ROUTING", 11},
+            {"PARCEL_DETAILS_NAME", 0},
+            {"PARCEL_DETAILS_DESC", 1},
+            {"PARCEL_DETAILS_GROUP", 3},
+            {"PARCEL_DETAILS_OWNER", 2},
+            {"PARCEL_DETAILS_AREA", 4},
+            {"PARCEL_DETAILS_ID", 5},
+            {"PARCEL_DETAILS_FLAGS", 12},
+            {"REGION_FLAG_ALLOW_DAMAGE", 0x1},
+            {"REGION_FLAG_FIXED_SUN", 0x10},
+            {"REGION_FLAG_BLOCK_TERRAFORM", 0x40},
+            {"REGION_FLAG_SANDBOX", 0x100},
+            {"REGION_FLAG_DISABLE_COLLISIONS", 0x1000},
+            {"REGION_FLAG_DISABLE_PHYSICS", 0x4000},
+            {"REGION_FLAG_BLOCK_FLY", 0x80000},
+            {"REGION_FLAG_ALLOW_DIRECT_TELEPORT", 0x100000},
+            {"REGION_FLAG_RESTRICT_PUSHOBJECT", 0x400000},
+            {"PARCEL_FLAG_ALLOW_FLY", 0x1},
+            {"PARCEL_FLAG_ALLOW_SCRIPTS", 0x2},
+            {"PARCEL_FLAG_ALLOW_LANDMARK", 0x8},
+            {"PARCEL_FLAG_ALLOW_TERRAFORM", 0x10},
+            {"PARCEL_FLAG_ALLOW_DAMAGE", 0x20},
+            {"PARCEL_FLAG_ALLOW_CREATE_OBJECTS", 0x40},
+            {"PARCEL_FLAG_USE_ACCESS_GROUP", 0x100},
+            {"PARCEL_FLAG_USE_ACCESS_LIST", 0x200},
+            {"PARCEL_FLAG_USE_BAN_LIST", 0x400},
+            {"PARCEL_FLAG_USE_LAND_PASS_LIST", 0x800},
+            {"PARCEL_FLAG_LOCAL_SOUND_ONLY", 0x8000},
+            {"PARCEL_FLAG_RESTRICT_PUSHOBJECT", 0x200000},
+            {"PARCEL_FLAG_ALLOW_GROUP_SCRIPTS", 0x2000000},
+            {"PARCEL_FLAG_ALLOW_CREATE_GROUP_OBJECTS", 0x4000000},
+            {"PARCEL_FLAG_ALLOW_ALL_OBJECT_ENTRY", 0x8000000},
+            {"PARCEL_FLAG_ALLOW_GROUP_OBJECT_ENTRY", 0x10000000},
+            {"AGENT_LIST_PARCEL", 1},
+            {"AGENT_LIST_PARCEL_OWNER", 2},
+            {"AGENT_LIST_REGION", 4},
+            {"DATA_ONLINE", 1},
+            {"DATA_NAME", 2},
+            {"DATA_BORN", 3},
+            {"DATA_RATING", 4},
+            {"DATA_SIM_POS", 5},
+            {"DATA_SIM_STATUS", 6},
+            {"DATA_SIM_RATING", 7},
+            {"DATA_PAYINFO", 8},
+            {"DATA_SIM_RELEASE", 128},
+            {"AGENT_LIST_EXCLUDENPC", 0x4000000},
+            {"LIST_STAT_RANGE", 0},
+            {"LIST_STAT_MIN", 1},
+            {"LIST_STAT_MAX", 2},
+            {"LIST_STAT_MEAN", 3},
+            {"LIST_STAT_MEDIAN", 4},
+            {"LIST_STAT_STD_DEV", 5},
+            {"LIST_STAT_SUM", 6},
+            {"LIST_STAT_SUM_SQUARES", 7},
+            {"LIST_STAT_NUM_COUNT", 8},
+            {"LIST_STAT_GEOMETRIC_MEAN", 9},
+            {"LIST_STAT_HARMONIC_MEAN", 100},
+            {"TYPE_KEY", 4},
+            {"TYPE_VECTOR", 5},
+            {"TYPE_ROTATION", 6},
+            {"STRING_TRIM_HEAD", 1},
+            {"STRING_TRIM_TAIL", 2},
+            {"STRING_TRIM", 3},
+            {"CLICK_ACTION_NONE", 0},
+            {"CLICK_ACTION_TOUCH", 0},
+            {"CLICK_ACTION_SIT", 1},
+            {"CLICK_ACTION_BUY", 2},
+            {"CLICK_ACTION_PAY", 3},
+            {"CLICK_ACTION_OPEN", 4},
+            {"CLICK_ACTION_PLAY", 5},
+            {"CLICK_ACTION_OPEN_MEDIA", 6},
+            {"CLICK_ACTION_ZOOM", 7},
+            {"CLICK_ACTION_DISABLED", 8},
+            {"CLICK_ACTION_IGNORE", 9},
+            {"MASK_BASE", 0},
+            {"MASK_OWNER", 1},
+            {"MASK_GROUP", 2},
+            {"MASK_EVERYONE", 3},
+            {"MASK_NEXT", 4},
+            {"PERM_TRANSFER", 0x2000},
+            {"PERM_MODIFY", 0x4000},
+            {"PERM_COPY", 0x8000},
+            {"PERM_MOVE", 0x80000},
+            {"PERM_ALL", 0x7fffffff},
+            {"INVENTORY_ALL", -1},
+            {"INVENTORY_NONE", -1},
+            {"INVENTORY_TEXTURE", 0},
+            {"INVENTORY_SOUND", 1},
+            {"INVENTORY_LANDMARK", 3},
+            {"INVENTORY_CLOTHING", 5},
+            {"INVENTORY_OBJECT", 6},
+            {"INVENTORY_NOTECARD", 7},
+            {"INVENTORY_SCRIPT", 10},
+            {"INVENTORY_BODYPART", 13},
+            {"INVENTORY_ANIMATION", 20},
+            {"INVENTORY_GESTURE", 21},
+            {"INVENTORY_SETTING", 56},
+            {"INVENTORY_MATERIAL", 57},
+            {"CHANGED_INVENTORY", 1},
+            {"CHANGED_COLOR", 2},
+            {"CHANGED_SHAPE", 4},
+            {"CHANGED_SCALE", 8},
+            {"CHANGED_TEXTURE", 16},
+            {"CHANGED_LINK", 32},
+            {"CHANGED_ALLOWED_DROP", 64},
+            {"CHANGED_OWNER", 128},
+            {"CHANGED_REGION", 256},
+            {"CHANGED_TELEPORT", 512},
+            {"CHANGED_REGION_RESTART", 1024},
+            {"CHANGED_REGION_START", 1024},
+            {"CHANGED_MEDIA", 2048},
+            {"CHANGED_RENDER_MATERIAL", 4096},
+            {"CHANGED_ANIMATION", 16384},
+            {"CHANGED_POSITION", 32768}};
+        for (const auto& [name, value] : integer_constants) {
+            if (!is(name))
+                continue;
+            e->value = value;
+            advance();
+            return e;
+        }
+        if (token.kind == Kind::Name) {
+            if (const auto variable = local(token.text)) {
+                e->op = Expression::Op::Local;
+                e->slot = variable->slot;
+                e->global = variable->global;
+                e->type = variable->type;
+                advance();
+                auto value = component_access(std::move(e));
+                if (update_operator()) {
+                    const int delta = is("++") ? 1 : -1;
+                    advance();
+                    return update(std::move(value), delta, true);
+                }
+                return value;
+            }
+        }
+        fail(token, "unsupported expression or undefined name");
+    }
+    struct BinaryOperator {
+        std::string_view token;
+        int precedence;
+        Expression::Op op;
+        bool compound = false;
+    };
+    static const BinaryOperator* binary(const Token& token, bool end_vector) {
+        using Op = Expression::Op;
+        static constexpr BinaryOperator operators[] = {{"=", 0, Op::Assign},
+                                                       {"+=", 0, Op::Add, true},
+                                                       {"-=", 0, Op::Subtract, true},
+                                                       {"*=", 0, Op::Multiply, true},
+                                                       {"/=", 0, Op::Divide, true},
+                                                       {"%=", 0, Op::Remainder, true},
+                                                       {"&=", 0, Op::BitAnd, true},
+                                                       {"|=", 0, Op::BitOr, true},
+                                                       {"^=", 0, Op::BitXor, true},
+                                                       {"<<=", 0, Op::ShiftLeft, true},
+                                                       {">>=", 0, Op::ShiftRight, true},
+                                                       {"|||", 1, Op::ShortOr},
+                                                       {"&&&", 2, Op::ShortAnd},
+                                                       {"&&", 3, Op::And},
+                                                       {"||", 3, Op::Or},
+                                                       {"|", 4, Op::BitOr},
+                                                       {"^", 5, Op::BitXor},
+                                                       {"&", 6, Op::BitAnd},
+                                                       {"==", 7, Op::Equal},
+                                                       {"!=", 7, Op::NotEqual},
+                                                       {"<", 8, Op::Less},
+                                                       {"<=", 8, Op::LessEqual},
+                                                       {">", 8, Op::Greater},
+                                                       {">=", 8, Op::GreaterEqual},
+                                                       {"<<", 9, Op::ShiftLeft},
+                                                       {">>", 9, Op::ShiftRight},
+                                                       {"+", 10, Op::Add},
+                                                       {"-", 10, Op::Subtract},
+                                                       {"*", 11, Op::Multiply},
+                                                       {"/", 11, Op::Divide},
+                                                       {"%", 11, Op::Remainder}};
+        if (token.kind != Kind::Symbol || (end_vector && token.text == ">"))
+            return nullptr;
+        for (const auto& op : operators)
+            if (op.token == token.text)
+                return &op;
+        return nullptr;
+    }
+    std::unique_ptr<Expression> expression(int minimum = 0, bool end_vector = false) {
+        Depth guard(*this);
+        using Op = Expression::Op;
+        auto left = unary();
+        while (const auto* binary_op = binary(token, end_vector)) {
+            const auto level = binary_op->precedence;
+            if (level < minimum)
+                break;
+            const auto at = token;
+            advance();
+            const auto op = binary_op->op;
+            const bool assign = level == 0;
+            auto right = expression(level + !assign, end_vector);
+            const bool list_operand = left->type == Type::List || right->type == Type::List;
+            const bool list_add = list_operand && op == Op::Add;
+            const bool list_compare = left->type == Type::List && right->type == Type::List &&
+                                      (op == Op::Equal || op == Op::NotEqual);
+            if (list_operand && !list_add && !list_compare && (binary_op->compound || level > 3))
+                fail(at, "unsupported list operator");
+            if (binary_op->compound) {
+                if (!writable(*left))
+                    fail(at, "compound assignment requires a writable variable");
+                const bool bitwise = op == Op::BitAnd || op == Op::BitOr || op == Op::BitXor ||
+                                     op == Op::ShiftLeft || op == Op::ShiftRight;
+                const auto spatial_type = spatial_binary_type(op, left->type, right->type);
+                if (!list_add && !spatial_type &&
+                    ((bitwise && (left->type != Type::Integer || right->type != Type::Integer)) ||
+                     ((!numeric(left->type) || !numeric(right->type)) &&
+                      (op != Op::Add || left->type != Type::String || right->type != Type::String))))
+                    fail(at, "compound assignment operand type mismatch");
+                auto operation = std::make_unique<Expression>();
+                operation->op = op;
+                operation->type =
+                    list_add ? Type::List
+                             : spatial_type.value_or(left->type == Type::Float || right->type == Type::Float
+                                                         ? Type::Float
+                                                         : left->type);
+                operation->height = std::max(left->height, right->height) + 1;
+                operation->left = copy_target(*left);
+                operation->right = std::move(right);
+                right = std::move(operation);
+            }
+            const auto spatial_type = spatial_binary_type(op, left->type, right->type);
+            if (!list_add && !spatial_type && !assign && level > 3 &&
+                (left->type == Type::Vector || right->type == Type::Vector || left->type == Type::Rotation ||
+                 right->type == Type::Rotation))
+                fail(at, "unsupported vector or rotation operator");
+            if (assign && (!writable(*left) || !assignable(left->type, right->type)))
+                fail(at, "assignment requires a writable variable and compatible value");
+            if (((level >= 4 && level <= 6) || level == 9) &&
+                (left->type != Type::Integer || right->type != Type::Integer))
+                fail(at, "bitwise operators require integers");
+            if (!list_add && !spatial_type && level > 3 && (!numeric(left->type) || !numeric(right->type)) &&
+                ((left->type == Type::Key || right->type == Type::Key)
+                     ? (numeric(left->type) || numeric(right->type) ||
+                        (op != Op::Equal && op != Op::NotEqual))
+                     : (left->type != right->type || (level > 9 && op != Op::Add))))
+                fail(at, "operator operand type mismatch");
+            auto result = std::make_unique<Expression>();
+            result->op = assign ? Op::Assign : op;
+            result->type =
+                assign     ? left->type
+                : list_add ? Type::List
+                           : spatial_type.value_or(level <= 9 ? Type::Integer
+                                                   : left->type == Type::Float || right->type == Type::Float
+                                                       ? Type::Float
+                                                       : left->type);
+            result->height = std::max(left->height, right->height) + 1;
+            if (result->height > 128)
+                fail(at, "native LSL expression depth exceeded");
+            result->left = std::move(left);
+            result->right = std::move(right);
+            left = std::move(result);
+        }
+        return left;
+    }
+    static bool assignable(Type target, Type source) {
+        return target == source ||
+               ((target == Type::String || target == Type::Key) &&
+                (source == Type::String || source == Type::Key)) ||
+               (target == Type::Float && source == Type::Integer);
+    }
+    Instruction store(Instruction ins, Local variable) {
+        if (ins.text && !assignable(variable.type, ins.text->type))
+            fail(token, "assignment operand type mismatch");
+        ins.store = variable.slot;
+        ins.global = variable.global;
+        ins.store_type = variable.type;
+        return ins;
+    }
+    Instruction expression_statement() {
+        Instruction ins;
+        ins.text = expression();
+        ins.discard = true;
+        return ins;
+    }
+    void for_expressions(std::vector<Instruction>& code, std::string_view end) {
+        if (is(end))
+            return;
+        for (;;) {
+            code.push_back(expression_statement());
+            if (!is(","))
+                return;
+            advance();
+        }
+    }
+    Instruction declaration(std::size_t slot, bool global) {
+        const auto type = is("integer")                          ? Type::Integer
+                          : is("float")                          ? Type::Float
+                          : is("key")                            ? Type::Key
+                          : is("vector")                         ? Type::Vector
+                          : (is("rotation") || is("quaternion")) ? Type::Rotation
+                          : is("list")                           ? Type::List
+                                                                 : Type::String;
+        advance();
+        if (token.kind != Kind::Name)
+            fail(token, "expected variable name");
+        const auto name = token;
+        advance();
+        const Local variable{type, slot, global};
+        if (scopes.back().contains(name.text))
+            fail(name, "duplicate variable");
+        Instruction ins;
+        if (is("=")) {
+            advance();
+            ins.text = expression();
+        }
+        scopes.back().emplace(name.text, variable);
+        require(";");
+        return store(std::move(ins), variable);
+    }
+    void block(bool event_body = false) {
+        require("{");
+        if (!event_body)
+            scopes.emplace_back();
+        blocks.push_back(next_block++);
+        while (!is("}")) {
+            if (token.kind == Kind::End)
+                fail(token, "eof parsing event body");
+            statement();
+        }
+        require("}");
+        blocks.pop_back();
+        if (!event_body)
+            scopes.pop_back();
+    }
+    void embedded_statement() {
+        scopes.emplace_back();
+        statement();
+        scopes.pop_back();
+    }
+    void statement() {
+        Depth guard(*this);
+        if (is("{")) {
+            block();
+            return;
+        }
+        if (is(";")) {
+            advance();
+            return;
+        }
+        Instruction ins;
+        if (is("jump") || is("@")) {
+            const bool jump = is("jump");
+            advance();
+            if (token.kind != Kind::Name)
+                fail(token, "expected label name");
+            const auto name = token;
+            advance();
+            require(";");
+            auto& code = handler->instructions;
+            if (jump) {
+                jumps.push_back({name, code.size(), blocks});
+                code.emplace_back();
+            } else if (!labels.emplace(name.text, Label{code.size(), blocks.back()}).second)
+                fail(name, "duplicate label");
+            return;
+        }
+        if (is("integer") || is("float") || is("string") || is("key") || is("vector") || is("rotation") ||
+            is("quaternion") || is("list")) {
+            auto instruction = declaration(handler->local_types.size(), false);
+            handler->local_types.push_back(instruction.store_type);
+            handler->instructions.push_back(std::move(instruction));
+            return;
+        }
+        if (update_operator() || (token.kind == Kind::Name && local(token.text)) ||
+            is("llRequestURL") || is("llRequestSecureURL") || is("llReleaseURL") || is("llHTTPResponse") ||
+            is("llSetContentType") || is("osRequestURL") || is("osRequestSecureURL") ||
+            is("osReplaceRegionEnvironment") || is("osReplaceParcelEnvironment") || is("osReplaceAgentEnvironment") ||
+            (token.kind == Kind::Name && (is_drawing_function(token.text) || is_environment_query(token.text)))) {
+            auto instruction = expression_statement();
+            require(";");
+            handler->instructions.push_back(std::move(instruction));
+            return;
+        }
+        if (is("state")) {
+            advance();
+            if (token.kind != Kind::Name)
+                fail(token, "expected state name");
+            state_targets.push_back(token);
+            ins.target_state = token.text;
+            advance();
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("return")) {
+            advance();
+            require(";");
+            ins.return_event = true;
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("for")) {
+            advance();
+            require("(");
+            auto& code = handler->instructions;
+            for_expressions(code, ";");
+            require(";");
+            const auto start = code.size();
+            const bool conditional = !is(";");
+            if (conditional) {
+                ins.condition = expression();
+                code.push_back(std::move(ins));
+            }
+            require(";");
+            std::vector<Instruction> updates;
+            for_expressions(updates, ")");
+            require(")");
+            embedded_statement();
+            for (auto& update : updates)
+                code.push_back(std::move(update));
+            Instruction repeat;
+            repeat.jump = start;
+            code.push_back(std::move(repeat));
+            if (conditional)
+                code[start].jump = code.size();
+            return;
+        }
+        if (is("do")) {
+            advance();
+            auto& code = handler->instructions;
+            const auto start = code.size();
+            embedded_statement();
+            require("while");
+            require("(");
+            ins.condition = expression();
+            require(")");
+            require(";");
+            ins.jump = start;
+            ins.jump_when_true = true;
+            code.push_back(std::move(ins));
+            return;
+        }
+        if (is("if") || is("while")) {
+            const bool loop = is("while");
+            advance();
+            require("(");
+            ins.condition = expression();
+            require(")");
+            auto& code = handler->instructions;
+            const auto branch = code.size();
+            code.push_back(std::move(ins));
+            embedded_statement();
+            if (loop) {
+                Instruction repeat;
+                repeat.jump = branch;
+                code.push_back(std::move(repeat));
+                code[branch].jump = code.size();
+            } else if (is("else")) {
+                advance();
+                const auto skip = code.size();
+                code.emplace_back();
+                code[branch].jump = code.size();
+                embedded_statement();
+                code[skip].jump = code.size();
+            } else
+                code[branch].jump = code.size();
+            return;
+        }
+        if (is("llUnSit")) {
+            advance();
+            require("(");
+            ins.unsit_avatar = expression();
+            if (ins.unsit_avatar->type != Type::Key && ins.unsit_avatar->type != Type::String)
+                fail(token, "llUnSit requires an avatar key");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("osForceOtherSit")) {
+            advance();
+            require("(");
+            ins.force_sit_avatar = expression();
+            if (ins.force_sit_avatar->type != Type::String && ins.force_sit_avatar->type != Type::Key)
+                fail(token, "osForceOtherSit requires an avatar key");
+            if (is(",")) {
+                advance();
+                ins.force_sit_target = expression();
+                if (ins.force_sit_target->type != Type::String && ins.force_sit_target->type != Type::Key)
+                    fail(token, "osForceOtherSit requires an object key");
+            }
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("osSetRegionSunSettings") || is("osSetEstateSunSettings")) {
+            ins.estate_sun = is("osSetEstateSunSettings");
+            const auto function = token;
+            advance();
+            require("(");
+            if (!ins.estate_sun) {
+                ins.sun_use_estate = expression();
+                require(",");
+            }
+            ins.sun_fixed = expression();
+            require(",");
+            ins.sun_hour = expression();
+            require(")");
+            require(";");
+            if ((ins.sun_use_estate && ins.sun_use_estate->type != Type::Integer) ||
+                ins.sun_fixed->type != Type::Integer || !numeric(ins.sun_hour->type))
+                fail(function, "Sun settings require integer flags and a numeric hour");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("osSetRegionWaterHeight")) {
+            advance();
+            require("(");
+            ins.region_water_height = expression();
+            if (!numeric(ins.region_water_height->type))
+                fail(token, "osSetRegionWaterHeight requires a numeric height");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSetLinkSitFlags")) {
+            advance();
+            require("(");
+            ins.sit_flags_link = expression();
+            require(",");
+            ins.sit_flags_value = expression();
+            if (ins.sit_flags_link->type != Type::Integer || ins.sit_flags_value->type != Type::Integer)
+                fail(token, "llSetLinkSitFlags requires an integer link number and flags");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSetCameraEyeOffset") || is("llSetCameraAtOffset") ||
+            is("llSetLinkCamera") || is("llForceMouselook")) {
+            const bool linked = is("llSetLinkCamera");
+            const bool eye = is("llSetCameraEyeOffset");
+            const bool mouselook = is("llForceMouselook");
+            advance();
+            require("(");
+            if (linked) {
+                ins.seat_camera_link = expression();
+                if (ins.seat_camera_link->type != Type::Integer)
+                    fail(token, "llSetLinkCamera requires an integer link number");
+                require(",");
+                ins.seat_camera_eye = expression();
+                if (ins.seat_camera_eye->type != Type::Vector)
+                    fail(token, "camera eye offset requires a vector");
+                require(",");
+            }
+            auto& value = mouselook ? ins.seat_camera_mouselook : eye ? ins.seat_camera_eye : ins.seat_camera_at;
+            value = expression();
+            if (value->type != (mouselook ? Type::Integer : Type::Vector))
+                fail(token, mouselook ? "llForceMouselook requires an integer" : "camera offset requires a vector");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("osSetSitActiveRange") || is("osSetLinkSitActiveRange") ||
+            is("osSetStandTarget") || is("osSetLinkStandTarget")) {
+            const bool stand = is("osSetStandTarget") || is("osSetLinkStandTarget");
+            const bool linked = is("osSetLinkSitActiveRange") || is("osSetLinkStandTarget");
+            advance();
+            require("(");
+            if (linked) {
+                auto& link = stand ? ins.stand_target_link : ins.sit_range_link;
+                link = expression();
+                if (link->type != Type::Integer)
+                    fail(token, "seat configuration requires an integer link number");
+                require(",");
+            }
+            auto& value = stand ? ins.stand_target_value : ins.sit_range_value;
+            value = expression();
+            if (stand ? value->type != Type::Vector : !numeric(value->type))
+                fail(token, stand ? "stand target requires a vector" : "sit range requires a number");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSitTarget") || is("llLinkSitTarget")) {
+            const bool linked = is("llLinkSitTarget");
+            advance();
+            require("(");
+            if (linked) {
+                ins.sit_target_link = expression();
+                if (ins.sit_target_link->type != Type::Integer)
+                    fail(token, "llLinkSitTarget requires an integer link number");
+                require(",");
+            }
+            ins.sit_target_position = expression();
+            require(",");
+            ins.sit_target_rotation = expression();
+            if (ins.sit_target_position->type != Type::Vector || ins.sit_target_rotation->type != Type::Rotation)
+                fail(token, "sit target requires a vector and rotation");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llPassTouches") || is("llAllowInventoryDrop")) {
+            const bool allow_drop = is("llAllowInventoryDrop");
+            advance();
+            require("(");
+            auto& value = allow_drop ? ins.allow_inventory_drop : ins.pass_touches;
+            value = expression();
+            if (value->type != Type::Integer)
+                fail(token, allow_drop ? "llAllowInventoryDrop requires an integer"
+                                       : "llPassTouches requires an integer");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSetClickAction")) {
+            advance();
+            require("(");
+            ins.click_action = expression();
+            if (ins.click_action->type != Type::Integer)
+                fail(token, "llSetClickAction requires an integer");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSetScale")) {
+            advance();
+            require("(");
+            ins.scale = expression();
+            if (ins.scale->type != Type::Vector)
+                fail(token, "llSetScale requires a vector");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llAdjustSoundVolume") || is("llSetSoundRadius")) {
+            const bool radius = is("llSetSoundRadius");
+            advance();
+            require("(");
+            auto& value = radius ? ins.sound_radius : ins.adjust_sound_gain;
+            value = expression();
+            if (!numeric(value->type))
+                fail(token, "sound setting requires a numeric value");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSetPayPrice")) {
+            advance();
+            require("(");
+            ins.pay_price = expression();
+            require(",");
+            ins.pay_buttons = expression();
+            if (ins.pay_price->type != Type::Integer || ins.pay_buttons->type != Type::List)
+                fail(token, "llSetPayPrice requires an integer price and a list");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSetSoundQueueing")) {
+            advance();
+            require("(");
+            ins.sound_queueing = expression();
+            if (ins.sound_queueing->type != Type::Integer)
+                fail(token, "llSetSoundQueueing requires an integer");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llScriptProfiler")) {
+            advance();
+            require("(");
+            ins.text = expression();
+            if (ins.text->type != Type::Integer)
+                fail(token, "llScriptProfiler requires an integer");
+            require(")");
+            require(";");
+            ins.discard = true;
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llPreloadSound")) {
+            advance();
+            require("(");
+            ins.preload_sound = expression();
+            if (ins.preload_sound->type != Type::String && ins.preload_sound->type != Type::Key)
+                fail(token, "llPreloadSound requires an asset name or key");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llLoopSound") || is("llLoopSoundMaster") || is("llLoopSoundSlave") || is("llStopSound") ||
+            is("llPlaySound") || is("llPlaySoundSlave") || is("llTriggerSound") ||
+            is("llTriggerSoundLimited") || is("llCollisionSound")) {
+            ins.sound = true;
+            const bool limited = is("llTriggerSoundLimited");
+            ins.trigger_sound = is("llTriggerSound") || limited;
+            ins.collision_sound = is("llCollisionSound");
+            ins.play_sound = is("llPlaySound") || is("llPlaySoundSlave") || ins.trigger_sound;
+            const bool loop = !is("llStopSound");
+            ins.sound_sync_flags = is("llLoopSoundMaster")                              ? 2
+                                   : (is("llLoopSoundSlave") || is("llPlaySoundSlave")) ? 4
+                                                                                        : 0;
+            advance();
+            require("(");
+            if (loop) {
+                ins.text = expression();
+                require(",");
+                ins.sound_gain = expression();
+                if ((ins.text->type != Type::String && ins.text->type != Type::Key) ||
+                    !numeric(ins.sound_gain->type))
+                    fail(token, "llLoopSound requires an asset name or key and numeric gain");
+                if (limited) {
+                    require(",");
+                    ins.sound_max = expression();
+                    require(",");
+                    ins.sound_min = expression();
+                    if (ins.sound_max->type != Type::Vector || ins.sound_min->type != Type::Vector)
+                        fail(token, "llTriggerSoundLimited requires two vector corners");
+                }
+            }
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSetText")) {
+            advance();
+            require("(");
+            ins.text = expression();
+            require(",");
+            ins.text_color = expression();
+            require(",");
+            ins.text_alpha = expression();
+            if ((ins.text->type != Type::String && ins.text->type != Type::Key) ||
+                ins.text_color->type != Type::Vector || !numeric(ins.text_alpha->type))
+                fail(token, "llSetText requires text, vector color and numeric alpha");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSetObjectName") || is("llSetObjectDesc") || is("llSetTouchText") || is("llSetSitText")) {
+            if (is("llSetTouchText") || is("llSetSitText"))
+                ins.sit_label = is("llSetSitText");
+            else
+                ins.set_metadata = true;
+            ins.description = is("llSetObjectDesc");
+            advance();
+            require("(");
+            ins.text = expression();
+            if (ins.text->type != Type::String && ins.text->type != Type::Key)
+                fail(token, "object metadata requires text");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llAddToLandBanList") || is("llAddToLandPassList") ||
+            is("llRemoveFromLandBanList") || is("llRemoveFromLandPassList") ||
+            is("llResetLandBanList") || is("llResetLandPassList")) {
+            const bool add = is("llAddToLandBanList") || is("llAddToLandPassList");
+            const bool reset = is("llResetLandBanList") || is("llResetLandPassList");
+            ins.parcel_list_action = reset ? LslParcelListAction::reset :
+                                     add ? LslParcelListAction::add : LslParcelListAction::remove;
+            ins.parcel_ban_list = is("llAddToLandBanList") || is("llRemoveFromLandBanList") ||
+                                  is("llResetLandBanList");
+            advance();
+            require("(");
+            if (!reset) {
+                ins.parcel_agent = expression();
+                if (ins.parcel_agent->type != Type::String && ins.parcel_agent->type != Type::Key)
+                    fail(token, "parcel list edits require an avatar key");
+            }
+            if (add) {
+                require(",");
+                ins.parcel_hours = expression();
+                if (!numeric(ins.parcel_hours->type))
+                    fail(token, "parcel list duration must be numeric");
+            }
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llMinEventDelay")) {
+            advance();
+            require("(");
+            ins.event_delay = expression();
+            if (!numeric(ins.event_delay->type))
+                fail(token, "llMinEventDelay requires a numeric interval");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSetTimerEvent")) {
+            advance();
+            require("(");
+            ins.timer = expression();
+            if (!numeric(ins.timer->type))
+                fail(token, "llSetTimerEvent requires a numeric interval");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSleep")) {
+            advance();
+            require("(");
+            ins.sleep = expression();
+            if (!numeric(ins.sleep->type))
+                fail(token, "llSleep requires a numeric duration");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llResetOtherScript") || is("llSetScriptState")) {
+            const bool set_running = is("llSetScriptState");
+            advance();
+            require("(");
+            ins.script_control_name = expression();
+            if (ins.script_control_name->type != Type::String && ins.script_control_name->type != Type::Key)
+                fail(token, "script name requires text");
+            if (set_running) {
+                require(",");
+                ins.script_control_run = expression();
+                if (ins.script_control_run->type != Type::Integer)
+                    fail(token, "script running state requires an integer");
+            }
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llResetScript")) {
+            advance();
+            require("(");
+            require(")");
+            require(";");
+            ins.reset_script = true;
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSetAnimationOverride") || is("llResetAnimationOverride")) {
+            const bool set = is("llSetAnimationOverride");
+            advance();
+            require("(");
+            ins.override_state = expression();
+            if (set) {
+                require(",");
+                ins.override_animation = expression();
+            }
+            require(")");
+            require(";");
+            if (ins.override_state->type != Type::String ||
+                (ins.override_animation && ins.override_animation->type != Type::String))
+                fail(token, "Animation override requires string arguments");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llStartAnimation") || is("llStopAnimation") ||
+            is("osAvatarPlayAnimation") || is("osAvatarStopAnimation")) {
+            const bool explicit_avatar = is("osAvatarPlayAnimation") || is("osAvatarStopAnimation");
+            ins.start_animation = is("llStartAnimation") || is("osAvatarPlayAnimation");
+            advance();
+            require("(");
+            if (explicit_avatar) {
+                ins.animation_avatar = expression();
+                if (ins.animation_avatar->type != Type::Key && ins.animation_avatar->type != Type::String)
+                    fail(token, "Avatar animation requires an avatar key");
+                require(",");
+            }
+            ins.animation_name = expression();
+            require(")");
+            require(";");
+            if (ins.animation_name->type != Type::String &&
+                !(explicit_avatar && ins.animation_name->type == Type::Key))
+                fail(token, "Animation name must be a string");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llRequestPermissions")) {
+            advance();
+            require("(");
+            ins.permission_agent = expression();
+            require(",");
+            ins.permission_mask = expression();
+            require(")");
+            require(";");
+            if ((ins.permission_agent->type != Type::String && ins.permission_agent->type != Type::Key) ||
+                ins.permission_mask->type != Type::Integer)
+                fail(token, "Permission request requires an agent key and integer mask");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llLinksetDataReset")) {
+            advance();
+            require("(");
+            require(")");
+            require(";");
+            ins.reset_linkset_data = true;
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llResetTime")) {
+            advance();
+            require("(");
+            require(")");
+            require(";");
+            ins.reset_time = true;
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llTargetOmega")) {
+            advance();
+            require("(");
+            ins.omega[0] = expression();
+            if (ins.omega[0]->type != Type::Vector)
+                fail(token, "llTargetOmega requires a vector axis");
+            for (std::size_t i = 1; i < ins.omega.size(); ++i) {
+                require(",");
+                ins.omega[i] = expression();
+                if (!numeric(ins.omega[i]->type))
+                    fail(token, "llTargetOmega requires numeric spin and gain");
+            }
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSay"))
+            ins.owner = false;
+        else if (is("llOwnerSay"))
+            ins.owner = true;
+        else
+            fail(token, "unsupported statement/API in native LSL subset");
+        advance();
+        require("(");
+        if (!ins.owner) {
+            ins.channel = expression();
+            if (ins.channel->type != Type::Integer)
+                fail(token, "llSay channel must be integer");
+            require(",");
+        }
+        ins.text = expression();
+        if (ins.text->type != Type::String && ins.text->type != Type::Key)
+            fail(token, "chat text must be string");
+        require(")");
+        require(";");
+        handler->instructions.push_back(std::move(ins));
+    }
+
+  public:
+    explicit Parser(std::string_view s) : lexer(s) {
+        advance();
+    }
+    std::shared_ptr<LslProgram> parse() {
+        auto program = std::make_shared<LslProgram>();
+        scopes.emplace_back();
+        while (is("integer") || is("float") || is("string") || is("key") || is("vector") || is("rotation") ||
+               is("quaternion") || is("list"))
+            program->globals.push_back(declaration(program->globals.size(), true));
+        require("default");
+        parse_state(program->states["default"]);
+        while (is("state")) {
+            advance();
+            if (token.kind != Kind::Name)
+                fail(token, "expected state name");
+            const auto name = token;
+            advance();
+            auto [it, inserted] = program->states.try_emplace(name.text);
+            if (!inserted)
+                fail(name, "duplicate state");
+            parse_state(it->second);
+        }
+        if (token.kind != Kind::End)
+            fail(token, "expected named state");
+        for (const auto& target : state_targets)
+            if (!program->states.contains(target.text))
+                fail(target, "undefined state");
+        return program;
+    }
+    void parse_state(ScriptState& state) {
+        require("{");
+        while (!is("}")) {
+            if (token.kind != Kind::Name)
+                fail(token, "expected event handler");
+            auto event = token.text;
+            auto at = token;
+            if (event != "state_entry" && event != "touch_start" && event != "touch" &&
+                event != "touch_end" && event != "changed" && event != "linkset_data" && event != "on_rez" &&
+                event != "run_time_permissions" && event != "timer" && event != "state_exit" &&
+                event != "dataserver" && event != "http_request")
+                fail(at, "unsupported event in native LSL subset");
+            advance();
+            if (state.handlers.contains(event))
+                fail(at, "duplicate event handler");
+            auto [it, inserted] = state.handlers.emplace(event, Handler{});
+            handler = &it->second;
+            scopes.emplace_back();
+            require("(");
+            const auto parameter = [&](Type type) {
+                require(type == Type::Integer ? "integer" : type == Type::Key ? "key" : "string");
+                if (token.kind != Kind::Name)
+                    fail(token, "expected event parameter name");
+                if (std::string_view(
+                        " default do else float for if integer list jump key return rotation state string vector while llSay llOwnerSay ")
+                        .find(" " + token.text + " ") != std::string_view::npos)
+                    fail(token, "unsupported/reserved event parameter name");
+                if (!scopes.back().emplace(token.text, Local{type, handler->local_types.size()}).second)
+                    fail(token, "duplicate event parameter");
+                handler->local_types.push_back(type);
+                advance();
+            };
+            if (event == "dataserver" || event == "http_request") {
+                parameter(Type::Key);
+                require(",");
+                parameter(Type::String);
+                if (event == "http_request") {
+                    require(",");
+                    parameter(Type::String);
+                }
+            } else if (event != "state_entry" && event != "timer" && event != "state_exit") {
+                parameter(Type::Integer);
+            }
+            if (event == "linkset_data") {
+                require(",");
+                parameter(Type::String);
+                require(",");
+                parameter(Type::String);
+            }
+            require(")");
+            block(true);
+            resolve_jumps();
+            scopes.pop_back();
+            handler = nullptr;
+            state.event_mask |= event == "state_entry"            ? 1ull << 30
+                                : event == "state_exit"           ? 1ull << 1
+                                : event == "touch_start"          ? 1ull << 21
+                                : event == "touch"                ? 1ull << 3
+                                : event == "dataserver"           ? 1ull << 8
+                                : event == "http_request"         ? 1ull << 38
+                                : event == "changed"              ? 1ull << 33
+                                : event == "linkset_data"         ? 1ull << 41
+                                : event == "on_rez"               ? 1ull << 36
+                                : event == "run_time_permissions" ? 1ull << 28
+                                : event == "timer"                ? 1ull << 2
+                                                                  : 1ull << 29;
+        }
+        require("}");
+        state.handlers.try_emplace("state_entry");
+        state.handlers.try_emplace("state_exit");
+    }
 };
 // SDK StringToBytesNoTerm excludes one existing trailing NUL and truncates at
 // a UTF-8 scalar boundary. Runtime strings use UTF-8; no byte splitting occurs.
-std::string say_text(std::string text){if(auto zero=text.find(char(0));zero!=std::string::npos)text.resize(zero);if(text.size()<=1023)return text;std::size_t n=1023;while(n>0&&(static_cast<unsigned char>(text[n])&0xc0)==0x80)--n;text.resize(n);return text;}
-std::int64_t ticks(){using Tick=std::chrono::duration<std::int64_t,std::ratio<1,10000000>>;return std::chrono::duration_cast<Tick>(std::chrono::steady_clock::now().time_since_epoch()).count();}
+std::string say_text(std::string text) {
+    if (auto zero = text.find(char(0)); zero != std::string::npos)
+        text.resize(zero);
+    if (text.size() <= 1023)
+        return text;
+    std::size_t n = 1023;
+    while (n > 0 && (static_cast<unsigned char>(text[n]) & 0xc0) == 0x80)
+        --n;
+    text.resize(n);
+    return text;
 }
-LslCompileResult compile_lsl(std::string_view source){try{return {Parser(source).parse(),{}};}catch(const CompileFailure& e){return {nullptr,{e.diagnostic}};}}
-struct LslInstance::Impl {
- std::shared_ptr<const LslProgram> program;LslContext context;LslHost host;
- std::deque<LslEvent> queue;std::map<std::string,std::int64_t> counts;std::optional<LslEvent> active;std::size_t pc=0;
- scene::ScriptExecutionControl control;
- std::int64_t last_say_check=0,sleep_until=0;std::uint64_t say_count=0;std::string fault;
- std::int64_t now()const{return host.clock_ticks?host.clock_ticks():ticks();}
- void reset(bool constructing=false){queue.clear();counts.clear();active.reset();pc=0;sleep_until=0;fault.clear();control.pending_events=0;control.active_event=false;if(constructing)control.state=scene::ScriptExecutionState::Construct;else if(control.state!=scene::ScriptExecutionState::Suspended)control.state=scene::ScriptExecutionState::Idle;post({"state_entry",{}, {}});if(constructing)control.state=control.running?(queue.empty()?scene::ScriptExecutionState::Idle:scene::ScriptExecutionState::OnStartQueue):scene::ScriptExecutionState::Suspended;}
- void set_running(bool value){control.active_event=active.has_value();control.pending_events=queue.size();scene::ScriptExecutionQueues queues;queues.queue_yield=[]{};queues.queue_start=[]{};queues.remove_sleep=[]{};queues.clear_events=[this]{queue.clear();counts.clear();};scene::script_set_running(control,value,queues);}
+std::int64_t ticks() {
+    using Tick = std::chrono::duration<std::int64_t, std::ratio<1, 10000000>>;
+    return std::chrono::duration_cast<Tick>(std::chrono::steady_clock::now().time_since_epoch()).count();
+}
 
- bool post(LslEvent event){control.pending_events=queue.size();auto gate=scene::stopped_script_event(control,program->handlers.contains(event.name),program->handlers.contains(event.name),event.name=="state_entry");if(gate==scene::StoppedScriptEvent::Reject)return false;if(gate==scene::StoppedScriptEvent::Ignore)return true;if(gate==scene::StoppedScriptEvent::QueueStateEntry){queue.push_front(std::move(event));control.pending_events=queue.size();return true;}auto expected=event.name=="state_entry"?0u:1u;if(event.arguments.size()!=expected)return false;if(expected&&!std::holds_alternative<std::int32_t>(event.arguments[0]))return false;if(counts[event.name]>=64)return false;++counts[event.name];if(event.name=="state_entry")queue.push_front(std::move(event));else queue.push_back(std::move(event));control.pending_events=queue.size();if(control.state==scene::ScriptExecutionState::Idle)control.state=scene::ScriptExecutionState::OnStartQueue;return true;}
+std::uint32_t heap_value_bytes(const LslValue& value, bool list_entry = false) {
+    if (std::holds_alternative<std::int32_t>(value))
+        return 4;
+    if (std::holds_alternative<double>(value))
+        return 8;
+    if (std::holds_alternative<framework::Vector3d>(value))
+        return 24;
+    if (std::holds_alternative<LslRotation>(value))
+        return 32;
+    if (const auto* text = std::get_if<std::string>(&value)) {
+        const auto units = framework::utf16_replacing(*text);
+        if (!list_entry && std::all_of(units.begin(), units.end(), framework::unicode_whitespace))
+            return 0;
+        return static_cast<std::uint32_t>(units.size()) * 2u;
+    }
+    const auto& list = std::get<std::shared_ptr<const LslList>>(value);
+    if (!list)
+        return 0;
+    auto bytes = static_cast<std::uint32_t>(list->items.size() * sizeof(void*));
+    for (const auto& item : list->items)
+        bytes += heap_value_bytes(item, true);
+    return bytes;
+}
 
- void execute(const Instruction& instruction){auto text=std::get<std::string>(evaluate(*instruction.text,*active));if(instruction.owner){if(context.owner==context.group)return;if(!host.chat)throw std::runtime_error("LSL host chat callback is required");host.chat({LslChatType::Owner,0,std::move(text),context});return;}
-  auto channel=std::get<std::int32_t>(evaluate(*instruction.channel,*active));auto time=now();if(channel==0){if(time-last_say_check>10000000){last_say_check=time;say_count=0;}else ++say_count;}
-  if(say_count>=11){float requested=2000.f*host.script_delay_factor;if(requested>=10&&requested<2147483648.f){auto delay=static_cast<std::int32_t>(requested);sleep_until=time+std::int64_t(delay)*10000;if(host.request_sleep)host.request_sleep(delay);}}
-  if(host.console_channel&&channel==*host.console_channel){if(!host.console)throw std::runtime_error("LSL host console callback is required");host.console(text);return;}
-  LslChat chat{LslChatType::Say,channel,say_text(std::move(text)),context};if(!host.chat)throw std::runtime_error("LSL host chat callback is required");host.chat(chat);if(host.listener)host.listener(chat);
- }
+class OutOfHeap final : public std::runtime_error {
+public:
+    OutOfHeap(std::uint64_t old_bytes, std::uint64_t new_bytes, std::int32_t limit)
+        : std::runtime_error("OutOfHeap: oldtotal=" + std::to_string(old_bytes) +
+                             ", newtotal=" + std::to_string(new_bytes) +
+                             ", limit=" + std::to_string(limit)) {}
 };
-LslInstance::LslInstance(std::shared_ptr<const LslProgram> p,LslContext c,LslHost h):LslInstance(std::move(p),std::move(c),std::move(h),true){}
-LslInstance::LslInstance(std::shared_ptr<const LslProgram> p,LslContext c,LslHost h,bool start_running):impl_(std::make_unique<Impl>()){
- if(!p)throw std::invalid_argument("null LSL program");impl_->program=std::move(p);impl_->context=std::move(c);impl_->host=std::move(h);impl_->last_say_check=impl_->now();impl_->control.running=start_running;impl_->reset(true);
 }
-LslInstance::~LslInstance()=default;LslInstance::LslInstance(LslInstance&&)noexcept=default;LslInstance& LslInstance::operator=(LslInstance&&)noexcept=default;
-void LslInstance::reset(){impl_->reset();}
-bool LslInstance::running()const{return impl_->control.running;}
-void LslInstance::running(bool value){impl_->set_running(value);}
-bool LslInstance::post_event(LslEvent event){return impl_->post(std::move(event));}
-std::size_t LslInstance::queued_events()const{return impl_->queue.size();}
-bool LslInstance::handles_event(std::string_view name)const{return impl_->program->handlers.contains(std::string(name));}
-std::uint64_t LslInstance::event_mask()const{return impl_->program->event_mask;}
-const LslEvent* LslInstance::current_event()const{return impl_->active?&*impl_->active:nullptr;}
-void LslInstance::set_context(LslContext c){impl_->context=std::move(c);}
-LslRunResult LslInstance::run(std::size_t budget){auto& s=*impl_;LslRunResult out{LslRunStatus::Idle,0,{}};
- auto paused=[&]{if(s.control.running)return false;s.control.state=scene::ScriptExecutionState::Suspended;s.control.active_event=s.active.has_value();s.control.pending_events=s.queue.size();return true;};
- if(paused())return out;if(!s.fault.empty())return {LslRunStatus::Faulted,0,s.fault};
- try{for(;;){if(paused())return out;if(s.now()<s.sleep_until){s.control.state=scene::ScriptExecutionState::OnSleepQueue;out.status=LslRunStatus::Sleeping;return out;}
-   if(!s.active){if(s.queue.empty()){s.control.state=scene::ScriptExecutionState::Idle;s.control.active_event=false;s.control.pending_events=0;return out;}if(out.instructions>=budget){s.control.state=scene::ScriptExecutionState::OnStartQueue;out.status=LslRunStatus::BudgetExhausted;return out;}s.active=std::move(s.queue.front());s.queue.pop_front();--s.counts[s.active->name];s.control.pending_events=s.queue.size();s.control.active_event=true;s.pc=0;}
-   auto& code=s.program->handlers.at(s.active->name).instructions;if(s.pc==code.size()){s.active.reset();s.control.active_event=false;continue;}if(out.instructions>=budget){s.control.state=scene::ScriptExecutionState::OnYieldQueue;out.status=LslRunStatus::BudgetExhausted;return out;}
-   s.control.state=scene::ScriptExecutionState::Running;s.execute(code[s.pc]);++s.pc;++out.instructions;
-  }}catch(const std::exception& e){s.fault=e.what();s.active.reset();s.pc=0;s.control.active_event=false;s.control.state=scene::ScriptExecutionState::OnSleepQueue;out.status=LslRunStatus::Faulted;out.error=s.fault;return out;}
+std::string lsl_vector_string(const framework::Vector3d& value) {
+    return value_text(value);
+}
+
+std::string lsl_date_from_unix(std::int32_t seconds) {
+    return utc_text(621355968000000000LL + std::int64_t(seconds) * 10000000, false);
+}
+
+LslCompileResult compile_lsl(std::string_view source) {
+    try {
+        return {Parser(source).parse(), {}};
+    } catch (const CompileFailure& e) {
+        return {nullptr, {e.diagnostic}};
+    }
+}
+struct LslInstance::Impl {
+    std::shared_ptr<const LslProgram> program;
+    LslContext context;
+    LslHost host;
+    std::deque<LslEvent> queue;
+    std::map<std::string, std::int64_t> counts;
+    std::optional<LslEvent> active;
+    std::size_t pc = 0;
+    std::vector<LslValue> locals, globals;
+    const ScriptState* state = nullptr;
+    const ScriptState* next_state = nullptr;
+    const auto& handlers() const {
+        return state->handlers;
+    }
+    std::size_t initialized_globals = 0;
+    double minimum_event_delay = 0.;
+    std::optional<double> next_event_time;
+    scene::ScriptExecutionControl control;
+    std::int64_t last_say_check = 0, sleep_until = 0, timer_start = 0;
+    std::int64_t timer_interval = 0, next_timer = 0;
+    bool sleep_requested = false;
+    std::uint64_t say_count = 0;
+    std::string fault;
+    std::uint64_t global_heap_bytes() const {
+        std::uint64_t bytes = 0;
+        for (std::size_t i = 0; i < globals.size(); ++i) {
+            switch (program->globals[i].store_type) {
+            case Type::Integer: bytes += 4; break;
+            case Type::Float: bytes += 8; break;
+            case Type::Vector: bytes += 24; break;
+            case Type::Rotation: bytes += 32; break;
+            default:
+                if (i < initialized_globals &&
+                    (std::holds_alternative<std::string>(globals[i]) ||
+                     std::holds_alternative<std::shared_ptr<const LslList>>(globals[i])))
+                    bytes += heap_value_bytes(globals[i]);
+                break;
+            }
+        }
+        return bytes;
+    }
+    std::uint64_t local_heap_bytes() const {
+        std::uint64_t bytes = 0;
+        if (active) {
+            const auto& types = handlers().at(active->name).local_types;
+            for (std::size_t i = 0; i < locals.size(); ++i)
+                if (types[i] == Type::String || types[i] == Type::List)
+                    bytes += heap_value_bytes(locals[i]);
+        }
+        return bytes;
+    }
+    std::int32_t heap_bytes_used() const {
+        return wrap(static_cast<std::uint32_t>(global_heap_bytes() + local_heap_bytes()));
+    }
+    void check_heap_limit(std::uint64_t old_bytes, std::uint64_t new_bytes) const {
+        if (host.heap_limit_bytes < 0 || new_bytes > static_cast<std::uint64_t>(host.heap_limit_bytes))
+            throw OutOfHeap(old_bytes, new_bytes, host.heap_limit_bytes);
+    }
+    void check_heap_store(const LslValue& slot, const LslValue& value, Type type, bool global) const {
+        // YEngine stores global keys in its string array. Its local key type
+        // has no heap tracker, unlike local strings and lists.
+        if (type != Type::String && type != Type::List && !(global && type == Type::Key))
+            return;
+        const auto previous = slot.index() == value.index() ? heap_value_bytes(slot) : 0;
+        const auto next = heap_value_bytes(value);
+        if (next == previous)
+            return;
+        auto total = global_heap_bytes();
+        if (!global)
+            total += local_heap_bytes();
+        check_heap_limit(total, total - previous + next);
+    }
+    void initialize_event_locals() {
+        const auto& types = handlers().at(active->name).local_types;
+        locals.clear();
+        locals.reserve(types.size());
+        for (const auto type : types)
+            locals.push_back(default_value(type));
+        for (std::size_t i = 0; i < active->arguments.size(); ++i) {
+            const auto& argument = active->arguments[i];
+            check_heap_store(locals[i], argument, types[i], false);
+            locals[i] = argument;
+        }
+    }
+    std::int64_t now() const {
+        return host.clock_ticks ? host.clock_ticks() : ticks();
+    }
+    void reset(bool constructing = false) {
+        if (!constructing && host.clear_script_permissions)
+            host.clear_script_permissions(context.item);
+        state = &program->states.at("default");
+        next_state = nullptr;
+        initialized_globals = 0;
+        minimum_event_delay = 0.;
+        next_event_time.reset();
+        globals.assign(program->globals.size(), std::int32_t{0});
+        locals.clear();
+        queue.clear();
+        counts.clear();
+        active.reset();
+        pc = 0;
+        sleep_until = 0;
+        sleep_requested = false;
+        timer_interval = 0;
+        fault.clear();
+        control.pending_events = 0;
+        control.active_event = false;
+        if (constructing)
+            control.state = scene::ScriptExecutionState::Construct;
+        else if (control.state != scene::ScriptExecutionState::Suspended)
+            control.state = scene::ScriptExecutionState::Idle;
+        post({"state_entry", {}, {}});
+        if (constructing)
+            control.state = control.running ? (queue.empty() ? scene::ScriptExecutionState::Idle
+                                                             : scene::ScriptExecutionState::OnStartQueue)
+                                            : scene::ScriptExecutionState::Suspended;
+    }
+    void set_running(bool value) {
+        control.active_event = active.has_value();
+        control.pending_events = queue.size();
+        scene::ScriptExecutionQueues queues;
+        queues.queue_yield = [] {};
+        queues.queue_start = [] {};
+        queues.remove_sleep = [] {};
+        queues.clear_events = [this] {
+            queue.clear();
+            counts.clear();
+        };
+        scene::script_set_running(control, value, queues);
+    }
+
+    bool throttle_event(const LslEvent& event) {
+        if (minimum_event_delay == 0.)
+            return false;
+        if (event.name == "changed") {
+            constexpr int scale_or_position = 8 | 32768;
+            const auto flags = std::get<std::int32_t>(event.arguments.front());
+            if (flags == 0)
+                return true;
+            if (flags & ~scale_or_position)
+                return false;
+        } else if (event.name != "timer" && event.name != "touch")
+            return false;
+
+        const auto time = (host.monotonic_ticks ? host.monotonic_ticks() : ticks()) / 10000000.;
+        if (next_event_time && time < *next_event_time)
+            return true;
+        next_event_time = time + minimum_event_delay;
+        return false;
+    }
+    bool post(LslEvent event) {
+        control.pending_events = queue.size();
+        auto gate = scene::stopped_script_event(control, handlers().contains(event.name),
+                                                handlers().contains(event.name), event.name == "state_entry");
+        if (gate == scene::StoppedScriptEvent::Reject)
+            return false;
+        if (gate == scene::StoppedScriptEvent::Ignore)
+            return true;
+        if (gate == scene::StoppedScriptEvent::QueueStateEntry) {
+            queue.push_front(std::move(event));
+            control.pending_events = queue.size();
+            return true;
+        }
+        const bool dataserver = event.name == "dataserver";
+        const bool http_request = event.name == "http_request";
+        const auto expected = event.name == "linkset_data" || http_request ? 3u
+                        : dataserver ? 2u
+                        : event.name == "state_entry" || event.name == "state_exit" || event.name == "timer"
+                            ? 0u
+                            : 1u;
+        if (event.arguments.size() != expected)
+            return false;
+        if (dataserver || http_request) {
+            if (!std::all_of(event.arguments.begin(), event.arguments.end(), [](const auto& value) {
+                    return std::holds_alternative<std::string>(value);
+                }))
+                return false;
+        } else {
+            if (expected && !std::holds_alternative<std::int32_t>(event.arguments[0]))
+                return false;
+            if (expected == 3 && (!std::holds_alternative<std::string>(event.arguments[1]) ||
+                                  !std::holds_alternative<std::string>(event.arguments[2])))
+                return false;
+        }
+        if (throttle_event(event))
+            return false;
+        if (counts[event.name] >= (event.name == "timer" ? 1 : 64))
+            return false;
+        ++counts[event.name];
+        if (event.name == "state_entry")
+            queue.push_front(std::move(event));
+        else
+            queue.push_back(std::move(event));
+        control.pending_events = queue.size();
+        if (control.state == scene::ScriptExecutionState::Idle)
+            control.state = scene::ScriptExecutionState::OnStartQueue;
+        return true;
+    }
+
+    void set_timer(double seconds) {
+        if (seconds == 0.) {
+            if (timer_interval) {
+                std::erase_if(queue, [](const auto& event) { return event.name == "timer"; });
+                counts["timer"] = 0;
+                control.pending_events = queue.size();
+            }
+            timer_interval = 0;
+            return;
+        }
+        const auto ticks = std::max(seconds, double(host.min_timer_interval)) * 10000000.;
+        if (!std::isfinite(ticks) || ticks < 1. || ticks >= 9223372036854775808.)
+            return;
+        timer_interval = static_cast<std::int64_t>(ticks);
+        advance_timer(now());
+    }
+    void advance_timer(std::int64_t time) {
+        constexpr auto limit = std::numeric_limits<std::int64_t>::max();
+        next_timer = time > limit - timer_interval ? limit : time + timer_interval;
+    }
+    void schedule_sleep(std::int32_t delay, std::int64_t time) {
+        sleep_until = time + std::int64_t(delay) * 10000;
+        sleep_requested = true;
+        if (host.request_sleep)
+            host.request_sleep(delay);
+    }
+    void reset_from_script() {
+        // YEngine ignores a self-reset during default state_entry, after
+        // the LSL API has released the script's URLs.
+        if (active->name == "state_entry" && state == &program->states.at("default")) {
+            if (host.release_script_urls)
+                host.release_script_urls(context.item);
+            return;
+        }
+        reset();
+    }
+    void execute(const Instruction& instruction) {
+        if (instruction.reset_script) {
+            reset_from_script();
+            return;
+        }
+        if (!instruction.target_state.empty()) {
+            const auto* target = &program->states.at(instruction.target_state);
+            if (active->name == "state_exit")
+                next_state = target;
+            else if (target != state) {
+                next_state = target;
+                active = LslEvent{"state_exit", {}, {}};
+                pc = 0;
+                initialize_event_locals();
+                return;
+            }
+            pc = handlers().at(active->name).instructions.size();
+            return;
+        }
+        if (instruction.return_event) {
+            pc = handlers().at(active->name).instructions.size();
+            return;
+        }
+        const Evaluator evaluator{locals,
+                                  globals,
+                                  active ? &*active : nullptr,
+                                  context,
+                                  host,
+                                  timer_start,
+                                  [this](std::int32_t milliseconds) { schedule_sleep(milliseconds, now()); },
+                                  [this] { return heap_bytes_used(); },
+                                  [this](const LslValue& slot, const LslValue& value, Type type, bool global) {
+                                      check_heap_store(slot, value, type, global);
+                                  }};
+        if (instruction.script_control_name) {
+            const auto name = std::get<std::string>(evaluator.evaluate(*instruction.script_control_name));
+            const auto* run = instruction.script_control_run.get();
+            const bool running = run && std::get<std::int32_t>(evaluator.evaluate(*run)) != 0;
+            const auto item = host.find_script ? host.find_script(context.object, name) : framework::Uuid{};
+            if (item.is_zero()) {
+                const auto* command = run ? "llSetScriptState" : "llResetOtherScript";
+                evaluator.script_error(std::string(command) + ": Can't find script '" + name + "'");
+            } else if (run) {
+                if (host.set_script_running)
+                    host.set_script_running(item, running);
+            } else if (item == context.item) {
+                reset_from_script();
+            } else if (host.reset_other_script) {
+                host.reset_other_script(item);
+            }
+            return;
+        }
+        if (instruction.unsit_avatar) {
+            const auto key = std::get<std::string>(evaluator.evaluate(*instruction.unsit_avatar));
+            framework::Uuid avatar;
+            if (host.unsit && framework::try_parse_sdk_uuid(key, avatar) && !avatar.is_zero())
+                host.unsit(context.object, avatar);
+            return;
+        }
+        if (instruction.force_sit_avatar) {
+            const auto avatar_key = std::get<std::string>(evaluator.evaluate(*instruction.force_sit_avatar));
+            const auto target_key = instruction.force_sit_target
+                ? std::get<std::string>(evaluator.evaluate(*instruction.force_sit_target))
+                : std::string{};
+            evaluator.check_ossl_permission("osForceOtherSit");
+            if (!host.force_sit)
+                return;
+
+            auto target = context.object;
+            if (instruction.force_sit_target && !framework::try_parse_sdk_uuid(target_key, target))
+                return;
+            framework::Uuid avatar;
+            if (framework::try_parse_sdk_uuid(avatar_key, avatar) && !avatar.is_zero())
+                host.force_sit(avatar, target);
+            return;
+        }
+        if (instruction.sun_hour) {
+            evaluator.evaluate(*instruction.sun_hour);
+            evaluator.evaluate(*instruction.sun_fixed);
+            // The current estate API evaluates its arguments and has an empty body.
+            if (instruction.estate_sun)
+                return;
+            const bool use_estate = std::get<std::int32_t>(evaluator.evaluate(*instruction.sun_use_estate)) != 0;
+            evaluator.check_ossl_permission("osSetRegionSunSettings");
+            // RegionSettings ignores assignments to FixedSun and SunPosition.
+            if (host.set_region_sun_settings)
+                host.set_region_sun_settings(use_estate);
+            return;
+        }
+        if (instruction.region_water_height) {
+            const auto height = list_float(evaluator.evaluate(*instruction.region_water_height));
+            evaluator.check_ossl_permission("osSetRegionWaterHeight");
+            if (std::abs(height) <= std::numeric_limits<float>::max() && host.set_region_water_height) {
+                const auto water_height = static_cast<float>(height);
+                if (water_height >= 0)
+                    host.set_region_water_height(water_height);
+            }
+            return;
+        }
+        if (instruction.sit_flags_link) {
+            // The source setter ignores both values after evaluating its arguments.
+            evaluator.evaluate(*instruction.sit_flags_value);
+            evaluator.evaluate(*instruction.sit_flags_link);
+            return;
+        }
+        if (instruction.seat_camera_eye || instruction.seat_camera_at || instruction.seat_camera_mouselook) {
+            const auto vector = [&](const auto& expression) -> std::optional<framework::Vector3d> {
+                if (!expression)
+                    return std::nullopt;
+                return std::get<framework::Vector3d>(evaluator.evaluate(*expression));
+            };
+            const auto at = vector(instruction.seat_camera_at);
+            const auto eye = vector(instruction.seat_camera_eye);
+            std::optional<bool> mouselook;
+            if (instruction.seat_camera_mouselook)
+                mouselook = std::get<std::int32_t>(evaluator.evaluate(*instruction.seat_camera_mouselook)) != 0;
+            const auto link = instruction.seat_camera_link
+                ? std::get<std::int32_t>(evaluator.evaluate(*instruction.seat_camera_link)) : -4;
+            if (host.set_seat_camera)
+                host.set_seat_camera(context.object, link, eye, at, mouselook);
+            return;
+        }
+        if (instruction.stand_target_value) {
+            const auto offset = std::get<framework::Vector3d>(evaluator.evaluate(*instruction.stand_target_value));
+            const auto link = instruction.stand_target_link
+                ? std::get<std::int32_t>(evaluator.evaluate(*instruction.stand_target_link)) : -4;
+            if (host.set_stand_target)
+                host.set_stand_target(context.object, link, offset);
+            return;
+        }
+        if (instruction.sit_range_value) {
+            const auto range = static_cast<float>(list_float(evaluator.evaluate(*instruction.sit_range_value)));
+            const auto link = instruction.sit_range_link
+                ? std::get<std::int32_t>(evaluator.evaluate(*instruction.sit_range_link)) : -4;
+            if (host.set_sit_active_range)
+                host.set_sit_active_range(context.object, link, std::min(range, 128.f));
+            return;
+        }
+        if (instruction.sit_target_position) {
+            auto rotation = std::get<LslRotation>(evaluator.evaluate(*instruction.sit_target_rotation));
+            const auto position =
+                std::get<framework::Vector3d>(evaluator.evaluate(*instruction.sit_target_position));
+            const auto link = instruction.sit_target_link
+                ? std::get<std::int32_t>(evaluator.evaluate(*instruction.sit_target_link)) : -4;
+            if (rotation == LslRotation{0, 0, 0, 0})
+                rotation.w = 1;
+            if (host.set_sit_target)
+                host.set_sit_target(context.object, link, position, rotation);
+            return;
+        }
+        if (instruction.allow_inventory_drop) {
+            const auto allowed = std::get<std::int32_t>(evaluator.evaluate(*instruction.allow_inventory_drop));
+            if (host.allow_inventory_drop)
+                host.allow_inventory_drop(context.object, allowed != 0);
+            return;
+        }
+        if (instruction.pass_touches) {
+            const auto pass = std::get<std::int32_t>(evaluator.evaluate(*instruction.pass_touches));
+            if (host.set_pass_touches)
+                host.set_pass_touches(context.object, pass != 0);
+            return;
+        }
+        if (instruction.click_action) {
+            const auto action = std::get<std::int32_t>(evaluator.evaluate(*instruction.click_action));
+            if (!host.set_click_action)
+                throw std::runtime_error("LSL host click action callback is required");
+            host.set_click_action(context.object, static_cast<std::uint8_t>(action));
+            return;
+        }
+        if (instruction.scale) {
+            const auto value = std::get<framework::Vector3d>(evaluator.evaluate(*instruction.scale));
+            if (!host.set_object_scale)
+                throw std::runtime_error("LSL host object scale callback is required");
+            if (auto scale =
+                    host.set_object_scale(context.object, {float(value.x), float(value.y), float(value.z)}))
+                context.object_scale = *scale;
+            return;
+        }
+        if (instruction.pay_price) {
+            std::array<std::int32_t, 5> prices;
+            prices.fill(-1);
+            prices[0] = std::get<std::int32_t>(evaluator.evaluate(*instruction.pay_price));
+            const auto buttons =
+                std::get<std::shared_ptr<const LslList>>(evaluator.evaluate(*instruction.pay_buttons));
+            if (buttons)
+                for (std::size_t i = 0; i < std::min(buttons->items.size(), prices.size() - 1); ++i)
+                    prices[i + 1] = list_integer(buttons->items[i]);
+            if (!host.set_pay_prices)
+                throw std::runtime_error("LSL host pay price callback is required");
+            host.set_pay_prices(context.object, prices);
+            return;
+        }
+        if (instruction.sound_queueing) {
+            const auto queueing = std::get<std::int32_t>(evaluator.evaluate(*instruction.sound_queueing));
+            if (!host.set_sound_queueing)
+                throw std::runtime_error("LSL host sound queueing callback is required");
+            host.set_sound_queueing(context.object, queueing == 1);
+            return;
+        }
+        if (instruction.preload_sound) {
+            const auto name = std::get<std::string>(evaluator.evaluate(*instruction.preload_sound));
+            if (!host.preload_sound)
+                throw std::runtime_error("LSL host sound preload callback is required");
+            if (host.preload_sound(context.object, name))
+                schedule_sleep(1000, now());
+            return;
+        }
+        if (instruction.sound_radius) {
+            const auto radius = evaluator.evaluate(*instruction.sound_radius);
+            const double value = std::holds_alternative<double>(radius) ? std::get<double>(radius)
+                                                                        : std::get<std::int32_t>(radius);
+            if (!host.set_sound_radius)
+                throw std::runtime_error("LSL host sound radius callback is required");
+            host.set_sound_radius(context.object, static_cast<float>(value));
+            return;
+        }
+        if (instruction.adjust_sound_gain) {
+            const auto gain = evaluator.evaluate(*instruction.adjust_sound_gain);
+            const double value =
+                std::holds_alternative<double>(gain) ? std::get<double>(gain) : std::get<std::int32_t>(gain);
+            if (!host.adjust_sound_gain)
+                throw std::runtime_error("LSL host sound gain callback is required");
+            host.adjust_sound_gain(context.object, static_cast<float>(std::clamp(value, 0., 1.)));
+            schedule_sleep(100, now());
+            return;
+        }
+        if (instruction.sound) {
+            if (instruction.collision_sound) {
+                const auto name = std::get<std::string>(evaluator.evaluate(*instruction.text));
+                const auto gain = evaluator.evaluate(*instruction.sound_gain);
+                const double volume = std::holds_alternative<double>(gain) ? std::get<double>(gain)
+                                                                           : std::get<std::int32_t>(gain);
+                if (!host.set_collision_sound)
+                    throw std::runtime_error("LSL host collision sound callback is required");
+                host.set_collision_sound(context.object, name, static_cast<float>(volume));
+                return;
+            }
+            if (instruction.play_sound) {
+                const auto name = std::get<std::string>(evaluator.evaluate(*instruction.text));
+                const auto gain = evaluator.evaluate(*instruction.sound_gain);
+                if (!host.play_sound)
+                    throw std::runtime_error("LSL host attached sound callback is required");
+                std::optional<LslHost::SoundBounds> bounds;
+                if (instruction.sound_max) {
+                    const auto convert = [](framework::Vector3d v) {
+                        return framework::Vector3{static_cast<float>(v.x), static_cast<float>(v.y),
+                                                  static_cast<float>(v.z)};
+                    };
+                    const auto max =
+                        convert(std::get<framework::Vector3d>(evaluator.evaluate(*instruction.sound_max)));
+                    const auto min =
+                        convert(std::get<framework::Vector3d>(evaluator.evaluate(*instruction.sound_min)));
+                    bounds.emplace(min, max);
+                }
+                host.play_sound(context.object, name,
+                                std::holds_alternative<double>(gain) ? std::get<double>(gain)
+                                                                     : std::get<std::int32_t>(gain),
+                                instruction.sound_sync_flags, instruction.trigger_sound, bounds);
+                return;
+            }
+            if (!host.loop_sound)
+                throw std::runtime_error("LSL host sound callback is required");
+            if (instruction.sound_gain) {
+                const auto name = std::get<std::string>(evaluator.evaluate(*instruction.text));
+                const auto gain = evaluator.evaluate(*instruction.sound_gain);
+                host.loop_sound(context.object, name,
+                                std::holds_alternative<double>(gain) ? std::get<double>(gain)
+                                                                     : std::get<std::int32_t>(gain),
+                                instruction.sound_sync_flags);
+            } else
+                host.loop_sound(context.object, std::nullopt, 0., 0);
+            return;
+        }
+        if (instruction.text_color) {
+            auto text = std::get<std::string>(evaluator.evaluate(*instruction.text));
+            const auto color = std::get<framework::Vector3d>(evaluator.evaluate(*instruction.text_color));
+            const auto alpha = evaluator.evaluate(*instruction.text_alpha);
+            const auto channel = [](double value) {
+                const auto clamped = std::clamp(static_cast<float>(value), 0.f, 1.f);
+                return std::isnan(clamped) ? 0u : static_cast<std::uint32_t>(clamped * 255.f);
+            };
+            const auto opacity = std::holds_alternative<double>(alpha) ? std::get<double>(alpha)
+                                                                       : std::get<std::int32_t>(alpha);
+            if (!host.set_floating_text)
+                throw std::runtime_error("LSL host floating text callback is required");
+            host.set_floating_text(context.object, std::move(text),
+                                   (channel(opacity) << 24) | (channel(color.x) << 16) |
+                                       (channel(color.y) << 8) | channel(color.z));
+            return;
+        }
+        if (instruction.sit_label) {
+            const auto text = std::get<std::string>(evaluator.evaluate(*instruction.text));
+            if (!host.set_interaction_label)
+                throw std::runtime_error("LSL host interaction label callback is required");
+            host.set_interaction_label(context.object, *instruction.sit_label,
+                                       framework::truncate_utf16(text, 9));
+            return;
+        }
+        if (instruction.set_metadata) {
+            auto text = std::get<std::string>(evaluator.evaluate(*instruction.text));
+            if (instruction.description && text.size() > 127) {
+                std::size_t end = 127;
+                while ((static_cast<unsigned char>(text[end]) & 0xc0) == 0x80)
+                    --end;
+                text.resize(end);
+            }
+            auto& current = instruction.description ? context.object_description : context.object_name;
+            if (text != current) {
+                if (!host.set_object_text)
+                    throw std::runtime_error("LSL host object text callback is required");
+                if (host.set_object_text(context.object, instruction.description, text))
+                    current = std::move(text);
+            }
+            return;
+        }
+        if (instruction.discard) {
+            evaluator.evaluate(*instruction.text);
+            return;
+        }
+        if (instruction.store) {
+            LslValue value = default_value(instruction.store_type);
+            if (instruction.text)
+                value = evaluator.evaluate(*instruction.text);
+            if (instruction.store_type == Type::Float) {
+                if (const auto* integer = std::get_if<std::int32_t>(&value))
+                    value = double(*integer);
+            }
+            auto& slot = (instruction.global ? globals : locals).at(*instruction.store);
+            check_heap_store(slot, value, instruction.store_type, instruction.global);
+            slot = std::move(value);
+            return;
+        }
+        if (instruction.jump) {
+            if (!instruction.condition || truth(evaluator.evaluate(*instruction.condition),
+                                                instruction.condition->type) == instruction.jump_when_true)
+                pc = *instruction.jump;
+            return;
+        }
+        if (instruction.parcel_list_action) {
+            framework::Uuid avatar;
+            if (instruction.parcel_agent &&
+                (!framework::try_parse_sdk_uuid(
+                     std::get<std::string>(evaluator.evaluate(*instruction.parcel_agent)), avatar) ||
+                 avatar.is_zero()))
+                return;
+            double hours = 0;
+            if (instruction.parcel_hours) {
+                const auto value = evaluator.evaluate(*instruction.parcel_hours);
+                hours = std::holds_alternative<double>(value) ? std::get<double>(value)
+                                                              : std::get<std::int32_t>(value);
+            }
+            if (!host.edit_parcel_list ||
+                host.edit_parcel_list(context.object, *instruction.parcel_list_action,
+                                      instruction.parcel_ban_list, avatar, hours))
+                schedule_sleep(100, now());
+            return;
+        }
+        if (instruction.event_delay) {
+            const auto value = evaluator.evaluate(*instruction.event_delay);
+            const auto seconds = std::holds_alternative<double>(value)
+                                     ? std::get<double>(value)
+                                     : double(std::get<std::int32_t>(value));
+            minimum_event_delay = seconds > 0.001 ? seconds : 0.;
+            next_event_time.reset();
+            return;
+        }
+        if (instruction.timer) {
+            const auto value = evaluator.evaluate(*instruction.timer);
+            set_timer(std::holds_alternative<double>(value) ? std::get<double>(value)
+                                                            : double(std::get<std::int32_t>(value)));
+            return;
+        }
+        if (instruction.sleep) {
+            const auto value = evaluator.evaluate(*instruction.sleep);
+            const auto seconds = std::holds_alternative<double>(value)
+                                     ? std::get<double>(value)
+                                     : double(std::get<std::int32_t>(value));
+            const auto milliseconds = std::trunc(seconds * 1000.);
+            const auto delay = milliseconds >= -2147483648. && milliseconds <= 2147483647.
+                                   ? static_cast<std::int32_t>(milliseconds)
+                                   : 0;
+            schedule_sleep(delay, now());
+            return;
+        }
+        if (instruction.override_state) {
+            const auto state = std::get<std::string>(evaluator.evaluate(*instruction.override_state));
+            std::optional<std::string> animation;
+            if (instruction.override_animation)
+                animation = std::get<std::string>(evaluator.evaluate(*instruction.override_animation));
+            if (host.change_animation_override)
+                host.change_animation_override(context.object, context.item, state, animation);
+            return;
+        }
+        if (instruction.animation_name) {
+            if (instruction.animation_avatar) {
+                const auto key = std::get<std::string>(evaluator.evaluate(*instruction.animation_avatar));
+                const auto name = std::get<std::string>(evaluator.evaluate(*instruction.animation_name));
+                evaluator.check_ossl_permission(
+                    instruction.start_animation ? "osAvatarPlayAnimation" : "osAvatarStopAnimation");
+                framework::Uuid avatar;
+                if (host.ossl_avatar_animation && framework::try_parse_sdk_uuid(key, avatar))
+                    host.ossl_avatar_animation(context.object, avatar, name, instruction.start_animation);
+                return;
+            }
+            const auto name = std::get<std::string>(evaluator.evaluate(*instruction.animation_name));
+            if (host.script_animation)
+                host.script_animation(context.object, context.item, name, instruction.start_animation);
+            return;
+        }
+        if (instruction.permission_agent) {
+            const auto agent = std::get<std::string>(evaluator.evaluate(*instruction.permission_agent));
+            const auto permissions = std::get<std::int32_t>(evaluator.evaluate(*instruction.permission_mask));
+            if (host.request_permissions)
+                host.request_permissions(context.object, context.item, agent, permissions);
+            return;
+        }
+        if (instruction.reset_linkset_data) {
+            if (host.linkset_data_reset)
+                host.linkset_data_reset(context.object);
+            return;
+        }
+        if (instruction.reset_time) {
+            timer_start = evaluator.timer_now();
+            return;
+        }
+        if (instruction.omega.front()) {
+            if (!host.target_omega)
+                throw std::runtime_error("LSL host target omega callback is required");
+            const auto number = [&](std::size_t i) {
+                const auto value = evaluator.evaluate(*instruction.omega[i]);
+                if (const auto* real = std::get_if<double>(&value))
+                    return static_cast<float>(*real);
+                return static_cast<float>(std::get<std::int32_t>(value));
+            };
+            const bool stop = std::abs(number(2)) < 1e-6f;
+            const float spin = number(1);
+            const auto axis = std::get<framework::Vector3d>(evaluator.evaluate(*instruction.omega[0]));
+            const auto velocity = stop ? framework::Vector3{}
+                                       : framework::Vector3{static_cast<float>(axis.x) * spin,
+                                                            static_cast<float>(axis.y) * spin,
+                                                            static_cast<float>(axis.z) * spin};
+            host.target_omega(context.object, velocity, stop);
+            context.omega = velocity;
+            return;
+        }
+        auto text = std::get<std::string>(evaluator.evaluate(*instruction.text));
+        if (instruction.owner) {
+            if (context.owner == context.group)
+                return;
+            if (!host.chat)
+                throw std::runtime_error("LSL host chat callback is required");
+            host.chat({LslChatType::Owner, 0, std::move(text), context});
+            return;
+        }
+        auto channel = std::get<std::int32_t>(evaluator.evaluate(*instruction.channel));
+        auto time = now();
+        if (channel == 0) {
+            if (time - last_say_check > 10000000) {
+                last_say_check = time;
+                say_count = 0;
+            } else
+                ++say_count;
+        }
+        if (say_count >= 11) {
+            float requested = 2000.f * host.script_delay_factor;
+            if (requested >= 10 && requested < 2147483648.f) {
+                auto delay = static_cast<std::int32_t>(requested);
+                schedule_sleep(delay, time);
+            }
+        }
+        if (host.console_channel && channel == *host.console_channel) {
+            if (!host.console)
+                throw std::runtime_error("LSL host console callback is required");
+            host.console(text);
+            return;
+        }
+        LslChat chat{LslChatType::Say, channel, say_text(std::move(text)), context};
+        if (!host.chat)
+            throw std::runtime_error("LSL host chat callback is required");
+        host.chat(chat);
+        if (host.listener)
+            host.listener(chat);
+    }
+};
+LslInstance::LslInstance(std::shared_ptr<const LslProgram> p, LslContext c, const LslHost& h)
+    : LslInstance(std::move(p), std::move(c), h, true) {
+}
+LslInstance::LslInstance(std::shared_ptr<const LslProgram> p, LslContext c, const LslHost& h, bool start_running)
+    : impl_(std::make_unique<Impl>()) {
+    if (!p)
+        throw std::invalid_argument("null LSL program");
+    impl_->program = std::move(p);
+    impl_->context = std::move(c);
+    impl_->host = h;
+    impl_->last_say_check = impl_->now();
+    impl_->timer_start = impl_->host.monotonic_ticks ? impl_->host.monotonic_ticks() : ticks();
+    impl_->control.running = start_running;
+    impl_->reset(true);
+}
+LslInstance::~LslInstance() = default;
+LslInstance::LslInstance(LslInstance&&) noexcept = default;
+LslInstance& LslInstance::operator=(LslInstance&&) noexcept = default;
+void LslInstance::reset() {
+    impl_->reset();
+}
+bool LslInstance::running() const {
+    return impl_->control.running;
+}
+void LslInstance::running(bool value) {
+    impl_->set_running(value);
+}
+bool LslInstance::post_event(LslEvent event) {
+    return impl_->post(std::move(event));
+}
+std::size_t LslInstance::queued_events() const {
+    return impl_->queue.size();
+}
+std::int32_t LslInstance::heap_bytes_used() const {
+    return impl_->heap_bytes_used();
+}
+bool LslInstance::handles_event(std::string_view name) const {
+    return impl_->handlers().contains(std::string(name));
+}
+std::uint64_t LslInstance::event_mask() const {
+    return impl_->state->event_mask;
+}
+const LslEvent* LslInstance::current_event() const {
+    return impl_->active ? &*impl_->active : nullptr;
+}
+void LslInstance::set_context(LslContext c) {
+    impl_->context = std::move(c);
+}
+LslRunResult LslInstance::run(std::size_t budget) {
+    auto& s = *impl_;
+    LslRunResult out{LslRunStatus::Idle, 0, {}};
+    auto paused = [&] {
+        if (s.control.running)
+            return false;
+        s.control.state = scene::ScriptExecutionState::Suspended;
+        s.control.active_event = s.active.has_value();
+        s.control.pending_events = s.queue.size();
+        return true;
+    };
+    if (paused())
+        return out;
+    if (!s.fault.empty())
+        return {LslRunStatus::Faulted, 0, s.fault};
+    try {
+        if (s.initialized_globals == 0)
+            s.check_heap_limit(0, s.global_heap_bytes());
+        for (;;) {
+            if (paused())
+                return out;
+            const auto time = s.now();
+            if (s.timer_interval && time >= s.next_timer) {
+                s.advance_timer(time);
+                s.post({"timer", {}, {}});
+            }
+            if (std::exchange(s.sleep_requested, false) || time < s.sleep_until) {
+                s.control.state = scene::ScriptExecutionState::OnSleepQueue;
+                out.status = LslRunStatus::Sleeping;
+                return out;
+            }
+            if (s.initialized_globals < s.program->globals.size()) {
+                if (out.instructions >= budget) {
+                    out.status = LslRunStatus::BudgetExhausted;
+                    return out;
+                }
+                s.execute(s.program->globals[s.initialized_globals++]);
+                ++out.instructions;
+                continue;
+            }
+            if (!s.active) {
+                if (s.queue.empty()) {
+                    s.control.state = scene::ScriptExecutionState::Idle;
+                    s.control.active_event = false;
+                    s.control.pending_events = 0;
+                    return out;
+                }
+                if (out.instructions >= budget) {
+                    s.control.state = scene::ScriptExecutionState::OnStartQueue;
+                    out.status = LslRunStatus::BudgetExhausted;
+                    return out;
+                }
+                s.active = std::move(s.queue.front());
+                s.queue.pop_front();
+                --s.counts[s.active->name];
+                s.control.pending_events = s.queue.size();
+                s.control.active_event = true;
+                s.pc = 0;
+                s.initialize_event_locals();
+            }
+            auto& code = s.handlers().at(s.active->name).instructions;
+            if (s.pc == code.size()) {
+                if (s.next_state && s.active->name == "state_exit") {
+                    s.state = std::exchange(s.next_state, nullptr);
+                    s.queue.clear();
+                    s.counts.clear();
+                    s.post({"state_entry", {}, {}});
+                }
+                ++out.events_completed;
+                s.active.reset();
+                s.control.active_event = false;
+                continue;
+            }
+            if (out.instructions >= budget) {
+                s.control.state = scene::ScriptExecutionState::OnYieldQueue;
+                out.status = LslRunStatus::BudgetExhausted;
+                return out;
+            }
+            s.control.state = scene::ScriptExecutionState::Running;
+            s.execute(code[s.pc++]);
+            ++out.instructions;
+        }
+    } catch (const std::exception& e) {
+        s.fault = e.what();
+        const bool out_of_heap = dynamic_cast<const OutOfHeap*>(&e) != nullptr;
+        const bool ossl_error = dynamic_cast<const OsslPermissionError*>(&e) != nullptr;
+        const bool ossl_runtime_error = dynamic_cast<const OsslRuntimeError*>(&e) != nullptr;
+        if ((out_of_heap || ossl_error || ossl_runtime_error) && s.host.chat) {
+            const auto& position = s.context.position;
+            char location[160];
+            std::snprintf(location, sizeof location, "<%.0f,%.0f,%.0f>",
+                          std::floor(position.x), std::floor(position.y), std::floor(position.z));
+            const auto event = s.active ? s.active->name : "None";
+            auto message = "YEngine: " + s.fault + " (script: " + s.context.script_name +
+                           " event: " + event + " primID: " + s.context.object.str() +
+                           " at: " + location + ") Script must be Reset to re-enable.\n";
+            const auto audience = out_of_heap || (ossl_error && s.host.ossl_permission_error_to_owner)
+                ? LslChatType::Owner : LslChatType::Debug;
+            s.host.chat({audience, std::numeric_limits<std::int32_t>::max(),
+                         framework::truncate_utf16(message, 1000), s.context});
+        }
+        s.active.reset();
+        s.locals.clear();
+        s.pc = 0;
+        s.control.active_event = false;
+        s.control.state = scene::ScriptExecutionState::OnSleepQueue;
+        out.status = LslRunStatus::Faulted;
+        out.error = s.fault;
+        return out;
+    }
 }
 }

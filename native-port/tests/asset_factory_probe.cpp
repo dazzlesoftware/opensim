@@ -4,16 +4,199 @@
 #include "opensim/framework/sha1.hpp"
 #include <iostream>
 #include <sstream>
-using namespace opensim;using namespace services;
-std::string hex(std::string_view s){std::string out;for(unsigned char c:s){out+="0123456789abcdef"[c>>4];out+="0123456789abcdef"[c&15];}return out;}
-std::string unhex(const std::string& s){if(s==".")return "";std::string out;for(size_t i=0;i<s.size();i+=2)out+=char(std::stoi(s.substr(i,2),nullptr,16));return out;}
-std::string bytes(const framework::AssetBytes& data){return data?hex(std::string(data->begin(),data->end())):"N";}
-struct Context{std::string trace,fail;int mode,loader_mode;AssetService::Asset current;void event(const std::string& name){trace+=name+";";if(name==fail)throw std::runtime_error("injected");}};
-AssetService::Asset make_asset(const std::string& id,std::vector<uint8_t> data){auto a=std::make_shared<framework::AssetBase>();a->id(id);a->data=std::make_shared<std::vector<uint8_t>>(std::move(data));return a;}
-constexpr auto asset_id="00000000-0000-0000-0000-000000000001";
-struct Data:InitializableAssetStore {Context& c;explicit Data(Context& value):c(value){}void initialise(const std::string& connection)override{c.event("initialize:"+connection);}void dispose()override{c.event("dispose");}AssetService::Asset get(framework::Uuid id)override{c.event("get:"+id.str());if(c.mode==4)throw std::runtime_error("get");return c.current;}bool store(AssetService::Asset a)override{c.event("store:"+a->id()+":"+bytes(a->data));c.current=a;return false;}std::vector<bool> exists(const std::vector<framework::Uuid>&)override{return {};}std::vector<std::shared_ptr<framework::AssetMetadata>> metadata_set(int32_t,int32_t)override{return {};}bool erase(const std::string&)override{return false;}};
-struct Loader:DefaultAssetLoader {Context& c;explicit Loader(Context& value):c(value){}void for_each(const std::string& arguments,std::function<void(AssetService::Asset)> action)override{c.event("loader:"+arguments);if(c.loader_mode==3){action({});return;}auto a=make_asset(c.loader_mode==5?"bad":asset_id,c.loader_mode==4?std::vector<uint8_t>{}:std::vector<uint8_t>{1,2});action(a);if(c.loader_mode==2)throw std::runtime_error("loader");if(c.loader_mode==6)action(make_asset(asset_id,{5}));}};
-struct Backend:AssetStorageBackend {Context& c;std::shared_ptr<Data> data;std::shared_ptr<Loader> loader;explicit Backend(Context& value):c(value),data(std::make_shared<Data>(c)),loader(std::make_shared<Loader>(c)){}std::shared_ptr<InitializableAssetStore> load_store(const std::string& module)override{c.event("load-store:"+module);return module=="missing"?nullptr:data;}std::shared_ptr<DefaultAssetLoader> load_loader(const std::string& module)override{c.event("load-loader:"+module);return module=="missing"||c.loader_mode==1?nullptr:loader;}void debug(const std::string& message)override{c.event("debug:"+message);}void warn(const std::string& message)override{c.event("warn:"+message);}void error(const std::string& message,const std::exception&)override{c.event("error:"+message);}std::string hash(const framework::AssetBytes& data)override{c.event("hash:"+bytes(data));return AssetStorageBackend::hash(data);}};
-int main(){std::string line;while(std::getline(std::cin,line)){std::istringstream in(line);std::string first;in>>first;if(first=="h"){std::string value;in>>value;try{if(value=="N")throw std::invalid_argument("null");auto text=unhex(value);std::cout<<framework::sha1_hex(std::span(reinterpret_cast<const uint8_t*>(text.data()),text.size()))<<'\n';}catch(...){std::cout<<"EX\n";}continue;}Context c;int config_index=std::stoi(first);std::string ops;in>>c.mode>>c.loader_mode>>ops>>c.fail;if(c.fail=="-")c.fail="";else c.fail=unhex(c.fail);if(c.mode!=0){c.current=make_asset(asset_id,c.mode==1?std::vector<uint8_t>{1,2}:std::vector<uint8_t>{3,4});if(c.mode==3)c.current->data=nullptr;}auto backend=std::make_shared<Backend>(c);auto state=std::make_shared<AssetStorageState>();AssetStorageFactory factory(backend,state);std::shared_ptr<ConfiguredAssetService> last;auto config=server::IniConfig::load("config-"+std::to_string(config_index)+".ini");std::string out;
- for(char op:ops){std::string result="-";try{switch(op){case 'I':last=factory.create(&config);break;case 'E':last=factory.create(&config,std::string{});break;case 'J':last=factory.create(&config,std::string("Other"));break;case 'N':last=factory.create(&config,std::nullopt);break;case 'C':last=factory.create(nullptr);break;case 'R':state->root=nullptr;break;case 'G':{auto root=state->root.load();if(!root)throw std::runtime_error("root");result=root->get_asset(asset_id)?"A":"N";break;}}}catch(...){result="EX";}auto root=state->root.load();out+=std::string(1,op)+":"+hex(result)+":"+(root?"1":"0")+(last?"1":"0")+(root==last?"1":"0")+":"+(root?hex(root->config_name.value_or("")):"N")+":"+(c.current?bytes(c.current->data):"N")+";";}
- std::cout<<out<<'|'<<hex(c.trace)<<'\n';}}
+using namespace opensim;
+using namespace services;
+std::string hex(std::string_view s) {
+    std::string out;
+    for (unsigned char c : s) {
+        out += "0123456789abcdef"[c >> 4];
+        out += "0123456789abcdef"[c & 15];
+    }
+    return out;
+}
+std::string unhex(const std::string &s) {
+    if (s == ".")
+        return "";
+    std::string out;
+    for (size_t i = 0; i < s.size(); i += 2)
+        out += char(std::stoi(s.substr(i, 2), nullptr, 16));
+    return out;
+}
+std::string bytes(const framework::AssetBytes &data) {
+    return data ? hex(std::string(data->begin(), data->end())) : "N";
+}
+struct Context {
+    std::string trace, fail;
+    int mode, loader_mode;
+    AssetService::Asset current;
+    void event(const std::string &name) {
+        trace += name + ";";
+        if (name == fail)
+            throw std::runtime_error("injected");
+    }
+};
+AssetService::Asset make_asset(const std::string &id, std::vector<uint8_t> data) {
+    auto a = std::make_shared<framework::AssetBase>();
+    a->id(id);
+    a->data = std::make_shared<std::vector<uint8_t>>(std::move(data));
+    return a;
+}
+constexpr auto asset_id = "00000000-0000-0000-0000-000000000001";
+struct Data : InitializableAssetStore {
+    Context &c;
+    explicit Data(Context &value) : c(value) {}
+    void initialise(const std::string &connection) override {
+        c.event("initialize:" + connection);
+    }
+    void dispose() override {
+        c.event("dispose");
+    }
+    AssetService::Asset get(framework::Uuid id) override {
+        c.event("get:" + id.str());
+        if (c.mode == 4)
+            throw std::runtime_error("get");
+        return c.current;
+    }
+    bool store(AssetService::Asset a) override {
+        c.event("store:" + a->id() + ":" + bytes(a->data));
+        c.current = a;
+        return false;
+    }
+    std::vector<bool> exists(const std::vector<framework::Uuid> &) override {
+        return {};
+    }
+    std::vector<std::shared_ptr<framework::AssetMetadata>> metadata_set(int32_t, int32_t) override {
+        return {};
+    }
+    bool erase(const std::string &) override {
+        return false;
+    }
+};
+struct Loader : DefaultAssetLoader {
+    Context &c;
+    explicit Loader(Context &value) : c(value) {}
+    void for_each(const std::string &arguments, std::function<void(AssetService::Asset)> action) override {
+        c.event("loader:" + arguments);
+        if (c.loader_mode == 3) {
+            action({});
+            return;
+        }
+        auto a = make_asset(c.loader_mode == 5 ? "bad" : asset_id,
+                            c.loader_mode == 4 ? std::vector<uint8_t>{} : std::vector<uint8_t>{1, 2});
+        action(a);
+        if (c.loader_mode == 2)
+            throw std::runtime_error("loader");
+        if (c.loader_mode == 6)
+            action(make_asset(asset_id, {5}));
+    }
+};
+struct Backend : AssetStorageBackend {
+    Context &c;
+    std::shared_ptr<Data> data;
+    std::shared_ptr<Loader> loader;
+    explicit Backend(Context &value)
+        : c(value), data(std::make_shared<Data>(c)), loader(std::make_shared<Loader>(c)) {}
+    std::shared_ptr<InitializableAssetStore> load_store(const std::string &module) override {
+        c.event("load-store:" + module);
+        return module == "missing" ? nullptr : data;
+    }
+    std::shared_ptr<DefaultAssetLoader> load_loader(const std::string &module) override {
+        c.event("load-loader:" + module);
+        return module == "missing" || c.loader_mode == 1 ? nullptr : loader;
+    }
+    void debug(const std::string &message) override {
+        c.event("debug:" + message);
+    }
+    void warn(const std::string &message) override {
+        c.event("warn:" + message);
+    }
+    void error(const std::string &message, const std::exception &) override {
+        c.event("error:" + message);
+    }
+    std::string hash(const framework::AssetBytes &data) override {
+        c.event("hash:" + bytes(data));
+        return AssetStorageBackend::hash(data);
+    }
+};
+int main() {
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        std::istringstream in(line);
+        std::string first;
+        in >> first;
+        if (first == "h") {
+            std::string value;
+            in >> value;
+            try {
+                if (value == "N")
+                    throw std::invalid_argument("null");
+                auto text = unhex(value);
+                std::cout << framework::sha1_hex(
+                                 std::span(reinterpret_cast<const uint8_t *>(text.data()), text.size()))
+                          << '\n';
+            } catch (...) {
+                std::cout << "EX\n";
+            }
+            continue;
+        }
+        Context c;
+        int config_index = std::stoi(first);
+        std::string ops;
+        in >> c.mode >> c.loader_mode >> ops >> c.fail;
+        if (c.fail == "-")
+            c.fail = "";
+        else
+            c.fail = unhex(c.fail);
+        if (c.mode != 0) {
+            c.current =
+                make_asset(asset_id, c.mode == 1 ? std::vector<uint8_t>{1, 2} : std::vector<uint8_t>{3, 4});
+            if (c.mode == 3)
+                c.current->data = nullptr;
+        }
+        auto backend = std::make_shared<Backend>(c);
+        auto state = std::make_shared<AssetStorageState>();
+        AssetStorageFactory factory(backend, state);
+        std::shared_ptr<ConfiguredAssetService> last;
+        auto config = server::IniConfig::load("config-" + std::to_string(config_index) + ".ini");
+        std::string out;
+        for (char op : ops) {
+            std::string result = "-";
+            try {
+                switch (op) {
+                case 'I':
+                    last = factory.create(&config);
+                    break;
+                case 'E':
+                    last = factory.create(&config, std::string{});
+                    break;
+                case 'J':
+                    last = factory.create(&config, std::string("Other"));
+                    break;
+                case 'N':
+                    last = factory.create(&config, std::nullopt);
+                    break;
+                case 'C':
+                    last = factory.create(nullptr);
+                    break;
+                case 'R':
+                    state->root.store(nullptr);
+                    break;
+                case 'G': {
+                    auto root = state->root.load();
+                    if (!root)
+                        throw std::runtime_error("root");
+                    result = root->get_asset(asset_id) ? "A" : "N";
+                    break;
+                }
+                }
+            } catch (...) {
+                result = "EX";
+            }
+            auto root = state->root.load();
+            out += std::string(1, op) + ":" + hex(result) + ":" + (root ? "1" : "0") + (last ? "1" : "0") +
+                   (root == last ? "1" : "0") + ":" + (root ? hex(root->config_name.value_or("")) : "N") +
+                   ":" + (c.current ? bytes(c.current->data) : "N") + ";";
+        }
+        std::cout << out << '|' << hex(c.trace) << '\n';
+    }
+}

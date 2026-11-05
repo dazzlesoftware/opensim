@@ -29,51 +29,59 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/services/grid_region.hpp"
 #include <memory>
 namespace opensim::services {
-using RegionRows=std::vector<std::shared_ptr<RegionData>>;
+using RegionRows = std::vector<std::shared_ptr<RegionData>>;
 class RegionStore {
-public:
-    virtual ~RegionStore()=default;
-    virtual std::shared_ptr<RegionData> get(const framework::Uuid& id,const framework::Uuid& scope)=0;
-    virtual std::shared_ptr<RegionData> at(std::int32_t x,std::int32_t y,const framework::Uuid& scope)=0;
-    virtual std::shared_ptr<RegionData> specific(const std::string& name,const framework::Uuid& scope)=0;
-    virtual std::optional<RegionRows> find(const std::string& pattern,const framework::Uuid& scope)=0;
-    virtual RegionRows range(std::int32_t x1,std::int32_t y1,std::int32_t x2,std::int32_t y2,const framework::Uuid& scope)=0;
-    virtual RegionRows with_flags(std::int32_t flags,const framework::Uuid& scope)=0;
-    virtual bool store(const std::shared_ptr<RegionData>& row)=0;
-    virtual bool set(const framework::Uuid& id,const std::string& item,const std::string& value)=0;
-    virtual bool erase(const framework::Uuid& id)=0;
+  public:
+    virtual ~RegionStore() = default;
+    virtual std::shared_ptr<RegionData> get(const framework::Uuid& id, const framework::Uuid& scope) = 0;
+    virtual std::shared_ptr<RegionData> at(std::int32_t x, std::int32_t y, const framework::Uuid& scope) = 0;
+    virtual std::shared_ptr<RegionData> specific(const std::string& name, const framework::Uuid& scope) = 0;
+    virtual std::optional<RegionRows> find(const std::string& pattern, const framework::Uuid& scope) = 0;
+    virtual RegionRows range(std::int32_t x1, std::int32_t y1, std::int32_t x2, std::int32_t y2,
+                             const framework::Uuid& scope) = 0;
+    virtual RegionRows with_flags(std::int32_t flags, const framework::Uuid& scope) = 0;
+    virtual bool store(const std::shared_ptr<RegionData>& row) = 0;
+    virtual bool set(const framework::Uuid& id, const std::string& item, const std::string& value) = 0;
+    virtual bool erase(const framework::Uuid& id) = 0;
 };
-class NullRegionStore final:public RegionStore {
-public:
-    explicit NullRegionStore(const std::string& connection="");
-    std::shared_ptr<RegionData> get(const framework::Uuid& id,const framework::Uuid& scope)override;
-    std::shared_ptr<RegionData> at(std::int32_t x,std::int32_t y,const framework::Uuid& scope)override;
-    std::shared_ptr<RegionData> specific(const std::string& name,const framework::Uuid& scope)override;
-    std::optional<RegionRows> find(const std::string& pattern,const framework::Uuid& scope)override;
-    RegionRows range(std::int32_t x1,std::int32_t y1,std::int32_t x2,std::int32_t y2,const framework::Uuid& scope)override;
-    RegionRows with_flags(std::int32_t flags,const framework::Uuid& scope)override;
-    bool store(const std::shared_ptr<RegionData>& row)override;
-    bool set(const framework::Uuid& id,const std::string& item,const std::string& value)override;
-    bool erase(const framework::Uuid& id)override;
-private:
-    struct State;std::shared_ptr<State> state_;
-    static std::shared_ptr<State> singleton(bool create=false);
+class NullRegionStore final : public RegionStore {
+  public:
+    explicit NullRegionStore(const std::string& connection = "");
+    std::shared_ptr<RegionData> get(const framework::Uuid& id, const framework::Uuid& scope) override;
+    std::shared_ptr<RegionData> at(std::int32_t x, std::int32_t y, const framework::Uuid& scope) override;
+    std::shared_ptr<RegionData> specific(const std::string& name, const framework::Uuid& scope) override;
+    std::optional<RegionRows> find(const std::string& pattern, const framework::Uuid& scope) override;
+    RegionRows range(std::int32_t x1, std::int32_t y1, std::int32_t x2, std::int32_t y2,
+                     const framework::Uuid& scope) override;
+    RegionRows with_flags(std::int32_t flags, const framework::Uuid& scope) override;
+    bool store(const std::shared_ptr<RegionData>& row) override;
+    bool set(const framework::Uuid& id, const std::string& item, const std::string& value) override;
+    bool erase(const framework::Uuid& id) override;
+
+  private:
+    struct State;
+    std::shared_ptr<State> state_;
+    static std::shared_ptr<State> singleton(bool create = false);
 };
-class SqliteRegionStore final:public RegionStore {
-public:
-    explicit SqliteRegionStore(const std::string& path,bool initialize=false,const std::string& realm="regions");
+class SqliteRegionStore final : public RegionStore {
+  public:
+    explicit SqliteRegionStore(const std::string& path, bool initialize = false,
+                               const std::string& realm = "regions");
     ~SqliteRegionStore();
-    std::shared_ptr<RegionData> get(const framework::Uuid& id,const framework::Uuid& scope)override;
-    std::shared_ptr<RegionData> at(std::int32_t x,std::int32_t y,const framework::Uuid& scope)override;
-    std::shared_ptr<RegionData> specific(const std::string& name,const framework::Uuid& scope)override;
-    std::optional<RegionRows> find(const std::string& pattern,const framework::Uuid& scope)override;
-    RegionRows range(std::int32_t x1,std::int32_t y1,std::int32_t x2,std::int32_t y2,const framework::Uuid& scope)override;
-    RegionRows with_flags(std::int32_t flags,const framework::Uuid& scope)override;
-    bool store(const std::shared_ptr<RegionData>& row)override;
-    bool set(const framework::Uuid& id,const std::string& item,const std::string& value)override;
-    bool erase(const framework::Uuid& id)override;
-private:
-    struct State;std::unique_ptr<State> state_;
+    std::shared_ptr<RegionData> get(const framework::Uuid& id, const framework::Uuid& scope) override;
+    std::shared_ptr<RegionData> at(std::int32_t x, std::int32_t y, const framework::Uuid& scope) override;
+    std::shared_ptr<RegionData> specific(const std::string& name, const framework::Uuid& scope) override;
+    std::optional<RegionRows> find(const std::string& pattern, const framework::Uuid& scope) override;
+    RegionRows range(std::int32_t x1, std::int32_t y1, std::int32_t x2, std::int32_t y2,
+                     const framework::Uuid& scope) override;
+    RegionRows with_flags(std::int32_t flags, const framework::Uuid& scope) override;
+    bool store(const std::shared_ptr<RegionData>& row) override;
+    bool set(const framework::Uuid& id, const std::string& item, const std::string& value) override;
+    bool erase(const framework::Uuid& id) override;
+
+  private:
+    struct State;
+    std::unique_ptr<State> state_;
 };
 
 }

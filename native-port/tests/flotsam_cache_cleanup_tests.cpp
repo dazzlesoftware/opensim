@@ -9,29 +9,458 @@
 #include <map>
 #include <set>
 #include <sstream>
-using namespace opensim;using namespace services;using Path=std::filesystem::path;using Date=framework::AssetDateTime;
+using namespace opensim;
+using namespace services;
+using Path = std::filesystem::path;
+using Date = framework::AssetDateTime;
 namespace {
-std::string text(const Path& p){auto u=p.u8string();return {reinterpret_cast<const char*>(u.data()),u.size()};}
-std::string decode(const std::string& hex){std::string s;for(std::size_t i=0;i<hex.size();i+=2)s+=static_cast<char>(std::stoi(hex.substr(i,2),nullptr,16));return s;}
-template<class T>std::string join(const T& values,const char* separator=","){std::string s;bool first=true;for(auto& value:values){if(!first)s+=separator;first=false;s+=value;}return s;}
+std::string text(const Path& p) {
+    auto u = p.u8string();
+    return {reinterpret_cast<const char*>(u.data()), u.size()};
+}
+std::string decode(const std::string& hex) {
+    std::string s;
+    for (std::size_t i = 0; i < hex.size(); i += 2)
+        s += static_cast<char>(std::stoi(hex.substr(i, 2), nullptr, 16));
+    return s;
+}
+template <class T> std::string join(const T& values, const char* separator = ",") {
+    std::string s;
+    bool first = true;
+    for (auto& value : values) {
+        if (!first)
+            s += separator;
+        first = false;
+        s += value;
+    }
+    return s;
+}
 struct Probe {
- std::set<std::string> dirs,files,defaults,weak;std::map<std::string,std::vector<Path>> children,dir_files;FlotsamProtectedAssets protect;
- std::vector<std::string> trace;std::shared_ptr<FlotsamCacheLifecycle> life=std::make_shared<FlotsamCacheLifecycle>();std::shared_ptr<FlotsamCacheSharedState> shared=std::make_shared<FlotsamCacheSharedState>();
- int point=0,nth=1,kind=0,cancel=0,cancel_nth=1,seen=0,cancel_seen=0,starts=0,heap_calls=0;std::uint64_t weak_hits=7;std::int64_t now=638712864000000000ll,purge=638712864000000000ll,delta=0,expiration=0;int date_kind=2,warn=3,cooldown=0;
- void add(const std::string& s){trace.push_back(s);}void hook(int p){if(cancel==p&&++cancel_seen==cancel_nth)life->cleanup_running=false;if(point==p&&++seen==nth)throw FlotsamFileError(kind==1?FlotsamFileFailure::MissingDirectory:kind==2?FlotsamFileFailure::Unauthorized:kind==3?FlotsamFileFailure::MissingFile:kind==4?FlotsamFileFailure::Other:FlotsamFileFailure::Io,"fault");}
- void directory(const std::string& name,std::initializer_list<const char*> list={}){dirs.insert(name);auto& v=children[name];for(auto child:list){dirs.insert(child);v.emplace_back(child);}}
- void items(const std::string& name,const std::vector<std::string>& list){auto& v=dir_files[name];for(auto& file:list){files.insert(file);v.emplace_back(file);}}
- void build(int profile){defaults={"default"};protect={framework::Uuid("11111111-1111-1111-1111-111111111111"),framework::Uuid{}};directory("cache",{"cache/a","cache/b"});items("cache",{"cache/root-marker"});if(profile==0){directory("cache/a",{"cache/a/nested"});items("cache/a/nested",{"cache/a/nested/old","cache/a/nested/edge","cache/a/nested/new","cache/a/nested/default","cache/a/nested/11111111-1111-1111-1111-111111111111"});items("cache/a",{"cache/a/old2"});}else if(profile==1){std::vector<std::string> v;for(int i=0;i<30;++i)v.push_back("cache/a/old"+std::to_string(i));items("cache/a",v);}else if(profile==2){directory("cache/a",{"cache/a/n1"});directory("cache/a/n1",{"cache/a/n1/n2"});directory("cache/a/n1/n2",{"cache/a/n1/n2/n3"});}else if(profile==3){std::vector<std::string> v;for(int i=0;i<40;++i){auto n="p"+std::to_string(i);defaults.insert(n);v.push_back("cache/a/"+n);}items("cache/a",v);}else if(profile==4)items("cache/a",{"cache/a/"});else if(profile==5){dirs.erase("cache/a");dirs.erase("cache/b");}else if(profile==6){dirs.clear();files.clear();}else items("cache/a",{"cache/a/00000000-0000-0000-0000-000000000000","cache/a/11111111111111111111111111111111","cache/a/not-a-uuid","cache/a/old"});for(auto& f:files)weak.insert(text(Path(f).filename()));weak.insert("unrelated");shared->default_assets=std::make_shared<std::unordered_set<std::string>>(defaults.begin(),defaults.end());}
- struct Timer:FlotsamCleanupTimer{Probe& p;explicit Timer(Probe& value):p(value){}void subscribe(std::function<void()>)override{}void start()override{p.add("T");p.hook(15);++p.starts;}void stop()override{}void close()override{}};
- std::shared_ptr<FlotsamCleanupBackend> backend(){auto b=std::make_shared<FlotsamCleanupBackend>();b->directory_exists=[this](auto& path){add("EXISTS:"+text(path));hook(1);return dirs.contains(text(path));};b->directories=[this](auto& path){add("D:"+text(path));hook(2);if(!dirs.contains(text(path)))throw FlotsamFileError(FlotsamFileFailure::MissingDirectory,"missing");std::vector<Path> result;for(auto& child:children[text(path)])if(dirs.contains(text(child)))result.push_back(child);return result;};b->files=[this](auto& path){add("F:"+text(path));hook(3);if(!dirs.contains(text(path)))throw FlotsamFileError(FlotsamFileFailure::MissingDirectory,"missing");std::vector<Path> result;for(auto& file:dir_files[text(path)])if(files.contains(text(file)))result.push_back(file);return result;};b->file_name=[this](auto& path){add("NAME:"+text(path));hook(4);return text(path.filename());};b->last_access=[this](auto& path){add("A:"+text(path));hook(5);auto name=text(path.filename());auto offset=name.starts_with("new")?1:name.starts_with("edge")?0:-1;return Date(purge+offset,date_kind);};b->erase_file=[this](auto& path){add("X:"+text(path));hook(6);files.erase(text(path));};b->erase_directory=[this](auto& path){add("R:"+text(path));hook(8);auto name=text(path);if(!dirs.contains(name))throw FlotsamFileError(FlotsamFileFailure::MissingDirectory,"missing");for(auto& child:children[name])if(dirs.contains(text(child)))throw std::runtime_error("not empty");for(auto& file:dir_files[name])if(files.contains(text(file)))throw std::runtime_error("not empty");dirs.erase(name);};decorate(b);return b;}
- void decorate(const std::shared_ptr<FlotsamCleanupBackend>& b){b->erase_weak=[this](auto& id){add("K:"+id);hook(7);weak.erase(id);};b->reset_weak=[this]{add("RESET");hook(14);weak.clear();weak_hits=0;};b->info=[this](auto& message){add("I:"+message);hook(11);};b->warn=[this](auto& message){add("W:"+message);hook(9);};b->sleep=[this](int ms){add("S:"+std::to_string(ms));hook(10);};b->heap=[this]{auto i=heap_calls++;add("H");hook(12);return i%2==0?10000000ll:std::bit_cast<std::int64_t>(10000000ull+static_cast<std::uint64_t>(delta));};b->now=[this]{add("N");hook(16);return Date(now,date_kind);};b->gather=[this]{add("G");hook(13);return protect;};}
- std::string state(){return std::to_string(life->cleanup_running?1:0)+":"+(life->timer_running?"1:":"0:")+std::to_string(weak_hits)+":"+std::to_string(starts)+":"+std::to_string(heap_calls)+"|"+join(weak);}
- std::string real(const Path& root,std::int64_t line){build(0);purge=line;delta=-1048577;life->cleanup_running=true;auto cache=std::make_shared<FlotsamMemoryCache>(FlotsamMemoryCache::Options{},FlotsamMemoryCache::Clock{},false);auto b=FlotsamCacheCleaner::native_backend(cache,[this]{return protect;},[]{return std::int64_t(0);});auto exists=b->directory_exists;auto ds=b->directories,fs=b->files;auto name=b->file_name;auto atime=b->last_access;auto erase=b->erase_file,remove=b->erase_directory;auto weak_erase=b->erase_weak;auto weak_reset=b->reset_weak;decorate(b);b->directory_exists=[this,exists](auto& path){add("EXISTS:"+text(path));hook(1);return exists(path);};b->directories=[this,ds](auto& path){add("D:"+text(path));hook(2);return ds(path);};b->files=[this,fs](auto& path){add("F:"+text(path));hook(3);return fs(path);};b->file_name=[this,name](auto& path){add("NAME:"+text(path));hook(4);return name(path);};b->last_access=[this,atime](auto& path){add("A:"+text(path));hook(5);return atime(path);};b->erase_file=[this,erase](auto& path){add("X:"+text(path));hook(6);erase(path);};b->erase_directory=[this,remove](auto& path){add("R:"+text(path));hook(8);remove(path);};b->erase_weak=[this,weak_erase](auto& id){add("K:"+id);hook(7);weak_erase(id);weak.erase(id);};b->reset_weak=[this,weak_reset]{add("RESET");hook(14);weak_reset();weak.clear();weak_hits=0;};FlotsamCacheCleaner cleaner({root,0,3},life,shared,b);std::string result;try{cleaner.clean_all(Date(purge,2));result="OK";}catch(...){result="EX";}return result+"|"+join(trace,";")+"|"+state();}
- std::string call(FlotsamCacheCleaner& cleaner,const std::string& op){if(op=="tree")return std::to_string(cleaner.clean_tree(Path("cache/a"),protect,Date(purge,date_kind),cooldown));if(op=="all"){cleaner.clean_all(Date(purge,date_kind));return "OK";}if(op=="retry"){std::string a;try{cleaner.elapsed();a="OK";}catch(...){a="EX";}cleaner.elapsed();return a+":OK";}cleaner.elapsed();return "OK";}
- std::string run(const std::string& line){std::istringstream in(line);std::string op;int profile,running,timer;in>>op>>profile>>running>>timer>>warn>>cooldown>>point>>nth>>kind>>cancel>>cancel_nth>>expiration>>now>>purge>>date_kind>>delta;build(profile);life->cleanup_running=running!=0;life->timer_running=timer!=0;life->timer=std::make_shared<Timer>(*this);FlotsamCacheCleaner cleaner({Path("cache"),expiration,warn},life,shared,backend());std::string result;try{result=call(cleaner,op);}catch(...){result="EX";}return result+"|"+join(trace,";")+"|"+state()+"|"+join(dirs)+"|"+join(files);}
+    std::set<std::string> dirs, files, defaults, weak;
+    std::map<std::string, std::vector<Path>> children, dir_files;
+    FlotsamProtectedAssets protect;
+    std::vector<std::string> trace;
+    std::shared_ptr<FlotsamCacheLifecycle> life = std::make_shared<FlotsamCacheLifecycle>();
+    std::shared_ptr<FlotsamCacheSharedState> shared = std::make_shared<FlotsamCacheSharedState>();
+    int point = 0, nth = 1, kind = 0, cancel = 0, cancel_nth = 1, seen = 0, cancel_seen = 0, starts = 0,
+        heap_calls = 0;
+    std::uint64_t weak_hits = 7;
+    std::int64_t now = 638712864000000000ll, purge = 638712864000000000ll, delta = 0, expiration = 0;
+    int date_kind = 2, warn = 3, cooldown = 0;
+    void add(const std::string& s) {
+        trace.push_back(s);
+    }
+    void hook(int p) {
+        if (cancel == p && ++cancel_seen == cancel_nth)
+            life->cleanup_running = false;
+        if (point == p && ++seen == nth)
+            throw FlotsamFileError(kind == 1   ? FlotsamFileFailure::MissingDirectory
+                                   : kind == 2 ? FlotsamFileFailure::Unauthorized
+                                   : kind == 3 ? FlotsamFileFailure::MissingFile
+                                   : kind == 4 ? FlotsamFileFailure::Other
+                                               : FlotsamFileFailure::Io,
+                                   "fault");
+    }
+    void directory(const std::string& name, std::initializer_list<const char*> list = {}) {
+        dirs.insert(name);
+        auto& v = children[name];
+        for (auto child : list) {
+            dirs.insert(child);
+            v.emplace_back(child);
+        }
+    }
+    void items(const std::string& name, const std::vector<std::string>& list) {
+        auto& v = dir_files[name];
+        for (auto& file : list) {
+            files.insert(file);
+            v.emplace_back(file);
+        }
+    }
+    void build(int profile) {
+        defaults = {"default"};
+        protect = {framework::Uuid("11111111-1111-1111-1111-111111111111"), framework::Uuid{}};
+        directory("cache", {"cache/a", "cache/b"});
+        items("cache", {"cache/root-marker"});
+        if (profile == 0) {
+            directory("cache/a", {"cache/a/nested"});
+            items("cache/a/nested",
+                  {"cache/a/nested/old", "cache/a/nested/edge", "cache/a/nested/new",
+                   "cache/a/nested/default", "cache/a/nested/11111111-1111-1111-1111-111111111111"});
+            items("cache/a", {"cache/a/old2"});
+        } else if (profile == 1) {
+            std::vector<std::string> v;
+            for (int i = 0; i < 30; ++i)
+                v.push_back("cache/a/old" + std::to_string(i));
+            items("cache/a", v);
+        } else if (profile == 2) {
+            directory("cache/a", {"cache/a/n1"});
+            directory("cache/a/n1", {"cache/a/n1/n2"});
+            directory("cache/a/n1/n2", {"cache/a/n1/n2/n3"});
+        } else if (profile == 3) {
+            std::vector<std::string> v;
+            for (int i = 0; i < 40; ++i) {
+                auto n = "p" + std::to_string(i);
+                defaults.insert(n);
+                v.push_back("cache/a/" + n);
+            }
+            items("cache/a", v);
+        } else if (profile == 4)
+            items("cache/a", {"cache/a/"});
+        else if (profile == 5) {
+            dirs.erase("cache/a");
+            dirs.erase("cache/b");
+        } else if (profile == 6) {
+            dirs.clear();
+            files.clear();
+        } else
+            items("cache/a",
+                  {"cache/a/00000000-0000-0000-0000-000000000000", "cache/a/11111111111111111111111111111111",
+                   "cache/a/not-a-uuid", "cache/a/old"});
+        for (auto& f : files)
+            weak.insert(text(Path(f).filename()));
+        weak.insert("unrelated");
+        shared->default_assets =
+            std::make_shared<std::unordered_set<std::string>>(defaults.begin(), defaults.end());
+    }
+    struct Timer : FlotsamCleanupTimer {
+        Probe& p;
+        explicit Timer(Probe& value) : p(value) {
+        }
+        void subscribe(std::function<void()>) override {
+        }
+        void start() override {
+            p.add("T");
+            p.hook(15);
+            ++p.starts;
+        }
+        void stop() override {
+        }
+        void close() override {
+        }
+    };
+    std::shared_ptr<FlotsamCleanupBackend> backend() {
+        auto b = std::make_shared<FlotsamCleanupBackend>();
+        b->directory_exists = [this](auto& path) {
+            add("EXISTS:" + text(path));
+            hook(1);
+            return dirs.contains(text(path));
+        };
+        b->directories = [this](auto& path) {
+            add("D:" + text(path));
+            hook(2);
+            if (!dirs.contains(text(path)))
+                throw FlotsamFileError(FlotsamFileFailure::MissingDirectory, "missing");
+            std::vector<Path> result;
+            for (auto& child : children[text(path)])
+                if (dirs.contains(text(child)))
+                    result.push_back(child);
+            return result;
+        };
+        b->files = [this](auto& path) {
+            add("F:" + text(path));
+            hook(3);
+            if (!dirs.contains(text(path)))
+                throw FlotsamFileError(FlotsamFileFailure::MissingDirectory, "missing");
+            std::vector<Path> result;
+            for (auto& file : dir_files[text(path)])
+                if (files.contains(text(file)))
+                    result.push_back(file);
+            return result;
+        };
+        b->file_name = [this](auto& path) {
+            add("NAME:" + text(path));
+            hook(4);
+            return text(path.filename());
+        };
+        b->last_access = [this](auto& path) {
+            add("A:" + text(path));
+            hook(5);
+            auto name = text(path.filename());
+            auto offset = name.starts_with("new") ? 1 : name.starts_with("edge") ? 0 : -1;
+            return Date(purge + offset, date_kind);
+        };
+        b->erase_file = [this](auto& path) {
+            add("X:" + text(path));
+            hook(6);
+            files.erase(text(path));
+        };
+        b->erase_directory = [this](auto& path) {
+            add("R:" + text(path));
+            hook(8);
+            auto name = text(path);
+            if (!dirs.contains(name))
+                throw FlotsamFileError(FlotsamFileFailure::MissingDirectory, "missing");
+            for (auto& child : children[name])
+                if (dirs.contains(text(child)))
+                    throw std::runtime_error("not empty");
+            for (auto& file : dir_files[name])
+                if (files.contains(text(file)))
+                    throw std::runtime_error("not empty");
+            dirs.erase(name);
+        };
+        decorate(b);
+        return b;
+    }
+    void decorate(const std::shared_ptr<FlotsamCleanupBackend>& b) {
+        b->erase_weak = [this](auto& id) {
+            add("K:" + id);
+            hook(7);
+            weak.erase(id);
+        };
+        b->reset_weak = [this] {
+            add("RESET");
+            hook(14);
+            weak.clear();
+            weak_hits = 0;
+        };
+        b->info = [this](auto& message) {
+            add("I:" + message);
+            hook(11);
+        };
+        b->warn = [this](auto& message) {
+            add("W:" + message);
+            hook(9);
+        };
+        b->sleep = [this](int ms) {
+            add("S:" + std::to_string(ms));
+            hook(10);
+        };
+        b->heap = [this] {
+            auto i = heap_calls++;
+            add("H");
+            hook(12);
+            return i % 2 == 0 ? 10000000ll
+                              : std::bit_cast<std::int64_t>(10000000ull + static_cast<std::uint64_t>(delta));
+        };
+        b->now = [this] {
+            add("N");
+            hook(16);
+            return Date(now, date_kind);
+        };
+        b->gather = [this] {
+            add("G");
+            hook(13);
+            return protect;
+        };
+    }
+    std::string state() {
+        return std::to_string(life->cleanup_running ? 1 : 0) + ":" + (life->timer_running ? "1:" : "0:") +
+               std::to_string(weak_hits) + ":" + std::to_string(starts) + ":" + std::to_string(heap_calls) +
+               "|" + join(weak);
+    }
+    std::string real(const Path& root, std::int64_t line) {
+        build(0);
+        purge = line;
+        delta = -1048577;
+        life->cleanup_running = true;
+        auto cache = std::make_shared<FlotsamMemoryCache>(FlotsamMemoryCache::Options{},
+                                                          FlotsamMemoryCache::Clock{}, false);
+        auto b = FlotsamCacheCleaner::native_backend(
+            cache, [this] { return protect; }, [] { return std::int64_t(0); });
+        auto exists = b->directory_exists;
+        auto ds = b->directories, fs = b->files;
+        auto name = b->file_name;
+        auto atime = b->last_access;
+        auto erase = b->erase_file, remove = b->erase_directory;
+        auto weak_erase = b->erase_weak;
+        auto weak_reset = b->reset_weak;
+        decorate(b);
+        b->directory_exists = [this, exists](auto& path) {
+            add("EXISTS:" + text(path));
+            hook(1);
+            return exists(path);
+        };
+        b->directories = [this, ds](auto& path) {
+            add("D:" + text(path));
+            hook(2);
+            return ds(path);
+        };
+        b->files = [this, fs](auto& path) {
+            add("F:" + text(path));
+            hook(3);
+            return fs(path);
+        };
+        b->file_name = [this, name](auto& path) {
+            add("NAME:" + text(path));
+            hook(4);
+            return name(path);
+        };
+        b->last_access = [this, atime](auto& path) {
+            add("A:" + text(path));
+            hook(5);
+            return atime(path);
+        };
+        b->erase_file = [this, erase](auto& path) {
+            add("X:" + text(path));
+            hook(6);
+            erase(path);
+        };
+        b->erase_directory = [this, remove](auto& path) {
+            add("R:" + text(path));
+            hook(8);
+            remove(path);
+        };
+        b->erase_weak = [this, weak_erase](auto& id) {
+            add("K:" + id);
+            hook(7);
+            weak_erase(id);
+            weak.erase(id);
+        };
+        b->reset_weak = [this, weak_reset] {
+            add("RESET");
+            hook(14);
+            weak_reset();
+            weak.clear();
+            weak_hits = 0;
+        };
+        FlotsamCacheCleaner cleaner({root, 0, 3}, life, shared, b);
+        std::string result;
+        try {
+            cleaner.clean_all(Date(purge, 2));
+            result = "OK";
+        } catch (...) {
+            result = "EX";
+        }
+        return result + "|" + join(trace, ";") + "|" + state();
+    }
+    std::string call(FlotsamCacheCleaner& cleaner, const std::string& op) {
+        if (op == "tree")
+            return std::to_string(
+                cleaner.clean_tree(Path("cache/a"), protect, Date(purge, date_kind), cooldown));
+        if (op == "all") {
+            cleaner.clean_all(Date(purge, date_kind));
+            return "OK";
+        }
+        if (op == "retry") {
+            std::string a;
+            try {
+                cleaner.elapsed();
+                a = "OK";
+            } catch (...) {
+                a = "EX";
+            }
+            cleaner.elapsed();
+            return a + ":OK";
+        }
+        cleaner.elapsed();
+        return "OK";
+    }
+    std::string run(const std::string& line) {
+        std::istringstream in(line);
+        std::string op;
+        int profile, running, timer;
+        in >> op >> profile >> running >> timer >> warn >> cooldown >> point >> nth >> kind >> cancel >>
+            cancel_nth >> expiration >> now >> purge >> date_kind >> delta;
+        build(profile);
+        life->cleanup_running = running != 0;
+        life->timer_running = timer != 0;
+        life->timer = std::make_shared<Timer>(*this);
+        FlotsamCacheCleaner cleaner({Path("cache"), expiration, warn}, life, shared, backend());
+        std::string result;
+        try {
+            result = call(cleaner, op);
+        } catch (...) {
+            result = "EX";
+        }
+        return result + "|" + join(trace, ";") + "|" + state() + "|" + join(dirs) + "|" + join(files);
+    }
 };
-void actual(){auto root=std::filesystem::temp_directory_path()/("opensim-cleanup-"+framework::Uuid::random().str());std::filesystem::create_directory(root);struct Cleanup{Path p;~Cleanup(){std::error_code ec;std::filesystem::remove_all(p,ec);}}cleanup{root};auto canonical=std::filesystem::canonical(root);if(canonical.parent_path()!=std::filesystem::canonical(std::filesystem::temp_directory_path()))throw std::runtime_error("Unexpected cleanup fixture root");auto cache=std::make_shared<FlotsamMemoryCache>(FlotsamMemoryCache::Options{true,true,900,120000},FlotsamMemoryCache::Clock{},false);auto id=framework::Uuid::random();auto asset=std::make_shared<framework::AssetBase>(id,"memory survivor",std::int8_t(7),"creator");cache->cache(asset);if(cache->get_cached(id.str())!=asset)throw std::runtime_error("Seed weak hit");cache->cache_negative(id.str());auto backend=FlotsamCacheCleaner::native_backend(cache,[id]{return FlotsamProtectedAssets{id};},[]{return std::int64_t(0);});backend->reset_weak();if(cache->statistics().weak_hits!=0||cache->get_asset(id.str())||cache->get_cached(id.str())!=asset||cache->statistics().memory_hits!=1)throw std::runtime_error("Weak reset changed memory/negative cache");backend->erase_weak(id.str());auto before=cache->statistics().memory_hits;if(cache->get_cached(id.str())!=asset||cache->statistics().memory_hits!=before+1)throw std::runtime_error("Weak-only removal lost memory entry");
- auto life=std::make_shared<FlotsamCacheLifecycle>();life->cleanup_running=true;auto shared=std::make_shared<FlotsamCacheSharedState>();shared->default_assets=std::make_shared<std::unordered_set<std::string>>(std::initializer_list<std::string>{"default"});std::filesystem::create_directories(root/"a"/"nested");for(auto name:{"old","edge","new","default"}){std::ofstream file(root/"a"/name);file<<name;}{std::ofstream file(root/"a"/id.str());file<<"referenced";}{std::ofstream file(root/"root-marker");file<<"root";}auto line=backend->last_access(root/"a"/"edge");backend->last_access=[line](const Path& path){auto name=text(path.filename());return Date(line.ticks()+(name=="new"?1:name=="edge"?0:-1),2);};backend->sleep=[](int){};FlotsamCacheCleaner cleaner({root,0,30000},life,shared,backend);cleaner.clean_all(line);if(std::filesystem::exists(root/"a"/"old")||!std::filesystem::exists(root/"a"/"edge")||!std::filesystem::exists(root/"a"/"new")||!std::filesystem::exists(root/"a"/"default")||!std::filesystem::exists(root/"a"/id.str())||!std::filesystem::exists(root/"root-marker")||std::filesystem::exists(root/"a"/"nested"))throw std::runtime_error("Native cleanup protection/boundary/root/empty-directory behavior");
+void actual() {
+    auto root =
+        std::filesystem::temp_directory_path() / ("opensim-cleanup-" + framework::Uuid::random().str());
+    std::filesystem::create_directory(root);
+    struct Cleanup {
+        Path p;
+        ~Cleanup() {
+            std::error_code ec;
+            std::filesystem::remove_all(p, ec);
+        }
+    } cleanup{root};
+    auto canonical = std::filesystem::canonical(root);
+    if (canonical.parent_path() != std::filesystem::canonical(std::filesystem::temp_directory_path()))
+        throw std::runtime_error("Unexpected cleanup fixture root");
+    auto cache = std::make_shared<FlotsamMemoryCache>(FlotsamMemoryCache::Options{true, true, 900, 120000},
+                                                      FlotsamMemoryCache::Clock{}, false);
+    auto id = framework::Uuid::random();
+    auto asset = std::make_shared<framework::AssetBase>(id, "memory survivor", std::int8_t(7), "creator");
+    cache->cache(asset);
+    if (cache->get_cached(id.str()) != asset)
+        throw std::runtime_error("Seed weak hit");
+    cache->cache_negative(id.str());
+    auto backend = FlotsamCacheCleaner::native_backend(
+        cache, [id] { return FlotsamProtectedAssets{id}; }, [] { return std::int64_t(0); });
+    backend->reset_weak();
+    if (cache->statistics().weak_hits != 0 || cache->get_asset(id.str()) ||
+        cache->get_cached(id.str()) != asset || cache->statistics().memory_hits != 1)
+        throw std::runtime_error("Weak reset changed memory/negative cache");
+    backend->erase_weak(id.str());
+    auto before = cache->statistics().memory_hits;
+    if (cache->get_cached(id.str()) != asset || cache->statistics().memory_hits != before + 1)
+        throw std::runtime_error("Weak-only removal lost memory entry");
+    auto life = std::make_shared<FlotsamCacheLifecycle>();
+    life->cleanup_running = true;
+    auto shared = std::make_shared<FlotsamCacheSharedState>();
+    shared->default_assets =
+        std::make_shared<std::unordered_set<std::string>>(std::initializer_list<std::string>{"default"});
+    std::filesystem::create_directories(root / "a" / "nested");
+    for (auto name : {"old", "edge", "new", "default"}) {
+        std::ofstream file(root / "a" / name);
+        file << name;
+    }
+    {
+        std::ofstream file(root / "a" / id.str());
+        file << "referenced";
+    }
+    {
+        std::ofstream file(root / "root-marker");
+        file << "root";
+    }
+    auto line = backend->last_access(root / "a" / "edge");
+    backend->last_access = [line](const Path& path) {
+        auto name = text(path.filename());
+        return Date(line.ticks() + (name == "new" ? 1 : name == "edge" ? 0 : -1), 2);
+    };
+    backend->sleep = [](int) {};
+    FlotsamCacheCleaner cleaner({root, 0, 30000}, life, shared, backend);
+    cleaner.clean_all(line);
+    if (std::filesystem::exists(root / "a" / "old") || !std::filesystem::exists(root / "a" / "edge") ||
+        !std::filesystem::exists(root / "a" / "new") || !std::filesystem::exists(root / "a" / "default") ||
+        !std::filesystem::exists(root / "a" / id.str()) || !std::filesystem::exists(root / "root-marker") ||
+        std::filesystem::exists(root / "a" / "nested"))
+        throw std::runtime_error("Native cleanup protection/boundary/root/empty-directory behavior");
 }
 }
-int main(int argc,char** argv){try{if(argc>1&&std::string_view(argv[1])=="--probe"){std::string line;while(std::getline(std::cin,line)){Probe p;std::cout<<p.run(line)<<'\n';}}else if(argc==3&&std::string_view(argv[1])=="--remove-tree"){try{native_flotsam_file_backend({})->remove_directory_tree(framework::utf8_path(decode(argv[2])));std::cout<<"OK\n";}catch(...){std::cout<<"EX\n";}}else if(argc==3&&std::string_view(argv[1])=="--time"){auto cache=std::make_shared<FlotsamMemoryCache>(FlotsamMemoryCache::Options{},FlotsamMemoryCache::Clock{},false);auto b=FlotsamCacheCleaner::native_backend(cache,[]{return FlotsamProtectedAssets{};},[]{return std::int64_t(0);});std::cout<<b->last_access(framework::utf8_path(decode(argv[2]))).ticks()<<'\n';}else if(argc==4&&std::string_view(argv[1])=="--fs"){Probe p;std::cout<<p.real(framework::utf8_path(decode(argv[2])),std::stoll(argv[3]))<<'\n';}else{actual();std::cout<<"PASS: native protected file cleanup and weak-only memory/negative preservation\n";}return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(int argc, char** argv) {
+    try {
+        if (argc > 1 && std::string_view(argv[1]) == "--probe") {
+            std::string line;
+            while (std::getline(std::cin, line)) {
+                Probe p;
+                std::cout << p.run(line) << '\n';
+            }
+        } else if (argc == 3 && std::string_view(argv[1]) == "--remove-tree") {
+            try {
+                native_flotsam_file_backend({})->remove_directory_tree(framework::utf8_path(decode(argv[2])));
+                std::cout << "OK\n";
+            } catch (...) {
+                std::cout << "EX\n";
+            }
+        } else if (argc == 3 && std::string_view(argv[1]) == "--time") {
+            auto cache = std::make_shared<FlotsamMemoryCache>(FlotsamMemoryCache::Options{},
+                                                              FlotsamMemoryCache::Clock{}, false);
+            auto b = FlotsamCacheCleaner::native_backend(
+                cache, [] { return FlotsamProtectedAssets{}; }, [] { return std::int64_t(0); });
+            std::cout << b->last_access(framework::utf8_path(decode(argv[2]))).ticks() << '\n';
+        } else if (argc == 4 && std::string_view(argv[1]) == "--fs") {
+            Probe p;
+            std::cout << p.real(framework::utf8_path(decode(argv[2])), std::stoll(argv[3])) << '\n';
+        } else {
+            actual();
+            std::cout << "PASS: native protected file cleanup and weak-only memory/negative preservation\n";
+        }
+        return 0;
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        return 1;
+    }
+}

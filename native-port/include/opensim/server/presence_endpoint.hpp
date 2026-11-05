@@ -30,10 +30,12 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/services/presence_service.hpp"
 namespace opensim::server {
 class PresenceEndpoint {
-public:
-    PresenceEndpoint(services::IPresenceService& service,const IniConfig& config):service_(service),auth_(config,"PresenceService"){}
+  public:
+    PresenceEndpoint(services::IPresenceService& service, const IniConfig& config)
+        : service_(service), auth_(config, "PresenceService") {}
     network::HttpResponse handle(const network::HttpRequest& request);
-private:
+
+  private:
     services::IPresenceService& service_;
     network::ServiceAuth auth_;
 };
