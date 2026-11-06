@@ -180,7 +180,8 @@ HttpResponse GridEndpoint::handle(const HttpRequest& request) {
         return response;
     response.body = result(false);
     try {
-        const auto fields = parse_service_form(framework::trim_utf8(request.body));
+        const auto body = read_service_body(request.body);
+        const auto fields = parse_service_form(framework::trim_utf8(body));
         const auto method = value(fields, "METHOD");
         const auto scope = uuid(fields, "SCOPEID"), id = uuid(fields, "REGIONID");
         if (method == "register") {

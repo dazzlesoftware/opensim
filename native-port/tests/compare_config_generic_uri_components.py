@@ -1,11 +1,172 @@
 from pathlib import Path
-import argparse,subprocess,json,itertools,random
-p=argparse.ArgumentParser();p.add_argument('--native',required=True);p.add_argument('--dotnet',required=True);p.add_argument('--work',type=Path,required=True);a=p.parse_args();d=Path(__file__).resolve().parent;w=a.work.resolve();w.mkdir(parents=True,exist_ok=True)
-def enc(s):return '~' if s is None else s.encode('utf-16-be','surrogatepass').hex()or'-'
-schemes=['http','https','ws','wss','ftp','file','gopher','nntp','news','mailto','uuid','telnet','ldap','net.tcp','net.pipe','vsmacros','a+b','a.b','a-b'];bodies=['','body','body?x#f','body%20x','body%41','body%FF','é','é?中#Ω','é\ud800','a\x00b','a\x7fb','a b','/a','/a/../b','//host/a','//EXAMPLE:81/a?b#c','//localhost/a','//LOOPBACK/a','//127.1/a','//127.0.0.1:80/a','//1.2.3.04/a','//[::1]/a','//[fe80::1%25zone]:81/a?b#c','//user:pass@host:80/a','//é@höst:81/a?é#Ω','//host:','//host:bad','//host\\a','///C:/a b','C:/x','C:\\x','C:bad','///tmp/a\\b','/C|/x','../a','%2f','%3f','%23','%ED%A0%80','%F0%90%80%80','é ','%41 ',' body ','?','#','?q','#f']
-texts=[s+':'+b for s,b in itertools.product(schemes,bodies)];texts += [None,'',' ','relative','relative/path','../é','?q','#f','C:\\a b\\c','file://server/share/a/../b','/tmp/a\\b','http:relative','file:relative','a:b','a+b://..','a+b://./x',' A+B:c ','\r\na+b://host/a\t']
-texts += [s+':'+body for s,body in itertools.product(schemes,['//host:81','//host:00081','//host:81?q','//host:81#f','//host:81?é#Ω','//höst/a','//[fe80::1%25zone]:81','///é?中#Ω','//user%40name:p%3Ass@host/a','//%61%62/a','//127.0.0.1:21/a','//loopback/a','//localhost/a'])]
-texts=[x for x in texts if x is not None];rows=[enc(x) for x in texts];payload='\n'.join(rows)+'\n';(w/'inputs.txt').write_text(payload);subprocess.run([a.dotnet,'build',str(d/'config_generic_uri_components_reference/ComponentsReference.csproj'),'-o',str(w/'app'),'--nologo','-v:q'],check=True);outputs={}
-for name,cmd in [('reference',[a.dotnet,str(w/'app/ComponentsReference.dll')]),('native',[str(Path(a.native).resolve()),'--probe'])]:
- r=subprocess.run(cmd,input=payload,text=True,capture_output=True);(w/(name+'.txt')).write_text(r.stdout);(w/(name+'-error.txt')).write_text(r.stderr);assert r.returncode==0,(name,r.returncode,r.stderr);outputs[name]=r.stdout.splitlines();assert len(outputs[name])==len(rows)
-diff=[{'row':row,'expected':e,'actual':n}for row,e,n in zip(rows,outputs['reference'],outputs['native'])if e!=n];(w/'all-differences.json').write_text(json.dumps(diff,indent=2));report={'cases':len(rows),'differences':len(diff),'examples':diff[:15],'applicationParityVerified':False,'scope':'Actual public absolute Uri host/IdnHost/DnsSafeHost/Port/UserInfo/AbsolutePath/Query and prior getters including string reference identity. Full application remains incomplete.'};(w/'results.json').write_text(json.dumps(report,indent=2));print(json.dumps({'cases':len(rows),'differences':len(diff)}));raise SystemExit(bool(diff))
+import argparse, subprocess, json, itertools, random
+
+p = argparse.ArgumentParser()
+p.add_argument('--native', required=True)
+p.add_argument('--dotnet', required=True)
+p.add_argument('--work', type=Path, required=True)
+a = p.parse_args()
+d = Path(__file__).resolve().parent
+w = a.work.resolve()
+w.mkdir(parents=True, exist_ok=True)
+
+
+def enc(s):
+    return '~' if s is None else s.encode('utf-16-be', 'surrogatepass').hex() or '-'
+
+
+schemes = [
+    'http',
+    'https',
+    'ws',
+    'wss',
+    'ftp',
+    'file',
+    'gopher',
+    'nntp',
+    'news',
+    'mailto',
+    'uuid',
+    'telnet',
+    'ldap',
+    'net.tcp',
+    'net.pipe',
+    'vsmacros',
+    'a+b',
+    'a.b',
+    'a-b',
+]
+bodies = [
+    '',
+    'body',
+    'body?x#f',
+    'body%20x',
+    'body%41',
+    'body%FF',
+    'é',
+    'é?中#Ω',
+    'é\ud800',
+    'a\x00b',
+    'a\x7fb',
+    'a b',
+    '/a',
+    '/a/../b',
+    '//host/a',
+    '//EXAMPLE:81/a?b#c',
+    '//localhost/a',
+    '//LOOPBACK/a',
+    '//127.1/a',
+    '//127.0.0.1:80/a',
+    '//1.2.3.04/a',
+    '//[::1]/a',
+    '//[fe80::1%25zone]:81/a?b#c',
+    '//user:pass@host:80/a',
+    '//é@höst:81/a?é#Ω',
+    '//host:',
+    '//host:bad',
+    '//host\\a',
+    '///C:/a b',
+    'C:/x',
+    'C:\\x',
+    'C:bad',
+    '///tmp/a\\b',
+    '/C|/x',
+    '../a',
+    '%2f',
+    '%3f',
+    '%23',
+    '%ED%A0%80',
+    '%F0%90%80%80',
+    'é ',
+    '%41 ',
+    ' body ',
+    '?',
+    '#',
+    '?q',
+    '#f',
+]
+texts = [s + ':' + b for s, b in itertools.product(schemes, bodies)]
+texts += [
+    None,
+    '',
+    ' ',
+    'relative',
+    'relative/path',
+    '../é',
+    '?q',
+    '#f',
+    'C:\\a b\\c',
+    'file://server/share/a/../b',
+    '/tmp/a\\b',
+    'http:relative',
+    'file:relative',
+    'a:b',
+    'a+b://..',
+    'a+b://./x',
+    ' A+B:c ',
+    '\r\na+b://host/a\t',
+]
+texts += [
+    s + ':' + body
+    for s, body in itertools.product(
+        schemes,
+        [
+            '//host:81',
+            '//host:00081',
+            '//host:81?q',
+            '//host:81#f',
+            '//host:81?é#Ω',
+            '//höst/a',
+            '//[fe80::1%25zone]:81',
+            '///é?中#Ω',
+            '//user%40name:p%3Ass@host/a',
+            '//%61%62/a',
+            '//127.0.0.1:21/a',
+            '//loopback/a',
+            '//localhost/a',
+        ],
+    )
+]
+texts = [x for x in texts if x is not None]
+rows = [enc(x) for x in texts]
+payload = '\n'.join(rows) + '\n'
+(w / 'inputs.txt').write_text(payload)
+subprocess.run(
+    [
+        a.dotnet,
+        'build',
+        str(d / 'config_generic_uri_components_reference/ComponentsReference.csproj'),
+        '-o',
+        str(w / 'app'),
+        '--nologo',
+        '-v:q',
+    ],
+    check=True,
+)
+outputs = {}
+for name, cmd in [
+    ('reference', [a.dotnet, str(w / 'app/ComponentsReference.dll')]),
+    ('native', [str(Path(a.native).resolve()), '--probe']),
+]:
+    r = subprocess.run(cmd, input=payload, text=True, capture_output=True)
+    (w / (name + '.txt')).write_text(r.stdout)
+    (w / (name + '-error.txt')).write_text(r.stderr)
+    assert r.returncode == 0, (name, r.returncode, r.stderr)
+    outputs[name] = r.stdout.splitlines()
+    assert len(outputs[name]) == len(rows)
+diff = [
+    {'row': row, 'expected': e, 'actual': n}
+    for row, e, n in zip(rows, outputs['reference'], outputs['native'])
+    if e != n
+]
+(w / 'all-differences.json').write_text(json.dumps(diff, indent=2))
+report = {
+    'cases': len(rows),
+    'differences': len(diff),
+    'examples': diff[:15],
+    'applicationParityVerified': False,
+    'scope': 'Actual public absolute Uri host/IdnHost/DnsSafeHost/Port/UserInfo/AbsolutePath/Query and prior getters including string reference identity. Full application remains incomplete.',
+}
+(w / 'results.json').write_text(json.dumps(report, indent=2))
+print(json.dumps({'cases': len(rows), 'differences': len(diff)}))
+raise SystemExit(bool(diff))

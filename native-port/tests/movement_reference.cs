@@ -1,9 +1,82 @@
-using System;using System.Globalization;using OpenMetaverse;
-using ACFlags=OpenMetaverse.AgentManager.ControlFlags;
-class Physics {public bool PIDHoverActive;public Vector3 TargetVelocity;}
-class ScenePresenceAnimator {public enum motionControlStates {falling,onsurface}public motionControlStates currentControlState;public int count;public void UpdateMovementAnimations(){count++;}}
-class Logger {public void Error(string s){throw new Exception(s);}}
-partial class MovementReference {
- public Quaternion Rotation;public bool Flying,IsNPC,IsColliding,m_movingToTarget;public float SpeedModifier,m_moveToSpeed;public uint AgentControlFlags;public double m_delayedStop;public ScenePresenceAnimator Animator=new ScenePresenceAnimator();public Physics PhysicsActor;static Logger m_log=new Logger();const uint CONTROL_FLAG_NORM_MASK=0x3f;
- static void Main(){string line;while((line=Console.ReadLine())!=null){var words=line.Split(' ');int seed=int.Parse(words[0]),mode=int.Parse(words[1]);var s=new MovementReference();s.Rotation=new Quaternion(seed*.01f,-.2f,.3f,.4f);s.Flying=(mode&1)!=0;s.IsNPC=(mode&2)!=0;s.m_movingToTarget=(mode&4)!=0;s.IsColliding=(mode&8)!=0;s.Animator.currentControlState=(mode&16)!=0?ScenePresenceAnimator.motionControlStates.falling:ScenePresenceAnimator.motionControlStates.onsurface;if((mode&32)!=0)s.PhysicsActor=new Physics{PIDHoverActive=(mode&64)!=0};s.AgentControlFlags=(mode&512)!=0?0x10u:0u;s.SpeedModifier=seed*.125f;s.m_moveToSpeed=(mode&1024)!=0?3.125f:-1;s.m_delayedStop=1234;Vector3 v=new Vector3(seed*.25f,-.5f,(mode&256)!=0?0f:.75f);if((mode&2048)!=0)v=Vector3.Zero;s.AddNewMovement(v,seed*.03125f+.25f,(mode&128)!=0);var t=s.TargetVelocity;Console.WriteLine(BitConverter.SingleToUInt32Bits(t.X).ToString("x")+","+BitConverter.SingleToUInt32Bits(t.Y).ToString("x")+","+BitConverter.SingleToUInt32Bits(t.Z).ToString("x")+","+s.m_delayedStop.ToString(CultureInfo.InvariantCulture)+","+s.Animator.count+","+((uint)RemoveIgnoredControls((ACFlags)(0xaabbccddu^(uint)seed),(ScriptControlled)(uint)mode)).ToString("x")+"/"+ControlVector(unchecked((uint)seed*0x12345u)^(uint)mode,(uint)mode>>3,(mode&1)!=0,seed>=0?1u:0u));}}
+using System;
+using System.Globalization;
+using OpenMetaverse;
+using ACFlags = OpenMetaverse.AgentManager.ControlFlags;
+class Physics
+{
+    public bool PIDHoverActive;
+    public Vector3 TargetVelocity;
+}
+class ScenePresenceAnimator
+{
+    public enum motionControlStates
+    {
+        falling,
+        onsurface
+    }
+    public motionControlStates currentControlState;
+    public int count;
+    public void UpdateMovementAnimations()
+    {
+        count++;
+    }
+}
+class Logger
+{
+    public void Error(string s)
+    {
+        throw new Exception(s);
+    }
+}
+partial class MovementReference
+{
+    public Quaternion Rotation;
+    public bool Flying, IsNPC, IsColliding, m_movingToTarget;
+    public float SpeedModifier, m_moveToSpeed;
+    public uint AgentControlFlags;
+    public double m_delayedStop;
+    public ScenePresenceAnimator Animator = new ScenePresenceAnimator();
+    public Physics PhysicsActor;
+    static Logger m_log = new Logger();
+    const uint CONTROL_FLAG_NORM_MASK = 0x3f;
+    static void Main()
+    {
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var words = line.Split(' ');
+            int seed = int.Parse(words[0]), mode = int.Parse(words[1]);
+            var s = new MovementReference();
+            s.Rotation = new Quaternion(seed * .01f, -.2f, .3f, .4f);
+            s.Flying = (mode & 1) != 0;
+            s.IsNPC = (mode & 2) != 0;
+            s.m_movingToTarget = (mode & 4) != 0;
+            s.IsColliding = (mode & 8) != 0;
+            s.Animator.currentControlState = (mode & 16) != 0
+                                                 ? ScenePresenceAnimator.motionControlStates.falling
+                                                 : ScenePresenceAnimator.motionControlStates.onsurface;
+            if ((mode & 32) != 0)
+                s.PhysicsActor = new Physics { PIDHoverActive = (mode & 64) != 0 };
+            s.AgentControlFlags = (mode & 512) != 0 ? 0x10u : 0u;
+            s.SpeedModifier = seed * .125f;
+            s.m_moveToSpeed = (mode & 1024) != 0 ? 3.125f : -1;
+            s.m_delayedStop = 1234;
+            Vector3 v = new Vector3(seed * .25f, -.5f, (mode & 256) != 0 ? 0f : .75f);
+            if ((mode & 2048) != 0)
+                v = Vector3.Zero;
+            s.AddNewMovement(v, seed * .03125f + .25f, (mode & 128) != 0);
+            var t = s.TargetVelocity;
+            Console.WriteLine(BitConverter.SingleToUInt32Bits(t.X).ToString("x") + "," +
+                              BitConverter.SingleToUInt32Bits(t.Y).ToString("x") + "," +
+                              BitConverter.SingleToUInt32Bits(t.Z).ToString("x") + "," +
+                              s.m_delayedStop.ToString(CultureInfo.InvariantCulture) + "," +
+                              s.Animator.count + "," +
+                              ((uint)RemoveIgnoredControls((ACFlags)(0xaabbccddu ^ (uint)seed),
+                                                           (ScriptControlled)(uint)mode))
+                                  .ToString("x") +
+                              "/" +
+                              ControlVector(unchecked((uint)seed * 0x12345u) ^ (uint)mode, (uint)mode >> 3,
+                                            (mode & 1) != 0, seed >= 0 ? 1u : 0u));
+        }
+    }
 }

@@ -57,7 +57,8 @@ HttpResponse AccountEndpoint::handle(const HttpRequest& request) {
         return response;
     response.body = failure;
     try {
-        const auto fields = parse_service_form(framework::trim_utf8(request.body));
+        const auto body = read_service_body(request.body);
+        const auto fields = parse_service_form(framework::trim_utf8(body));
         auto method = fields.find("METHOD");
         if (method == fields.end())
             return response;

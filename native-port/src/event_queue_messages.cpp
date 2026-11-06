@@ -456,7 +456,11 @@ void EventQueueModule::bulk_inventory(const InventoryItem* item, Uuid agent,
     x.elem("TransactionID", transaction ? *transaction : backend_.random_uuid());
     x.endmaparray();
     x.s +=
-        "<key>FolderData</key><array><map><key>FolderID</key><uuid>00000000-0000-0000-0000-000000000000</uuid><key>Name</key><string></string><key>ParentID</key><uuid>00000000-0000-0000-0000-000000000000</uuid ><key>Type</key ><integer>-1</integer></map ></array>";
+        "<key>FolderData</key><array><map>"
+        "<key>FolderID</key><uuid>00000000-0000-0000-0000-000000000000</uuid>"
+        "<key>Name</key><string></string>"
+        "<key>ParentID</key><uuid>00000000-0000-0000-0000-000000000000</uuid >"
+        "<key>Type</key ><integer>-1</integer></map ></array>";
     auto& v = required(item);
     auto trim = [](const std::string& s) {
         auto text = framework::utf8(framework::utf16_replacing(s));

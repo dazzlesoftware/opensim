@@ -23,7 +23,9 @@ not included in the tracked-file baseline and need separate inventories.
 
 BUILD (Windows, Linux, macOS)
 
-Requires CMake >= 3.20 and a C++20 compiler with standard threading support.
+Requires CMake >= 3.20, a C++20 compiler with standard threading support,
+and the libjpeg, libpng, and FreeType development libraries. The vcpkg manifest supplies
+these libraries. Map export labels use Arial when available and Liberation Sans on Linux.
 
     cmake -S native-port -B native-port/build -DCMAKE_BUILD_TYPE=Release
     cmake --build native-port/build --config Release --parallel

@@ -171,10 +171,12 @@ target_sources(opensim_server_core PRIVATE src/event_queue.cpp src/event_queue_m
 target_sources(opensim_server_core PRIVATE src/scene_capabilities.cpp)
 target_sources(opensim_server_core PRIVATE src/terrain.cpp src/terrain_layer.cpp src/world.cpp src/avatar_update.cpp src/avatar_packets.cpp src/object_add.cpp src/object_update.cpp src/rez_location.cpp src/pos_physics.cpp src/viewer_region.cpp src/region_runtime.cpp)
 target_sources(opensim_server_core PRIVATE src/object_asset_xml.cpp)
-target_sources(opensim_server_core PRIVATE src/chat_packet.cpp src/lsl_runtime.cpp)
+target_sources(opensim_server_core PRIVATE src/chat_packet.cpp src/lsl_runtime.cpp src/lsl_checkpoint.cpp)
 target_sources(opensim_server_core PRIVATE src/movement.cpp)
-target_sources(opensim_server_core PRIVATE src/default_animations.cpp src/movement_animation.cpp src/ubode.cpp src/viewer_physics.cpp)
-target_sources(opensim_server_core PRIVATE src/texture_layers.cpp)
+target_sources(opensim_server_core PRIVATE src/default_animations.cpp src/movement_animation.cpp src/mesh_asset.cpp src/ubode.cpp src/viewer_physics.cpp)
+target_sources(opensim_server_core PRIVATE
+    src/texture_layers.cpp src/map_tile.cpp src/warp_terrain_splat.cpp src/warp_terrain_mesh.cpp
+    src/warp_map_raster.cpp src/warp_prim_mesh.cpp)
 target_sources(opensim_server_core PRIVATE src/nini_config_view.cpp src/native_flotsam_datetime.cpp src/primitive_base_shape.cpp src/prim_geometry.cpp src/status_date_format.cpp src/root_position.cpp src/region_asset_runtime.cpp src/inventory_caps.cpp src/inventory_descendents.cpp src/region_inventory_runtime.cpp src/region_inventory_descendents_runtime.cpp src/library_inventory_caps.cpp src/library_descendents.cpp src/region_library_descendents_runtime.cpp src/inventory_packets.cpp src/legacy_inventory_requests.cpp src/xfer_download.cpp src/task_inventory_file.cpp src/script_running.cpp src/script_task_caps.cpp src/inventory_asset_caps.cpp src/baked_texture_caps.cpp src/flotsam_memory_cache.cpp src/flotsam_expiring_entries.cpp src/flotsam_console_files.cpp src/flotsam_file_access.cpp src/flotsam_cache_files.cpp src/flotsam_cache_module.cpp src/flotsam_cache_cleanup.cpp src/flotsam_cache_maintenance.cpp src/flotsam_cache_config.cpp src/native_flotsam_config.cpp src/flotsam_cache_console.cpp src/hg_uuid_gatherer.cpp src/uuid_gatherer.cpp src/uuid_asset_formats.cpp src/live_asset_gather.cpp src/flotsam_file_store.cpp src/region_baked_texture_runtime.cpp src/region_inventory_asset_runtime.cpp src/script_task_update.cpp src/region_script_task_runtime.cpp src/object_properties.cpp src/script_control.cpp src/script_asset_text.cpp src/task_inventory_registry.cpp src/inventory_script_rez.cpp src/script_instance_create.cpp)
 target_sources(opensim_server_core PRIVATE src/task_inventory_move.cpp src/task_inventory_remove.cpp src/agent_inventory_add.cpp src/inventory_notifications.cpp src/inventory_item_create.cpp)
 target_sources(opensim_server_core PRIVATE src/task_inventory_update.cpp src/inventory_drop_permission.cpp)
@@ -184,7 +186,8 @@ target_sources(opensim_server_core PRIVATE src/http_range.cpp src/get_assets.cpp
 target_sources(opensim_server_core PRIVATE src/object_job_engine.cpp src/get_assets_module.cpp)
 target_sources(opensim_server_core PRIVATE src/local_asset_connector.cpp)
 target_sources(opensim_server_core PRIVATE src/stored_asset_service.cpp src/sqlite_asset_store.cpp)
-target_sources(opensim_framework PRIVATE src/sha1.cpp)
+target_sources(opensim_framework PRIVATE src/sha1.cpp src/sha256.cpp)
+target_sources(opensim_server_core PRIVATE src/fs_asset_files.cpp src/fs_asset_service.cpp)
 target_sources(opensim_framework PRIVATE src/unicode_regex.cpp)
 target_sources(opensim_server_core PRIVATE src/migration.cpp)
 set(ASSET_MIGRATION_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/../OpenSim/Data/SQLite/Resources/AssetStore.migrations")
@@ -242,6 +245,7 @@ target_sources(opensim_server_core PRIVATE src/presence_service.cpp src/presence
 target_sources(opensim_server_core PRIVATE src/grid_user_connector.cpp)
 target_sources(opensim_server_core PRIVATE src/login_destination.cpp src/grid_identity.cpp src/grid_user_store.cpp src/grid_user_service.cpp src/grid_region.cpp src/region_store.cpp src/sqlite_region_store.cpp src/grid_service.cpp)
 target_sources(opensim_server_core PRIVATE src/gzip_inflate.cpp src/gzip_deflate.cpp src/simulation_body.cpp src/service_protocol.cpp src/service_xml_reader.cpp src/presence_endpoint.cpp src/grid_user_endpoint.cpp src/grid_endpoint.cpp src/account_endpoint.cpp src/avatar_endpoint.cpp)
+target_sources(opensim_server_core PRIVATE src/asset_endpoint.cpp src/asset_console.cpp src/hg_asset_service.cpp)
 target_link_libraries(opensim_server_core PUBLIC opensim_framework PRIVATE opensim_config_http native_sqlite native_xml native_inflate)
 find_package(PostgreSQL QUIET)
 find_package(unofficial-libmariadb CONFIG QUIET)
@@ -254,19 +258,41 @@ else()
     find_library(OPENSIM_MYSQL_LIBRARY NAMES mariadb libmariadb mysqlclient libmysql)
     if(OPENSIM_MYSQL_INCLUDE_DIR AND OPENSIM_MYSQL_LIBRARY)
         set(OPENSIM_MYSQL_TARGET "${OPENSIM_MYSQL_LIBRARY}")
-        set_source_files_properties(src/mysql_connection.cpp src/mysql_mute_list_store.cpp src/mysql_offline_im_store.cpp src/sql_service_connection.cpp
+        set_source_files_properties(src/mysql_connection.cpp src/mysql_mute_list_store.cpp src/mysql_offline_im_store.cpp src/mysql_asset_store.cpp src/sql_service_connection.cpp
             PROPERTIES INCLUDE_DIRECTORIES "${OPENSIM_MYSQL_INCLUDE_DIR}")
     endif()
 endif()
+if(OPENSIM_MYSQL_TARGET OR PostgreSQL_FOUND)
+    set(FS_ASSET_MIGRATION_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/../OpenSim/Data/MySQL/Resources/FSAssetStore.migrations")
+    set(PGSQL_FS_ASSET_MIGRATION_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/../OpenSim/Data/PGSQL/Resources/FSAssetStore.migrations")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${FS_ASSET_MIGRATION_SOURCE}" "${PGSQL_FS_ASSET_MIGRATION_SOURCE}")
+    file(READ "${FS_ASSET_MIGRATION_SOURCE}" FS_ASSET_MIGRATION_SQL)
+    file(READ "${PGSQL_FS_ASSET_MIGRATION_SOURCE}" PGSQL_FS_ASSET_MIGRATION_SQL)
+    configure_file(cmake/fs_asset_migration_resource.hpp.in generated/fs_asset_migration_resource.hpp @ONLY)
+endif()
 if(OPENSIM_MYSQL_TARGET)
-    target_sources(opensim_server_core PRIVATE src/mysql_connection.cpp src/mysql_mute_list_store.cpp src/mysql_offline_im_store.cpp)
-    set_property(SOURCE src/mute_list_endpoint.cpp APPEND PROPERTY COMPILE_DEFINITIONS OPENSIM_HAVE_MYSQL)
+    set(MYSQL_ASSET_MIGRATION_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/../OpenSim/Data/MySQL/Resources/AssetStore.migrations")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${MYSQL_ASSET_MIGRATION_SOURCE}")
+    file(READ "${MYSQL_ASSET_MIGRATION_SOURCE}" MYSQL_ASSET_MIGRATION_SQL)
+    configure_file(cmake/mysql_asset_store_migration_resource.hpp.in generated/mysql_asset_store_migration_resource.hpp @ONLY)
+    target_sources(opensim_server_core PRIVATE src/mysql_connection.cpp src/mysql_mute_list_store.cpp
+        src/mysql_offline_im_store.cpp src/mysql_asset_store.cpp)
+    set_property(SOURCE src/mute_list_endpoint.cpp src/native_asset_storage.cpp src/fs_asset_service.cpp
+        APPEND PROPERTY COMPILE_DEFINITIONS OPENSIM_HAVE_MYSQL)
     target_link_libraries(opensim_server_core PRIVATE ${OPENSIM_MYSQL_TARGET})
+    set(OPENSIM_MARIADB_TEST_BIN "" CACHE PATH "MariaDB server tools for disposable integration databases")
 endif()
 if(PostgreSQL_FOUND)
-    target_sources(opensim_server_core PRIVATE src/postgres_connection.cpp src/postgres_mute_list_store.cpp src/pgsql_offline_im_store.cpp)
-    set_property(SOURCE src/mute_list_endpoint.cpp APPEND PROPERTY COMPILE_DEFINITIONS OPENSIM_HAVE_POSTGRESQL)
+    set(PGSQL_ASSET_MIGRATION_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/../OpenSim/Data/PGSQL/Resources/AssetStore.migrations")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${PGSQL_ASSET_MIGRATION_SOURCE}")
+    file(READ "${PGSQL_ASSET_MIGRATION_SOURCE}" PGSQL_ASSET_MIGRATION_SQL)
+    configure_file(cmake/pgsql_asset_store_migration_resource.hpp.in generated/pgsql_asset_store_migration_resource.hpp @ONLY)
+    target_sources(opensim_server_core PRIVATE src/postgres_connection.cpp src/postgres_mute_list_store.cpp
+        src/pgsql_offline_im_store.cpp src/pgsql_asset_store.cpp)
+    set_property(SOURCE src/mute_list_endpoint.cpp src/native_asset_storage.cpp src/fs_asset_service.cpp
+        APPEND PROPERTY COMPILE_DEFINITIONS OPENSIM_HAVE_POSTGRESQL)
     target_link_libraries(opensim_server_core PRIVATE PostgreSQL::PostgreSQL)
+    set(OPENSIM_POSTGRES_TEST_BIN "" CACHE PATH "PostgreSQL server tools for disposable integration clusters")
 endif()
 if(OPENSIM_MYSQL_TARGET OR PostgreSQL_FOUND)
     target_sources(opensim_server_core PRIVATE src/sql_service_connection.cpp src/sql_presence_store.cpp src/sql_grid_user_store.cpp)
@@ -319,7 +345,12 @@ if(UNIX)
     find_package(ZLIB REQUIRED)
     target_compile_definitions(opensim_server_core PRIVATE OPENSIM_GZIP_SYSTEM_ZLIB)
 else()
-    find_package(ZLIB QUIET)
+    if(WIN32)
+        find_package(ZLIB CONFIG QUIET)
+    endif()
+    if(NOT ZLIB_FOUND)
+        find_package(ZLIB QUIET)
+    endif()
 endif()
 if(ZLIB_FOUND)
     target_compile_definitions(opensim_config_http PRIVATE CPPHTTPLIB_ZLIB_SUPPORT)
@@ -327,6 +358,18 @@ if(ZLIB_FOUND)
     target_compile_definitions(opensim_server_core PRIVATE CPPHTTPLIB_ZLIB_SUPPORT)
     target_link_libraries(opensim_server_core PRIVATE ZLIB::ZLIB)
 endif()
+find_package(JPEG REQUIRED)
+if(WIN32)
+    find_package(PNG CONFIG QUIET)
+endif()
+if(NOT PNG_FOUND)
+    find_package(PNG REQUIRED)
+endif()
+find_package(Freetype REQUIRED)
+add_library(opensim_map_labels STATIC src/map_labels.cpp)
+target_compile_features(opensim_map_labels PRIVATE cxx_std_20)
+target_link_libraries(opensim_map_labels PRIVATE opensim_framework Freetype::Freetype)
+target_link_libraries(opensim_server_core PRIVATE JPEG::JPEG PNG::PNG opensim_map_labels)
 add_executable(opensim-native src/main.cpp)
 if(MSVC)
     target_compile_options(opensim-native PRIVATE /bigobj)
@@ -348,6 +391,20 @@ if(MINGW)
     target_link_options(opensim-native PRIVATE -municode)
 endif()
 install(TARGETS opensim-native RUNTIME DESTINATION bin)
+if(WIN32)
+    find_package(libjpeg-turbo CONFIG QUIET)
+    if(TARGET libjpeg-turbo::jpeg)
+        install(FILES "$<TARGET_FILE:libjpeg-turbo::jpeg>" DESTINATION bin)
+    endif()
+    foreach(image_dependency PNG::png_shared ZLIB::ZLIB freetype)
+        if(TARGET "${image_dependency}")
+            get_target_property(image_dependency_type "${image_dependency}" TYPE)
+            if(image_dependency_type STREQUAL "SHARED_LIBRARY")
+                install(FILES "$<TARGET_FILE:${image_dependency}>" DESTINATION bin)
+            endif()
+        endif()
+    endforeach()
+endif()
 install(FILES native-server.ini.example LICENSE.txt CONTRIBUTORS.txt BUILDING.txt DESTINATION share/opensim-native)
 install(FILES native-region.ini.example ../bin/data/avataranimations.xml DESTINATION share/opensim-native)
 install(FILES ../ThirdPartyLicenses/ODE.txt DESTINATION share/opensim-native/licenses)
@@ -455,6 +512,10 @@ if(BUILD_TESTING)
     add_executable(avatar_packets_tests tests/avatar_packets_tests.cpp)
     add_executable(chat_packet_tests tests/chat_packet_tests.cpp)
     add_executable(lsl_runtime_tests tests/lsl_runtime_tests.cpp)
+    if(MSVC)
+        # The fixture keeps hundreds of script cases in one function and also exercises nested evaluation.
+        target_link_options(lsl_runtime_tests PRIVATE /STACK:2097152)
+    endif()
     add_executable(inventory_packets_tests tests/inventory_packets_tests.cpp)
     target_link_libraries(inventory_packets_tests PRIVATE opensim_server_core)
     add_test(NAME inventory_packets_tests COMMAND inventory_packets_tests)
@@ -804,6 +865,10 @@ if(BUILD_TESTING)
     add_executable(get_assets_server tests/get_assets_server.cpp)
     add_executable(get_assets_probe tests/get_assets_probe.cpp)
     add_executable(local_asset_connector_probe tests/local_asset_connector_probe.cpp)
+    add_test(NAME region_asset_store_policy COMMAND local_asset_connector_probe --region-store)
+    add_test(NAME region_asset_async_cache_policy COMMAND local_asset_connector_probe --region-async-cache)
+    add_test(NAME region_asset_async_miss_coalescing COMMAND local_asset_connector_probe --region-async-miss)
+    add_test(NAME region_asset_read_shutdown COMMAND local_asset_connector_probe --region-read-close)
     add_test(NAME foreign_asset_queue_rejection COMMAND local_asset_connector_probe --reject-foreign)
     add_test(NAME foreign_asset_queue_coalescing COMMAND local_asset_connector_probe --coalesce-foreign)
     add_executable(asset_storage_probe tests/asset_storage_probe.cpp)
@@ -1151,6 +1216,22 @@ if(BUILD_TESTING)
         add_test(NAME region_teleport_timeout_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/foreign_agent_network.py" "$<TARGET_FILE:opensim-native>" --teleport-timeout)
         set_tests_properties(region_teleport_timeout_network PROPERTIES TIMEOUT 65)
+        add_test(NAME avatar_boundary_crossing_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/foreign_agent_network.py" "$<TARGET_FILE:opensim-native>"
+            --walk-crossing "${OPENSIM_UBODE_LIBRARY}")
+        set_tests_properties(avatar_boundary_crossing_network PROPERTIES TIMEOUT 65)
+        add_test(NAME avatar_flight_crossing_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/foreign_agent_network.py" "$<TARGET_FILE:opensim-native>"
+            --walk-crossing "${OPENSIM_UBODE_LIBRARY}" --fly)
+        set_tests_properties(avatar_flight_crossing_network PROPERTIES TIMEOUT 65)
+        add_test(NAME avatar_blocked_flight_crossing_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/foreign_agent_network.py" "$<TARGET_FILE:opensim-native>"
+            --walk-crossing "${OPENSIM_UBODE_LIBRARY}" --fly --no-flight-destination)
+        set_tests_properties(avatar_blocked_flight_crossing_network PROPERTIES TIMEOUT 65)
+        add_test(NAME avatar_fall_crossing_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/foreign_agent_network.py" "$<TARGET_FILE:opensim-native>"
+            --walk-crossing "${OPENSIM_UBODE_LIBRARY}" --fall)
+        set_tests_properties(avatar_fall_crossing_network PROPERTIES TIMEOUT 65)
         add_test(NAME hypergrid_release_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/foreign_agent_network.py" "$<TARGET_FILE:opensim-native>" --hypergrid-release)
         set_tests_properties(hypergrid_release_network PROPERTIES TIMEOUT 45)
@@ -2072,6 +2153,58 @@ if(BUILD_TESTING)
         add_test(NAME remote_asset_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/remote_asset_network.py" "$<TARGET_FILE:asset_service_probe>")
         set_tests_properties(remote_asset_network PROPERTIES TIMEOUT 45)
+        add_test(NAME fs_asset_files COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/fs_asset_files.py" "$<TARGET_FILE:asset_service_probe>")
+        set_tests_properties(fs_asset_files PROPERTIES TIMEOUT 45)
+        add_test(NAME asset_endpoint_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/asset_endpoint_network.py"
+            "$<TARGET_FILE:opensim-native>" "$<TARGET_FILE:asset_service_probe>")
+        set_tests_properties(asset_endpoint_network PROPERTIES TIMEOUT 90)
+        set(managed_fs_args)
+        if(OPENSIM_DIFFERENTIAL_TESTS
+           AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/Robust.dll"
+           AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/Robust.runtimeconfig.json"
+           AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/OpenSim.Server.Handlers.dll"
+           AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/OpenSim.Services.FSAssetService.dll")
+            set(managed_fs_args --dotnet "${DOTNET_EXECUTABLE}")
+        endif()
+        if(PostgreSQL_FOUND AND OPENSIM_POSTGRES_TEST_BIN)
+            set(pg_fs_args)
+            if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/OpenSim.Data.PGSQL.dll")
+                set(pg_fs_args ${managed_fs_args})
+            endif()
+            add_test(NAME pgsql_asset_network COMMAND "${Python3_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/pgsql_asset_network.py"
+                --native "$<TARGET_FILE:opensim-native>" --probe "$<TARGET_FILE:asset_service_probe>"
+                --postgres-bin "${OPENSIM_POSTGRES_TEST_BIN}" ${pg_fs_args})
+            set_tests_properties(pgsql_asset_network PROPERTIES TIMEOUT 240)
+        endif()
+        if(OPENSIM_MYSQL_TARGET AND OPENSIM_MARIADB_TEST_BIN)
+            set(mysql_fs_args)
+            if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/OpenSim.Data.MySQL.dll"
+               AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/OpenSim.Services.AssetService.dll")
+                set(mysql_fs_args ${managed_fs_args})
+            endif()
+            add_test(NAME mysql_asset_network COMMAND "${Python3_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/mysql_asset_network.py"
+                --native "$<TARGET_FILE:opensim-native>" --probe "$<TARGET_FILE:asset_service_probe>"
+                --mariadb-bin "${OPENSIM_MARIADB_TEST_BIN}" ${mysql_fs_args})
+            set_tests_properties(mysql_asset_network PROPERTIES TIMEOUT 240)
+        endif()
+        if(OPENSIM_DIFFERENTIAL_TESTS
+           AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/OpenSim.Framework.dll"
+           AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/OpenSim.Services.Interfaces.dll"
+           AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/Robust.dll"
+           AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/Robust.runtimeconfig.json"
+           AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/OpenSim.Server.Handlers.dll"
+           AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/OpenSim.Services.AssetService.dll"
+           AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/OpenSim.Data.SQLite.dll")
+            add_test(NAME managed_asset_wire_network COMMAND "${Python3_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/managed_asset_wire_network.py"
+                --native "$<TARGET_FILE:opensim-native>" --native-probe "$<TARGET_FILE:asset_service_probe>"
+                --dotnet "${DOTNET_EXECUTABLE}")
+            set_tests_properties(managed_asset_wire_network PROPERTIES TIMEOUT 180)
+        endif()
         add_test(NAME advanced_profile_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
             --viewer "$<TARGET_FILE:viewer_session_probe>" --advanced-profiles --work "${CMAKE_CURRENT_BINARY_DIR}/advanced-profile-network")
@@ -2178,6 +2311,15 @@ if(BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/default_parcel_persistence_network.py"
             --native "$<TARGET_FILE:opensim-native>" --work "${CMAKE_CURRENT_BINARY_DIR}/default-parcel-persistence-network")
         set_tests_properties(default_parcel_persistence_network PROPERTIES TIMEOUT 90)
+        add_test(NAME legacy_material_restart_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/legacy_material_restart_network.py"
+            --native "$<TARGET_FILE:opensim-native>" --work "${CMAKE_CURRENT_BINARY_DIR}/legacy-material-restart-network")
+        set_tests_properties(legacy_material_restart_network PROPERTIES TIMEOUT 90)
+        add_test(NAME parcel_ownership_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/default_parcel_persistence_network.py"
+            --native "$<TARGET_FILE:opensim-native>" --force-owner
+            --work "${CMAKE_CURRENT_BINARY_DIR}/parcel-ownership-network")
+        set_tests_properties(parcel_ownership_network PROPERTIES TIMEOUT 90)
         add_test(NAME large_llraw_upload_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/default_parcel_persistence_network.py"
             --native "$<TARGET_FILE:opensim-native>" --large-terrain
@@ -2213,6 +2355,31 @@ if(BUILD_TESTING)
             --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --os-landing
             --work "${CMAKE_CURRENT_BINARY_DIR}/os-parcel-landing-network")
         set_tests_properties(os_parcel_landing_network PROPERTIES TIMEOUT 90)
+        add_test(NAME map_tile_refresh_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
+            --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --map-tile-refresh
+            --work "${CMAKE_CURRENT_BINARY_DIR}/map-tile-refresh-network")
+        set_tests_properties(map_tile_refresh_network PROPERTIES TIMEOUT 30)
+        add_test(NAME static_map_file_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
+            --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --static-map-file
+            --work "${CMAKE_CURRENT_BINARY_DIR}/static-map-file-network")
+        set_tests_properties(static_map_file_network PROPERTIES TIMEOUT 60)
+        add_test(NAME warp_map_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
+            --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --warp-map
+            --work "${CMAKE_CURRENT_BINARY_DIR}/warp-map-network")
+        set_tests_properties(warp_map_network PROPERTIES TIMEOUT 60)
+        add_test(NAME region_restart_shutdown_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
+            --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --restart-shutdown
+            --work "${CMAKE_CURRENT_BINARY_DIR}/region-restart-shutdown-network")
+        set_tests_properties(region_restart_shutdown_network PROPERTIES TIMEOUT 90)
+        add_test(NAME region_script_listener_restart_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
+            --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --script-restart
+            --work "${CMAKE_CURRENT_BINARY_DIR}/region-script-listener-restart-network")
+        set_tests_properties(region_script_listener_restart_network PROPERTIES TIMEOUT 180)
         add_test(NAME pbr_terrain_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
             --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --pbr-terrain

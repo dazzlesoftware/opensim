@@ -61,6 +61,9 @@ bool ConfigUriComponents::is_http() const {
 ConfigUriText ConfigUriComponents::host() const {
     return config_generic_uri_component(state_->object, ConfigGenericUriComponent::Host);
 }
+ConfigUriText ConfigUriComponents::authority() const {
+    return config_generic_uri_authority(state_->object);
+}
 ConfigUriText ConfigUriComponents::idn_host() const {
     return config_generic_uri_component(state_->object, ConfigGenericUriComponent::IdnHost);
 }

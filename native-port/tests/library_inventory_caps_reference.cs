@@ -1,14 +1,168 @@
-using System;using System.Net;using System.IO;using OpenMetaverse;using OpenMetaverse.StructuredData;
-class IOSHttpRequest {public string HttpMethod;public Stream InputStream;public object Headers;}
-class IOSHttpResponse {public int StatusCode=200;public byte[] RawBuffer=Array.Empty<byte>();public void AddHeader(string key,string value){}}
-class ExpiringKey<T>{public System.Collections.Generic.HashSet<T> Keys=new();public bool ContainsKey(T key)=>Keys.Contains(key);}
-class AuthStub {public bool Authenticate(object headers,Action<string,string> add,out HttpStatusCode status){status=HttpStatusCode.OK;return true;}}
-partial class Wrapper {public int RequestsReceived,RequestsHandled;public string m_httMethod="POST";public AuthStub m_Auth;public Action<IOSHttpRequest,IOSHttpResponse,OSDMap> m_processRequest;protected void ProcessRequest(IOSHttpRequest request,IOSHttpResponse response,OSDMap args){}}
-partial class InventoryItemBase {public UUID Folder,AssetID,ID,CreatorIdAsUuid,Owner,GroupID;public uint CurrentPermissions,GroupPermissions,EveryOnePermissions,NextPermissions,Flags;public bool GroupOwned;public int AssetType,InvType,SalePrice,CreationDate;public byte SaleType;public string Name,Description;}
-class LibraryStub {public int Calls,Mode,Seed;public string Trace="";public InventoryItemBase[] GetMultipleItems(UUID[] ids){Calls++;foreach(var id in ids){if(Trace.Length>0)Trace+=',';Trace+=id;}if((Mode&16)!=0)throw new InvalidOperationException("PROVIDER");if((Mode&32)!=0)return null;var result=new InventoryItemBase[ids.Length];for(int i=0;i<ids.Length;i++)if((Mode&512)==0&&!ids[i].IsZero()&&i%3!=2)result[i]=LibraryReference.Sample(Seed,ids[i]);return result;}}
-partial class LibraryReference {
- LibraryStub m_LibraryService;UUID m_agentID;
- static UUID Id(int n)=>new UUID("00000000-0000-0000-0000-"+n.ToString().PadLeft(12,'0'));
- public static InventoryItemBase Sample(int seed,UUID key)=>new(){ID=key,Owner=Id(200),Folder=Id(201),AssetID=Id(500+seed),Name="library <&> é",Description="library description",Flags=seed%2!=0?uint.MaxValue:0x1234,AssetType=seed-5,InvType=seed%3,CurrentPermissions=seed%2!=0?uint.MaxValue:0,CreatorIdAsUuid=Id(44),GroupID=seed%2!=0?Id(45):UUID.Zero,GroupOwned=seed%2!=0,SalePrice=seed%3,SaleType=(byte)(seed%4)};
- static void Main(string[] args){if(args.Length>0&&args[0]=="--http"){string httpCommand;while((httpCommand=Console.ReadLine())!=null){var v=httpCommand.Split(' ');int seed=int.Parse(v[0]),mode=int.Parse(v[1]);var library=new LibraryStub{Mode=mode,Seed=seed};var core=new LibraryReference{m_agentID=(mode&8)!=0?UUID.Zero:Id(42),m_LibraryService=(mode&4)!=0?null:library};var cache=new ExpiringKey<UUID>();if((mode&1)!=0)cache.Keys.Add(Id(2));var wrapper=new Wrapper{m_processRequest=(request,response,map)=>core.FetchLibSimpleRequest(request,response,map,(mode&2)!=0?null:cache)};var response=new IOSHttpResponse();wrapper.Handle(new(){HttpMethod=v[2],InputStream=new MemoryStream(v[3]=="-"?Array.Empty<byte>():Convert.FromHexString(v[3]))},response);Console.WriteLine(response.StatusCode+":"+Convert.ToHexString(response.RawBuffer).ToLowerInvariant()+"|"+wrapper.RequestsReceived+"|"+wrapper.RequestsHandled+"|"+library.Calls+"|"+library.Trace);}return;}string command;while((command=Console.ReadLine())!=null){var p=command.Split(' ');int seed=int.Parse(p[0]),count=int.Parse(p[1]),mode=int.Parse(p[2]);var library=new LibraryStub{Mode=mode,Seed=seed};var core=new LibraryReference{m_agentID=(mode&8)!=0?UUID.Zero:Id(42),m_LibraryService=(mode&4)!=0?null:library};var cache=new ExpiringKey<UUID>();if((mode&1)!=0)cache.Keys.Add(Id(2));var map=new OSDMap();var array=new OSDArray();for(int i=0;i<count;i++){var item=new OSDMap();if((mode&256)==0)item["item_id"]=OSD.FromUUID(Id(i+1));array.Add((mode&128)!=0?OSD.FromString("wrong"):item);}map["items"]=(mode&64)!=0?OSD.FromString("wrong"):array;var response=new IOSHttpResponse();string result;try{core.FetchLibSimpleRequest(new(),response,map,(mode&2)!=0?null:cache);result=response.StatusCode+":"+Convert.ToHexString(response.RawBuffer).ToLowerInvariant();}catch(InvalidOperationException e){result=e.Message=="PROVIDER"?"PROVIDER":"CAST";}catch(Exception){result="CAST";}Console.WriteLine(result+"|"+library.Calls+"|"+library.Trace);}}
+using System;
+using System.Net;
+using System.IO;
+using OpenMetaverse;
+using OpenMetaverse.StructuredData;
+class IOSHttpRequest
+{
+    public string HttpMethod;
+    public Stream InputStream;
+    public object Headers;
+}
+class IOSHttpResponse
+{
+    public int StatusCode = 200;
+    public byte[] RawBuffer = Array.Empty<byte>();
+    public void AddHeader(string key, string value)
+    {
+    }
+}
+class ExpiringKey<T>
+{
+    public System.Collections.Generic.HashSet<T> Keys = new();
+    public bool ContainsKey(T key) => Keys.Contains(key);
+}
+class AuthStub
+{
+    public bool Authenticate(object headers, Action<string, string> add, out HttpStatusCode status)
+    {
+        status = HttpStatusCode.OK;
+        return true;
+    }
+}
+partial class Wrapper
+{
+    public int RequestsReceived, RequestsHandled;
+    public string m_httMethod = "POST";
+    public AuthStub m_Auth;
+    public Action<IOSHttpRequest, IOSHttpResponse, OSDMap> m_processRequest;
+    protected void ProcessRequest(IOSHttpRequest request, IOSHttpResponse response, OSDMap args)
+    {
+    }
+}
+partial class InventoryItemBase
+{
+    public UUID Folder, AssetID, ID, CreatorIdAsUuid, Owner, GroupID;
+    public uint CurrentPermissions, GroupPermissions, EveryOnePermissions, NextPermissions, Flags;
+    public bool GroupOwned;
+    public int AssetType, InvType, SalePrice, CreationDate;
+    public byte SaleType;
+    public string Name, Description;
+}
+class LibraryStub
+{
+    public int Calls, Mode, Seed;
+    public string Trace = "";
+    public InventoryItemBase[] GetMultipleItems(UUID[] ids)
+    {
+        Calls++;
+        foreach (var id in ids)
+        {
+            if (Trace.Length > 0)
+                Trace += ',';
+            Trace += id;
+        }
+        if ((Mode & 16) != 0)
+            throw new InvalidOperationException("PROVIDER");
+        if ((Mode & 32) != 0)
+            return null;
+        var result = new InventoryItemBase[ids.Length];
+        for (int i = 0; i < ids.Length; i++)
+            if ((Mode & 512) == 0 && !ids[i].IsZero() && i % 3 != 2)
+                result[i] = LibraryReference.Sample(Seed, ids[i]);
+        return result;
+    }
+}
+partial class LibraryReference
+{
+    LibraryStub m_LibraryService;
+    UUID m_agentID;
+    static UUID Id(int n) => new UUID("00000000-0000-0000-0000-" + n.ToString().PadLeft(12, '0'));
+    public static InventoryItemBase Sample(int seed, UUID key) => new() {
+        ID = key,
+        Owner = Id(200),
+        Folder = Id(201),
+        AssetID = Id(500 + seed),
+        Name = "library <&> é",
+        Description = "library description",
+        Flags = seed % 2 != 0 ? uint.MaxValue : 0x1234,
+        AssetType = seed - 5,
+        InvType = seed % 3,
+        CurrentPermissions = seed % 2 != 0 ? uint.MaxValue : 0,
+        CreatorIdAsUuid = Id(44),
+        GroupID = seed % 2 != 0 ? Id(45) : UUID.Zero,
+        GroupOwned = seed % 2 != 0,
+        SalePrice = seed % 3,
+        SaleType = (byte)(seed % 4)
+    };
+    static void Main(string[] args)
+    {
+        if (args.Length > 0 && args[0] == "--http")
+        {
+            string httpCommand;
+            while ((httpCommand = Console.ReadLine()) != null)
+            {
+                var v = httpCommand.Split(' ');
+                int seed = int.Parse(v[0]), mode = int.Parse(v[1]);
+                var library = new LibraryStub { Mode = mode, Seed = seed };
+                var core = new LibraryReference { m_agentID = (mode & 8) != 0 ? UUID.Zero : Id(42),
+                                                  m_LibraryService = (mode & 4) != 0 ? null : library };
+                var cache = new ExpiringKey<UUID>();
+                if ((mode & 1) != 0)
+                    cache.Keys.Add(Id(2));
+                var wrapper =
+                    new Wrapper { m_processRequest = (request, response, map) => core.FetchLibSimpleRequest(
+                                      request, response, map, (mode & 2) != 0 ? null : cache) };
+                var response = new IOSHttpResponse();
+                wrapper.Handle(new() { HttpMethod = v[2],
+                                       InputStream = new MemoryStream(
+                                           v[3] == "-" ? Array.Empty<byte>() : Convert.FromHexString(v[3])) },
+                               response);
+                Console.WriteLine(response.StatusCode + ":" +
+                                  Convert.ToHexString(response.RawBuffer).ToLowerInvariant() + "|" +
+                                  wrapper.RequestsReceived + "|" + wrapper.RequestsHandled + "|" +
+                                  library.Calls + "|" + library.Trace);
+            }
+            return;
+        }
+        string command;
+        while ((command = Console.ReadLine()) != null)
+        {
+            var p = command.Split(' ');
+            int seed = int.Parse(p[0]), count = int.Parse(p[1]), mode = int.Parse(p[2]);
+            var library = new LibraryStub { Mode = mode, Seed = seed };
+            var core = new LibraryReference { m_agentID = (mode & 8) != 0 ? UUID.Zero : Id(42),
+                                              m_LibraryService = (mode & 4) != 0 ? null : library };
+            var cache = new ExpiringKey<UUID>();
+            if ((mode & 1) != 0)
+                cache.Keys.Add(Id(2));
+            var map = new OSDMap();
+            var array = new OSDArray();
+            for (int i = 0; i < count; i++)
+            {
+                var item = new OSDMap();
+                if ((mode & 256) == 0)
+                    item["item_id"] = OSD.FromUUID(Id(i + 1));
+                array.Add((mode & 128) != 0 ? OSD.FromString("wrong") : item);
+            }
+            map["items"] = (mode & 64) != 0 ? OSD.FromString("wrong") : array;
+            var response = new IOSHttpResponse();
+            string result;
+            try
+            {
+                core.FetchLibSimpleRequest(new(), response, map, (mode & 2) != 0 ? null : cache);
+                result =
+                    response.StatusCode + ":" + Convert.ToHexString(response.RawBuffer).ToLowerInvariant();
+            }
+            catch (InvalidOperationException e)
+            {
+                result = e.Message == "PROVIDER" ? "PROVIDER" : "CAST";
+            }
+            catch (Exception)
+            {
+                result = "CAST";
+            }
+            Console.WriteLine(result + "|" + library.Calls + "|" + library.Trace);
+        }
+    }
 }

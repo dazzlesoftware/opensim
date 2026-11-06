@@ -12,6 +12,7 @@ struct ViewerRegionOptions {
     std::uint8_t access = 13;
     framework::Uuid owner, cache_id;
     float water_height = 20, billable_factor = 1;
+    std::function<std::pair<framework::Uuid, float>()> current_estate_owner_and_billable_factor;
     std::function<float()> current_water_height;
     std::array<framework::Uuid, 4> terrain_details{framework::Uuid("b8d3965a-ad78-bf43-699b-bff8eca6c975"),
                                                    framework::Uuid("abb783e6-3e93-26c0-248a-247666855da3"),
@@ -40,9 +41,20 @@ struct ViewerAgent {
     std::shared_ptr<framework::AgentCircuitData> circuit;
     network::UdpEndpoint endpoint;
     std::uint32_t local_id = 0, viewer_flags = 0, controls = 0;
+    std::uint8_t agent_state = 0;
     bool connected = false, handshake_sent = false, handshake_reply = false, root = false,
          logout_requested = false;
+    bool crossed_child = false;
+    bool crossing_arrival_ready = false;
     framework::Vector3 position, look_at{1, 0, 0}, velocity, acceleration;
+    framework::Vector3 camera_position;
+    framework::Vector3 camera_at_axis, camera_left_axis;
+    framework::Vector3 camera_up_axis;
+    framework::Quaternion camera_rotation;
+    float camera_fov = 1.04f;
+    std::uint32_t camera_fov_generation = 0;
+    std::uint32_t view_width = 640;
+    std::uint32_t view_height = 480;
     bool flying = false, always_run = false;
     framework::Quaternion rotation{0, 0, 0, 1};
     std::optional<framework::Quaternion> mouselook_rotation;
@@ -85,6 +97,9 @@ class ViewerRegion {
     bool teleport_local(framework::Uuid agent, framework::Uuid session, const network::lludp::Packet&);
     void broadcast_terrain_changes();
     std::optional<ViewerAgent> agent(framework::Uuid id) const;
+    std::optional<ViewerAgent> demote_after_crossing(framework::Uuid id, framework::Uuid session);
+    bool stage_crossing_arrival(const std::shared_ptr<framework::AgentCircuitData>& circuit);
+    void cancel_crossing_arrival(framework::Uuid id, framework::Uuid session);
     std::optional<ViewerAgent> update_seat(framework::Uuid id, framework::Uuid session,
                                            std::optional<ViewerAgent::Seat> seat, framework::Vector3 position,
                                            std::optional<framework::Quaternion> rotation = std::nullopt,
@@ -112,6 +127,8 @@ class ViewerRegion {
                const network::UdpEndpoint& endpoint);
     void packet(const network::CircuitConnection& connection, const network::lludp::Packet& packet);
     void closed(const network::CircuitConnection& connection);
+    void restore_transferred_seat(ViewerAgent& avatar);
+    std::uint32_t region_flags() const;
     World& world_;
     framework::AgentCircuitManager& circuits_;
     Admission admission_;

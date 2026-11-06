@@ -76,12 +76,15 @@ def main():
         for suffix in ["", "&UserID="+user, "&UserID="+user+"&RegionID=bad", "&UserID="+user+"&RegionID="+region, "&UserID="+user+"&RegionID="+region+"&Position=<1,2,3>&LookAt=bad", "&UserID="+user+"&RegionID="+region+"&Position=bad&LookAt=<4,5,6>", "&UserID[]=list&RegionID="+region]:
             bodies.append("METHOD="+method+suffix)
     modes = [("none", "", False), ("basic", "", False), ("basic", "Basic "+base64.b64encode(b"u:p").decode(), False), ("basic", " Basic "+base64.b64encode(b"u:p:ignored").decode()+" ", False), ("basic", "basic dTpw", False), ("basic", "Basic invalid!", False), ("none", "", True), ("allow", "Basic dTpw", True)]
+    encoded_lookup = "METHOD=getgriduserinfo&UserID=" + user
+    bodies = [body.encode() for body in bodies]
+    bodies.extend(encoded_lookup.encode(encoding) for encoding in ("utf-8-sig", "utf-16", "utf-32"))
     differences = []
     count = 0
     for index, (mode, authorization, shard) in enumerate(modes):
         config = work / f"config-{index}.ini"
         config.write_text("[GridUserService]\n" + ("AuthType=BasicHttpAuthentication\nHttpAuthUsername=u\nHttpAuthPassword=p\n" if mode != "none" else "") + ("AllowllHTTPRequestIn=true\n" if mode == "allow" else ""))
-        lines = [body.encode().hex()+"|"+authorization.encode().hex()+"|"+str(int(shard)) for body in bodies]
+        lines = [body.hex()+"|"+authorization.encode().hex()+"|"+str(int(shard)) for body in bodies]
         data = "\n".join(lines)+"\n"
         results = []
         for executable in [command, [args.native]]:
@@ -91,7 +94,7 @@ def main():
             results.append(run.stdout.splitlines())
         if any(len(rows) != len(lines) for rows in results):
             raise AssertionError("Endpoint output length differs")
-        differences.extend({"mode": index, "body": body, "reference": expected, "native": actual} for body, expected, actual in zip(bodies, *results) if expected != actual)
+        differences.extend({"mode": index, "body": repr(body), "reference": expected, "native": actual} for body, expected, actual in zip(bodies, *results) if expected != actual)
         count += len(lines)
     report = {"passed": not differences, "scenarioCount": count, "sourceHashes": {path: hashlib.sha256((ROOT/path).read_bytes()).hexdigest() for path in SOURCES+["OpenSim/Server/Base/ServerUtils.cs", "OpenSim/Framework/Util.cs"]}, "differences": differences}
     (work / "grid-user-endpoint-parity-results.json").write_text(json.dumps(report, indent=2)+"\n")

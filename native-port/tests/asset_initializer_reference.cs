@@ -1,5 +1,124 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
-using System;using System.Data.SQLite;using System.Globalization;using System.IO;using System.Reflection;using System.Text;using System.Text.Json;using OpenMetaverse;using OpenSim.Framework;using OpenSim.Data.SQLite;
-namespace OpenSim.Framework{public static class DllmapConfigHelper{public static void RegisterAssembly(Assembly a){}}}
-class AssetInitializerReference{static string Scalar(SQLiteConnection db,string sql){try{using var c=db.CreateCommand();c.CommandText=sql;return Convert.ToString(c.ExecuteScalar(),CultureInfo.InvariantCulture);}catch{return "X";}}static string Snapshot(SQLiteConnection db)=>Host.Hex(Scalar(db,"SELECT coalesce(group_concat(name||':'||quote(version),'|'),'') FROM (SELECT name,version FROM migrations ORDER BY name,version)"))+":"+Host.Hex(Scalar(db,"SELECT coalesce(group_concat(name||':'||type,'|'),'') FROM (SELECT name,type FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name,type)"));static void Exec(SQLiteConnection db,string sql){if(string.IsNullOrEmpty(sql))return;using var c=db.CreateCommand();c.CommandText=sql;c.ExecuteNonQuery();}static void Main(string[] args){CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;string line;int index=0;while((line=Console.ReadLine())!=null){Host.Input=JsonDocument.Parse(Encoding.UTF8.GetString(Convert.FromHexString(line))).RootElement;Host.Trace="";var input=Host.Input;var path=Path.Combine(Path.GetFullPath(args[0]),(index++).ToString()+".db");using var db=new SQLiteConnection("Data Source="+path+";Pooling=False");db.Open();try{Exec(db,input.GetProperty("setup").GetString());}catch{Console.WriteLine("FIXTURE_EX");continue;}var plugin=new SQLiteAssetData();string output="";var id=new UUID("00000000-0000-0000-0000-000000000001");foreach(var op in input.GetProperty("ops").EnumerateArray()){string result="-";try{switch(op.GetProperty("op").GetString()){case "init":plugin.Initialise(op.GetProperty("connection").GetString().Replace("$DB",path));break;case "get":var a=plugin.GetAsset(id);result=a==null?"N":a.ID+":"+a.Name+":"+(a.Data==null?"N":Convert.ToHexString(a.Data).ToLowerInvariant());break;case "store":result=plugin.StoreAsset(new AssetBase{FullID=id,Name="asset",Data=new byte[]{1,2}})?"1":"0";break;case "exists":result="";foreach(bool b in plugin.AssetsExist(new[]{id}))result+=b?'1':'0';break;case "empty":result=plugin.AssetsExist(Array.Empty<UUID>()).Length.ToString();break;case "invalid":result=plugin.Delete("bad")?"1":"0";break;case "dispose":plugin.Dispose();break;case "raw":Exec(db,op.GetProperty("sql").GetString());break;}}catch{result="EX";}output+=Host.Hex(result)+":"+Snapshot(db)+";";}plugin.Dispose();Console.WriteLine(output+"|"+Host.Hex(Host.Trace));}}}
+using System;
+using System.Data.SQLite;
+using System.Globalization;
+using System.IO;
+using System.Reflection;
+using System.Text;
+using System.Text.Json;
+using OpenMetaverse;
+using OpenSim.Framework;
+using OpenSim.Data.SQLite;
+
+namespace OpenSim.Framework
+{
+    public static class DllmapConfigHelper
+    {
+        public static void RegisterAssembly(Assembly a)
+        {
+        }
+    }
+}
+
+class AssetInitializerReference
+{
+    static string Scalar(SQLiteConnection db, string sql)
+    {
+        try
+        {
+            using var c = db.CreateCommand();
+            c.CommandText = sql;
+            return Convert.ToString(c.ExecuteScalar(), CultureInfo.InvariantCulture);
+        }
+        catch
+        {
+            return "X";
+        }
+    }
+
+    static string Snapshot(SQLiteConnection db) => Host.Hex(Scalar(db, "SELECT coalesce(group_concat(name||':'||quote(version),'|'),'') FROM (SELECT name,version FROM migrations ORDER BY name,version)")) + ":" + Host.Hex(Scalar(db, "SELECT coalesce(group_concat(name||':'||type,'|'),'') FROM (SELECT name,type FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name,type)"));
+    static void Exec(SQLiteConnection db, string sql)
+    {
+        if (string.IsNullOrEmpty(sql))
+            return;
+        using var c = db.CreateCommand();
+        c.CommandText = sql;
+        c.ExecuteNonQuery();
+    }
+
+    static void Main(string[] args)
+    {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        string line;
+        int index = 0;
+        while ((line = Console.ReadLine()) != null)
+        {
+            Host.Input = JsonDocument.Parse(Encoding.UTF8.GetString(Convert.FromHexString(line))).RootElement;
+            Host.Trace = "";
+            var input = Host.Input;
+            var path = Path.Combine(Path.GetFullPath(args[0]), (index++).ToString() + ".db");
+            using var db = new SQLiteConnection("Data Source=" + path + ";Pooling=False");
+            db.Open();
+            try
+            {
+                Exec(db, input.GetProperty("setup").GetString());
+            }
+            catch
+            {
+                Console.WriteLine("FIXTURE_EX");
+                continue;
+            }
+
+            var plugin = new SQLiteAssetData();
+            string output = "";
+            var id = new UUID("00000000-0000-0000-0000-000000000001");
+            foreach (var op in input.GetProperty("ops").EnumerateArray())
+            {
+                string result = "-";
+                try
+                {
+                    switch (op.GetProperty("op").GetString())
+                    {
+                        case "init":
+                            plugin.Initialise(op.GetProperty("connection").GetString().Replace("$DB", path));
+                            break;
+                        case "get":
+                            var a = plugin.GetAsset(id);
+                            result = a == null ? "N" : a.ID + ":" + a.Name + ":" + (a.Data == null ? "N" : Convert.ToHexString(a.Data).ToLowerInvariant());
+                            break;
+                        case "store":
+                            result = plugin.StoreAsset(new AssetBase { FullID = id, Name = "asset", Data = new byte[] { 1, 2 } }) ? "1" : "0";
+                            break;
+                        case "exists":
+                            result = "";
+                            foreach (bool b in plugin.AssetsExist(new[] { id }))
+                                result += b ? '1' : '0';
+                            break;
+                        case "empty":
+                            result = plugin.AssetsExist(Array.Empty<UUID>()).Length.ToString();
+                            break;
+                        case "invalid":
+                            result = plugin.Delete("bad") ? "1" : "0";
+                            break;
+                        case "dispose":
+                            plugin.Dispose();
+                            break;
+                        case "raw":
+                            Exec(db, op.GetProperty("sql").GetString());
+                            break;
+                    }
+                }
+                catch
+                {
+                    result = "EX";
+                }
+
+                output += Host.Hex(result) + ":" + Snapshot(db) + ";";
+            }
+
+            plugin.Dispose();
+            Console.WriteLine(output + "|" + Host.Hex(Host.Trace));
+        }
+    }
+}

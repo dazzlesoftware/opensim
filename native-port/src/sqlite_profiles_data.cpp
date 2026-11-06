@@ -8,6 +8,7 @@
 #include "opensim/framework/culture_prefix.hpp"
 #include "profiles_migration_resource.hpp"
 #include <sqlite3.h>
+#include <algorithm>
 #include <variant>
 #include <limits>
 namespace opensim::services {
@@ -283,7 +284,11 @@ bool SqliteProfilesData::UpdateClassifiedRecord(std::shared_ptr<UserClassifiedAd
     try {
         execute(
             database_,
-            "INSERT OR REPLACE INTO classifieds (`classifieduuid`,`creatoruuid`,`creationdate`,`expirationdate`,`category`,`name`,`description`,`parceluuid`,`parentestate`,`snapshotuuid`,`simname`,`posglobal`,`parcelname`,`classifiedflags`,`priceforlisting`) VALUES (:ClassifiedId,:CreatorId,:CreatedDate,:ExpirationDate,:Category,:Name,:Description,:ParcelId,:ParentEstate,:SnapshotId,:SimName,:GlobalPos,:ParcelName,:Flags,:ListingPrice)",
+            "INSERT OR REPLACE INTO classifieds (`classifieduuid`,`creatoruuid`,`creationdate`,"
+            "`expirationdate`,`category`,`name`,`description`,`parceluuid`,`parentestate`,`snapshotuuid`,"
+            "`simname`,`posglobal`,`parcelname`,`classifiedflags`,`priceforlisting`) VALUES (:ClassifiedId,"
+            ":CreatorId,:CreatedDate,:ExpirationDate,:Category,:Name,:Description,:ParcelId,:ParentEstate,"
+            ":SnapshotId,:SimName,:GlobalPos,:ParcelName,:Flags,:ListingPrice)",
             {{":ClassifiedId", id(ad.ClassifiedId)},
              {":CreatorId", id(ad.CreatorId)},
              {":CreatedDate", Text(utf16(std::to_string(ad.CreationDate)))},
@@ -398,7 +403,10 @@ bool SqliteProfilesData::UpdatePicksRecord(std::shared_ptr<UserProfilePick> valu
         auto& pick = required(value);
         execute(
             database_,
-            "INSERT OR REPLACE INTO userpicks (pickuuid,creatoruuid,toppick,parceluuid,name,description,snapshotuuid,user,originalname,simname,posglobal,gatekeeper,sortorder,enabled) VALUES (:PickId,:CreatorId,:TopPick,:ParcelId,:Name,:Desc,:SnapshotId,:User,:Original,:SimName,:GlobalPos,:Gatekeeper,:SortOrder,:Enabled)",
+            "INSERT OR REPLACE INTO userpicks (pickuuid,creatoruuid,toppick,parceluuid,name,description,"
+            "snapshotuuid,user,originalname,simname,posglobal,gatekeeper,sortorder,enabled) VALUES (:PickId,"
+            ":CreatorId,:TopPick,:ParcelId,:Name,:Desc,:SnapshotId,:User,:Original,:SimName,:GlobalPos,"
+            ":Gatekeeper,:SortOrder,:Enabled)",
             {{":PickId", id(pick.PickId)},
              {":CreatorId", id(pick.CreatorId)},
              {":TopPick", 0},
@@ -500,7 +508,12 @@ bool SqliteProfilesData::GetAvatarProperties(std::shared_ptr<UserProfileProperti
         props.PublishMature = false;
         execute(
             database_,
-            "INSERT INTO userprofile (useruuid,profilePartner,profileAllowPublish,profileMaturePublish,profileURL,profileWantToMask,profileWantToText,profileSkillsMask,profileSkillsText,profileLanguages,profileImage,profileAboutText,profileFirstImage,profileFirstText) VALUES (:userId,:profilePartner,:profileAllowPublish,:profileMaturePublish,:profileURL,:profileWantToMask,:profileWantToText,:profileSkillsMask,:profileSkillsText,:profileLanguages,:profileImage,:profileAboutText,:profileFirstImage,:profileFirstText)",
+            "INSERT INTO userprofile (useruuid,profilePartner,profileAllowPublish,profileMaturePublish,"
+            "profileURL,profileWantToMask,profileWantToText,profileSkillsMask,profileSkillsText,"
+            "profileLanguages,profileImage,profileAboutText,profileFirstImage,profileFirstText) VALUES "
+            "(:userId,:profilePartner,:profileAllowPublish,:profileMaturePublish,:profileURL,"
+            ":profileWantToMask,:profileWantToText,:profileSkillsMask,:profileSkillsText,:profileLanguages,"
+            ":profileImage,:profileAboutText,:profileFirstImage,:profileFirstText)",
             {{":userId", id(props.UserId)},
              {":profilePartner", id(props.PartnerId)},
              {":profileAllowPublish", props.PublishProfile},
@@ -524,7 +537,8 @@ bool SqliteProfilesData::UpdateAvatarProperties(std::shared_ptr<UserProfilePrope
         auto& p = required(value);
         execute(
             database_,
-            "UPDATE userprofile SET profileURL=:profileURL, profileImage=:image, profileAboutText=:abouttext,profileFirstImage=:firstlifeimage,profileFirstText=:firstlifetext WHERE useruuid=:uuid",
+            "UPDATE userprofile SET profileURL=:profileURL, profileImage=:image, profileAboutText=:abouttext,"
+            "profileFirstImage=:firstlifeimage,profileFirstText=:firstlifetext WHERE useruuid=:uuid",
             {{":profileURL", p.WebUrl},
              {":image", id(p.ImageId)},
              {":abouttext", p.AboutText},
@@ -542,7 +556,9 @@ bool SqliteProfilesData::UpdateAvatarInterests(std::shared_ptr<UserProfileProper
         auto& p = required(value);
         execute(
             database_,
-            "UPDATE userprofile SET profileWantToMask=:WantMask, profileWantToText=:WantText,profileSkillsMask=:SkillsMask,profileSkillsText=:SkillsText, profileLanguages=:Languages WHERE useruuid=:uuid",
+            "UPDATE userprofile SET profileWantToMask=:WantMask, profileWantToText=:WantText,"
+            "profileSkillsMask=:SkillsMask,profileSkillsText=:SkillsText, profileLanguages=:Languages WHERE "
+            "useruuid=:uuid",
             {{":WantMask", p.WantToMask},
              {":WantText", p.WantToText},
              {":SkillsMask", p.SkillsMask},

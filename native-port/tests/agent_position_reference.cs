@@ -1,4 +1,129 @@
-using System;using System.IO;using System.Text;using System.Collections.Generic;using OpenMetaverse;using OpenMetaverse.StructuredData;using OpenSim.Framework;
-namespace OpenSim.Framework{public interface IScene{}}
-class PositionReference{static UUID Id(int n)=>new UUID("00000000-0000-0000-0000-00000000000"+n);static string H(string s)=>Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();static string B(float n)=>BitConverter.SingleToUInt32Bits(n).ToString("x8");static string Bytes(byte[] data)=>data==null?"-":Convert.ToHexString(data).ToLowerInvariant();static string State(AgentPosition p){string s=p.AgentID+"|"+p.SessionID+"|"+p.RegionHandle+"|"+p.CircuitCode+"|"+B(p.Far);foreach(var v in new[]{p.Position,p.Velocity,p.Center,p.Size,p.AtAxis,p.LeftAxis,p.UpAxis})s+="|"+B(v.X)+","+B(v.Y)+","+B(v.Z);s+="|"+(p.ChangedGrid?1:0)+"|"+(p.GodData==null?"-":H(OSDParser.SerializeJsonString(p.GodData,true)))+"|"+Bytes(p.Throttles)+"|";if(p.ChildrenCapSeeds==null)s+="-";else foreach(var pair in p.ChildrenCapSeeds)s+=pair.Key+":"+(pair.Value==null?"-":H(pair.Value))+";";return s;}
-static void Main(){Culture.SetCurrentCulture();string line;while((line=Console.ReadLine())!=null){var parts=line.Split(' ');int profile=int.Parse(parts[0]);var args=(OSDMap)OSDParser.DeserializeJson(Encoding.UTF8.GetString(Convert.FromHexString(parts[1])));var p=new AgentPosition();if((profile&1)!=0){p.AgentID=Id(7);p.SessionID=Id(8);p.RegionHandle=ulong.MaxValue;p.CircuitCode=uint.MaxValue;p.Far=123.5f;p.Position=new(1,2,3);p.Velocity=new(4,5,6);p.Center=new(7,8,9);p.Size=new(10,11,12);p.AtAxis=new(13,14,15);p.LeftAxis=new(16,17,18);p.UpAxis=new(19,20,21);p.ChangedGrid=true;p.GodData=new OSDMap{{"ViewerUiIsGod",OSD.FromBoolean(false)}};p.Throttles=new byte[]{1,2,3};p.ChildrenCapSeeds=new(){{9,"nine"},{8,"eight"},{7,null}};p.ChildrenCapSeeds.Remove(8);p.ChildrenCapSeeds[6]="six";}bool unpackFailed=false,packFailed=false;string packed="";try{if((profile&8)!=0&&args.ContainsKey("throttles"))args["throttles"]=OSD.FromBinary(args["throttles"].AsBinary());p.Unpack(args,null,null);if((profile&2)!=0){if(args["god_data"] is OSDMap god){god["ViewerUiIsGod"]=OSD.FromBoolean(true);god["after"]=OSD.FromString("source");if(args["replace_god"].AsBoolean())args["god_data"]=new OSDMap();}if((profile&8)!=0&&args.ContainsKey("throttles")){var bytes=args["throttles"].AsBinary();if(bytes.Length>0)bytes[0]=99;}}if((profile&16)!=0){var child=new ChildAgentDataUpdate{AgentID=Id(5).Guid,AVHeight=1.75f,cameraPosition=new(31,32,33),drawdistance=64.25f,Position=new(41,42,43),regionHandle=123456789,throttles=new byte[]{8,9},Velocity=new(51,52,53)};p.CopyFrom((profile&32)!=0?null:child,Id(6));child.throttles[0]=77;}}catch{unpackFailed=true;}try{var value=p.Pack(null);if((profile&4)!=0&&p.GodData is OSDMap god){god["ViewerUiIsGod"]=OSD.FromBoolean(false);god["after_pack"]=OSD.FromString("shared");}if((profile&4)!=0&&p.Throttles!=null&&p.Throttles.Length>0)p.Throttles[0]=55;packed=OSDParser.SerializeJsonString(value,true);}catch{packFailed=true;}Console.WriteLine((unpackFailed?1:0)+"|"+(packFailed?1:0)+"|"+H(packed)+"|"+H(State(p)));}}}
+using System;
+using System.IO;
+using System.Text;
+using System.Collections.Generic;
+using OpenMetaverse;
+using OpenMetaverse.StructuredData;
+using OpenSim.Framework;
+namespace OpenSim.Framework
+{
+    public interface IScene
+    {
+    }
+}
+class PositionReference
+{
+    static UUID Id(int n) => new UUID("00000000-0000-0000-0000-00000000000" + n);
+    static string H(string s) => Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();
+    static string B(float n) => BitConverter.SingleToUInt32Bits(n).ToString("x8");
+    static string Bytes(byte[] data) => data == null ? "-" : Convert.ToHexString(data).ToLowerInvariant();
+    static string State(AgentPosition p)
+    {
+        string s =
+            p.AgentID + "|" + p.SessionID + "|" + p.RegionHandle + "|" + p.CircuitCode + "|" + B(p.Far);
+        foreach (var v in new[] { p.Position, p.Velocity, p.Center, p.Size, p.AtAxis, p.LeftAxis, p.UpAxis })
+            s += "|" + B(v.X) + "," + B(v.Y) + "," + B(v.Z);
+        s += "|" + (p.ChangedGrid ? 1 : 0) + "|" +
+             (p.GodData == null ? "-" : H(OSDParser.SerializeJsonString(p.GodData, true))) + "|" +
+             Bytes(p.Throttles) + "|";
+        if (p.ChildrenCapSeeds == null)
+            s += "-";
+        else
+            foreach (var pair in p.ChildrenCapSeeds)
+                s += pair.Key + ":" + (pair.Value == null ? "-" : H(pair.Value)) + ";";
+        return s;
+    }
+    static void Main()
+    {
+        Culture.SetCurrentCulture();
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var parts = line.Split(' ');
+            int profile = int.Parse(parts[0]);
+            var args =
+                (OSDMap)OSDParser.DeserializeJson(Encoding.UTF8.GetString(Convert.FromHexString(parts[1])));
+            var p = new AgentPosition();
+            if ((profile & 1) != 0)
+            {
+                p.AgentID = Id(7);
+                p.SessionID = Id(8);
+                p.RegionHandle = ulong.MaxValue;
+                p.CircuitCode = uint.MaxValue;
+                p.Far = 123.5f;
+                p.Position = new(1, 2, 3);
+                p.Velocity = new(4, 5, 6);
+                p.Center = new(7, 8, 9);
+                p.Size = new(10, 11, 12);
+                p.AtAxis = new(13, 14, 15);
+                p.LeftAxis = new(16, 17, 18);
+                p.UpAxis = new(19, 20, 21);
+                p.ChangedGrid = true;
+                p.GodData = new OSDMap { { "ViewerUiIsGod", OSD.FromBoolean(false) } };
+                p.Throttles = new byte[] { 1, 2, 3 };
+                p.ChildrenCapSeeds = new() { { 9, "nine" }, { 8, "eight" }, { 7, null } };
+                p.ChildrenCapSeeds.Remove(8);
+                p.ChildrenCapSeeds[6] = "six";
+            }
+            bool unpackFailed = false, packFailed = false;
+            string packed = "";
+            try
+            {
+                if ((profile & 8) != 0 && args.ContainsKey("throttles"))
+                    args["throttles"] = OSD.FromBinary(args["throttles"].AsBinary());
+                p.Unpack(args, null, null);
+                if ((profile & 2) != 0)
+                {
+                    if (args["god_data"] is OSDMap god)
+                    {
+                        god["ViewerUiIsGod"] = OSD.FromBoolean(true);
+                        god["after"] = OSD.FromString("source");
+                        if (args["replace_god"].AsBoolean())
+                            args["god_data"] = new OSDMap();
+                    }
+                    if ((profile & 8) != 0 && args.ContainsKey("throttles"))
+                    {
+                        var bytes = args["throttles"].AsBinary();
+                        if (bytes.Length > 0)
+                            bytes[0] = 99;
+                    }
+                }
+                if ((profile & 16) != 0)
+                {
+                    var child = new ChildAgentDataUpdate { AgentID = Id(5).Guid,
+                                                           AVHeight = 1.75f,
+                                                           cameraPosition = new(31, 32, 33),
+                                                           drawdistance = 64.25f,
+                                                           Position = new(41, 42, 43),
+                                                           regionHandle = 123456789,
+                                                           throttles = new byte[] { 8, 9 },
+                                                           Velocity = new(51, 52, 53) };
+                    p.CopyFrom((profile & 32) != 0 ? null : child, Id(6));
+                    child.throttles[0] = 77;
+                }
+            }
+            catch
+            {
+                unpackFailed = true;
+            }
+            try
+            {
+                var value = p.Pack(null);
+                if ((profile & 4) != 0 && p.GodData is OSDMap god)
+                {
+                    god["ViewerUiIsGod"] = OSD.FromBoolean(false);
+                    god["after_pack"] = OSD.FromString("shared");
+                }
+                if ((profile & 4) != 0 && p.Throttles != null && p.Throttles.Length > 0)
+                    p.Throttles[0] = 55;
+                packed = OSDParser.SerializeJsonString(value, true);
+            }
+            catch
+            {
+                packFailed = true;
+            }
+            Console.WriteLine((unpackFailed ? 1 : 0) + "|" + (packFailed ? 1 : 0) + "|" + H(packed) + "|" +
+                              H(State(p)));
+        }
+    }
+}

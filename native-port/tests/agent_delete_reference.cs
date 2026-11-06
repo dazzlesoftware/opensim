@@ -1,7 +1,148 @@
-using System;using System.Net;using System.Text;using System.Collections.Generic;using OpenMetaverse;using OpenMetaverse.StructuredData;using GridRegion=OpenSim.Services.Interfaces.GridRegion;using OpenSim.Framework;
-namespace OpenSim.Services.Interfaces{public class GridRegion{public UUID RegionID;}}
-public class IOSHttpRequest{public IPEndPoint RemoteIPEndPoint;public string HttpMethod="DELETE",UriPath;public System.Collections.Specialized.NameValueCollection Headers=new();public Dictionary<string,string> QueryAsDictionary=new();}public class IOSHttpResponse{public int StatusCode=211;public byte[] RawBuffer=Encoding.UTF8.GetBytes("before");public bool KeepAlive=true;public string ContentType="before-type";}
-public class Logger{public void Debug(string s){}public void InfoFormat(string s,params object[] args){}public void DebugFormat(string s,params object[] args){}}
-namespace OpenSim.Framework{public static class Util{public static Encoding UTF8=Encoding.UTF8;public static int Profile;public static string Context;public static List<Action> Tasks=new();public static void FireAndForget(System.Threading.WaitCallback callback,object state,string context){Context=context;if((Profile&16)!=0)throw new Exception();if((Profile&8)!=0)Tasks.Add(()=>callback(state));else callback(state);}}}
-public partial class DeleteReference{void DoQueryAccess(OSDMap a,IOSHttpResponse b,UUID c,UUID d)=>throw new Exception();void DoAgentPost(OSDMap a,IOSHttpRequest b,IOSHttpResponse c,UUID d)=>throw new Exception();void DoAgentPut(OSDMap a,IOSHttpResponse b)=>throw new Exception();Service m_SimulationService;Logger m_log=new();static string H(string s)=>Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();class Service{public int Profile;public string Trace="";bool Record(char op,UUID r,UUID a,string auth){Trace+=op+":"+r+":"+a+":"+(auth==null?"-":H(auth))+";";if((Profile&2)!=0)throw new Exception();return (Profile&1)==0;}public bool ReleaseAgent(UUID r,UUID a,string uri)=>Record('r',r,a,uri);public bool CloseAgent(GridRegion r,UUID a,string auth)=>Record('c',r.RegionID,a,auth);}
-static string Opt(OSD v)=>v.Type==OSDType.Unknown?null:v.AsString();public static void Main(){string line;while((line=Console.ReadLine())!=null){var p=line.Split(' ');int profile=int.Parse(p[0]);var args=(OSDMap)OSDParser.DeserializeJson(Encoding.UTF8.GetString(Convert.FromHexString(p[1])));var service=new Service{Profile=profile};var handler=new DeleteReference{m_SimulationService=(profile&4)!=0?null:service};Util.Profile=profile;Util.Context="";Util.Tasks.Clear();var response=new IOSHttpResponse();bool failed=false,callbackFailed=false;try{if(args.ContainsKey("target")){var uri=new Uri("http://localhost"+args["target"].AsString());var request=new IOSHttpRequest{UriPath=uri.AbsolutePath,RemoteIPEndPoint=new IPEndPoint(IPAddress.Parse("192.0.2.1"),0)};if((profile&64)!=0)request.Headers["X-SecondLife-Shard"]="fixture";var q=System.Web.HttpUtility.ParseQueryString(uri.Query);foreach(string key in q.AllKeys)if(!string.IsNullOrEmpty(key))request.QueryAsDictionary[key]=q[key];handler.ProcessRequest(request,response);}else handler.DoAgentDelete(new IOSHttpRequest{RemoteIPEndPoint=(profile&32)!=0?null:new IPEndPoint(IPAddress.Parse("192.0.2.1"),0)},response,new UUID(args["agent"].AsString()),Opt(args["action"]),new UUID(args["region"].AsString()),Opt(args["auth"]));}catch{failed=true;}string before=service.Trace;int count=Util.Tasks.Count;foreach(var task in Util.Tasks)try{task();}catch{callbackFailed=true;}Console.WriteLine((failed?1:0)+"|"+response.StatusCode+"|"+(response.KeepAlive?1:0)+"|"+Convert.ToHexString(response.RawBuffer).ToLowerInvariant()+"|"+H(response.ContentType)+"|"+H(before)+"|"+H(service.Trace)+"|"+(callbackFailed?1:0)+"|"+H(Util.Context)+"|"+count);}}}
+using System;
+using System.Net;
+using System.Text;
+using System.Collections.Generic;
+using OpenMetaverse;
+using OpenMetaverse.StructuredData;
+using GridRegion = OpenSim.Services.Interfaces.GridRegion;
+using OpenSim.Framework;
+namespace OpenSim.Services.Interfaces
+{
+    public class GridRegion
+    {
+        public UUID RegionID;
+    }
+}
+public class IOSHttpRequest
+{
+    public IPEndPoint RemoteIPEndPoint;
+    public string HttpMethod = "DELETE", UriPath;
+    public System.Collections.Specialized.NameValueCollection Headers = new();
+    public Dictionary<string, string> QueryAsDictionary = new();
+}
+public class IOSHttpResponse
+{
+    public int StatusCode = 211;
+    public byte[] RawBuffer = Encoding.UTF8.GetBytes("before");
+    public bool KeepAlive = true;
+    public string ContentType = "before-type";
+}
+public class Logger
+{
+    public void Debug(string s)
+    {
+    }
+    public void InfoFormat(string s, params object[] args)
+    {
+    }
+    public void DebugFormat(string s, params object[] args)
+    {
+    }
+}
+namespace OpenSim.Framework
+{
+    public static class Util
+    {
+        public static Encoding UTF8 = Encoding.UTF8;
+        public static int Profile;
+        public static string Context;
+        public static List<Action> Tasks = new();
+        public static void FireAndForget(System.Threading.WaitCallback callback, object state, string context)
+        {
+            Context = context;
+            if ((Profile & 16) != 0)
+                throw new Exception();
+            if ((Profile & 8) != 0)
+                Tasks.Add(() => callback(state));
+            else
+                callback(state);
+        }
+    }
+}
+public partial class DeleteReference
+{
+    void DoQueryAccess(OSDMap a, IOSHttpResponse b, UUID c, UUID d) => throw new Exception();
+    void DoAgentPost(OSDMap a, IOSHttpRequest b, IOSHttpResponse c, UUID d) => throw new Exception();
+    void DoAgentPut(OSDMap a, IOSHttpResponse b) => throw new Exception();
+    Service m_SimulationService;
+    Logger m_log = new();
+    static string H(string s) => Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();
+    class Service
+    {
+        public int Profile;
+        public string Trace = "";
+        bool Record(char op, UUID r, UUID a, string auth)
+        {
+            Trace += op + ":" + r + ":" + a + ":" + (auth == null ? "-" : H(auth)) + ";";
+            if ((Profile & 2) != 0)
+                throw new Exception();
+            return (Profile & 1) == 0;
+        }
+        public bool ReleaseAgent(UUID r, UUID a, string uri) => Record('r', r, a, uri);
+        public bool CloseAgent(GridRegion r, UUID a, string auth) => Record('c', r.RegionID, a, auth);
+    }
+    static string Opt(OSD v) => v.Type == OSDType.Unknown ? null : v.AsString();
+    public static void Main()
+    {
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var p = line.Split(' ');
+            int profile = int.Parse(p[0]);
+            var args =
+                (OSDMap)OSDParser.DeserializeJson(Encoding.UTF8.GetString(Convert.FromHexString(p[1])));
+            var service = new Service { Profile = profile };
+            var handler = new DeleteReference { m_SimulationService = (profile & 4) != 0 ? null : service };
+            Util.Profile = profile;
+            Util.Context = "";
+            Util.Tasks.Clear();
+            var response = new IOSHttpResponse();
+            bool failed = false, callbackFailed = false;
+            try
+            {
+                if (args.ContainsKey("target"))
+                {
+                    var uri = new Uri("http://localhost" + args["target"].AsString());
+                    var request = new IOSHttpRequest { UriPath = uri.AbsolutePath,
+                                                       RemoteIPEndPoint =
+                                                           new IPEndPoint(IPAddress.Parse("192.0.2.1"), 0) };
+                    if ((profile & 64) != 0)
+                        request.Headers["X-SecondLife-Shard"] = "fixture";
+                    var q = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                    foreach (string key in q.AllKeys)
+                        if (!string.IsNullOrEmpty(key))
+                            request.QueryAsDictionary[key] = q[key];
+                    handler.ProcessRequest(request, response);
+                }
+                else
+                    handler.DoAgentDelete(
+                        new IOSHttpRequest { RemoteIPEndPoint =
+                                                 (profile & 32) != 0
+                                                     ? null
+                                                     : new IPEndPoint(IPAddress.Parse("192.0.2.1"), 0) },
+                        response, new UUID(args["agent"].AsString()), Opt(args["action"]),
+                        new UUID(args["region"].AsString()), Opt(args["auth"]));
+            }
+            catch
+            {
+                failed = true;
+            }
+            string before = service.Trace;
+            int count = Util.Tasks.Count;
+            foreach (var task in Util.Tasks)
+                try
+                {
+                    task();
+                }
+                catch
+                {
+                    callbackFailed = true;
+                }
+            Console.WriteLine((failed ? 1 : 0) + "|" + response.StatusCode + "|" +
+                              (response.KeepAlive ? 1 : 0) + "|" +
+                              Convert.ToHexString(response.RawBuffer).ToLowerInvariant() + "|" +
+                              H(response.ContentType) + "|" + H(before) + "|" + H(service.Trace) + "|" +
+                              (callbackFailed ? 1 : 0) + "|" + H(Util.Context) + "|" + count);
+        }
+    }
+}

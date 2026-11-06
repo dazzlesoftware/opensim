@@ -28,9 +28,32 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using System;
 using System.Collections.Specialized;
 using System.Net;
-namespace OpenSim.Framework.Servers.HttpServer {
-    public interface IStreamedRequestHandler {}
-    public class BaseRequestHandler {public int RequestsReceived{get;protected set;}public int RequestsHandled{get;protected set;}public BaseRequestHandler(string method,string path,string name,string description){}}
-    public class IOSHttpRequest {public NameValueCollection Headers=new();public IPEndPoint RemoteIPEndPoint=new(IPAddress.Loopback,9000);}
-    public class IOSHttpResponse {public int StatusCode=200;public string ContentType="application/xml";public NameValueCollection Headers=new();public void AddHeader(string key,string value){Headers[key]=value;}}
+namespace OpenSim.Framework.Servers.HttpServer
+{
+    public interface IStreamedRequestHandler
+    {
+    }
+    public class BaseRequestHandler
+    {
+        public int RequestsReceived { get; protected set; }
+        public int RequestsHandled { get; protected set; }
+        public BaseRequestHandler(string method, string path, string name, string description)
+        {
+        }
+    }
+    public class IOSHttpRequest
+    {
+        public NameValueCollection Headers = new();
+        public IPEndPoint RemoteIPEndPoint = new(IPAddress.Loopback, 9000);
+    }
+    public class IOSHttpResponse
+    {
+        public int StatusCode = 200;
+        public string ContentType = "application/xml";
+        public NameValueCollection Headers = new();
+        public void AddHeader(string key, string value)
+        {
+            Headers[key] = value;
+        }
+    }
 }

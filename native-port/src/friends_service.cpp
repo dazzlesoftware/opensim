@@ -3,18 +3,29 @@
 #include "opensim/services/friends_service.hpp"
 #include <stdexcept>
 namespace opensim::services {
+namespace {
+std::optional<std::int32_t> friend_rights(IFriendsService& service, framework::Uuid principal,
+                                         framework::Uuid other, bool hypergrid) {
+    if (principal.is_zero())
+        return std::nullopt;
+    const auto other_id = other.str();
+    for (const auto& entry : service.get(principal)) {
+        if (entry.friend_id &&
+            (hypergrid ? entry.friend_id->starts_with(other_id) : *entry.friend_id == other_id))
+            return entry.their_flags;
+    }
+    return std::nullopt;
+}
+}
 bool friend_can_modify_objects(IFriendsService& service, framework::Uuid actor, framework::Uuid owner,
                                bool hypergrid) {
-    if (actor.is_zero())
-        return false;
     constexpr std::int32_t modify_objects = 4;
-    const auto owner_id = owner.str();
-    for (const auto& entry : service.get(actor)) {
-        if (entry.friend_id &&
-            (hypergrid ? entry.friend_id->starts_with(owner_id) : *entry.friend_id == owner_id))
-            return entry.their_flags != -1 && (entry.their_flags & modify_objects) != 0;
-    }
-    return false;
+    const auto rights = friend_rights(service, actor, owner, hypergrid).value_or(-1);
+    return rights != -1 && (rights & modify_objects) != 0;
+}
+bool friend_is_confirmed(IFriendsService& service, framework::Uuid principal, framework::Uuid other,
+                         bool hypergrid) {
+    return friend_rights(service, principal, other, hypergrid).value_or(-1) != -1;
 }
 FriendInfo::FriendInfo(const AccountValues& values) : friend_id("") {
     auto text = [&](const char* key) -> std::optional<std::string> {

@@ -1,6 +1,59 @@
-using System;using System.Globalization;using OpenMetaverse;
-class Program{
- static string Decode(string s){if(s=="-")return null;if(s==".")return "";byte[] b=Convert.FromHexString(s);char[] c=new char[b.Length/2];for(int i=0;i<c.Length;i++)c[i]=(char)(b[i*2]|(b[i*2+1]<<8));return new string(c);}
- static string Hex(string s){byte[] b=new byte[s.Length*2];for(int i=0;i<s.Length;i++){b[2*i]=(byte)s[i];b[2*i+1]=(byte)(s[i]>>8);}return Convert.ToHexString(b).ToLowerInvariant();}
- static void Main(){CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;string line;while((line=Console.ReadLine())!=null){try{string[] p=line.Split(' ');Vector3d v;string prefix="";if(p[0]=="P"){bool ok=Vector3d.TryParse(Decode(p[1]),out v);prefix=(ok?1:0)+":"+BitConverter.DoubleToUInt64Bits(v.X).ToString("x16")+":"+BitConverter.DoubleToUInt64Bits(v.Y).ToString("x16")+":"+BitConverter.DoubleToUInt64Bits(v.Z).ToString("x16")+"|";}else v=new Vector3d(BitConverter.UInt64BitsToDouble(ulong.Parse(p[1],NumberStyles.HexNumber)),BitConverter.UInt64BitsToDouble(ulong.Parse(p[2],NumberStyles.HexNumber)),BitConverter.UInt64BitsToDouble(ulong.Parse(p[3],NumberStyles.HexNumber)));Console.WriteLine(prefix+Hex(v.ToString()));}catch(Exception e){Console.WriteLine("EX:"+e.Message);}}}
+using System;
+using System.Globalization;
+using OpenMetaverse;
+class Program
+{
+    static string Decode(string s)
+    {
+        if (s == "-")
+            return null;
+        if (s == ".")
+            return "";
+        byte[] b = Convert.FromHexString(s);
+        char[] c = new char[b.Length / 2];
+        for (int i = 0; i < c.Length; i++)
+            c[i] = (char)(b[i * 2] | (b[i * 2 + 1] << 8));
+        return new string(c);
+    }
+    static string Hex(string s)
+    {
+        byte[] b = new byte[s.Length * 2];
+        for (int i = 0; i < s.Length; i++)
+        {
+            b[2 * i] = (byte)s[i];
+            b[2 * i + 1] = (byte)(s[i] >> 8);
+        }
+        return Convert.ToHexString(b).ToLowerInvariant();
+    }
+    static void Main()
+    {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            try
+            {
+                string[] p = line.Split(' ');
+                Vector3d v;
+                string prefix = "";
+                if (p[0] == "P")
+                {
+                    bool ok = Vector3d.TryParse(Decode(p[1]), out v);
+                    prefix = (ok ? 1 : 0) + ":" + BitConverter.DoubleToUInt64Bits(v.X).ToString("x16") + ":" +
+                             BitConverter.DoubleToUInt64Bits(v.Y).ToString("x16") + ":" +
+                             BitConverter.DoubleToUInt64Bits(v.Z).ToString("x16") + "|";
+                }
+                else
+                    v = new Vector3d(
+                        BitConverter.UInt64BitsToDouble(ulong.Parse(p[1], NumberStyles.HexNumber)),
+                        BitConverter.UInt64BitsToDouble(ulong.Parse(p[2], NumberStyles.HexNumber)),
+                        BitConverter.UInt64BitsToDouble(ulong.Parse(p[3], NumberStyles.HexNumber)));
+                Console.WriteLine(prefix + Hex(v.ToString()));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("EX:" + e.Message);
+            }
+        }
+    }
 }

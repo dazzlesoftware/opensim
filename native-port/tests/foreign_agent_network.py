@@ -211,10 +211,18 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
    udp=probe.getsockname()[1]
   home_uri=f"http://127.0.0.1:{home.server_address[1]}/"
   config=Path(d)/"foreign.ini"
+  walk_crossing = "--walk-crossing" in sys.argv[2:]
+  fly_crossing = walk_crossing and "--fly" in sys.argv[2:]
+  blocked_flight_destination = fly_crossing and "--no-flight-destination" in sys.argv[2:]
+  fall_crossing = walk_crossing and "--fall" in sys.argv[2:]
   config.write_text(f"[NativeServer]\nEnableLocalRegion=true\nEnablePresenceEndpoint=true\nEnableGridUserEndpoint=true\nEnableGridEndpoint=true\nGridRegionProvider=SQLite\nGridRegionDatabase=regions.db\nEnableGatekeeperDiscovery=true\nEnableForeignAgentAdmission=true\nUserAccountDatabase=users.db\nAuthenticationDatabase=users.db\nInventoryDatabase=inventory.db\nGridUserDatabase=grid.db\n[Startup]\nGatekeeperURI=http://127.0.0.1:8002/\n[Network]\nhttp_listener_port=0\n[NativeRegion]\nUDPPort={udp}\nBindAddress=127.0.0.1\nExternalHost=127.0.0.1\nName=Foreign Test\n[GatekeeperService]\nForeignAgentsAllowed=false\nDisallowExcept={home_uri}\nDeniedMacs=abc123\nDeniedID0s=def456\nAllowedClients=^Fixture\nDeniedClients=Blocked$\n[Messaging]\nMessageKey=fixture-grid-key\n[GridService]\nAllowHypergridMapSearch=true\n")
   settings = config.read_text()
   config.write_text(settings.replace("[NativeServer]\n",
       "[NativeServer]\nEnableSimulationEndpoint=true\nEnableFriendsEndpoint=true\nFriendsDatabase=friends.db\n"))
+  if walk_crossing:
+   library = sys.argv[sys.argv.index("--walk-crossing") + 1]
+   config.write_text(config.read_text().replace("[NativeRegion]\n",
+       f"[NativeRegion]\nPhysics=ubODE\nPhysicsLibrary={library}\n", 1))
   if not deny_client:
    config.write_text(config.read_text() + "\n[PresenceService]\nConnectionString=presence.db\n")
   command=[str(Path(sys.argv[1]).resolve()),"--config",str(config)]
@@ -312,7 +320,9 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
                 "SESSIONID":travel_session, "KEY":"fixture-travel-token"}
     for arguments, expected in (({**creation, "Friend":pending.split(";")[0] + ";;"}, "Failure"),
                                 (creation, "Success"), (creation, "Failure")):
-     hg.request("POST", "/hgfriends", urllib.parse.urlencode(arguments),
+     form = urllib.parse.urlencode(arguments)
+     request_body = ("  " + form + "  ").encode("utf-16") if expected == "Success" else form
+     hg.request("POST", "/hgfriends", request_body,
                 {"Content-Type":"application/x-www-form-urlencoded"})
      reply = hg.getresponse()
      body = ET.fromstring(reply.read())
@@ -515,6 +525,271 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
        break
      else:
       raise AssertionError("Source viewer did not enter the region")
+     if walk_crossing:
+      destination_config = Path(d) / "destination.ini"
+      destination_id = str(uuid.uuid4())
+      with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as port_probe:
+       port_probe.bind(("127.0.0.1", 0))
+       destination_udp = port_probe.getsockname()[1]
+      destination_settings = config.read_text(encoding="utf-8").replace(
+          f"UDPPort={udp}", f"UDPPort={destination_udp}").replace(
+          "Name=Foreign Test", f"Name=Transfer Test\nID={destination_id}\nLocationX=1001")
+      if blocked_flight_destination:
+       destination_settings = destination_settings.replace("[NativeRegion]\n",
+           "[NativeRegion]\nTerrainDatabase=destination-terrain.db\n", 1)
+       with closing(sqlite3.connect(Path(d) / "destination-terrain.db")) as database, database:
+        database.execute("CREATE TABLE regionsettings (regionUUID TEXT, terrain_raise_limit REAL, "
+                         "terrain_lower_limit REAL, block_terraform INTEGER, water_height REAL, block_fly INTEGER)")
+        database.execute("INSERT INTO regionsettings VALUES (?,?,?,?,?,?)",
+                         (destination_id, 100.0, -100.0, 0, 20.0, 1))
+      destination_config.write_text(destination_settings, encoding="utf-8")
+      c.request("POST", urlsplit(login["seed_capability"]).path,
+                "<llsd><array><string>EventQueueGet</string></array></llsd>",
+                {"Content-Type":"application/llsd+xml"})
+      response = c.getresponse()
+      event_queue_url = ET.fromstring(response.read()).findtext("map/string")
+      assert response.status == 200 and event_queue_url
+      handle = ((1001 * 256) << 32) | (1000 * 256)
+
+      def movement_animation(packet):
+       payload = packet[6 + packet[5]:]
+       if len(payload) >= 38 and payload[:17] == b"\x14" + local_agent.bytes and payload[17]:
+        return struct.unpack_from("<16si", payload, 18)
+       return None
+
+      with running_server([command[0], "--config", str(destination_config)]):
+       source_handle = ((1000 * 256) << 32) | (1000 * 256)
+       altitude = 70 if fall_crossing else 40 if fly_crossing else 25
+       source_viewer.sendto(struct.pack(">BIB", 0x40, 19001, 0) + bytes.fromhex("ffff003f") +
+                            local_agent.bytes + session_bytes +
+                            struct.pack("<Q6f", source_handle, 255, 128, altitude, 1, 0, 0), source_endpoint)
+       for _ in range(64):
+        if source_viewer.recv(4096)[6:10] == bytes.fromhex("ffff0040"):
+         break
+       else:
+        raise AssertionError("Viewer could not reach the crossing fixture's starting position")
+       # The local teleport starts above ground. Let the physics body land
+       # before walking so the source has a distinct movement animation.
+       if fall_crossing:
+        falling_animation = uuid.UUID("666307d9-a860-572d-6fd4-c3ab8865c094").bytes
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+         source_fall = movement_animation(source_viewer.recv(4096))
+         if source_fall is not None and source_fall[0] == falling_animation:
+          break
+        else:
+         raise AssertionError("The source avatar did not start falling")
+       elif not fly_crossing:
+        time.sleep(0.75)
+       movement_controls = 0x2001 if fly_crossing else 1
+       source_viewer.sendto(struct.pack(">BIBB", 0x40, 19002, 0, 4) +
+                            local_agent.bytes + session_bytes + bytes(24) + b"\0" +
+                            struct.pack("<13fIB", 255,128,altitude, 1,0,0, 0,1,0, 0,0,1, 64, movement_controls, 0),
+                            source_endpoint)
+       deadline = time.monotonic() + 12
+       crossed = None
+       while time.monotonic() < deadline and crossed is None:
+        c.request("POST", urlsplit(event_queue_url).path,
+                  "<llsd><map><key>ack</key><undef/><key>done</key><boolean>0</boolean></map></llsd>",
+                  {"Content-Type":"application/llsd+xml"})
+        response = c.getresponse()
+        body = response.read()
+        if response.status == 200:
+         crossed = next((event for event in ET.fromstring(body).iter("map")
+                         if event.findtext("string") == "CrossedRegion"), None)
+       assert crossed is not None, "Viewer did not receive CrossedRegion after moving across the boundary"
+       region_data = next((dict(zip((key.text for key in entry[::2]), entry[1::2]))
+                           for entry in crossed.iter("map") if entry.findtext("key") == "RegionHandle"), None)
+       assert region_data is not None, ET.tostring(crossed)
+       endpoint = (socket.inet_ntoa(base64.b64decode(region_data["SimIP"].text)),
+                   int(region_data["SimPort"].text))
+       assert endpoint == ("127.0.0.1", destination_udp), endpoint
+       seed_url = urlsplit(region_data["SeedCapability"].text)
+       assert seed_url.hostname == endpoint[0] and seed_url.path.startswith("/CAPS/")
+
+       with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as crossed_viewer:
+        crossed_viewer.settimeout(5)
+        crossed_viewer.sendto(struct.pack(">BIB", 0x40, 1, 0) + bytes.fromhex("ffff0003") +
+                              circuit_bytes + session_bytes + local_agent.bytes, endpoint)
+        crossed_viewer.sendto(struct.pack(">BIB", 0x40, 2, 0) + bytes.fromhex("ffff00f9") +
+                              local_agent.bytes + session_bytes + circuit_bytes, endpoint)
+        destination_animation = None
+        for _ in range(64):
+         packet = crossed_viewer.recv(4096)
+         if destination_animation is None:
+          destination_animation = movement_animation(packet)
+         if packet[6:10] == bytes.fromhex("ffff00fa"):
+          x, y, z = struct.unpack_from("<3f", packet, 42)
+          assert 0 <= x < 4 and abs(y - 128) < 1, (x, y)
+          if fly_crossing:
+           assert abs(z - altitude) < 2, z
+          if fall_crossing:
+           assert 25 < z < altitude - 2, z
+          assert struct.unpack_from("<Q", packet, 66)[0] == handle
+          break
+        else:
+         raise AssertionError("Crossing viewer did not enter the destination region")
+        for _ in range(64):
+         if destination_animation is not None:
+          break
+         destination_animation = movement_animation(crossed_viewer.recv(4096))
+        assert destination_animation is not None, "The destination did not publish a movement animation"
+        assert destination_animation[1] > 1, "The destination restarted the movement animation sequence"
+        if fly_crossing:
+         fly_animation = uuid.UUID("aec4610c-757f-bc4e-c092-c6e9caf18daf").bytes
+         assert destination_animation[0] == fly_animation, "The transfer did not retain the source flight animation"
+        if blocked_flight_destination:
+         crossed_viewer.sendto(struct.pack(">BIBB", 0x40, 3, 0, 4) +
+                               local_agent.bytes + session_bytes + bytes(25) +
+                               struct.pack("<13fIB", x,y,z, 1,0,0, 0,1,0, 0,0,1, 64, 0x2010, 0), endpoint)
+         deadline = time.monotonic() + 8
+         ack_sequence = 200
+         while time.monotonic() < deadline:
+          packet = crossed_viewer.recv(4096)
+          if packet[0] & 0x40:
+           ack_sequence += 1
+           sequence = struct.unpack_from(">I", packet, 1)[0]
+           crossed_viewer.sendto(struct.pack(">BIB", 0, ack_sequence, 0) + bytes.fromhex("fffffffb") +
+                                 struct.pack("<BI", 1, sequence), endpoint)
+          payload = packet[6 + packet[5]:]
+          if packet[0] & 0x80:
+           decoded = bytearray()
+           cursor = iter(payload)
+           for byte in cursor:
+            if byte:
+             decoded.append(byte)
+            else:
+             decoded.extend(bytes(next(cursor, 0)))
+           payload = decoded
+          if payload[:1] == b"\x0c" and payload[17:33] == local_agent.bytes and len(payload) >= 93:
+           # The avatar ObjectData block stores position and velocity consecutively.
+           current_z, _, _, vertical_speed = struct.unpack_from("<4f", payload, 77)
+           if current_z < z - 3 and vertical_speed < 0:
+            break
+         else:
+          raise AssertionError("Avatar did not descend in the no-flight region")
+        elif fly_crossing:
+         # Observe several physics heartbeats without sending fresh movement input.
+         crossed_viewer.settimeout(0.1)
+         deadline = time.monotonic() + 0.55
+         while time.monotonic() < deadline:
+          try:
+           animation = movement_animation(crossed_viewer.recv(4096))
+          except socket.timeout:
+           continue
+          assert animation is None or animation == destination_animation, "Flight changed before fresh viewer input"
+         crossed_viewer.settimeout(5)
+        if fall_crossing:
+         assert destination_animation == source_fall, "The falling animation restarted at the crossing"
+         landing_animations = {uuid.UUID(name).bytes for name in (
+             "7a17b059-12b2-41b1-570a-186368b6aa6f", "f4f00d6e-b9fe-9292-f4cb-0ae06ea58d57",
+             "3da1d753-028a-5446-24f3-9c9b856d9422")}
+         deadline = time.monotonic() + 10
+         ack_sequence = 200
+         while time.monotonic() < deadline:
+          packet = crossed_viewer.recv(4096)
+          if packet[0] & 0x40:
+           ack_sequence += 1
+           sequence = struct.unpack_from(">I", packet, 1)[0]
+           crossed_viewer.sendto(struct.pack(">BIB", 0, ack_sequence, 0) + bytes.fromhex("fffffffb") +
+                                 struct.pack("<BI", 1, sequence), endpoint)
+          animation = movement_animation(packet)
+          if animation is not None and animation[0] in landing_animations:
+           break
+          assert animation is None or animation == source_fall, "The avatar stopped falling before landing"
+         else:
+          raise AssertionError("The falling avatar did not land in the destination")
+        else:
+         for _ in range(128):
+          if movement_animation(source_viewer.recv(4096)) == destination_animation:
+           break
+         else:
+          raise AssertionError("The destination did not publish the source movement animation and sequence")
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+         with closing(sqlite3.connect(Path(d) / "presence.db")) as database:
+          presence = database.execute("SELECT RegionID FROM Presence WHERE SessionID = ?",
+                                      (login["session_id"],)).fetchone()
+         if presence == (destination_id,):
+          break
+         time.sleep(0.02)
+        else:
+         raise AssertionError(f"Crossing did not move the grid presence to the destination: {presence}")
+
+        if fall_crossing or blocked_flight_destination:
+         home.shutdown()
+         print("PASS: avatar descends in the destination region")
+         sys.exit(0)
+
+        time.sleep(0.25)
+        source_viewer.sendto(struct.pack(">BIBBB", 0, 19003, 0, 1, 127) + bytes(4), source_endpoint)
+        for _ in range(64):
+         if source_viewer.recv(4096)[6:8] == bytes((2, 127)):
+          break
+        else:
+         raise AssertionError("Source region did not retain the viewer's child circuit")
+        with closing(http.client.HTTPConnection(seed_url.hostname, seed_url.port, timeout=15)) as neighbor:
+         neighbor.request("POST", seed_url.path, "<llsd><array><string>EventQueueGet</string></array></llsd>",
+                          {"Content-Type":"application/llsd+xml"})
+         response = neighbor.getresponse()
+         neighbor_queue = ET.fromstring(response.read()).findtext("map/string")
+         assert response.status == 200 and neighbor_queue
+         crossed_viewer.sendto(struct.pack(">BIB", 0x40, 3, 0) + bytes.fromhex("ffff003f") +
+                               local_agent.bytes + session_bytes +
+                               struct.pack("<Q6f", handle, 1, 128, 25, 1, 0, 0), endpoint)
+         for _ in range(64):
+          if crossed_viewer.recv(4096)[6:10] == bytes.fromhex("ffff0040"):
+           break
+         else:
+          raise AssertionError("Viewer could not reach the return crossing's starting position")
+         crossed_viewer.sendto(struct.pack(">BIBB", 0x40, 4, 0, 4) +
+                               local_agent.bytes + session_bytes + bytes(24) + b"\0" +
+                               struct.pack("<13fIB", 1,128,25, 1,0,0, 0,1,0, 0,0,1, 64, 2, 0), endpoint)
+         deadline = time.monotonic() + 12
+         returned = None
+         while time.monotonic() < deadline and returned is None:
+          neighbor.request("POST", urlsplit(neighbor_queue).path,
+                           "<llsd><map><key>ack</key><undef/><key>done</key><boolean>0</boolean></map></llsd>",
+                           {"Content-Type":"application/llsd+xml"})
+          response = neighbor.getresponse()
+          body = response.read()
+          if response.status == 200:
+           returned = next((event for event in ET.fromstring(body).iter("map")
+                            if event.findtext("string") == "CrossedRegion"), None)
+         assert returned is not None, "Viewer did not receive the return CrossedRegion event"
+         assert urlsplit(login["seed_capability"]).path in ET.tostring(returned, encoding="unicode")
+
+        # The original UDP connection is already open and can complete the return directly.
+        source_viewer.sendto(struct.pack(">BIB", 0x40, 19004, 0) + bytes.fromhex("ffff00f9") +
+                             local_agent.bytes + session_bytes + circuit_bytes, source_endpoint)
+        for _ in range(64):
+         packet = source_viewer.recv(4096)
+         if packet[6:10] == bytes.fromhex("ffff00fa") and struct.unpack_from("<Q", packet, 66)[0] == source_handle:
+          x, y, _ = struct.unpack_from("<3f", packet, 42)
+          if 252 < x < 256 and abs(y - 128) < 1:
+           break
+        else:
+         raise AssertionError("Viewer did not return through the original child circuit")
+        time.sleep(0.25)
+        crossed_viewer.sendto(struct.pack(">BIB", 0x40, 5, 0) + bytes.fromhex("ffff00fc") +
+                              local_agent.bytes + session_bytes, endpoint)
+        deadline = time.monotonic() + 5
+        with closing(http.client.HTTPConnection(seed_url.hostname, seed_url.port, timeout=5)) as neighbor:
+         while time.monotonic() < deadline:
+          neighbor.request("POST", seed_url.path, "<llsd><array/></llsd>",
+                           {"Content-Type":"application/llsd+xml"})
+          response = neighbor.getresponse()
+          response.read()
+          if response.status == 404:
+           break
+          time.sleep(0.02)
+         else:
+          raise AssertionError("Closing the neighbor child circuit did not remove its seed capability")
+        with closing(sqlite3.connect(Path(d) / "presence.db")) as database:
+         assert database.execute("SELECT RegionID FROM Presence WHERE SessionID = ?",
+                                 (login["session_id"],)).fetchone() == ("11111111-1111-4111-8111-111111111111",)
+       print("PASS: avatar crosses a region boundary through the viewer event queue")
+       sys.exit(0)
      pending_messages = {b"Will you be my friend?": b"Offer Recipient",
                          b"Please confirm this friendship you made while you were on another HG grid":
                              f"Foreign.Sender @127.0.0.1:{home.server_address[1]}".encode()}
@@ -2149,6 +2424,13 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
      response.read()
      if "--hypergrid-release" in sys.argv[2:]:
       accept_home_launch.set()
+      camera_update = struct.pack(
+          "<13fIB", 130, 131, 47, 0, 1, 0, -1, 0, 0, 0, 0, 1, 64, 0, 0)
+      viewer.sendto(struct.pack(">BIBB", 0x40, 11000, 0, 4) +
+                    agent.bytes + session.bytes + bytes(24) + b"\0" + camera_update,
+                    ("127.0.0.1", udp))
+      viewer.sendto(struct.pack(">BIBHH", 0x40, 11001, 0, 0xffff, 88) +
+                    agent.bytes + session.bytes + b"\x01", ("127.0.0.1", udp))
       viewer.sendto(struct.pack(">BIB", 0x40, 10, 0) + bytes.fromhex("ffff003f") +
                     agent.bytes + session.bytes + struct.pack("<Q6f", linked_handle, 120, 121, 45, 1, 0, 0),
                     ("127.0.0.1", udp))
@@ -2156,6 +2438,9 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
       assert access_queries.get(timeout=5)[0] == f"/agent/{agent}/{remote_id}/"
       assert home_launches.get(timeout=5)[0] == f"/homeagent/{agent}/"
       _, update = outbound_updates.get(timeout=5)
+      assert update["center"] == "<130, 131, 47>", update
+      assert update["at_axis"] == "<1, 0, 0>", update
+      assert update["always_run"] is True, update
       for _ in range(64):
        packet = viewer.recv(4096)
        if packet[6:10] == bytes.fromhex("ffff0045"):

@@ -1,23 +1,132 @@
-using System;using System.Net.Http;using System.Reflection;using System.Runtime.InteropServices;using System.Runtime.CompilerServices;
-class Reference{
- [UnmanagedFunctionPointer(CallingConvention.Winapi,CharSet=CharSet.Unicode)]delegate void Configure(int a,int b,int c,[MarshalAs(UnmanagedType.LPWStr)]string? proxy,[MarshalAs(UnmanagedType.LPWStr)]string? bypass);
- [UnmanagedFunctionPointer(CallingConvention.Winapi)]delegate int Count();
- [UnmanagedFunctionPointer(CallingConvention.Winapi)]delegate uint Number(int index,int field);
- [UnmanagedFunctionPointer(CallingConvention.Winapi)]delegate IntPtr Text(int index,int field);
- static string? Decode(string s)=>s=="null"?null:s=="-"?"":System.Text.Encoding.BigEndianUnicode.GetString(Convert.FromHexString(s));
- static string Hex(string? s)=>s==null?"null":s.Length==0?"-":Convert.ToHexString(System.Text.Encoding.BigEndianUnicode.GetBytes(s)).ToLowerInvariant();
- static string Bit(bool value)=>value?"1":"0";
- static void Main(string[] args){var assembly=typeof(HttpClient).Assembly;var type=assembly.GetType("System.Net.Http.WinInetProxyHelper",true)!;var interop=assembly.GetType("Interop+WinHttp",true)!;var open=interop.GetMethod("WinHttpOpen",BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic)!;
- if(args[0]=="--native"){var native=Activator.CreateInstance(type)!;using var session=(IDisposable)open.Invoke(null,new object?[]{IntPtr.Zero,1u,null,null,268435456})!;bool valid=!(bool)session.GetType().GetProperty("IsInvalid")!.GetValue(session)!;Console.WriteLine(Bit((bool)type.GetProperty("AutoDetect")!.GetValue(native)!)+":"+Bit((bool)type.GetField("_useProxy",BindingFlags.NonPublic|BindingFlags.Instance)!.GetValue(native)!)+":"+Hex((string?)type.GetProperty("AutoConfigUrl")!.GetValue(native))+":"+Hex((string?)type.GetProperty("Proxy")!.GetValue(native))+":"+Hex((string?)type.GetProperty("ProxyBypass")!.GetValue(native))+":"+Bit(valid));return;}
- if(args[0]=="--live"){var helper=RuntimeHelpers.GetUninitializedObject(type);void Set(string name,object? value)=>type.GetField(name,BindingFlags.NonPublic|BindingFlags.Instance)!.SetValue(helper,value);Set("_useProxy",true);Set("_autoConfigUrl",args[1]);Set("_proxy",Decode(args[2]));Set("_proxyBypass",Decode(args[3]));using var session=(IDisposable)open.Invoke(null,new object?[]{IntPtr.Zero,1u,null,null,268435456})!;var values=new object?[]{session,new Uri(args[4]),null};bool success=(bool)type.GetMethod("GetProxyForUrl")!.Invoke(helper,values)!;Console.Error.WriteLine("POST_REFLECTION_LAST:"+Marshal.GetLastPInvokeError());var info=values[2]!;var p=(IntPtr)info.GetType().GetField("Proxy")!.GetValue(info)!;var b=(IntPtr)info.GetType().GetField("ProxyBypass")!.GetValue(info)!;try{Console.WriteLine(Bit(success)+":"+info.GetType().GetField("AccessType")!.GetValue(info)+":"+Hex(Marshal.PtrToStringUni(p))+":"+Hex(Marshal.PtrToStringUni(b))+"|"+Bit((bool)type.GetProperty("RecentAutoDetectionFailure")!.GetValue(helper)!));}finally{Marshal.FreeHGlobal(p);Marshal.FreeHGlobal(b);}return;}
- var dll=NativeLibrary.Load(args[0]);NativeLibrary.SetDllImportResolver(assembly,(name,owner,path)=>name.Equals("winhttp.dll",StringComparison.OrdinalIgnoreCase)?dll:IntPtr.Zero);
- var configure=Marshal.GetDelegateForFunctionPointer<Configure>(NativeLibrary.GetExport(dll,"Configure"));var count=Marshal.GetDelegateForFunctionPointer<Count>(NativeLibrary.GetExport(dll,"CallCount"));var number=Marshal.GetDelegateForFunctionPointer<Number>(NativeLibrary.GetExport(dll,"CallNumber"));var text=Marshal.GetDelegateForFunctionPointer<Text>(NativeLibrary.GetExport(dll,"CallText"));
- using var handle=(IDisposable)open.Invoke(null,new object?[]{IntPtr.Zero,1u,null,null,268435456})!;var method=type.GetMethod("GetProxyForUrl")!;string? row;
- while((row=Console.ReadLine())!=null){var p=row.Split(' ');var errors=p[6].Split(',');int a=int.Parse(errors[0]),b=errors.Length>1?int.Parse(errors[1]):a,c=errors.Length>2?int.Parse(errors[2]):b;configure(a,b,c,Decode(p[7]),Decode(p[8]));var helper=RuntimeHelpers.GetUninitializedObject(type);
+using System;
+using System.Net.Http;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
+class Reference
+{
+    [UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet = CharSet.Unicode)]
+    delegate void Configure(int a, int b, int c, [MarshalAs(UnmanagedType.LPWStr)] string? proxy,
+                            [MarshalAs(UnmanagedType.LPWStr)] string? bypass);
+    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+    delegate int Count();
+    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+    delegate uint Number(int index, int field);
+    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+    delegate IntPtr Text(int index, int field);
+    static string? Decode(string s) =>
+        s == "null" ? null
+        : s == "-"  ? ""
+                    : System.Text.Encoding.BigEndianUnicode.GetString(Convert.FromHexString(s));
+    static string Hex(string? s) =>
+        s == null ? "null"
+        : s.Length == 0
+            ? "-"
+            : Convert.ToHexString(System.Text.Encoding.BigEndianUnicode.GetBytes(s)).ToLowerInvariant();
+    static string Bit(bool value) => value ? "1" : "0";
+    static void Main(string[] args)
+    {
+        var assembly = typeof(HttpClient).Assembly;
+        var type = assembly.GetType("System.Net.Http.WinInetProxyHelper", true)!;
+        var interop = assembly.GetType("Interop+WinHttp", true)!;
+        var open = interop.GetMethod("WinHttpOpen",
+                                     BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)!;
+        if (args[0] == "--native")
+        {
+            var native = Activator.CreateInstance(type)!;
+            using var session =
+                (IDisposable)open.Invoke(null, new object?[] { IntPtr.Zero, 1u, null, null, 268435456 })!;
+            bool valid = !(bool)session.GetType().GetProperty("IsInvalid")!.GetValue(session)!;
+            Console.WriteLine(
+                Bit((bool)type.GetProperty("AutoDetect")!.GetValue(native)!) + ":" +
+                Bit((bool)type.GetField("_useProxy",
+                                        BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(native)!) +
+                ":" + Hex((string?)type.GetProperty("AutoConfigUrl")!.GetValue(native)) + ":" +
+                Hex((string?)type.GetProperty("Proxy")!.GetValue(native)) + ":" +
+                Hex((string?)type.GetProperty("ProxyBypass")!.GetValue(native)) + ":" + Bit(valid));
+            return;
+        }
+        if (args[0] == "--live")
+        {
+            var helper = RuntimeHelpers.GetUninitializedObject(type);void Set(string name,object? value)=>type.GetField(name,BindingFlags.NonPublic|BindingFlags.Instance)!.SetValue(helper,value);
+            Set("_useProxy", true);
+            Set("_autoConfigUrl", args[1]);
+            Set("_proxy", Decode(args[2]));
+            Set("_proxyBypass", Decode(args[3]));
+            using var session =
+                (IDisposable)open.Invoke(null, new object?[] { IntPtr.Zero, 1u, null, null, 268435456 })!;
+            var values = new object?[] { session, new Uri(args[4]), null };
+            bool success = (bool)type.GetMethod("GetProxyForUrl")!.Invoke(helper, values)!;
+            Console.Error.WriteLine("POST_REFLECTION_LAST:" + Marshal.GetLastPInvokeError());
+            var info = values[2]!;
+            var p = (IntPtr)info.GetType().GetField("Proxy")!.GetValue(info)!;
+            var b = (IntPtr)info.GetType().GetField("ProxyBypass")!.GetValue(info)!;
+            try
+            {
+                Console.WriteLine(
+                    Bit(success) + ":" + info.GetType().GetField("AccessType")!.GetValue(info) + ":" +
+                    Hex(Marshal.PtrToStringUni(p)) + ":" + Hex(Marshal.PtrToStringUni(b)) + "|" +
+                    Bit((bool)type.GetProperty("RecentAutoDetectionFailure")!.GetValue(helper)!));
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(p);
+                Marshal.FreeHGlobal(b);
+            }
+            return;
+        }
+        var dll = NativeLibrary.Load(args[0]);
+        NativeLibrary.SetDllImportResolver(
+            assembly, (name, owner, path) =>
+                          name.Equals("winhttp.dll", StringComparison.OrdinalIgnoreCase) ? dll : IntPtr.Zero);
+        var configure =
+            Marshal.GetDelegateForFunctionPointer<Configure>(NativeLibrary.GetExport(dll, "Configure"));
+        var count = Marshal.GetDelegateForFunctionPointer<Count>(NativeLibrary.GetExport(dll, "CallCount"));
+        var number =
+            Marshal.GetDelegateForFunctionPointer<Number>(NativeLibrary.GetExport(dll, "CallNumber"));
+        var text = Marshal.GetDelegateForFunctionPointer<Text>(NativeLibrary.GetExport(dll, "CallText"));
+        using var handle =
+            (IDisposable)open.Invoke(null, new object?[] { IntPtr.Zero, 1u, null, null, 268435456 })!;
+        var method = type.GetMethod("GetProxyForUrl")!;
+        string? row;
+        while ((row = Console.ReadLine()) != null)
+        {
+            var p = row.Split(' ');
+            var errors = p[6].Split(',');
+            int a = int.Parse(errors[0]), b = errors.Length > 1 ? int.Parse(errors[1]) : a,
+                c = errors.Length > 2 ? int.Parse(errors[2]) : b;
+            configure(a, b, c, Decode(p[7]), Decode(p[8]));
+            var helper = RuntimeHelpers.GetUninitializedObject(type);
  void Set(string name,object? value)=>type.GetField(name,BindingFlags.NonPublic|BindingFlags.Instance)!.SetValue(helper,value);
- bool Property(string name)=>(bool)type.GetProperty(name)!.GetValue(helper)!;
- Set("_autoDetect",p[0]=="1");Set("_useProxy",p[1]=="1");Set("_autoConfigUrl",Decode(p[2]));Set("_proxy",Decode(p[3]));Set("_proxyBypass",Decode(p[4]));var arguments=new object?[]{handle,new Uri(Decode(p[5])!),null};bool success=(bool)method.Invoke(helper,arguments)!;var info=arguments[2]!;var infoType=info.GetType();var proxy=(IntPtr)infoType.GetField("Proxy")!.GetValue(info)!;var bypass=(IntPtr)infoType.GetField("ProxyBypass")!.GetValue(info)!;
- try{Console.Write(Bit(Property("AutoSettingsUsed"))+":"+Bit(Property("ManualSettingsUsed"))+":"+Bit(Property("ManualSettingsOnly"))+"|"+Bit(success)+":"+infoType.GetField("AccessType")!.GetValue(info)+":"+Hex(Marshal.PtrToStringUni(proxy))+":"+Hex(Marshal.PtrToStringUni(bypass))+"|"+Bit(Property("RecentAutoDetectionFailure"))+"|");for(int i=0;i<count();i++)Console.Write(Hex(Marshal.PtrToStringUni(text(i,0)))+","+number(i,0)+","+number(i,1)+","+number(i,2)+","+Hex(Marshal.PtrToStringUni(text(i,1)))+";");Console.WriteLine();}finally{Marshal.FreeHGlobal(proxy);Marshal.FreeHGlobal(bypass);}
+ bool Property(string name) => (bool)type.GetProperty(name)!.GetValue(helper)!;
+ Set("_autoDetect", p[0] == "1");
+ Set("_useProxy", p[1] == "1");
+ Set("_autoConfigUrl", Decode(p[2]));
+ Set("_proxy", Decode(p[3]));
+ Set("_proxyBypass", Decode(p[4]));
+ var arguments = new object?[] { handle, new Uri(Decode(p[5])!), null };
+ bool success = (bool)method.Invoke(helper, arguments)!;
+ var info = arguments[2]!;
+ var infoType = info.GetType();
+ var proxy = (IntPtr)infoType.GetField("Proxy")!.GetValue(info)!;
+ var bypass = (IntPtr)infoType.GetField("ProxyBypass")!.GetValue(info)!;
+ try
+ {
+     Console.Write(Bit(Property("AutoSettingsUsed")) + ":" + Bit(Property("ManualSettingsUsed")) + ":" +
+                   Bit(Property("ManualSettingsOnly")) + "|" + Bit(success) + ":" +
+                   infoType.GetField("AccessType")!.GetValue(info) + ":" +
+                   Hex(Marshal.PtrToStringUni(proxy)) + ":" + Hex(Marshal.PtrToStringUni(bypass)) + "|" +
+                   Bit(Property("RecentAutoDetectionFailure")) + "|");
+     for (int i = 0; i < count(); i++)
+         Console.Write(Hex(Marshal.PtrToStringUni(text(i, 0))) + "," + number(i, 0) + "," + number(i, 1) +
+                       "," + number(i, 2) + "," + Hex(Marshal.PtrToStringUni(text(i, 1))) + ";");
+     Console.WriteLine();
  }
+ finally
+ {
+     Marshal.FreeHGlobal(proxy);
+     Marshal.FreeHGlobal(bypass);
  }
+        }
+    }
 }

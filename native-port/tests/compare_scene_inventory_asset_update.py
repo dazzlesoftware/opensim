@@ -1,21 +1,130 @@
 """Complete original Scene.CapsUpdateItemAsset and full actual task/model classes."""
-import argparse,hashlib,itertools,json,random,subprocess,xml.etree.ElementTree as ET
+
+import argparse, hashlib, itertools, json, random, subprocess, xml.etree.ElementTree as ET
 from pathlib import Path
 from compare_task_inventory_update import extract
-ROOT=Path(__file__).resolve().parents[2]
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
 def main():
- p=argparse.ArgumentParser();p.add_argument('--native',required=True);p.add_argument('--dotnet',required=True);p.add_argument('--work',required=True,type=Path);a=p.parse_args();w=a.work.resolve();w.mkdir(parents=True,exist_ok=True)
- source=ROOT/'OpenSim/Region/Framework/Scenes/Scene.Inventory.cs';util=ROOT/'OpenSim/Framework/Util.cs';animation=ROOT/'OpenSim/Framework/AnimationSet.cs';task=ROOT/'OpenSim/Framework/TaskInventoryItem.cs';generated=w/'ExtractedSceneAssetUpdate.cs';generated.write_text('using System;using OpenMetaverse;using OpenSim.Framework;using PermissionMask=OpenSim.Framework.PermissionMask;partial class Scene{'+extract(source.read_text(encoding='utf-8'),'public UUID CapsUpdateItemAsset(')+'}namespace OpenSim.Framework{'+extract(util.read_text(encoding='utf-8'),'public enum PermissionMask')+'}',encoding='utf-8')
- project=ET.Element('Project',Sdk='Microsoft.NET.Sdk');props=ET.SubElement(project,'PropertyGroup')
- for k,v in dict(TargetFramework='net8.0',OutputType='Exe',EnableDefaultCompileItems='false').items():ET.SubElement(props,k).text=v
- ig=ET.SubElement(project,'ItemGroup');files=[generated,animation,task,ROOT/'OpenSim/Framework/InventoryNodeBase.cs',ROOT/'OpenSim/Framework/InventoryItemBase.cs',ROOT/'OpenSim/Framework/CustomTypes.cs',ROOT/'native-port/tests/scene_inventory_asset_update_reference.cs']
- for f in files:ET.SubElement(ig,'Compile',Include=str(f))
- for name in ['OpenMetaverse','OpenMetaverseTypes','OpenMetaverse.StructuredData']:
-  ref=ET.SubElement(ig,'Reference',Include=name);ET.SubElement(ref,'HintPath').text=str(ROOT/'bin'/f'{name}.dll')
- cs=w/'SceneInventoryAssetUpdateReference.csproj';ET.ElementTree(project).write(cs,encoding='utf-8',xml_declaration=True);r=subprocess.run([a.dotnet,'build',str(cs),'-o',str(w/'app'),'--nologo','-v','quiet'],capture_output=True,text=True);assert r.returncode==0,r.stdout+r.stderr
- modes=set(range(1024));modes.update([1024,2048,4096,8192,16384,32768,65536,131072,262144,524288,1048576,2097152,4194304]);rng=random.Random(12394);modes.update(rng.randrange(1<<23) for _ in range(96));invs=[-1,7,10,20,25,26,96,-249,263,352];commands=[f'{agent} {m} {inv} 255 0' for agent,m,inv in itertools.product(range(2),sorted(modes),invs)]
- commands += [f'{agent} {m} {inv} {t} {fail}' for agent,m,inv,t,fail in itertools.product(range(2),[0,2,4,512,1024,2048,8192,16384,32768,131072,524288,1048576],[-2147483648,-249,-1,7,10,20,25,26,96,263,276,281,282,352],[-2147483648,-129,-128,-1,7,127,128,255,256],range(1,20))];outputs=[]
- for cmd in [[a.dotnet,str(w/'app/SceneInventoryAssetUpdateReference.dll')],[a.native,'--probe']]:
-  r=subprocess.run(cmd,input='\n'.join(commands)+'\n',capture_output=True,text=True,encoding='utf-8',timeout=120);assert r.returncode==0,r.stderr;outputs.append(r.stdout.splitlines())
- assert len(outputs[0])==len(outputs[1])==len(commands);diffs=[dict(command=c,source=s,native=n) for c,s,n in zip(commands,*outputs) if s!=n];sources=[source,util,animation,task,ROOT/'bin/OpenMetaverseTypes.dll'];report=dict(passed=not diffs,cases=len(commands),sourceHashes={str(f.relative_to(ROOT)):hashlib.sha256(f.read_bytes()).hexdigest() for f in sources},scope='Complete unchanged Scene.CapsUpdateItemAsset with full original TaskInventoryItem/AnimationSet/item models and real SDK. Missing/found-null presence, optional module lookup before client access, actual nullable client forwarding, part/group/deleted/item/policy gates, signed-byte InventoryType and asset Type narrowing, exact pre-store success/permission alerts, no generic task LSL policy, original animation constructor, no task owner check, nullable text/data, value snapshots, shared-reference/dependency mutation and failure order, ignored Store result/no retry, second Inventory getter and post-update actual asset ID return. Actual region owner thread, registry/storage and HTTP capability routing remain separate; complete concurrent/culture/invalid UTF16 behavior not proven.',differences=diffs[:2]);(w/'scene-inventory-asset-update-results.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8');assert not diffs,json.dumps(diffs[:1]);print(f'PASS: {len(commands)} original scene inventory asset update observations')
-if __name__=='__main__':main()
+    p = argparse.ArgumentParser()
+    p.add_argument('--native', required=True)
+    p.add_argument('--dotnet', required=True)
+    p.add_argument('--work', required=True, type=Path)
+    a = p.parse_args()
+    w = a.work.resolve()
+    w.mkdir(parents=True, exist_ok=True)
+    source = ROOT / 'OpenSim/Region/Framework/Scenes/Scene.Inventory.cs'
+    util = ROOT / 'OpenSim/Framework/Util.cs'
+    animation = ROOT / 'OpenSim/Framework/AnimationSet.cs'
+    task = ROOT / 'OpenSim/Framework/TaskInventoryItem.cs'
+    generated = w / 'ExtractedSceneAssetUpdate.cs'
+    generated.write_text(
+        'using System;using OpenMetaverse;using OpenSim.Framework;using PermissionMask=OpenSim.Framework.PermissionMask;partial class Scene{'
+        + extract(source.read_text(encoding='utf-8'), 'public UUID CapsUpdateItemAsset(')
+        + '}namespace OpenSim.Framework{'
+        + extract(util.read_text(encoding='utf-8'), 'public enum PermissionMask')
+        + '}',
+        encoding='utf-8',
+    )
+    project = ET.Element('Project', Sdk='Microsoft.NET.Sdk')
+    props = ET.SubElement(project, 'PropertyGroup')
+    for k, v in dict(
+        TargetFramework='net8.0', OutputType='Exe', EnableDefaultCompileItems='false'
+    ).items():
+        ET.SubElement(props, k).text = v
+    ig = ET.SubElement(project, 'ItemGroup')
+    files = [
+        generated,
+        animation,
+        task,
+        ROOT / 'OpenSim/Framework/InventoryNodeBase.cs',
+        ROOT / 'OpenSim/Framework/InventoryItemBase.cs',
+        ROOT / 'OpenSim/Framework/CustomTypes.cs',
+        ROOT / 'native-port/tests/scene_inventory_asset_update_reference.cs',
+    ]
+    for f in files:
+        ET.SubElement(ig, 'Compile', Include=str(f))
+    for name in ['OpenMetaverse', 'OpenMetaverseTypes', 'OpenMetaverse.StructuredData']:
+        ref = ET.SubElement(ig, 'Reference', Include=name)
+        ET.SubElement(ref, 'HintPath').text = str(ROOT / 'bin' / f'{name}.dll')
+    cs = w / 'SceneInventoryAssetUpdateReference.csproj'
+    ET.ElementTree(project).write(cs, encoding='utf-8', xml_declaration=True)
+    r = subprocess.run(
+        [a.dotnet, 'build', str(cs), '-o', str(w / 'app'), '--nologo', '-v', 'quiet'],
+        capture_output=True,
+        text=True,
+    )
+    assert r.returncode == 0, r.stdout + r.stderr
+    modes = set(range(1024))
+    modes.update(
+        [
+            1024,
+            2048,
+            4096,
+            8192,
+            16384,
+            32768,
+            65536,
+            131072,
+            262144,
+            524288,
+            1048576,
+            2097152,
+            4194304,
+        ]
+    )
+    rng = random.Random(12394)
+    modes.update(rng.randrange(1 << 23) for _ in range(96))
+    invs = [-1, 7, 10, 20, 25, 26, 96, -249, 263, 352]
+    commands = [
+        f'{agent} {m} {inv} 255 0'
+        for agent, m, inv in itertools.product(range(2), sorted(modes), invs)
+    ]
+    commands += [
+        f'{agent} {m} {inv} {t} {fail}'
+        for agent, m, inv, t, fail in itertools.product(
+            range(2),
+            [0, 2, 4, 512, 1024, 2048, 8192, 16384, 32768, 131072, 524288, 1048576],
+            [-2147483648, -249, -1, 7, 10, 20, 25, 26, 96, 263, 276, 281, 282, 352],
+            [-2147483648, -129, -128, -1, 7, 127, 128, 255, 256],
+            range(1, 20),
+        )
+    ]
+    outputs = []
+    for cmd in [
+        [a.dotnet, str(w / 'app/SceneInventoryAssetUpdateReference.dll')],
+        [a.native, '--probe'],
+    ]:
+        r = subprocess.run(
+            cmd,
+            input='\n'.join(commands) + '\n',
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            timeout=120,
+        )
+        assert r.returncode == 0, r.stderr
+        outputs.append(r.stdout.splitlines())
+    assert len(outputs[0]) == len(outputs[1]) == len(commands)
+    diffs = [dict(command=c, source=s, native=n) for c, s, n in zip(commands, *outputs) if s != n]
+    sources = [source, util, animation, task, ROOT / 'bin/OpenMetaverseTypes.dll']
+    report = dict(
+        passed=not diffs,
+        cases=len(commands),
+        sourceHashes={
+            str(f.relative_to(ROOT)): hashlib.sha256(f.read_bytes()).hexdigest() for f in sources
+        },
+        scope='Complete unchanged Scene.CapsUpdateItemAsset with full original TaskInventoryItem/AnimationSet/item models and real SDK. Missing/found-null presence, optional module lookup before client access, actual nullable client forwarding, part/group/deleted/item/policy gates, signed-byte InventoryType and asset Type narrowing, exact pre-store success/permission alerts, no generic task LSL policy, original animation constructor, no task owner check, nullable text/data, value snapshots, shared-reference/dependency mutation and failure order, ignored Store result/no retry, second Inventory getter and post-update actual asset ID return. Actual region owner thread, registry/storage and HTTP capability routing remain separate; complete concurrent/culture/invalid UTF16 behavior not proven.',
+        differences=diffs[:2],
+    )
+    (w / 'scene-inventory-asset-update-results.json').write_text(
+        json.dumps(report, indent=2) + '\n', encoding='utf-8'
+    )
+    assert not diffs, json.dumps(diffs[:1])
+    print(f'PASS: {len(commands)} original scene inventory asset update observations')
+
+
+if __name__ == '__main__':
+    main()

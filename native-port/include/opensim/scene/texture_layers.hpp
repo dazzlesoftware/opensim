@@ -3,7 +3,10 @@
 #pragma once
 
 #include "opensim/framework/uuid.hpp"
+#include "opensim/scene/map_tile.hpp"
+#include <array>
 #include <memory>
+#include <optional>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
@@ -16,6 +19,21 @@ struct TextureLayer {
     std::int32_t start, end;
     bool operator==(const TextureLayer&) const = default;
 };
+using MapJpegEncoder = std::function<std::string(std::span<const std::uint8_t>)>;
+MapJpegEncoder open_map_jpeg_encoder(const std::filesystem::path& library);
+std::string encode_map_bitmap_jpeg(const MapBitmap& bitmap);
+using MapTextureAverage = std::function<std::optional<std::array<std::uint8_t, 3>>(
+    std::span<const std::uint8_t>)>;
+MapTextureAverage open_map_texture_average(const std::filesystem::path& library);
+
+using MapBitmapDecoder = std::function<MapBitmap(std::span<const std::uint8_t>)>;
+MapBitmapDecoder open_map_bitmap_decoder(const std::filesystem::path& library);
+
+using MapJpeg2000Encoder = std::function<std::vector<std::uint8_t>(
+    std::span<const std::uint8_t> pixels, std::uint32_t width, std::uint32_t height,
+    std::size_t channels, bool lossless)>;
+MapJpeg2000Encoder open_map_jpeg2000_encoder(const std::filesystem::path& library);
+
 using TextureLayerDecoder = std::function<std::vector<TextureLayer>(std::span<const std::uint8_t>)>;
 using CachedTextureLayerDecoder = std::function<std::vector<std::int32_t>(
     const framework::Uuid&, std::span<const std::uint8_t>)>;

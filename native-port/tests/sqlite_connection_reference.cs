@@ -1,7 +1,62 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
-using System;using System.Collections.Generic;using System.Reflection;using System.Text;using System.Data.SQLite;
-class Reference {
- static string Hex(string s)=>Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();
- static void Main(){string line;while((line=Console.ReadLine())!=null){try{char mode=line[0];string value=Encoding.UTF8.GetString(Convert.FromHexString(line.Substring(1)));if(mode=='B')Console.WriteLine(SQLiteConvert.ToBoolean(value)?"1":"0");else if(mode=='M')Console.WriteLine(Hex((string)typeof(SQLiteConnection).GetMethod("MapUriPath",BindingFlags.Static|BindingFlags.NonPublic).Invoke(null,new object[]{value})));else{var fields=SQLiteConnection.ParseConnectionString(null,value,false,mode=='A',false);if(mode=='C'){string path=(string)typeof(SQLiteConnection).GetMethod("FindKey",BindingFlags.Static|BindingFlags.NonPublic).Invoke(null,new object[]{fields,"Data Source",null});if(string.IsNullOrEmpty(path)){fields.TryGetValue("URI",out path);if(string.IsNullOrEmpty(path))throw new Exception();path=(string)typeof(SQLiteConnection).GetMethod("MapUriPath",BindingFlags.Static|BindingFlags.NonPublic).Invoke(null,new object[]{path});}if(string.Equals(path,":memory:",StringComparison.OrdinalIgnoreCase))path=":memory:";Console.WriteLine(Hex(path));continue;}string output="";foreach(var item in fields)output+=Hex(item.Key)+":"+Hex(item.Value)+";";Console.WriteLine(output);}}catch{Console.WriteLine("EX");}}}
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Text;
+using System.Data.SQLite;
+class Reference
+{
+    static string Hex(string s) => Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();
+    static void Main()
+    {
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            try
+            {
+                char mode = line[0];
+                string value = Encoding.UTF8.GetString(Convert.FromHexString(line.Substring(1)));
+                if (mode == 'B')
+                    Console.WriteLine(SQLiteConvert.ToBoolean(value) ? "1" : "0");
+                else if (mode == 'M')
+                    Console.WriteLine(
+                        Hex((string) typeof(SQLiteConnection)
+                                .GetMethod("MapUriPath", BindingFlags.Static | BindingFlags.NonPublic)
+                                .Invoke(null, new object[] { value })));
+                else
+                {
+                    var fields =
+                        SQLiteConnection.ParseConnectionString(null, value, false, mode == 'A', false);
+                    if (mode == 'C')
+                    {
+                        string path = (string) typeof(SQLiteConnection)
+                                          .GetMethod("FindKey", BindingFlags.Static | BindingFlags.NonPublic)
+                                          .Invoke(null, new object[] { fields, "Data Source", null });
+                        if (string.IsNullOrEmpty(path))
+                        {
+                            fields.TryGetValue("URI", out path);
+                            if (string.IsNullOrEmpty(path))
+                                throw new Exception();
+                            path = (string) typeof(SQLiteConnection)
+                                       .GetMethod("MapUriPath", BindingFlags.Static | BindingFlags.NonPublic)
+                                       .Invoke(null, new object[] { path });
+                        }
+                        if (string.Equals(path, ":memory:", StringComparison.OrdinalIgnoreCase))
+                            path = ":memory:";
+                        Console.WriteLine(Hex(path));
+                        continue;
+                    }
+                    string output = "";
+                    foreach (var item in fields)
+                        output += Hex(item.Key) + ":" + Hex(item.Value) + ";";
+                    Console.WriteLine(output);
+                }
+            }
+            catch
+            {
+                Console.WriteLine("EX");
+            }
+        }
+    }
 }

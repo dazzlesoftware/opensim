@@ -1,8 +1,127 @@
-using System;using System.IO;using System.Net;using System.Text;using System.Collections.Generic;using OpenMetaverse;using OpenMetaverse.StructuredData;using OpenSim.Framework;using GridRegion=OpenSim.Services.Interfaces.GridRegion;
-namespace OpenSim.Services.Interfaces{public class GridRegion{public UUID RegionID;public int RegionLocX,RegionLocY;public string RegionName,RawServerURI;}}
-public class IOSHttpRequest{public IPEndPoint RemoteIPEndPoint;}public class IOSHttpResponse{public int StatusCode=211;public byte[] RawBuffer=Encoding.UTF8.GetBytes("before");public bool KeepAlive=true;}
-public class PostLogger{public void InfoFormat(string s,params object[] args){}public void WarnFormat(string s,params object[] args){}}
-public class AgentDestinationData{public int x,y;public string name;public UUID uuid;public uint flags;public bool fromLogin;}
-namespace OpenSim.Framework{public static class Util{public static Encoding UTF8=Encoding.UTF8;}}
-public partial class PostReference{Service m_SimulationService;PostLogger m_log=new();static string H(string s)=>Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();class Service{public int Profile;public string Trace="";OSDMap Region(GridRegion r,bool raw){var m=new OSDMap{{"id",OSD.FromString(r.RegionID.ToString())},{"x",OSD.FromInteger(r.RegionLocX)},{"y",OSD.FromInteger(r.RegionLocY)},{"name",r.RegionName==null?new OSD():OSD.FromString(r.RegionName)}};if(raw)m["uri"]=r.RawServerURI==null?new OSD():OSD.FromString(r.RawServerURI);return m;}public bool CreateAgent(GridRegion source,GridRegion destination,AgentCircuitData circuit,uint flags,EntityTransferContext context,out string reason){var value=new OSDMap{{"source",source==null?new OSD():Region(source,true)},{"destination",Region(destination,false)},{"flags",OSD.FromString(flags.ToString())},{"context",context.Pack()},{"circuit",circuit.PackAgentCircuitData(context)}};Trace=OSDParser.SerializeJsonString(value,true);if((Profile&2)!=0)throw new Exception();if((Profile&4)!=0){context.OutboundVersion=.4f;circuit.firstname="mutated";}reason=(Profile&1)!=0?"denied":"";return (Profile&1)==0;}}
- public static void Main(){Culture.SetCurrentCulture();string line;while((line=Console.ReadLine())!=null){var p=line.Split(' ');int profile=int.Parse(p[0]);var service=new Service{Profile=profile};var handler=new PostReference{m_SimulationService=(profile&8)!=0?null:service};var response=new IOSHttpResponse();var request=new IOSHttpRequest{RemoteIPEndPoint=(profile&16)!=0?null:new IPEndPoint(IPAddress.Parse((profile&32)!=0?"2001:db8::5":"192.0.2.5"),0)};bool failed=false;try{handler.DoAgentPost((OSDMap)OSDParser.DeserializeJson(Encoding.UTF8.GetString(Convert.FromHexString(p[1]))),request,response,new UUID("00000000-0000-0000-0000-000000000099"));}catch{failed=true;}Console.WriteLine((failed?1:0)+"|"+response.StatusCode+"|"+(response.KeepAlive?1:0)+"|"+Convert.ToHexString(response.RawBuffer).ToLowerInvariant()+"|"+H(service.Trace));}}}
+using System;
+using System.IO;
+using System.Net;
+using System.Text;
+using System.Collections.Generic;
+using OpenMetaverse;
+using OpenMetaverse.StructuredData;
+using OpenSim.Framework;
+using GridRegion = OpenSim.Services.Interfaces.GridRegion;
+namespace OpenSim.Services.Interfaces
+{
+    public class GridRegion
+    {
+        public UUID RegionID;
+        public int RegionLocX, RegionLocY;
+        public string RegionName, RawServerURI;
+    }
+}
+public class IOSHttpRequest
+{
+    public IPEndPoint RemoteIPEndPoint;
+}
+public class IOSHttpResponse
+{
+    public int StatusCode = 211;
+    public byte[] RawBuffer = Encoding.UTF8.GetBytes("before");
+    public bool KeepAlive = true;
+}
+public class PostLogger
+{
+    public void InfoFormat(string s, params object[] args)
+    {
+    }
+    public void WarnFormat(string s, params object[] args)
+    {
+    }
+}
+public class AgentDestinationData
+{
+    public int x, y;
+    public string name;
+    public UUID uuid;
+    public uint flags;
+    public bool fromLogin;
+}
+namespace OpenSim.Framework
+{
+    public static class Util
+    {
+        public static Encoding UTF8 = Encoding.UTF8;
+    }
+}
+public partial class PostReference
+{
+    Service m_SimulationService;
+    PostLogger m_log = new();
+    static string H(string s) => Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();
+    class Service
+    {
+        public int Profile;
+        public string Trace = "";
+        OSDMap Region(GridRegion r, bool raw)
+        {
+            var m =
+                new OSDMap { { "id", OSD.FromString(r.RegionID.ToString()) },
+                             { "x", OSD.FromInteger(r.RegionLocX) },
+                             { "y", OSD.FromInteger(r.RegionLocY) },
+                             { "name", r.RegionName == null ? new OSD() : OSD.FromString(r.RegionName) } };
+            if (raw)
+                m["uri"] = r.RawServerURI == null ? new OSD() : OSD.FromString(r.RawServerURI);
+            return m;
+        }
+        public bool CreateAgent(GridRegion source, GridRegion destination, AgentCircuitData circuit,
+                                uint flags, EntityTransferContext context, out string reason)
+        {
+            var value = new OSDMap { { "source", source == null ? new OSD() : Region(source, true) },
+                                     { "destination", Region(destination, false) },
+                                     { "flags", OSD.FromString(flags.ToString()) },
+                                     { "context", context.Pack() },
+                                     { "circuit", circuit.PackAgentCircuitData(context) } };
+            Trace = OSDParser.SerializeJsonString(value, true);
+            if ((Profile & 2) != 0)
+                throw new Exception();
+            if ((Profile & 4) != 0)
+            {
+                context.OutboundVersion = .4f;
+                circuit.firstname = "mutated";
+            }
+            reason = (Profile & 1) != 0 ? "denied" : "";
+            return (Profile & 1) == 0;
+        }
+    }
+    public static void Main()
+    {
+        Culture.SetCurrentCulture();
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var p = line.Split(' ');
+            int profile = int.Parse(p[0]);
+            var service = new Service { Profile = profile };
+            var handler = new PostReference { m_SimulationService = (profile & 8) != 0 ? null : service };
+            var response = new IOSHttpResponse();
+            var request = new IOSHttpRequest {
+                RemoteIPEndPoint =
+                    (profile & 16) != 0
+                        ? null
+                        : new IPEndPoint(IPAddress.Parse((profile & 32) != 0 ? "2001:db8::5" : "192.0.2.5"),
+                                         0)
+            };
+            bool failed = false;
+            try
+            {
+                handler.DoAgentPost(
+                    (OSDMap)OSDParser.DeserializeJson(Encoding.UTF8.GetString(Convert.FromHexString(p[1]))),
+                    request, response, new UUID("00000000-0000-0000-0000-000000000099"));
+            }
+            catch
+            {
+                failed = true;
+            }
+            Console.WriteLine(
+                (failed ? 1 : 0) + "|" + response.StatusCode + "|" + (response.KeepAlive ? 1 : 0) + "|" +
+                Convert.ToHexString(response.RawBuffer).ToLowerInvariant() + "|" + H(service.Trace));
+        }
+    }
+}

@@ -275,6 +275,18 @@ void world_tests() {
     const auto linked = world.add(child);
     check(linked && linked->parent_id == root->local_id && !linked->attached_to_backup,
           "linked child retains parent and has no separate backup registration");
+    {
+        scene::World bounds_world({}, 16, 16);
+        const auto box = bounds_world.add(scene::SceneObject::primitive(owner, {4, 4, 4}, {2, 2, 2}));
+        auto offset = scene::SceneObject::primitive(owner, {3, 0, 0}, {2, 4, 2});
+        offset.parent_id = box->local_id;
+        offset.rotation = {0, 0, .70710678f, .70710678f};
+        const auto child_box = bounds_world.add(offset);
+        const auto [lower, upper] = bounds_world.bounding_box(child_box->id);
+        check(lower.x == -1 && std::abs(lower.y + 1.f) < .00001f && lower.z == -1 &&
+                  std::abs(upper.x - 5.f) < .00001f && std::abs(upper.y - 1.f) < .00001f && upper.z == 1,
+              "linkset bounds include rotated child in the root coordinate system");
+    }
     world.drain_events();
     check(!world.object(root->id)->changed, "root starts clean before child rename");
     check(world.update_object_text(child.id, false, "Renamed child"), "rename linked child");

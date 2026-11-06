@@ -1,4 +1,6 @@
 #include "opensim/scene/object_update.hpp"
+#include "opensim/scene/object_asset_xml.hpp"
+#include "opensim/framework/text.hpp"
 #include <iostream>
 #include <iomanip>
 #include <stdexcept>
@@ -106,12 +108,40 @@ int main(int argc, char**) {
         }
         o = object(1, 0);
         o.parent_id = 42;
+        o.texture_animation = {3, 255, 4, 8, 0, 0, 160, 63, 0, 0, 32, 64, 0, 0, 64, 192};
         const auto child =
             network::lludp::decode_datagram(network::lludp::encode_datagram(object_update(o, 123, 1)));
         const auto& linked = child.block("ObjectData");
         if (std::get<std::uint64_t>(linked.at("ParentID")) != 42 ||
-            !std::get<std::vector<std::uint8_t>>(linked.at("NameValue")).empty())
+            !std::get<std::vector<std::uint8_t>>(linked.at("NameValue")).empty() ||
+            std::get<std::vector<std::uint8_t>>(linked.at("TextureAnim")) != o.texture_animation)
             throw std::runtime_error("linked child fields on the wire");
+        ObjectAssetPart asset_part{o, 0, {}};
+        asset_part.object.parent_id = 0;
+        asset_part.object.buoyancy = 1.25f;
+        asset_part.object.force = {1.f, -2.f, 3.f};
+        asset_part.object.torque = {-4.f, 5.f, -6.f};
+        std::u16string asset_xml;
+        framework::XmlTextWriterIo io;
+        io.encoding = [] { return std::shared_ptr<framework::NativeXmlTextEncoding>{}; };
+        io.write = [&](auto, auto text) {
+            if (text)
+                asset_xml.append(*text);
+        };
+        io.write_array = [&](auto data, int offset, int count) { asset_xml.append(data->data() + offset, count); };
+        io.write_whole_array = [&](auto data) { asset_xml.append(data->data(), data->size()); };
+        framework::NativeXmlTextWriter writer(std::move(io));
+        write_object_asset_xml(writer, asset_part, {});
+        const auto utf8 = framework::utf8(asset_xml);
+        const auto restored = read_object_asset_xml(std::vector<std::uint8_t>(utf8.begin(), utf8.end()));
+        if (!restored || restored->linksets.at(0).parts.at(0).object.texture_animation != o.texture_animation)
+            throw std::runtime_error("texture animation did not survive object asset serialization");
+        if (restored->linksets.at(0).parts.at(0).object.buoyancy != asset_part.object.buoyancy)
+            throw std::runtime_error("buoyancy did not survive object asset serialization");
+        if (restored->linksets.at(0).parts.at(0).object.force != asset_part.object.force)
+            throw std::runtime_error("force did not survive object asset serialization");
+        if (restored->linksets.at(0).parts.at(0).object.torque != asset_part.object.torque)
+            throw std::runtime_error("torque did not survive object asset serialization");
         o = object(1, 0);
         o.is_attachment = true;
         o.parent_id = 42;

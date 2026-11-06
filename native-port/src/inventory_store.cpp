@@ -175,11 +175,22 @@ InventoryFolderStore::InventoryFolderStore(const std::string &path, bool initial
     if (initialize) {
         impl_->execute("BEGIN TRANSACTION");
         impl_->execute(
-            "CREATE TABLE inventoryfolders(folderName varchar(64),type integer,version integer,folderID varchar(36) primary key,agentID varchar(36) not null default '00000000-0000-0000-0000-000000000000',parentFolderID varchar(36) not null default '00000000-0000-0000-0000-000000000000')");
+            "CREATE TABLE inventoryfolders(folderName varchar(64),type integer,version integer,folderID "
+            "varchar(36) primary key,agentID varchar(36) not null default "
+            "'00000000-0000-0000-0000-000000000000',parentFolderID varchar(36) not null default "
+            "'00000000-0000-0000-0000-000000000000')");
         impl_->execute("CREATE INDEX inventoryfolders_agentid ON inventoryfolders(agentID)");
         impl_->execute("CREATE INDEX inventoryfolders_parentid ON inventoryfolders(parentFolderID)");
         impl_->execute(
-            "CREATE TABLE inventoryitems(assetID varchar(36),assetType integer,inventoryName varchar(64),inventoryDescription varchar(128),inventoryNextPermissions integer,inventoryCurrentPermissions integer,invType integer,creatorID varchar(128),inventoryBasePermissions integer,inventoryEveryOnePermissions integer,salePrice integer default 99,saleType integer default 0,creationDate integer default 2000,groupID varchar(36) default '00000000-0000-0000-0000-000000000000',groupOwned integer default 0,flags integer default 0,inventoryID varchar(36) primary key,parentFolderID varchar(36) not null default '00000000-0000-0000-0000-000000000000',avatarID varchar(36) not null default '00000000-0000-0000-0000-000000000000',inventoryGroupPermissions integer not null default 0)");
+            "CREATE TABLE inventoryitems(assetID varchar(36),assetType integer,inventoryName varchar(64),"
+            "inventoryDescription varchar(128),inventoryNextPermissions integer,inventoryCurrentPermissions "
+            "integer,invType integer,creatorID varchar(128),inventoryBasePermissions integer,"
+            "inventoryEveryOnePermissions integer,salePrice integer default 99,saleType integer default 0,"
+            "creationDate integer default 2000,groupID varchar(36) default "
+            "'00000000-0000-0000-0000-000000000000',groupOwned integer default 0,flags integer default 0,"
+            "inventoryID varchar(36) primary key,parentFolderID varchar(36) not null default "
+            "'00000000-0000-0000-0000-000000000000',avatarID varchar(36) not null default "
+            "'00000000-0000-0000-0000-000000000000',inventoryGroupPermissions integer not null default 0)");
         impl_->execute("CREATE INDEX inventoryitems_parentfolderid ON inventoryitems(parentFolderID)");
         impl_->execute("CREATE INDEX inventoryitems_avatarid ON inventoryitems(avatarID)");
         impl_->execute("COMMIT");

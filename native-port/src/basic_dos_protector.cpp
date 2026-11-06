@@ -39,7 +39,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace opensim::framework {
 namespace {
 std::int32_t capacity(const std::shared_ptr<BasicDosProtectorOptions>& options) {
-    if (!options) throw std::invalid_argument("Null DOS protector options");
+    if (!options)
+        throw std::invalid_argument("Null DOS protector options");
     return wrapping_add(options->max_requests_in_timeframe, 1);
 }
 std::string milliseconds(double value) {
@@ -62,7 +63,8 @@ BasicDOSProtector::BasicDOSProtector(std::shared_ptr<BasicDosProtectorOptions> o
     general_request_times_.put(0);
     if (!(timer_interval_ms_ > 0) || timer_interval_ms_ > 2147483647.0)
         throw std::invalid_argument("Invalid cleanup timer interval");
-    if (automatic_cleanup) timer_ = std::thread([this] { timer_loop(); });
+    if (automatic_cleanup)
+        timer_ = std::thread([this] { timer_loop(); });
 }
 BasicDOSProtector::~BasicDOSProtector() {
     {
@@ -70,10 +72,12 @@ BasicDOSProtector::~BasicDOSProtector() {
         stopping_ = true;
         timer_changed_.notify_all();
     }
-    if (timer_.joinable()) timer_.join();
+    if (timer_.joinable())
+        timer_.join();
 }
 void BasicDOSProtector::timer_enabled(bool enabled) {
-    if (timer_enabled_ == enabled) return;
+    if (timer_enabled_ == enabled)
+        return;
     timer_enabled_ = enabled;
     ++timer_generation_;
     timer_changed_.notify_all();
@@ -86,25 +90,32 @@ void BasicDOSProtector::timer_loop() {
     std::unique_lock lock(mutex_);
     while (!stopping_) {
         timer_changed_.wait(lock, [this] { return stopping_ || timer_enabled_; });
-        if (stopping_) break;
+        if (stopping_)
+            break;
         const auto generation = timer_generation_;
         const auto interval = std::chrono::milliseconds(static_cast<std::int64_t>(std::ceil(timer_interval_ms_)));
         if (timer_changed_.wait_for(lock, interval, [this, generation] {
                 return stopping_ || !timer_enabled_ || timer_generation_ != generation;
-            })) continue;
+            }))
+            continue;
         // System.Timers.Timer suppresses exceptions raised by Elapsed handlers.
-        try { expire_blocks(); } catch (...) { }
+        try {
+            expire_blocks();
+        } catch (...) {
+        }
     }
 }
 void BasicDOSProtector::log(const std::string& level, const std::string& message) const {
-    if (logger_) logger_(level, message);
+    if (logger_)
+        logger_(level, message);
 }
 bool BasicDOSProtector::is_blocked(const std::string& key) const {
     std::lock_guard lock(mutex_);
     return temp_blocked_.contains(key);
 }
 bool BasicDOSProtector::throttled() const {
-    if (options_->throttled_action == ThrottleAction::DoThrottledMethod) return false;
+    if (options_->throttled_action == ThrottleAction::DoThrottledMethod)
+        return false;
     throw ThrottledError();
 }
 std::int32_t BasicDOSProtector::deadline() const {
@@ -112,8 +123,10 @@ std::int32_t BasicDOSProtector::deadline() const {
 }
 bool BasicDOSProtector::process(const std::string& key, const std::string& endpoint) {
     std::lock_guard lock(mutex_);
-    if (options_->max_requests_in_timeframe < 1 || options_->request_time_span_ms < 1) return true;
-    if (temp_blocked_.contains(key)) return throttled();
+    if (options_->max_requests_in_timeframe < 1 || options_->request_time_span_ms < 1)
+        return true;
+    if (temp_blocked_.contains(key))
+        return throttled();
     general_request_times_.put(clock_());
     if (options_->max_concurrent_sessions > 0) {
         auto found = sessions_.find(key);
@@ -132,7 +145,8 @@ bool BasicDOSProtector::process(const std::string& key, const std::string& endpo
     }
     if (general_request_times_.size() == general_request_times_.capacity() &&
         environment_tick_count_subtract(clock_(), general_request_times_.get()) < options_->request_time_span_ms) {
-        if (deeper_inspection(key, endpoint)) return true;
+        if (deeper_inspection(key, endpoint))
+            return true;
         return throttled();
     }
     return true;
@@ -140,10 +154,12 @@ bool BasicDOSProtector::process(const std::string& key, const std::string& endpo
 void BasicDOSProtector::process_end(const std::string& key, const std::string& /*endpoint*/) {
     std::lock_guard lock(mutex_);
     auto found = sessions_.find(key);
-    if (found == sessions_.end()) sessions_.emplace(key, 1);
-    else {
+    if (found == sessions_.end()) {
+        sessions_.emplace(key, 1);
+    } else {
         found->second = wrapping_add(found->second, -1);
-        if (found->second <= 0) sessions_.erase(found);
+        if (found->second <= 0)
+            sessions_.erase(found);
     }
 }
 bool BasicDOSProtector::deeper_inspection(const std::string& key, const std::string& endpoint) {
@@ -171,13 +187,15 @@ void BasicDOSProtector::expire_blocks() {
     timer_enabled(false);
     std::vector<std::string> removes;
     for (const auto& [key, when] : temp_blocked_)
-        if (environment_tick_count_subtract(clock_(), when) > 0) removes.push_back(key);
+        if (environment_tick_count_subtract(clock_(), when) > 0)
+            removes.push_back(key);
     for (const auto& key : removes) {
         temp_blocked_.erase(key);
         deeper_inspection_.erase(key);
         sessions_.erase(key);
         log("info", "[" + options_->reporting_name + "] client: " + key + " is no longer blocked.");
     }
-    if (!temp_blocked_.empty()) timer_enabled(true);
+    if (!temp_blocked_.empty())
+        timer_enabled(true);
 }
 }

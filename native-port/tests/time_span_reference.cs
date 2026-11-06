@@ -1,4 +1,34 @@
-using System;using System.Globalization;
-static class Program{
- static void Main(string[] args){CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;Console.OutputEncoding=new System.Text.UTF8Encoding(false);if(args.Length>0){Console.WriteLine(Environment.Version);Console.WriteLine(typeof(TimeSpan).Assembly.Location);return;}string line;while((line=Console.ReadLine())!=null){var values=line.Split(' ');ulong bits=ulong.Parse(values[1],NumberStyles.HexNumber,CultureInfo.InvariantCulture);try{var span=values[0]=="h"?TimeSpan.FromHours(BitConverter.UInt64BitsToDouble(bits)):new TimeSpan(unchecked((long)bits));Console.WriteLine("OK|"+span.Ticks+"|"+BitConverter.DoubleToUInt64Bits(span.TotalHours));}catch(Exception e){Console.WriteLine("EX|"+e.GetType().Name+"|"+e.Message+"|"+e.HResult+"|"+(e is ArgumentException arg?arg.ParamName:""));}}}
+using System;
+using System.Globalization;
+static class Program
+{
+    static void Main(string[] args)
+    {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        Console.OutputEncoding = new System.Text.UTF8Encoding(false);
+        if (args.Length > 0)
+        {
+            Console.WriteLine(Environment.Version);
+            Console.WriteLine(typeof(TimeSpan).Assembly.Location);
+            return;
+        }
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var values = line.Split(' ');
+            ulong bits = ulong.Parse(values[1], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+            try
+            {
+                var span = values[0] == "h" ? TimeSpan.FromHours(BitConverter.UInt64BitsToDouble(bits))
+                                            : new TimeSpan(unchecked((long)bits));
+                Console.WriteLine("OK|" + span.Ticks + "|" +
+                                  BitConverter.DoubleToUInt64Bits(span.TotalHours));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("EX|" + e.GetType().Name + "|" + e.Message + "|" + e.HResult + "|" +
+                                  (e is ArgumentException arg ? arg.ParamName : ""));
+            }
+        }
+    }
 }

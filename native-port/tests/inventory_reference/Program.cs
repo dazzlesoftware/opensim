@@ -31,24 +31,100 @@ using System.Collections.Generic;
 using OpenMetaverse;
 using OpenSim.Framework;
 using OpenSim.Services.InventoryService;
-static class Program {
+static class Program
+{
     public static Database Database;
     public static bool AllowDelete;
-    static UUID Id(int value)=>new UUID("00000000-0000-0000-0000-"+value.ToString("x12"));
-    static void Main(){string line;while((line=Console.ReadLine())!=null){try{Run(int.Parse(line));}catch(Exception error){Console.WriteLine("ERROR:"+error);}}}
-    static void Run(int seed){
-        Database=new();AllowDelete=seed%2==0;var service=new XInventoryService(new Nini.Config.Source());var owner=Id(1);var other=Id(2);var observations=new List<string>();
-        void Flag(bool value)=>observations.Add(value?"1":"0");
-        Flag(service.CreateUserInventory(owner));for(int i=0;i<seed%3;++i)Flag(service.CreateUserInventory(owner));var root=service.GetRootFolder(owner);
-        var folder=new InventoryFolderBase(Id(100),"Ordinary",owner,-1,root.ID,(ushort)(seed+1));Flag(service.AddFolder(folder));Flag(service.AddFolder(folder));folder.Name="Edited";folder.Version=0;Flag(service.UpdateFolder(folder));
-        var system=service.GetFolderForType(owner,FolderType.Object);system.Name="Override";system.Version=(ushort)(system.Version+seed);Flag(service.UpdateFolder(system));
-        var item=new InventoryItemBase{ID=Id(200),Owner=owner,Folder=folder.ID,AssetID=Id(300),AssetType=6,InvType=6,CreatorIdentification=owner+";https://grid.invalid",Name=new string('x',70),Description="Description",CurrentPermissions=0x80004000,SaleType=255,GroupOwned=true};
-        Flag(service.AddItem(item));var initial=service.GetItem(other,item.ID);observations.Add(initial.CreatorIdentification);observations.Add(initial.Name.Length.ToString());
-        item.Owner=other;item.Folder=root.ID;item.AssetType=21;item.InvType=21;item.CreatorIdentification="different";item.Name="Updated";item.AssetID=Id(301);Flag(service.UpdateItem(item));
-        Flag(item.Owner==owner&&item.Folder==folder.ID&&item.AssetType==6&&item.InvType==6);observations.Add(item.CreatorIdentification);Flag(service.GetItem(owner,item.ID).AssetID==Id(301));
-        var link=new InventoryItemBase{ID=Id(201),Owner=owner,Folder=folder.ID,AssetID=Id(300),AssetType=24,InvType=6,CreatorIdentification=owner.ToString(),Name="Link",Description=""};Flag(service.AddItem(link));Flag(service.UpdateItem(link));Flag(service.DeleteItems(other,new(){item.ID,link.ID}));Flag(service.GetItem(owner,item.ID)!=null);Flag(service.GetItem(owner,link.ID)!=null);
-        var contents=service.GetFolderContent(other,folder.ID);Flag(contents.OwnerID==owner);observations.Add(contents.Items.Count.ToString());
-        var skeleton=service.GetInventorySkeleton(owner);var names=skeleton.ToDictionary(x=>x.ID,x=>x.Name);observations.AddRange(skeleton.Select(x=>x.Name+":"+x.Type+":"+x.Version+":"+(x.ParentID==UUID.Zero?"-":names.GetValueOrDefault(x.ParentID,"?"))).OrderBy(x=>x,StringComparer.Ordinal));
-        Console.WriteLine(string.Join("|",observations));
+    static UUID Id(int value) => new UUID("00000000-0000-0000-0000-" + value.ToString("x12"));
+    static void Main()
+    {
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            try
+            {
+                Run(int.Parse(line));
+            }
+            catch (Exception error)
+            {
+                Console.WriteLine("ERROR:" + error);
+            }
+        }
+    }
+    static void Run(int seed)
+    {
+        Database = new();
+        AllowDelete = seed % 2 == 0;
+        var service = new XInventoryService(new Nini.Config.Source());
+        var owner = Id(1);
+        var other = Id(2);
+        var observations = new List<string>();
+        void Flag(bool value) => observations.Add(value ? "1" : "0");
+        Flag(service.CreateUserInventory(owner));
+        for (int i = 0; i < seed % 3; ++i)
+            Flag(service.CreateUserInventory(owner));
+        var root = service.GetRootFolder(owner);
+        var folder = new InventoryFolderBase(Id(100), "Ordinary", owner, -1, root.ID, (ushort)(seed + 1));
+        Flag(service.AddFolder(folder));
+        Flag(service.AddFolder(folder));
+        folder.Name = "Edited";
+        folder.Version = 0;
+        Flag(service.UpdateFolder(folder));
+        var system = service.GetFolderForType(owner, FolderType.Object);
+        system.Name = "Override";
+        system.Version = (ushort)(system.Version + seed);
+        Flag(service.UpdateFolder(system));
+        var item = new InventoryItemBase { ID = Id(200),
+                                           Owner = owner,
+                                           Folder = folder.ID,
+                                           AssetID = Id(300),
+                                           AssetType = 6,
+                                           InvType = 6,
+                                           CreatorIdentification = owner + ";https://grid.invalid",
+                                           Name = new string('x', 70),
+                                           Description = "Description",
+                                           CurrentPermissions = 0x80004000,
+                                           SaleType = 255,
+                                           GroupOwned = true };
+        Flag(service.AddItem(item));
+        var initial = service.GetItem(other, item.ID);
+        observations.Add(initial.CreatorIdentification);
+        observations.Add(initial.Name.Length.ToString());
+        item.Owner = other;
+        item.Folder = root.ID;
+        item.AssetType = 21;
+        item.InvType = 21;
+        item.CreatorIdentification = "different";
+        item.Name = "Updated";
+        item.AssetID = Id(301);
+        Flag(service.UpdateItem(item));
+        Flag(item.Owner == owner && item.Folder == folder.ID && item.AssetType == 6 && item.InvType == 6);
+        observations.Add(item.CreatorIdentification);
+        Flag(service.GetItem(owner, item.ID).AssetID == Id(301));
+        var link = new InventoryItemBase { ID = Id(201),
+                                           Owner = owner,
+                                           Folder = folder.ID,
+                                           AssetID = Id(300),
+                                           AssetType = 24,
+                                           InvType = 6,
+                                           CreatorIdentification = owner.ToString(),
+                                           Name = "Link",
+                                           Description = "" };
+        Flag(service.AddItem(link));
+        Flag(service.UpdateItem(link));
+        Flag(service.DeleteItems(other, new() { item.ID, link.ID }));
+        Flag(service.GetItem(owner, item.ID) != null);
+        Flag(service.GetItem(owner, link.ID) != null);
+        var contents = service.GetFolderContent(other, folder.ID);
+        Flag(contents.OwnerID == owner);
+        observations.Add(contents.Items.Count.ToString());
+        var skeleton = service.GetInventorySkeleton(owner);
+        var names = skeleton.ToDictionary(x => x.ID, x => x.Name);
+        observations.AddRange(
+            skeleton
+                .Select(x => x.Name + ":" + x.Type + ":" + x.Version + ":" +
+                             (x.ParentID == UUID.Zero ? "-" : names.GetValueOrDefault(x.ParentID, "?")))
+                .OrderBy(x => x, StringComparer.Ordinal));
+        Console.WriteLine(string.Join("|", observations));
     }
 }

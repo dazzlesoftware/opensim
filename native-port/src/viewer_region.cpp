@@ -3,6 +3,7 @@
 #include "opensim/scene/viewer_region.hpp"
 #include "opensim/framework/sdk_quaternion.hpp"
 #include "opensim/scene/terrain_layer.hpp"
+#include <algorithm>
 #include <ctime>
 #include <cmath>
 namespace opensim::scene {
@@ -27,7 +28,13 @@ Vector3 vector(const lludp::FieldValue& value) {
 std::uint32_t number(const lludp::Block& block, const char* name) {
     return static_cast<std::uint32_t>(std::get<std::uint64_t>(block.at(name)));
 }
-Quaternion camera_rotation(Vector3 forward, Vector3 left, Vector3 up) {
+Vector3 camera_axis_normalized(Vector3 axis) {
+    const float length = std::sqrt(axis.x * axis.x + axis.y * axis.y + axis.z * axis.z);
+    if (length > 0.f)
+        return {axis.x / length, axis.y / length, axis.z / length};
+    return {};
+}
+Quaternion rotation_from_axes(Vector3 forward, Vector3 left, Vector3 up) {
     const float trace = forward.x + left.y + up.z + 1.f;
     if (trace >= 1.f) {
         const float scale = .5f / std::sqrt(trace);
@@ -72,6 +79,41 @@ void ViewerRegion::callbacks(Event handshake, Event entered, Event logout, Event
     closed_ = std::move(closed);
     other_ = std::move(other);
 }
+namespace {
+constexpr std::uint32_t block_flight = 0x80000u;
+constexpr std::uint32_t fly_control = 0x2000u;
+
+void apply_arrival_state(ViewerAgent& value, std::uint32_t region_flags) {
+    const auto& circuit = value.circuit;
+    value.position = circuit->start_position;
+    value.camera_position = value.position;
+    if (const auto& camera = circuit->transfer_camera) {
+        value.camera_position = camera->center;
+        value.camera_at_axis = camera->at_axis;
+        value.camera_left_axis = camera->left_axis;
+        value.camera_up_axis = camera->up_axis;
+        value.camera_rotation = rotation_from_axes(camera->at_axis, camera->left_axis, camera->up_axis);
+    }
+    if (circuit->transfer_look_at)
+        value.look_at = *circuit->transfer_look_at;
+    if (const auto& movement = circuit->transfer_movement) {
+        const auto& velocity = movement->velocity;
+        if (std::isfinite(velocity.x) && std::isfinite(velocity.y) && std::isfinite(velocity.z))
+            value.velocity = velocity;
+        const auto& rotation = movement->rotation;
+        const float squared_length = rotation.x * rotation.x + rotation.y * rotation.y +
+                                     rotation.z * rotation.z + rotation.w * rotation.w;
+        if (squared_length > 0.f && std::isfinite(squared_length))
+            value.rotation = rotation;
+        value.controls = movement->controls;
+        value.always_run = movement->always_run;
+    }
+    value.flying = (region_flags & block_flight) == 0 &&
+                   ((circuit->teleport_flags & 8192u) != 0 || (value.controls & fly_control) != 0);
+    if (value.flying)
+        value.controls |= fly_control;
+}
+}
 bool ViewerRegion::admit(const std::shared_ptr<AgentCircuitData>& circuit, const Login& login,
                          const UdpEndpoint& endpoint) {
     if (!admission_ || !admission_(circuit, login, endpoint))
@@ -80,13 +122,8 @@ bool ViewerRegion::admit(const std::shared_ptr<AgentCircuitData>& circuit, const
     value.circuit = circuit;
     value.endpoint = endpoint;
     value.local_id = world_.allocate_local_id();
-    value.position = circuit->start_position;
     value.connected = true;
-    if (circuit->transfer_look_at)
-        value.look_at = *circuit->transfer_look_at;
-    value.flying = (circuit->teleport_flags & 8192u) != 0;
-    if (value.flying)
-        value.controls |= 0x2000u;
+    apply_arrival_state(value, region_flags());
     std::lock_guard lock(mutex_);
     const auto id = circuit->agent_id;
     const auto [entry, inserted] = agents_.try_emplace(id, std::move(value));
@@ -109,6 +146,73 @@ std::optional<ViewerAgent> ViewerRegion::agent(Uuid id) const {
     std::lock_guard lock(mutex_);
     auto i = agents_.find(id);
     return i == agents_.end() ? std::nullopt : std::optional(i->second);
+}
+std::optional<ViewerAgent> ViewerRegion::demote_after_crossing(Uuid id, Uuid session) {
+    std::lock_guard lock(mutex_);
+    const auto entry = agents_.find(id);
+    if (entry == agents_.end() || entry->second.circuit->session_id != session ||
+        !entry->second.root || entry->second.logout_requested)
+        return std::nullopt;
+    auto& avatar = entry->second;
+    avatar.root = false;
+    avatar.crossed_child = true;
+    avatar.crossing_arrival_ready = false;
+    avatar.seat.reset();
+    avatar.ground_sitting = false;
+    avatar.controls = 0;
+    avatar.velocity = {};
+    avatar.acceleration = {};
+    return avatar;
+}
+bool ViewerRegion::stage_crossing_arrival(const std::shared_ptr<AgentCircuitData>& circuit) {
+    std::lock_guard lock(mutex_);
+    const auto entry = agents_.find(circuit->agent_id);
+    if (entry == agents_.end() || !entry->second.crossed_child || entry->second.logout_requested ||
+        entry->second.circuit->session_id != circuit->session_id)
+        return false;
+    entry->second.circuit = circuit;
+    entry->second.crossing_arrival_ready = true;
+    return true;
+}
+void ViewerRegion::cancel_crossing_arrival(Uuid id, Uuid session) {
+    std::lock_guard lock(mutex_);
+    const auto entry = agents_.find(id);
+    if (entry != agents_.end() && entry->second.crossed_child && entry->second.circuit->session_id == session)
+        entry->second.crossing_arrival_ready = false;
+}
+void ViewerRegion::restore_transferred_seat(ViewerAgent& avatar) {
+    const auto& transfer = avatar.circuit->transfer_seat;
+    if (!transfer)
+        return;
+    const auto part = world_.object(transfer->part);
+    if (!part || part->is_attachment)
+        return;
+    const auto root = part->parent_id ? world_.object(part->parent_id) : part;
+    if (!root)
+        return;
+    auto offset = transfer->offset;
+    if (!std::isfinite(offset.x) || !std::isfinite(offset.y) || !std::isfinite(offset.z))
+        return;
+    if (transfer->explicit_target && std::ranges::any_of(agents_, [&](const auto& entry) {
+            const auto& seat = entry.second.seat;
+            return seat && seat->explicit_target && seat->part == part->id;
+        }))
+        return;
+
+    auto rotation = avatar.rotation;
+    if (part->parent_id) {
+        offset = framework::sdk_rotate_vector(offset, part->rotation);
+        offset = {offset.x + part->position.x, offset.y + part->position.y, offset.z + part->position.z};
+        rotation = framework::sdk_multiply_quaternion(part->rotation, rotation);
+    }
+    avatar.seat = ViewerAgent::Seat{part->id, root->local_id, offset, rotation,
+                                   transfer->explicit_target, ++seat_order_};
+    const auto world_offset = framework::sdk_rotate_vector(offset, root->rotation);
+    avatar.position = {root->position.x + world_offset.x, root->position.y + world_offset.y,
+                       root->position.z + world_offset.z};
+    avatar.velocity = {};
+    avatar.acceleration = {};
+    avatar.flying = false;
 }
 std::optional<ViewerAgent> ViewerRegion::update_physics(Uuid id, Uuid session, Vector3 position,
                                                         Vector3 velocity, Vector3 acceleration, bool flying) {
@@ -290,20 +394,25 @@ std::optional<ViewerAgent> ViewerRegion::update_active_group(Uuid id, Uuid sessi
     found->second.active_group_override = std::move(group);
     return found->second;
 }
+std::uint32_t ViewerRegion::region_flags() const {
+    return options_.current_region_flags ? options_.current_region_flags() : options_.region_flags;
+}
 lludp::Packet ViewerRegion::region_handshake(Uuid agent, bool terrain_pbr) const {
-    const auto flags =
-        options_.current_region_flags ? options_.current_region_flags() : options_.region_flags;
+    const auto flags = region_flags();
     auto p = lludp::make_packet("RegionHandshake");
     auto& r = p.block("RegionInfo");
     r["RegionFlags"] = std::uint64_t(flags);
     r["SimAccess"] = std::uint64_t(options_.current_access ? options_.current_access() : options_.access);
     r["SimName"] = text(options_.name);
-    r["SimOwner"] = options_.owner;
+    const auto [owner, billable_factor] = options_.current_estate_owner_and_billable_factor
+        ? options_.current_estate_owner_and_billable_factor()
+        : std::pair{options_.owner, options_.billable_factor};
+    r["SimOwner"] = owner;
     r["IsEstateManager"] = options_.estate_manager ? options_.estate_manager(agent)
-                                                   : (!agent.is_zero() && agent == options_.owner);
+                                                   : (!agent.is_zero() && agent == owner);
     r["WaterHeight"] = double(options_.current_water_height ? options_.current_water_height() :
                                                            options_.water_height);
-    r["BillableFactor"] = double(options_.billable_factor);
+    r["BillableFactor"] = double(billable_factor);
     r["CacheID"] = options_.cache_id;
     const char* corners[] = {"00", "01", "10", "11"};
     const auto heights = options_.terrain_texture_heights ? options_.terrain_texture_heights()
@@ -423,11 +532,26 @@ void ViewerRegion::packet(const CircuitConnection& connection, const lludp::Pack
             current.viewer_flags = number(p.block("RegionInfo"), "Flags");
             event = handshake_;
         } else if (p.spec->name == "CompleteAgentMovement") {
-            if (number(p.block("AgentData"), "CircuitCode") != connection.circuit_code || current.root)
+            if (number(p.block("AgentData"), "CircuitCode") != connection.circuit_code ||
+                current.root || (current.crossed_child && !current.crossing_arrival_ready))
                 return;
+            if (current.crossing_arrival_ready) {
+                current.appearance_override.reset();
+                current.active_group_override.reset();
+                current.mouselook_rotation.reset();
+                apply_arrival_state(current, region_flags());
+            }
+            restore_transferred_seat(current);
             if (options_.prepare_root)
                 options_.prepare_root(current);
+            // Teleports reset the camera center after landing. Crossings retain the transferred center.
+            if (current.circuit->teleport_flags != 0) {
+                current.camera_position = current.position;
+                current.velocity = {};
+            }
             current.root = true;
+            current.crossed_child = false;
+            current.crossing_arrival_ready = false;
             event = entered_;
             move = true;
         } else if (p.spec->name == "TeleportLocationRequest") {
@@ -446,6 +570,7 @@ void ViewerRegion::packet(const CircuitConnection& connection, const lludp::Pack
                 if (current.seat || current.ground_sitting)
                     before_seat_exit = current;
                 current.position = position;
+                current.camera_position = position;
                 current.seat.reset();
                 current.ground_sitting = false;
                 current.look_at = look_at;
@@ -462,18 +587,39 @@ void ViewerRegion::packet(const CircuitConnection& connection, const lludp::Pack
         } else if (p.spec->name == "AgentUpdate") {
             auto& b = p.block("AgentData");
             current.controls = number(b, "ControlFlags");
-            current.flying = !current.seat && !current.ground_sitting && (current.controls & 0x2000u) != 0;
+            current.agent_state = static_cast<std::uint8_t>(number(b, "State"));
+            current.flying = !current.seat && !current.ground_sitting &&
+                             (region_flags() & block_flight) == 0 && (current.controls & fly_control) != 0;
             current.look_at = vector(b.at("CameraAtAxis"));
+            current.camera_position = vector(b.at("CameraCenter"));
+            const auto left = vector(b.at("CameraLeftAxis"));
+            const auto up = vector(b.at("CameraUpAxis"));
+            current.camera_at_axis = camera_axis_normalized(current.look_at);
+            current.camera_left_axis = camera_axis_normalized(left);
+            current.camera_up_axis = camera_axis_normalized(up);
+            current.camera_rotation = rotation_from_axes(current.camera_at_axis,
+                                                        current.camera_left_axis,
+                                                        current.camera_up_axis);
             constexpr std::uint32_t mouselook = 0x40000u;
             if (current.controls & mouselook)
-                current.mouselook_rotation = camera_rotation(current.look_at, vector(b.at("CameraLeftAxis")),
-                                                             vector(b.at("CameraUpAxis")));
+                current.mouselook_rotation = rotation_from_axes(current.look_at, left, up);
             else
                 current.mouselook_rotation.reset();
             auto& q = std::get<std::vector<double>>(b.at("BodyRotation"));
             current.rotation = {static_cast<float>(q.at(0)), static_cast<float>(q.at(1)),
                                 static_cast<float>(q.at(2)), static_cast<float>(q.at(3))};
             other = other_;
+        } else if (p.spec->name == "AgentFOV") {
+            const auto& fov = p.block("FOVBlock");
+            const auto generation = number(fov, "GenCounter");
+            if (generation == 0 || generation > current.camera_fov_generation) {
+                current.camera_fov_generation = generation;
+                current.camera_fov = static_cast<float>(std::get<double>(fov.at("VerticalAngle")));
+            }
+        } else if (p.spec->name == "AgentHeightWidth") {
+            const auto& viewport = p.block("HeightWidthBlock");
+            current.view_width = number(viewport, "Width");
+            current.view_height = number(viewport, "Height");
         } else if (p.spec->name == "SetAlwaysRun") {
             current.always_run = std::get<bool>(p.block("AgentData").at("AlwaysRun"));
             other = other_;

@@ -1,12 +1,229 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
-using System;using System.Collections.Generic;using System.Globalization;using System.Reflection;using System.Runtime.CompilerServices;using System.Text;using Nini.Config;using OpenMetaverse;using OpenSim.Framework;using OpenSim.Data;using OriginalService=OpenSim.Services.AssetService.AssetService;
-namespace log4net{public interface ILog{void WarnFormat(string f,params object[] args);void ErrorFormat(string f,params object[] args);void Error(object message,Exception error);void DebugFormat(string f,params object[] args);void Debug(object message);}public class Log:ILog{public void WarnFormat(string f,params object[] args)=>Host.C.Event("warn:"+string.Format(f,args));public void ErrorFormat(string f,params object[] args){for(int i=0;i<args.Length;++i)if(args[i] is Exception)args[i]="";Host.C.Event("error:"+string.Format(f,args));}public void Error(object message,Exception error)=>Host.C.Event("error:"+message);public void DebugFormat(string f,params object[] args){}public void Debug(object message){}}public static class LogManager{public static ILog GetLogger(Type type)=>new Log();}}
-namespace OpenSim.Services.Base{public class ServiceBase{public ServiceBase(IConfigSource config){}public T LoadPlugin<T>(string value)=>throw new NotImplementedException();}}
-namespace OpenSim.Framework{public static class Util{public static string SHA1Hash(byte[] data)=>throw new NotImplementedException();}}
-static class Host{public static Context C;public static string Hex(string s)=>Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();}
-class Context{public string Trace="",Fail;public int Mode,Exist;public bool Stored,Deleted;public AssetBase A=new(),B=new();public Context(){A.ID="00000000-0000-0000-0000-000000000001";B.ID="00000000-0000-0000-0000-000000000002";A.Data=new byte[]{1};B.Data=new byte[]{2};}public void Event(string value){Trace+=value+";";if(!string.IsNullOrEmpty(Fail)&&value.StartsWith(Fail+":"))throw new Exception("log");}public string Name(AssetBase a)=>a==null?"N":ReferenceEquals(a,A)?"A":ReferenceEquals(a,B)?"B":"?";}
-class Store:IAssetDataPlugin{public AssetBase GetAsset(UUID id){var c=Host.C;c.Event("get:"+id);if(c.Mode==2)throw new Exception("get");return c.Mode==1?null:c.Mode==3?c.B:c.A;}public bool StoreAsset(AssetBase a){Host.C.Event("store:"+Host.C.Name(a));return Host.C.Stored;}public bool[] AssetsExist(UUID[] ids){string value="exists:";foreach(var id in ids)value+=id+",";Host.C.Event(value);if(Host.C.Exist==3)throw new Exception("exists");return Host.C.Exist==0?Array.Empty<bool>():new[]{Host.C.Exist==2};}public bool Delete(string id){Host.C.Event("delete:"+id);return Host.C.Deleted;}public List<AssetMetadata> FetchAssetMetadataSet(int start,int count)=>new();public string Version=>"0";public string Name=>"Store";public void Initialise(){}public void Initialise(string value){}public void Dispose(){}}
-class AssetServiceReference{static void Main(){CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;string line;while((line=Console.ReadLine())!=null){var p=line.Split(' ');var c=new Context{Mode=int.Parse(p[0]),Exist=int.Parse(p[1]),Stored=p[2]!="0",Deleted=p[3]!="0",Fail=p[4]=="-"?"":p[4]};Host.C=c;string id=p[5]=="."?"":Encoding.UTF8.GetString(Convert.FromHexString(p[5]));var service=(OriginalService)RuntimeHelpers.GetUninitializedObject(typeof(OriginalService));typeof(OpenSim.Services.AssetService.AssetServiceBase).GetField("m_Database",BindingFlags.NonPublic|BindingFlags.Instance).SetValue(service,new Store());string result="";
- foreach(char op in p[6]){string value="-";try{switch(op){case 'G':value=c.Name(service.Get(id));break;case 'C':value=c.Name(service.GetCached(id));break;case 'M':var m=service.GetMetadata(id);value=m==null?"N":ReferenceEquals(m,c.A.Metadata)?"A":ReferenceEquals(m,c.B.Metadata)?"B":"?";break;case 'D':var data=service.GetData(id);value=data==null?"N":ReferenceEquals(data,c.A.Data)?"A":ReferenceEquals(data,c.B.Data)?"B":"?";break;case 'A':case 'R':case 'Q':OpenSim.Services.Interfaces.AssetRetrieved callback=null;if(op!='Q')callback=(key,sender,asset)=>{c.Event("callback:"+key+":"+sender+":"+c.Name(asset));if(op=='R')throw new Exception("callback");};value=service.Get(id,"sender",callback)?"1":"0";break;case 'F':service.Get(id,"foreign",true,asset=>c.Event("simple:"+c.Name(asset)));break;case 'S':case 's':value=service.Store(op=='s'?null:c.A)??"N";break;case 'U':value=service.UpdateContent(id,null)?"1":"0";break;case 'X':value=service.Delete(id)?"1":"0";break;case 'E':case 'e':value="";foreach(bool b in service.AssetsExist(op=='e'?Array.Empty<string>():new[]{id,c.A.ID}))value+=b?'1':'0';break;case 'T':c.A.Metadata=null;break;}}catch{value="EX";}result+=op+":"+Host.Hex(value)+";";}Console.WriteLine(result+"|"+Host.Hex(c.Trace));}}
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Text;
+using Nini.Config;
+using OpenMetaverse;
+using OpenSim.Framework;
+using OpenSim.Data;
+using OriginalService = OpenSim.Services.AssetService.AssetService;
+namespace log4net
+{
+    public interface ILog
+    {
+        void WarnFormat(string f, params object[] args);
+        void ErrorFormat(string f, params object[] args);
+        void Error(object message, Exception error);
+        void DebugFormat(string f, params object[] args);
+        void Debug(object message);
+    }
+    public class Log : ILog
+    {
+        public void WarnFormat(string f,
+                               params object[] args) => Host.C.Event("warn:" + string.Format(f, args));
+        public void ErrorFormat(string f, params object[] args)
+        {
+            for (int i = 0; i < args.Length; ++i)
+                if (args[i] is Exception)
+                    args[i] = "";
+            Host.C.Event("error:" + string.Format(f, args));
+        }
+        public void Error(object message, Exception error) => Host.C.Event("error:" + message);
+        public void DebugFormat(string f, params object[] args)
+        {
+        }
+        public void Debug(object message)
+        {
+        }
+    }
+    public static class LogManager
+    {
+        public static ILog GetLogger(Type type) => new Log();
+    }
+}
+namespace OpenSim.Services.Base
+{
+    public class ServiceBase
+    {
+        public ServiceBase(IConfigSource config)
+        {
+        }
+        public T LoadPlugin<T>(string value) => throw new NotImplementedException();
+    }
+}
+namespace OpenSim.Framework
+{
+    public static class Util
+    {
+        public static string SHA1Hash(byte[] data) => throw new NotImplementedException();
+    }
+}
+static class Host
+{
+    public static Context C;
+    public static string Hex(string s) => Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();
+}
+class Context
+{
+    public string Trace = "", Fail;
+    public int Mode, Exist;
+    public bool Stored, Deleted;
+    public AssetBase A = new(), B = new();
+    public Context()
+    {
+        A.ID = "00000000-0000-0000-0000-000000000001";
+        B.ID = "00000000-0000-0000-0000-000000000002";
+        A.Data = new byte[] { 1 };
+        B.Data = new byte[] { 2 };
+    }
+    public void Event(string value)
+    {
+        Trace += value + ";";
+        if (!string.IsNullOrEmpty(Fail) && value.StartsWith(Fail + ":"))
+            throw new Exception("log");
+    }
+    public string Name(AssetBase a) => a == null               ? "N"
+                                       : ReferenceEquals(a, A) ? "A"
+                                       : ReferenceEquals(a, B) ? "B"
+                                                               : "?";
+}
+class Store : IAssetDataPlugin
+{
+    public AssetBase GetAsset(UUID id)
+    {
+        var c = Host.C;
+        c.Event("get:" + id);
+        if (c.Mode == 2)
+            throw new Exception("get");
+        return c.Mode == 1 ? null : c.Mode == 3 ? c.B : c.A;
+    }
+    public bool StoreAsset(AssetBase a)
+    {
+        Host.C.Event("store:" + Host.C.Name(a));
+        return Host.C.Stored;
+    }
+    public bool[] AssetsExist(UUID[] ids)
+    {
+        string value = "exists:";
+        foreach (var id in ids)
+            value += id + ",";
+        Host.C.Event(value);
+        if (Host.C.Exist == 3)
+            throw new Exception("exists");
+        return Host.C.Exist == 0 ? Array.Empty<bool>() : new[] { Host.C.Exist == 2 };
+    }
+    public bool Delete(string id)
+    {
+        Host.C.Event("delete:" + id);
+        return Host.C.Deleted;
+    }
+    public List<AssetMetadata> FetchAssetMetadataSet(int start, int count) => new();
+    public string Version => "0";
+    public string Name => "Store";
+    public void Initialise()
+    {
+    }
+    public void Initialise(string value)
+    {
+    }
+    public void Dispose()
+    {
+    }
+}
+class AssetServiceReference
+{
+    static void Main()
+    {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var p = line.Split(' ');
+            var c = new Context { Mode = int.Parse(p[0]), Exist = int.Parse(p[1]), Stored = p[2] != "0",
+                                  Deleted = p[3] != "0", Fail = p[4] == "-" ? "" : p[4] };
+            Host.C = c;
+            string id = p[5] == "." ? "" : Encoding.UTF8.GetString(Convert.FromHexString(p[5]));
+            var service = (OriginalService)RuntimeHelpers.GetUninitializedObject(typeof(OriginalService));
+            typeof(OpenSim.Services.AssetService.AssetServiceBase)
+                .GetField("m_Database", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(service, new Store());
+            string result = "";
+            foreach (char op in p[6])
+            {
+                string value = "-";
+                try
+                {
+                    switch (op)
+                    {
+                    case 'G':
+                        value = c.Name(service.Get(id));
+                        break;
+                    case 'C':
+                        value = c.Name(service.GetCached(id));
+                        break;
+                    case 'M':
+                        var m = service.GetMetadata(id);
+                        value = m == null                          ? "N"
+                                : ReferenceEquals(m, c.A.Metadata) ? "A"
+                                : ReferenceEquals(m, c.B.Metadata) ? "B"
+                                                                   : "?";
+                        break;
+                    case 'D':
+                        var data = service.GetData(id);
+                        value = data == null                      ? "N"
+                                : ReferenceEquals(data, c.A.Data) ? "A"
+                                : ReferenceEquals(data, c.B.Data) ? "B"
+                                                                  : "?";
+                        break;
+                    case 'A':
+                    case 'R':
+                    case 'Q':
+                        OpenSim.Services.Interfaces.AssetRetrieved callback = null;
+                        if (op != 'Q')
+                            callback = (key, sender, asset) =>
+                            {
+                                c.Event("callback:" + key + ":" + sender + ":" + c.Name(asset));
+                                if (op == 'R')
+                                    throw new Exception("callback");
+                            };
+                        value = service.Get(id, "sender", callback) ? "1" : "0";
+                        break;
+                    case 'F':
+                        service.Get(id, "foreign", true, asset => c.Event("simple:" + c.Name(asset)));
+                        break;
+                    case 'S':
+                    case 's':
+                        value = service.Store(op == 's' ? null : c.A) ?? "N";
+                        break;
+                    case 'U':
+                        value = service.UpdateContent(id, null) ? "1" : "0";
+                        break;
+                    case 'X':
+                        value = service.Delete(id) ? "1" : "0";
+                        break;
+                    case 'E':
+                    case 'e':
+                        value = "";
+                        foreach (bool b in service.AssetsExist(op == 'e' ? Array.Empty<string>()
+                                                                         : new[] { id, c.A.ID }))
+                            value += b ? '1' : '0';
+                        break;
+                    case 'T':
+                        c.A.Metadata = null;
+                        break;
+                    }
+                }
+                catch
+                {
+                    value = "EX";
+                }
+                result += op + ":" + Host.Hex(value) + ";";
+            }
+            Console.WriteLine(result + "|" + Host.Hex(c.Trace));
+        }
+    }
 }

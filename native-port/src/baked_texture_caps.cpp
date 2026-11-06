@@ -81,7 +81,14 @@ network::HttpResponse BakedTextureUpload::handle(const network::HttpRequest& req
             backend_.cache->cache(asset);
             response.body =
                 "<llsd><map><key>new_asset</key><string>" + id.str() +
-                "</string><key>new_inventory_item</key><uuid>00000000-0000-0000-0000-000000000000</uuid><key>state</key><string>complete</string><key>new_next_owner_mask</key><integer>0</integer><key>new_group_mask</key><integer>0</integer><key>new_everyone_mask</key><integer>0</integer><key>inventory_item_flags</key><integer>0</integer></map></llsd>";
+                "</string>"
+                "<key>new_inventory_item</key><uuid>00000000-0000-0000-0000-000000000000</uuid>"
+                "<key>state</key><string>complete</string>"
+                "<key>new_next_owner_mask</key><integer>0</integer>"
+                "<key>new_group_mask</key><integer>0</integer>"
+                "<key>new_everyone_mask</key><integer>0</integer>"
+                "<key>inventory_item_flags</key><integer>0</integer>"
+                "</map></llsd>";
             response.status = 200;
         } catch (...) {
             response.status = 400;

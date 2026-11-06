@@ -1,0 +1,5 @@
+// Generated from the original PostgreSQL AssetStore.migrations resource.
+#pragma once
+namespace opensim::services {
+inline constexpr char PgsqlAssetStoreMigration[] = R"OSIMSQL(@PGSQL_ASSET_MIGRATION_SQL@)OSIMSQL";
+}

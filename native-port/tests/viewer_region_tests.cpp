@@ -63,6 +63,43 @@ void admission_test() {
     check(replies.size() == 1 && replies[0].spec->name == "PacketAck" && !region.agent(f.circuit->agent_id),
           "registered credentials require actual scene admission");
 }
+void flight_policy_test() {
+    Fixture f;
+    constexpr std::uint32_t fly = 0x2000;
+    constexpr std::uint32_t block_flight = 0x80000;
+    std::uint32_t flags = 0;
+    ViewerRegionOptions options;
+    options.current_region_flags = [&] { return flags; };
+    ViewerRegion region(f.world, f.circuits,
+                        [](const auto&, auto) { return true; },
+                        [](const auto&, const auto&, const auto&) { return true; }, options);
+    f.circuit->transfer_movement = AgentCircuitData::TransferredMovement{{2, 0, 0}, {}, fly, false};
+    const UdpEndpoint endpoint{"127.0.0.1", 12345};
+    const auto send = [&](const auto& packet) {
+        region.receive(endpoint, lludp::encode_datagram(packet));
+    };
+    send(f.use());
+    auto arrival = f.packet("CompleteAgentMovement", 2);
+    arrival.block("AgentData")["CircuitCode"] = std::uint64_t{42};
+    send(arrival);
+    const auto allowed = region.agent(f.circuit->agent_id);
+    check(allowed && allowed->root && allowed->flying, "arrival honors flight where permitted");
+    check(region.demote_after_crossing(f.circuit->agent_id, f.circuit->session_id).has_value(),
+          "retain a child circuit for the next arrival");
+    flags = block_flight;
+    check(region.stage_crossing_arrival(f.circuit), "stage flying arrival into a no-flight region");
+    arrival.sequence = 3;
+    send(arrival);
+    const auto returned = region.agent(f.circuit->agent_id);
+    check(returned && returned->root && !returned->flying && returned->velocity.x == 2.f,
+          "crossing applies destination flight policy while retaining velocity");
+    auto input = f.packet("AgentUpdate", 4);
+    input.block("AgentData")["ControlFlags"] = std::uint64_t{fly};
+    send(input);
+    const auto blocked = region.agent(f.circuit->agent_id);
+    check(blocked && !blocked->flying && blocked->controls == fly,
+          "no-flight viewer state keeps the raw request available to scripts");
+}
 void root_agent_names_test() {
     Fixture f;
     ViewerRegion region(f.world, f.circuits,
@@ -263,6 +300,7 @@ void socket_test() {
 int main() {
     try {
         admission_test();
+        flight_policy_test();
         root_agent_names_test();
         socket_test();
     } catch (const std::exception& e) {

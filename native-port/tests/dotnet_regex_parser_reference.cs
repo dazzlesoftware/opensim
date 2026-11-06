@@ -1,24 +1,436 @@
-using System;using System.Collections;using System.Collections.Generic;using System.Globalization;using System.Reflection;using System.Reflection.Emit;using System.Text;using System.Text.RegularExpressions;
-class NamedCulture:CultureInfo{string name;public int Reads;public NamedCulture(string name):base(""){this.name=name;}public override string Name{get{Reads++;return name;}}}
-class Program{
- delegate bool Find(object target,string text,ref int pos,int start);
- delegate object Write(object tree);
- delegate object Replacement(string pattern,RegexOptions options,Hashtable caps,int size,Hashtable names);
- delegate object Parse(string pattern,RegexOptions options,CultureInfo culture);
- static string Dec(string s){if(s=="-")return null;if(s==".")return "";var c=new char[s.Length/4];for(int i=0;i<c.Length;i++)c[i]=(char)Convert.ToUInt16(s.Substring(i*4,4),16);return new string(c);}
- static string Hex(string s){if(s==null)return "-";if(s.Length==0)return ".";var b=new StringBuilder();foreach(char c in s)b.Append(((int)c).ToString("x4"));return b.ToString();}
- static BindingFlags flags=BindingFlags.Instance|BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic;
- static object Field(object n,string name)=>n.GetType().GetField(name,flags).GetValue(n);
- static object Prop(object n,string name)=>n.GetType().GetProperty(name,flags).GetValue(n);
- static object Call(object n,string name,params object[] args)=>n.GetType().GetMethod(name,flags).Invoke(n,args);
- static string Graph(object root){var nodes=new List<object>();string Id(object n){if(n==null)return "-";int id=nodes.IndexOf(n);if(id<0){id=nodes.Count;nodes.Add(n);}return id.ToString();}Id(root);for(int i=0;i<nodes.Count;i++){var n=nodes[i];for(int j=0;j<(int)Call(n,"ChildCount");j++)Id(Call(n,"Child",j));Id(Field(n,"Parent"));}var result=new StringBuilder();for(int i=0;i<nodes.Count;i++){var n=nodes[i];if(i!=0)result.Append('/');string text=(string)Prop(n,"Str");result.Append(Convert.ToInt32(Prop(n,"Kind"))+":"+Convert.ToInt32(Field(n,"Options"))+":"+(int)(char)Prop(n,"Ch")+":"+Prop(n,"M")+":"+Prop(n,"N")+":"+Hex(text)+":"+Id(Field(n,"Parent"))+":");for(int j=0;j<(int)Call(n,"ChildCount");j++)result.Append(Id(Call(n,"Child",j))+",");int first=0;for(;first<nodes.Count;first++)if(ReferenceEquals(Prop(nodes[first],"Str"),text))break;result.Append("@"+first);}return result.ToString();}
- static string Sets(object values){if(values==null)return "-";var result=new StringBuilder();foreach(object item in (IEnumerable)values){var chars=(char[])Field(item,"Chars");object range=Field(item,"Range");result.Append(Hex((string)Field(item,"Set"))+":"+Field(item,"Distance")+":"+((bool)Field(item,"Negated")?1:0)+":"+Hex(chars==null?null:new string(chars))+":"+(range==null?"-":((int)(char)Field(range,"Item1"))+","+((int)(char)Field(range,"Item2")))+";");}return result.ToString();}
- static string Prefix(object root){var type=typeof(Regex).Assembly.GetType("System.Text.RegularExpressions.RegexPrefixAnalyzer");object Invoke(string name,params object[] args)=>type.GetMethod(name,flags).Invoke(null,args);var plain=Invoke("FindFixedDistanceSets",root,false);var thorough=Invoke("FindFixedDistanceSets",root,true);var result=Hex((string)Invoke("FindPrefix",root))+"|"+Hex((string)Invoke("FindPrefixOrdinalCaseInsensitive",root))+"|"+Hex((string)Invoke("FindFirstCharClass",root))+"|"+Convert.ToInt32(Invoke("FindLeadingAnchor",root))+","+Convert.ToInt32(Invoke("FindTrailingAnchor",root))+"|"+Sets(plain)+"|"+Sets(thorough)+"|";if(thorough!=null)Invoke("SortFixedDistanceSetsByQuality",thorough);result+=Sets(thorough)+"|";var literal=Invoke("FindLiteralFollowingLeadingLoop",root);if(literal==null)return result+"-";var inner=Field(literal,"Item2");var chars=(char[])Field(inner,"Item3");return result+Graph(Field(literal,"Item1"))+":"+(int)(char)Field(inner,"Item1")+":"+Hex((string)Field(inner,"Item2"))+":"+Hex(chars==null?null:new string(chars));}
- static object Property(object n,string name)=>n.GetType().GetProperty(name,flags).GetValue(n);
- static string Caches(object find){var values=(uint[][])Field(find,"_asciiLookups");if(values==null)return "-";var result=new StringBuilder();foreach(var row in values){if(row==null)result.Append('-');else foreach(uint word in row)result.Append(word+",");result.Append(';');}return result.ToString();}
- static string FindData(object find){object fixedLiteral=Property(find,"FixedDistanceLiteral"),after=Property(find,"LiteralAfterLoop");var result=Convert.ToInt32(Property(find,"FindMode"))+":"+((bool)Property(find,"IsUseful")?1:0)+":"+Convert.ToInt32(Property(find,"LeadingAnchor"))+":"+Convert.ToInt32(Property(find,"TrailingAnchor"))+":"+Property(find,"MinRequiredLength")+":"+(Property(find,"MaxPossibleLength")?.ToString()??"-")+":"+Hex((string)Property(find,"LeadingPrefix"))+":"+(int)(char)Field(fixedLiteral,"Item1")+","+Hex((string)Field(fixedLiteral,"Item2"))+","+Field(fixedLiteral,"Item3")+":"+Sets(Property(find,"FixedDistanceSets"))+":";if(after==null)result+="-";else{object inner=Field(after,"Item2");var chars=(char[])Field(inner,"Item3");result+=Graph(Field(after,"Item1"))+":"+(int)(char)Field(inner,"Item1")+":"+Hex((string)Field(inner,"Item2"))+":"+Hex(chars==null?null:new string(chars));}return result+":"+Caches(find);}
- static Find Finder(string method){var type=typeof(Regex).Assembly.GetType("System.Text.RegularExpressions.RegexFindOptimizations");var d=new DynamicMethod("ActualFind"+method,typeof(bool),new[]{typeof(object),typeof(string),typeof(int).MakeByRefType(),typeof(int)},typeof(Program).Module,true);var il=d.GetILGenerator();il.Emit(OpCodes.Ldarg_0);il.Emit(OpCodes.Castclass,type);il.Emit(OpCodes.Ldarg_1);il.Emit(OpCodes.Call,typeof(MemoryExtensions).GetMethod("AsSpan",new[]{typeof(string)}));il.Emit(OpCodes.Ldarg_2);il.Emit(OpCodes.Ldarg_3);il.Emit(OpCodes.Callvirt,type.GetMethod(method,flags));il.Emit(OpCodes.Ret);return (Find)d.CreateDelegate(typeof(Find));}
- static void Main(){CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;CultureInfo.CurrentUICulture=CultureInfo.InvariantCulture;var parser=typeof(Regex).Assembly.GetType("System.Text.RegularExpressions.RegexParser");var parseMethod=parser.GetMethod("Parse",flags);var dynamicParse=new DynamicMethod("ParseActualRegex",typeof(object),new[]{typeof(string),typeof(RegexOptions),typeof(CultureInfo)},typeof(Program).Module,true);var il=dynamicParse.GetILGenerator();il.Emit(OpCodes.Ldarg_0);il.Emit(OpCodes.Ldarg_1);il.Emit(OpCodes.Ldarg_2);il.Emit(OpCodes.Call,parseMethod);il.Emit(OpCodes.Ret);var parse=(Parse)dynamicParse.CreateDelegate(typeof(Parse));var escape=(Func<string,string>)parser.GetMethod("Escape",flags).CreateDelegate(typeof(Func<string,string>));var unescape=(Func<string,string>)parser.GetMethod("Unescape",flags).CreateDelegate(typeof(Func<string,string>));var dynamicReplacement=new DynamicMethod("ParseActualReplacement",typeof(object),new[]{typeof(string),typeof(RegexOptions),typeof(Hashtable),typeof(int),typeof(Hashtable)},typeof(Program).Module,true);var ril=dynamicReplacement.GetILGenerator();for(int i=0;i<5;i++)ril.Emit(OpCodes.Ldarg,i);ril.Emit(OpCodes.Call,parser.GetMethod("ParseReplacement",flags));ril.Emit(OpCodes.Ret);var replacement=(Replacement)dynamicReplacement.CreateDelegate(typeof(Replacement));var writer=typeof(Regex).Assembly.GetType("System.Text.RegularExpressions.RegexWriter");var treeType=typeof(Regex).Assembly.GetType("System.Text.RegularExpressions.RegexTree");var dynamicWrite=new DynamicMethod("WriteActualRegex",typeof(object),new[]{typeof(object)},typeof(Program).Module,true);var wil=dynamicWrite.GetILGenerator();wil.Emit(OpCodes.Ldarg_0);wil.Emit(OpCodes.Castclass,treeType);wil.Emit(OpCodes.Call,writer.GetMethod("Write",flags));wil.Emit(OpCodes.Ret);var write=(Write)dynamicWrite.CreateDelegate(typeof(Write));var mapCapture=(Func<int,Hashtable,int>)parser.GetMethod("MapCaptureNumber",flags).CreateDelegate(typeof(Func<int,Hashtable,int>));var groupName=(Func<Hashtable,string[],int,int,string>)parser.GetMethod("GroupNameFromNumber",flags).CreateDelegate(typeof(Func<Hashtable,string[],int,int,string>));var targetCulture=(Func<RegexOptions,CultureInfo>)parser.GetMethod("GetTargetCulture",flags).CreateDelegate(typeof(Func<RegexOptions,CultureInfo>));var opcodeType=typeof(Regex).Assembly.GetType("System.Text.RegularExpressions.RegexOpcode");var interpreterCode=typeof(Regex).Assembly.GetType("System.Text.RegularExpressions.RegexInterpreterCode");var findLeft=Finder("TryFindNextStartingPositionLeftToRight");var findRight=Finder("TryFindNextStartingPositionRightToLeft");string line;while((line=Console.ReadLine())!=null){try{var f=line.Split(' ');int options=int.Parse(f[1]);string pattern=Dec(f[3]);if(f[0]=="T"){Console.WriteLine((bool)interpreterCode.GetMethod("OpcodeBacktracks",flags).Invoke(null,new[]{Enum.ToObject(opcodeType,options)})?1:0);continue;}if(f[0]=="C"){var current=CultureInfo.CurrentCulture;var named=new NamedCulture(Dec(f[2]));CultureInfo.CurrentCulture=named;try{string selected=targetCulture((RegexOptions)options).Name;Console.WriteLine(Hex(selected)+":"+named.Reads);}finally{CultureInfo.CurrentCulture=current;}continue;}if(f[0]=="E"||f[0]=="U"){string value=(f[0]=="E"?escape:unescape)(pattern);Console.WriteLine(Hex(value)+":"+(ReferenceEquals(value,pattern)?1:0));continue;}if(f[0]=="R"||f[0]=="M"||f[0]=="G"){int context=int.Parse(f[2]),size=context==1?3:context==3?10:context==4?2:context==5?10:context==6?-1:0;Hashtable caps=null,replacementNames=null;if(context==2){caps=new Hashtable{{0,0},{2,1},{5,2}};replacementNames=new Hashtable{{"x",2},{"y",5},{"0",0}};size=3;}if(context==3)replacementNames=new Hashtable{{"a",1},{"b",9}};if(context==4){caps=new Hashtable{{0,0},{1,int.MaxValue}};replacementNames=new Hashtable{{"x",1}};}if(context==5){caps=new Hashtable();replacementNames=new Hashtable{{"x",1}};}if(context==6)replacementNames=new Hashtable{{"x",-1}};if(f[0]=="M"){Console.WriteLine(mapCapture(int.Parse(pattern),caps));continue;}if(f[0]=="G"){string[] list=context==0||context==8?null:new[]{"zero","one","two"};if(context==8)size=-1;Console.WriteLine(Hex(groupName(caps,list,size,int.Parse(pattern))));continue;}var rep=replacement(pattern,(RegexOptions)options,caps,size,replacementNames);var outputRep=new StringBuilder(Hex((string)Prop(rep,"Pattern"))+":"+(ReferenceEquals(Prop(rep,"Pattern"),pattern)?1:0)+":"+((bool)Field(rep,"_hasBackreferences")?1:0)+":");foreach(int rule in (int[])Field(rep,"_rules"))outputRep.Append(rule+",");outputRep.Append(':');foreach(string value in (string[])Field(rep,"_strings"))outputRep.Append(Hex(value)+",");Console.WriteLine(outputRep);continue;}var culture=new NamedCulture(Dec(f[2]));var tree=parse(pattern,(RegexOptions)options,culture);if(f[0]=="O"||f[0]=="F"){var find=Field(tree,"FindOptimizations");string findOutput=FindData(find);if(f[0]=="F"){int pos=int.Parse(f[5]),start=int.Parse(f[6]);bool success=(f[7]=="r"?findRight:findLeft)(find,Dec(f[4]),ref pos,start);findOutput+="|"+(success?1:0)+":"+pos+":"+Caches(find);}Console.WriteLine(findOutput);continue;}if(f[0]=="X"){Console.WriteLine(Prefix(Field(tree,"Root")));continue;}if(f[0]=="W"){var code=write(tree);var outputCode=new StringBuilder(Convert.ToInt32(Field(code,"Options"))+":"+Field(code,"TrackCount")+":");foreach(int value in (int[])Field(code,"Codes"))outputCode.Append(value+",");outputCode.Append(':');foreach(string value in (string[])Field(code,"Strings"))outputCode.Append(Hex(value)+",");outputCode.Append(':');foreach(var value in (uint[][])Field(code,"StringsAsciiLookup"))outputCode.Append((value==null?0:1)+",");Console.WriteLine(outputCode);continue;}var output=new StringBuilder(culture.Reads+":"+Convert.ToInt32(Field(tree,"Options"))+":"+Field(tree,"CaptureCount")+":"+(Field(tree,"Culture")==null?0:1)+":");var names=(string[])Field(tree,"CaptureNames");if(names==null)output.Append('-');else foreach(var name in names)output.Append(Hex(name)+",");output.Append(':');var mapping=(Hashtable)Field(tree,"CaptureNameToNumberMapping");if(mapping==null)output.Append('-');else{var sorted=new SortedDictionary<string,int>(StringComparer.Ordinal);foreach(DictionaryEntry entry in mapping)sorted[(string)entry.Key]=(int)entry.Value;foreach(var entry in sorted)output.Append(Hex(entry.Key)+"="+entry.Value+",");}output.Append(':');mapping=(Hashtable)Field(tree,"CaptureNumberSparseMapping");if(mapping==null)output.Append('-');else{var sorted=new SortedDictionary<int,int>();foreach(DictionaryEntry entry in mapping)sorted[(int)entry.Key]=(int)entry.Value;foreach(var entry in sorted)output.Append(entry.Key+"="+entry.Value+",");}output.Append(':');output.Append(Graph(Field(tree,"Root")));Console.WriteLine(output);}
- catch(Exception e){while(e is TargetInvocationException&&e.InnerException!=null)e=e.InnerException;if(e is RegexParseException p)Console.WriteLine("P:"+(int)p.Error+":"+p.Offset+":"+Hex(p.Message));else Console.WriteLine("E:"+e.GetType().FullName+":"+unchecked((uint)e.HResult).ToString("x8")+":"+Hex(e.Message));}
- }}
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Reflection;
+using System.Reflection.Emit;
+using System.Text;
+using System.Text.RegularExpressions;
+class NamedCulture : CultureInfo
+{
+    string name;
+    public int Reads;
+    public NamedCulture(string name) : base("")
+    {
+        this.name = name;
+    }
+    public override string Name
+    {
+        get {
+            Reads++;
+            return name;
+        }
+    }
+}
+class Program
+{
+    delegate bool Find(object target, string text, ref int pos, int start);
+    delegate object Write(object tree);
+    delegate object Replacement(string pattern, RegexOptions options, Hashtable caps, int size,
+                                Hashtable names);
+    delegate object Parse(string pattern, RegexOptions options, CultureInfo culture);
+    static string Dec(string s)
+    {
+        if (s == "-")
+            return null;
+        if (s == ".")
+            return "";
+        var c = new char[s.Length / 4];
+        for (int i = 0; i < c.Length; i++)
+            c[i] = (char)Convert.ToUInt16(s.Substring(i * 4, 4), 16);
+        return new string(c);
+    }
+    static string Hex(string s)
+    {
+        if (s == null)
+            return "-";
+        if (s.Length == 0)
+            return ".";
+        var b = new StringBuilder();
+        foreach (char c in s)
+            b.Append(((int)c).ToString("x4"));
+        return b.ToString();
+    }
+    static BindingFlags flags =
+        BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+    static object Field(object n, string name) => n.GetType().GetField(name, flags).GetValue(n);
+    static object Prop(object n, string name) => n.GetType().GetProperty(name, flags).GetValue(n);
+    static object Call(object n, string name,
+                       params object[] args) => n.GetType().GetMethod(name, flags).Invoke(n, args);
+    static string Graph(object root)
+    {
+        var nodes = new List<object>();
+        string Id(object n)
+        {
+            if (n == null)
+                return "-";
+            int id = nodes.IndexOf(n);
+            if (id < 0)
+            {
+                id = nodes.Count;
+                nodes.Add(n);
+            }
+            return id.ToString();
+        }
+        Id(root);
+        for (int i = 0; i < nodes.Count; i++)
+        {
+            var n = nodes[i];
+            for (int j = 0; j < (int)Call(n, "ChildCount"); j++)
+                Id(Call(n, "Child", j));
+            Id(Field(n, "Parent"));
+        }
+        var result = new StringBuilder();
+        for (int i = 0; i < nodes.Count; i++)
+        {
+            var n = nodes[i];
+            if (i != 0)
+                result.Append('/');
+            string text = (string)Prop(n, "Str");
+            result.Append(Convert.ToInt32(Prop(n, "Kind")) + ":" + Convert.ToInt32(Field(n, "Options")) +
+                          ":" + (int)(char)Prop(n, "Ch") + ":" + Prop(n, "M") + ":" + Prop(n, "N") + ":" +
+                          Hex(text) + ":" + Id(Field(n, "Parent")) + ":");
+            for (int j = 0; j < (int)Call(n, "ChildCount"); j++)
+                result.Append(Id(Call(n, "Child", j)) + ",");
+            int first = 0;
+            for (; first < nodes.Count; first++)
+                if (ReferenceEquals(Prop(nodes[first], "Str"), text))
+                    break;
+            result.Append("@" + first);
+        }
+        return result.ToString();
+    }
+    static string Sets(object values)
+    {
+        if (values == null)
+            return "-";
+        var result = new StringBuilder();
+        foreach (object item in (IEnumerable)values)
+        {
+            var chars = (char[])Field(item, "Chars");
+            object range = Field(item, "Range");
+            result.Append(Hex((string)Field(item, "Set")) + ":" + Field(item, "Distance") + ":" +
+                          ((bool)Field(item, "Negated") ? 1 : 0) + ":" +
+                          Hex(chars == null ? null : new string(chars)) + ":" +
+                          (range == null ? "-"
+                                         : ((int)(char)Field(range, "Item1")) + "," +
+                                               ((int)(char)Field(range, "Item2"))) +
+                          ";");
+        }
+        return result.ToString();
+    }
+    static string Prefix(object root)
+    {
+        var type = typeof(Regex).Assembly.GetType("System.Text.RegularExpressions.RegexPrefixAnalyzer");
+        object Invoke(string name, params object[] args) => type.GetMethod(name, flags).Invoke(null, args);
+        var plain = Invoke("FindFixedDistanceSets", root, false);
+        var thorough = Invoke("FindFixedDistanceSets", root, true);
+        var result = Hex((string)Invoke("FindPrefix", root)) + "|" +
+                     Hex((string)Invoke("FindPrefixOrdinalCaseInsensitive", root)) + "|" +
+                     Hex((string)Invoke("FindFirstCharClass", root)) + "|" +
+                     Convert.ToInt32(Invoke("FindLeadingAnchor", root)) + "," +
+                     Convert.ToInt32(Invoke("FindTrailingAnchor", root)) + "|" + Sets(plain) + "|" +
+                     Sets(thorough) + "|";
+        if (thorough != null)
+            Invoke("SortFixedDistanceSetsByQuality", thorough);
+        result += Sets(thorough) + "|";
+        var literal = Invoke("FindLiteralFollowingLeadingLoop", root);
+        if (literal == null)
+            return result + "-";
+        var inner = Field(literal, "Item2");
+        var chars = (char[])Field(inner, "Item3");
+        return result + Graph(Field(literal, "Item1")) + ":" + (int)(char)Field(inner, "Item1") + ":" +
+               Hex((string)Field(inner, "Item2")) + ":" + Hex(chars == null ? null : new string(chars));
+    }
+    static object Property(object n, string name) => n.GetType().GetProperty(name, flags).GetValue(n);
+    static string Caches(object find)
+    {
+        var values = (uint[][])Field(find, "_asciiLookups");
+        if (values == null)
+            return "-";
+        var result = new StringBuilder();
+        foreach (var row in values)
+        {
+            if (row == null)
+                result.Append('-');
+            else
+                foreach (uint word in row)
+                    result.Append(word + ",");
+            result.Append(';');
+        }
+        return result.ToString();
+    }
+    static string FindData(object find)
+    {
+        object fixedLiteral = Property(find, "FixedDistanceLiteral"),
+               after = Property(find, "LiteralAfterLoop");
+        var result =
+            Convert.ToInt32(Property(find, "FindMode")) + ":" + ((bool)Property(find, "IsUseful") ? 1 : 0) +
+            ":" + Convert.ToInt32(Property(find, "LeadingAnchor")) + ":" +
+            Convert.ToInt32(Property(find, "TrailingAnchor")) + ":" + Property(find, "MinRequiredLength") +
+            ":" + (Property(find, "MaxPossibleLength")?.ToString() ?? "-") + ":" +
+            Hex((string)Property(find, "LeadingPrefix")) + ":" + (int)(char)Field(fixedLiteral, "Item1") +
+            "," + Hex((string)Field(fixedLiteral, "Item2")) + "," + Field(fixedLiteral, "Item3") + ":" +
+            Sets(Property(find, "FixedDistanceSets")) + ":";
+        if (after == null)
+            result += "-";
+        else
+        {
+            object inner = Field(after, "Item2");
+            var chars = (char[])Field(inner, "Item3");
+            result += Graph(Field(after, "Item1")) + ":" + (int)(char)Field(inner, "Item1") + ":" +
+                      Hex((string)Field(inner, "Item2")) + ":" +
+                      Hex(chars == null ? null : new string(chars));
+        }
+        return result + ":" + Caches(find);
+    }
+    static Find Finder(string method)
+    {
+        var type = typeof(Regex).Assembly.GetType("System.Text.RegularExpressions.RegexFindOptimizations");
+        var d = new DynamicMethod(
+            "ActualFind" + method, typeof(bool),
+            new[] { typeof(object), typeof(string), typeof(int).MakeByRefType(), typeof(int) },
+            typeof(Program).Module, true);
+        var il = d.GetILGenerator();
+        il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Castclass, type);
+        il.Emit(OpCodes.Ldarg_1);
+        il.Emit(OpCodes.Call, typeof(MemoryExtensions).GetMethod("AsSpan", new[] { typeof(string) }));
+        il.Emit(OpCodes.Ldarg_2);
+        il.Emit(OpCodes.Ldarg_3);
+        il.Emit(OpCodes.Callvirt, type.GetMethod(method, flags));
+        il.Emit(OpCodes.Ret);
+        return (Find)d.CreateDelegate(typeof(Find));
+    }
+    static void Main()
+    {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
+        var parser = typeof(Regex).Assembly.GetType("System.Text.RegularExpressions.RegexParser");
+        var parseMethod = parser.GetMethod("Parse", flags);
+        var dynamicParse =
+            new DynamicMethod("ParseActualRegex", typeof(object),
+                              new[] { typeof(string), typeof(RegexOptions), typeof(CultureInfo) },
+                              typeof(Program).Module, true);
+        var il = dynamicParse.GetILGenerator();
+        il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Ldarg_1);
+        il.Emit(OpCodes.Ldarg_2);
+        il.Emit(OpCodes.Call, parseMethod);
+        il.Emit(OpCodes.Ret);
+        var parse = (Parse)dynamicParse.CreateDelegate(typeof(Parse));
+        var escape = (Func<string, string>)parser.GetMethod("Escape", flags)
+                         .CreateDelegate(typeof(Func<string, string>));
+        var unescape = (Func<string, string>)parser.GetMethod("Unescape", flags)
+                           .CreateDelegate(typeof(Func<string, string>));
+        var dynamicReplacement = new DynamicMethod(
+            "ParseActualReplacement", typeof(object),
+            new[] { typeof(string), typeof(RegexOptions), typeof(Hashtable), typeof(int), typeof(Hashtable) },
+            typeof(Program).Module, true);
+        var ril = dynamicReplacement.GetILGenerator();
+        for (int i = 0; i < 5; i++)
+            ril.Emit(OpCodes.Ldarg, i);
+        ril.Emit(OpCodes.Call, parser.GetMethod("ParseReplacement", flags));
+        ril.Emit(OpCodes.Ret);
+        var replacement = (Replacement)dynamicReplacement.CreateDelegate(typeof(Replacement));
+        var writer = typeof(Regex).Assembly.GetType("System.Text.RegularExpressions.RegexWriter");
+        var treeType = typeof(Regex).Assembly.GetType("System.Text.RegularExpressions.RegexTree");
+        var dynamicWrite = new DynamicMethod("WriteActualRegex", typeof(object), new[] { typeof(object) },
+                                             typeof(Program).Module, true);
+        var wil = dynamicWrite.GetILGenerator();
+        wil.Emit(OpCodes.Ldarg_0);
+        wil.Emit(OpCodes.Castclass, treeType);
+        wil.Emit(OpCodes.Call, writer.GetMethod("Write", flags));
+        wil.Emit(OpCodes.Ret);
+        var write = (Write)dynamicWrite.CreateDelegate(typeof(Write));
+        var mapCapture = (Func<int, Hashtable, int>)parser.GetMethod("MapCaptureNumber", flags)
+                             .CreateDelegate(typeof(Func<int, Hashtable, int>));
+        var groupName =
+            (Func<Hashtable, string[], int, int, string>)parser.GetMethod("GroupNameFromNumber", flags)
+                .CreateDelegate(typeof(Func<Hashtable, string[], int, int, string>));
+        var targetCulture = (Func<RegexOptions, CultureInfo>)parser.GetMethod("GetTargetCulture", flags)
+                                .CreateDelegate(typeof(Func<RegexOptions, CultureInfo>));
+        var opcodeType = typeof(Regex).Assembly.GetType("System.Text.RegularExpressions.RegexOpcode");
+        var interpreterCode =
+            typeof(Regex).Assembly.GetType("System.Text.RegularExpressions.RegexInterpreterCode");
+        var findLeft = Finder("TryFindNextStartingPositionLeftToRight");
+        var findRight = Finder("TryFindNextStartingPositionRightToLeft");
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            try
+            {
+                var f = line.Split(' ');
+                int options = int.Parse(f[1]);
+                string pattern = Dec(f[3]);
+                if (f[0] == "T")
+                {
+                    Console.WriteLine((bool)interpreterCode.GetMethod("OpcodeBacktracks", flags)
+                                              .Invoke(null, new[] { Enum.ToObject(opcodeType, options) })
+                                          ? 1
+                                          : 0);
+                    continue;
+                }
+                if (f[0] == "C")
+                {
+                    var current = CultureInfo.CurrentCulture;
+                    var named = new NamedCulture(Dec(f[2]));
+                    CultureInfo.CurrentCulture = named;
+                    try
+                    {
+                        string selected = targetCulture((RegexOptions)options).Name;
+                        Console.WriteLine(Hex(selected) + ":" + named.Reads);
+                    }
+                    finally
+                    {
+                        CultureInfo.CurrentCulture = current;
+                    }
+                    continue;
+                }
+                if (f[0] == "E" || f[0] == "U")
+                {
+                    string value = (f[0] == "E" ? escape : unescape)(pattern);
+                    Console.WriteLine(Hex(value) + ":" + (ReferenceEquals(value, pattern) ? 1 : 0));
+                    continue;
+                }
+                if (f[0] == "R" || f[0] == "M" || f[0] == "G")
+                {
+                    int context = int.Parse(f[2]), size = context == 1   ? 3
+                                                          : context == 3 ? 10
+                                                          : context == 4 ? 2
+                                                          : context == 5 ? 10
+                                                          : context == 6 ? -1
+                                                                         : 0;
+                    Hashtable caps = null, replacementNames = null;
+                    if (context == 2)
+                    {
+                        caps = new Hashtable { { 0, 0 }, { 2, 1 }, { 5, 2 } };
+                        replacementNames = new Hashtable { { "x", 2 }, { "y", 5 }, { "0", 0 } };
+                        size = 3;
+                    }
+                    if (context == 3)
+                        replacementNames = new Hashtable { { "a", 1 }, { "b", 9 } };
+                    if (context == 4)
+                    {
+                        caps = new Hashtable { { 0, 0 }, { 1, int.MaxValue } };
+                        replacementNames = new Hashtable { { "x", 1 } };
+                    }
+                    if (context == 5)
+                    {
+                        caps = new Hashtable();
+                        replacementNames = new Hashtable { { "x", 1 } };
+                    }
+                    if (context == 6)
+                        replacementNames = new Hashtable { { "x", -1 } };
+                    if (f[0] == "M")
+                    {
+                        Console.WriteLine(mapCapture(int.Parse(pattern), caps));
+                        continue;
+                    }
+                    if (f[0] == "G")
+                    {
+                        string[] list = context == 0 || context == 8 ? null : new[] { "zero", "one", "two" };
+                        if (context == 8)
+                            size = -1;
+                        Console.WriteLine(Hex(groupName(caps, list, size, int.Parse(pattern))));
+                        continue;
+                    }
+                    var rep = replacement(pattern, (RegexOptions)options, caps, size, replacementNames);
+                    var outputRep =
+                        new StringBuilder(Hex((string)Prop(rep, "Pattern")) + ":" +
+                                          (ReferenceEquals(Prop(rep, "Pattern"), pattern) ? 1 : 0) + ":" +
+                                          ((bool)Field(rep, "_hasBackreferences") ? 1 : 0) + ":");
+                    foreach (int rule in (int[])Field(rep, "_rules"))
+                        outputRep.Append(rule + ",");
+                    outputRep.Append(':');
+                    foreach (string value in (string[])Field(rep, "_strings"))
+                        outputRep.Append(Hex(value) + ",");
+                    Console.WriteLine(outputRep);
+                    continue;
+                }
+                var culture = new NamedCulture(Dec(f[2]));
+                var tree = parse(pattern, (RegexOptions)options, culture);
+                if (f[0] == "O" || f[0] == "F")
+                {
+                    var find = Field(tree, "FindOptimizations");
+                    string findOutput = FindData(find);
+                    if (f[0] == "F")
+                    {
+                        int pos = int.Parse(f[5]), start = int.Parse(f[6]);
+                        bool success = (f[7] == "r" ? findRight : findLeft)(find, Dec(f[4]), ref pos, start);
+                        findOutput += "|" + (success ? 1 : 0) + ":" + pos + ":" + Caches(find);
+                    }
+                    Console.WriteLine(findOutput);
+                    continue;
+                }
+                if (f[0] == "X")
+                {
+                    Console.WriteLine(Prefix(Field(tree, "Root")));
+                    continue;
+                }
+                if (f[0] == "W")
+                {
+                    var code = write(tree);
+                    var outputCode = new StringBuilder(Convert.ToInt32(Field(code, "Options")) + ":" +
+                                                       Field(code, "TrackCount") + ":");
+                    foreach (int value in (int[])Field(code, "Codes"))
+                        outputCode.Append(value + ",");
+                    outputCode.Append(':');
+                    foreach (string value in (string[])Field(code, "Strings"))
+                        outputCode.Append(Hex(value) + ",");
+                    outputCode.Append(':');
+                    foreach (var value in (uint[][])Field(code, "StringsAsciiLookup"))
+                        outputCode.Append((value == null ? 0 : 1) + ",");
+                    Console.WriteLine(outputCode);
+                    continue;
+                }
+                var output = new StringBuilder(culture.Reads + ":" + Convert.ToInt32(Field(tree, "Options")) +
+                                               ":" + Field(tree, "CaptureCount") + ":" +
+                                               (Field(tree, "Culture") == null ? 0 : 1) + ":");
+                var names = (string[])Field(tree, "CaptureNames");
+                if (names == null)
+                    output.Append('-');
+                else
+                    foreach (var name in names)
+                        output.Append(Hex(name) + ",");
+                output.Append(':');
+                var mapping = (Hashtable)Field(tree, "CaptureNameToNumberMapping");
+                if (mapping == null)
+                    output.Append('-');
+                else
+                {
+                    var sorted = new SortedDictionary<string, int>(StringComparer.Ordinal);
+                    foreach (DictionaryEntry entry in mapping)
+                        sorted[(string)entry.Key] = (int)entry.Value;
+                    foreach (var entry in sorted)
+                        output.Append(Hex(entry.Key) + "=" + entry.Value + ",");
+                }
+                output.Append(':');
+                mapping = (Hashtable)Field(tree, "CaptureNumberSparseMapping");
+                if (mapping == null)
+                    output.Append('-');
+                else
+                {
+                    var sorted = new SortedDictionary<int, int>();
+                    foreach (DictionaryEntry entry in mapping)
+                        sorted[(int)entry.Key] = (int)entry.Value;
+                    foreach (var entry in sorted)
+                        output.Append(entry.Key + "=" + entry.Value + ",");
+                }
+                output.Append(':');
+                output.Append(Graph(Field(tree, "Root")));
+                Console.WriteLine(output);
+            }
+            catch (Exception e)
+            {
+                while (e is TargetInvocationException && e.InnerException != null)
+                    e = e.InnerException;
+                if (e is RegexParseException p)
+                    Console.WriteLine("P:" + (int)p.Error + ":" + p.Offset + ":" + Hex(p.Message));
+                else
+                    Console.WriteLine("E:" + e.GetType().FullName + ":" +
+                                      unchecked((uint)e.HResult).ToString("x8") + ":" + Hex(e.Message));
+            }
+        }
+    }
 }

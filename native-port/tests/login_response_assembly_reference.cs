@@ -1,24 +1,231 @@
-using System;using System.Linq;using System.Collections.Generic;using System.Net;using OpenMetaverse;using OpenSim.Framework;using OpenSim.Services.Interfaces;using Response=OpenSim.Services.LLLoginService.LLLoginResponse;using GridRegion=OpenSim.Services.Interfaces.GridRegion;using FriendInfo=OpenSim.Services.Interfaces.FriendInfo;
-public static partial class ResponseFixture{
- public static string Events="";public static int Profile,Variant;
- public static bool LocalDst(){Events+="local;";if(Profile==34)throw new Exception();return (Variant&1)==0;}
- public static TimeZoneInfo FindZone(string name){Events+="find:"+name+";";if(name=="null-zone")return null;if(name!="summer"&&name!="winter"&&name!="throw-dst")throw new Exception();return TimeZoneInfo.CreateCustomTimeZone(name,TimeSpan.Zero,name,name);}
- public static bool IsDst(TimeZoneInfo zone){Events+="dst:"+zone.Id+";";if(zone.Id=="throw-dst")throw new Exception();return zone.Id=="summer";}
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.Net;
+using OpenMetaverse;
+using OpenSim.Framework;
+using OpenSim.Services.Interfaces;
+using Response = OpenSim.Services.LLLoginService.LLLoginResponse;
+using GridRegion = OpenSim.Services.Interfaces.GridRegion;
+using FriendInfo = OpenSim.Services.Interfaces.FriendInfo;
+public static partial class ResponseFixture
+{
+    public static string Events = "";
+    public static int Profile, Variant;
+    public static bool LocalDst()
+    {
+        Events += "local;";
+        if (Profile == 34)
+            throw new Exception();
+        return (Variant & 1) == 0;
+    }
+    public static TimeZoneInfo FindZone(string name)
+    {
+        Events += "find:" + name + ";";
+        if (name == "null-zone")
+            return null;
+        if (name != "summer" && name != "winter" && name != "throw-dst")
+            throw new Exception();
+        return TimeZoneInfo.CreateCustomTimeZone(name, TimeSpan.Zero, name, name);
+    }
+    public static bool IsDst(TimeZoneInfo zone)
+    {
+        Events += "dst:" + zone.Id + ";";
+        if (zone.Id == "throw-dst")
+            throw new Exception();
+        return zone.Id == "summer";
+    }
 }
-public partial class ResponseProgram {
- static UUID Id(int n)=>new UUID("00000000-0000-0000-0000-"+n.ToString("x12"));
- class NullNameFolder:InventoryFolderImpl{public override string Name{get=>null;set{}}}
- class Library:ILibraryService{public int profile,roots;public InventoryFolderImpl root,other;public InventoryFolderImpl LibraryRootFolder{get{++roots;ResponseFixture.Events+="root"+roots+";";if(profile==9&&roots==1||profile==10&&roots==2)throw new Exception();if(profile==5&&roots==1||profile==6&&roots==2)return null;return root;}}public Dictionary<UUID,InventoryFolderImpl> GetAllFolders(){ResponseFixture.Events+="folders;";if(profile==11)throw new Exception();if(profile==7)return null;return new(){{root.ID,root},{other.ID,profile==8?null:other}};}}
- static string Construct(int profile,int variant){
-  ResponseFixture.random=ResponseFixture.clocks=0;ResponseFixture.SecondsValue=1700000000;ResponseFixture.Events="";ResponseFixture.Profile=profile;ResponseFixture.Variant=variant;
-  var account=new UserAccount(Id(7)){FirstName="First",LastName="Last"};var circuit=new AgentCircuitData{circuitcode=uint.MaxValue,SessionID=Id(8),SecureSessionID=Id(9),CapsPath=profile==22?null:"caps/path/"};var user=new GridUserInfo{HomePosition=new(1.25f,-0f,30),HomeLookAt=new(0,1,-2)};
-  var destination=new GridRegion{RegionLocX=-256,RegionLocY=51200,RegionSizeX=512,RegionSizeY=1024,endpoint=new IPEndPoint(IPAddress.Parse((variant&1)!=0?"::1":"203.0.113.5"),9000),uri="http://destination:9000/base/"};var home=new GridRegion{RegionLocX=1024,RegionLocY=-512};
-  InventoryFolderImpl Folder(int n,string name)=>new(){ID=Id(n),Name=name,Version=65535,Type=-1};InventoryFolderImpl root=profile==44?new NullNameFolder{ID=Id(1),Version=65535,Type=-1}:Folder(1,"My Inventory");var other=Folder(2,"Other");other.ParentID=root.ID;List<InventoryFolderBase> skeleton=new(){root,other};List<InventoryItemBase> gestures=new(){new InventoryItemBase{ID=Id(4),AssetID=Id(5)}};
-  FriendInfo Buddy(string name,int mine,int theirs)=>new(){Friend=name,MyFlags=mine,TheirFlags=theirs};FriendInfo[] friends={Buddy(Id(3).ToString(),1,2),Buddy(Id(3).ToString(),3,4),Buddy("bad",5,6),Buddy(Id(6)+";http://home/;First Last",int.MaxValue,int.MinValue),Buddy(Id(5).ToString(),9,-1),Buddy(null,1,2)};
-  ILibraryService library=new Library{profile=profile,root=root,other=other};string where="safe",message="Welcome",map="map",purl="profile",openid="openid",search="search",currency="currency",dst="none",destinations="destinations",avatars="avatars",fee="7";var look=new Vector3(1.25f,2,-0f);
-  switch(profile){case 1:skeleton=null;break;case 2:skeleton.Add(null);break;case 3:gestures=null;break;case 4:gestures.Add(null);break;case 12:friends=null;break;case 13:friends=friends.Concat(new FriendInfo[]{null}).ToArray();break;case 14:account=null;break;case 15:circuit=null;break;case 16:user=null;break;case 17:destination=null;break;case 24:home=null;break;case 25:user.HomePosition=new(float.NaN,float.PositiveInfinity,1e-10f);user.HomeLookAt=new(float.NegativeInfinity,1e20f,-0f);look=user.HomePosition;break;case 26:case 34:dst="local";break;case 28:dst="bad;summer";break;case 29:dst="winter;summer";break;case 30:dst="bad;";break;case 31:dst=null;break;case 32:dst="null-zone;summer";break;case 33:dst="throw-dst;summer";break;case 35:dst=" summer ";break;case 38:library=null;break;case 39:skeleton.Clear();break;case 40:root.Name=null;skeleton.Add(Folder(3,"My Inventory"));skeleton.Add(Folder(4,"My Inventory"));break;case 41:root.Name="Not Root";break;case 42:friends=friends.Concat(new[]{Buddy(new string('0',32)+"tail",2,3)}).ToArray();break;case 43:account.FirstName=account.LastName=null;where=message=map=purl=openid=search=currency=fee=destinations=avatars=null;break;}
-  if((variant&2)!=0&&skeleton!=null&&skeleton.Count>0){skeleton[0].Version=0;skeleton[0].Type=13;}
-  string status="OK",xml="",llsd="";Response response=null;try{response=new Response(account,circuit,user,destination,skeleton,friends,library,where,"unused",new Vector3(99,99,99),look,gestures,message,home,null,map,purl,openid,search,currency,dst,destinations,avatars,Id(6),fee,-9);}catch{status="EX";}
-  if(response!=null){xml=View(response.ToHashtable());llsd=View(response.ToOSDMap());}return "CON|"+status+"|"+ResponseFixture.random+":"+ResponseFixture.clocks+"|"+H(ResponseFixture.Events)+"|"+xml+"|"+llsd;
- }
+public partial class ResponseProgram
+{
+    static UUID Id(int n) => new UUID("00000000-0000-0000-0000-" + n.ToString("x12"));
+    class NullNameFolder : InventoryFolderImpl
+    {
+        public override string Name
+        {
+            get => null;
+            set {
+            }
+        }
+    }
+    class Library : ILibraryService
+    {
+        public int profile, roots;
+        public InventoryFolderImpl root, other;
+        public InventoryFolderImpl LibraryRootFolder
+        {
+            get {
+                ++roots;
+                ResponseFixture.Events += "root" + roots + ";";
+                if (profile == 9 && roots == 1 || profile == 10 && roots == 2)
+                    throw new Exception();
+                if (profile == 5 && roots == 1 || profile == 6 && roots == 2)
+                    return null;
+                return root;
+            }
+        }
+        public Dictionary<UUID, InventoryFolderImpl> GetAllFolders()
+        {
+            ResponseFixture.Events += "folders;";
+            if (profile == 11)
+                throw new Exception();
+            if (profile == 7)
+                return null;
+            return new() { { root.ID, root }, { other.ID, profile == 8 ? null : other } };
+        }
+    }
+    static string Construct(int profile, int variant)
+    {
+        ResponseFixture.random = ResponseFixture.clocks = 0;
+        ResponseFixture.SecondsValue = 1700000000;
+        ResponseFixture.Events = "";
+        ResponseFixture.Profile = profile;
+        ResponseFixture.Variant = variant;
+        var account = new UserAccount(Id(7)) { FirstName = "First", LastName = "Last" };
+        var circuit =
+            new AgentCircuitData { circuitcode = uint.MaxValue, SessionID = Id(8), SecureSessionID = Id(9),
+                                   CapsPath = profile == 22 ? null : "caps/path/" };
+        var user = new GridUserInfo { HomePosition = new(1.25f, -0f, 30), HomeLookAt = new(0, 1, -2) };
+        var destination = new GridRegion {
+            RegionLocX = -256,
+            RegionLocY = 51200,
+            RegionSizeX = 512,
+            RegionSizeY = 1024,
+            endpoint = new IPEndPoint(IPAddress.Parse((variant & 1) != 0 ? "::1" : "203.0.113.5"), 9000),
+            uri = "http://destination:9000/base/"
+        };
+        var home = new GridRegion { RegionLocX = 1024, RegionLocY = -512 };
+        InventoryFolderImpl Folder(int n, string name) =>
+            new() { ID = Id(n), Name = name, Version = 65535, Type = -1 };
+        InventoryFolderImpl root = profile == 44
+                                       ? new NullNameFolder { ID = Id(1), Version = 65535, Type = -1 }
+                                       : Folder(1, "My Inventory");
+        var other = Folder(2, "Other");
+        other.ParentID = root.ID;
+        List<InventoryFolderBase> skeleton = new() { root, other };
+        List<InventoryItemBase> gestures = new() { new InventoryItemBase { ID = Id(4), AssetID = Id(5) } };
+        FriendInfo Buddy(string name, int mine, int theirs) =>
+            new() { Friend = name, MyFlags = mine, TheirFlags = theirs };
+        FriendInfo[] friends = { Buddy(Id(3).ToString(), 1, 2),
+                                 Buddy(Id(3).ToString(), 3, 4),
+                                 Buddy("bad", 5, 6),
+                                 Buddy(Id(6) + ";http://home/;First Last", int.MaxValue, int.MinValue),
+                                 Buddy(Id(5).ToString(), 9, -1),
+                                 Buddy(null, 1, 2) };
+        ILibraryService library = new Library { profile = profile, root = root, other = other };
+        string
+            where = "safe",
+            message = "Welcome", map = "map", purl = "profile", openid = "openid", search = "search",
+            currency = "currency", dst = "none", destinations = "destinations", avatars = "avatars",
+            fee = "7";
+        var look = new Vector3(1.25f, 2, -0f);
+        switch (profile)
+        {
+        case 1:
+            skeleton = null;
+            break;
+        case 2:
+            skeleton.Add(null);
+            break;
+        case 3:
+            gestures = null;
+            break;
+        case 4:
+            gestures.Add(null);
+            break;
+        case 12:
+            friends = null;
+            break;
+        case 13:
+            friends = friends.Concat(new FriendInfo[] { null }).ToArray();
+            break;
+        case 14:
+            account = null;
+            break;
+        case 15:
+            circuit = null;
+            break;
+        case 16:
+            user = null;
+            break;
+        case 17:
+            destination = null;
+            break;
+        case 24:
+            home = null;
+            break;
+        case 25:
+            user.HomePosition = new(float.NaN, float.PositiveInfinity, 1e-10f);
+            user.HomeLookAt = new(float.NegativeInfinity, 1e20f, -0f);
+            look = user.HomePosition;
+            break;
+        case 26:
+        case 34:
+            dst = "local";
+            break;
+        case 28:
+            dst = "bad;summer";
+            break;
+        case 29:
+            dst = "winter;summer";
+            break;
+        case 30:
+            dst = "bad;";
+            break;
+        case 31:
+            dst = null;
+            break;
+        case 32:
+            dst = "null-zone;summer";
+            break;
+        case 33:
+            dst = "throw-dst;summer";
+            break;
+        case 35:
+            dst = " summer ";
+            break;
+        case 38:
+            library = null;
+            break;
+        case 39:
+            skeleton.Clear();
+            break;
+        case 40:
+            root.Name = null;
+            skeleton.Add(Folder(3, "My Inventory"));
+            skeleton.Add(Folder(4, "My Inventory"));
+            break;
+        case 41:
+            root.Name = "Not Root";
+            break;
+        case 42:
+            friends = friends.Concat(new[] { Buddy(new string('0', 32) + "tail", 2, 3) }).ToArray();
+            break;
+        case 43:
+            account.FirstName = account.LastName = null;
+                where = message = map = purl = openid = search = currency = fee = destinations = avatars = null;
+            break;
+        }
+        if ((variant & 2) != 0 && skeleton != null && skeleton.Count > 0)
+        {
+            skeleton[0].Version = 0;
+            skeleton[0].Type = 13;
+        }
+        string status = "OK", xml = "", llsd = "";
+        Response response = null;
+        try
+        {response=new Response(account,circuit,user,destination,skeleton,friends,library,where,"unused",new Vector3(99,99,99),look,gestures,message,home,null,map,purl,openid,search,currency,dst,destinations,avatars,Id(6),fee,-9);
+        }
+        catch
+        {
+            status = "EX";
+        }
+        if (response != null)
+        {
+            xml = View(response.ToHashtable());
+            llsd = View(response.ToOSDMap());
+        }
+        return "CON|" + status + "|" + ResponseFixture.random + ":" + ResponseFixture.clocks + "|" +
+               H(ResponseFixture.Events) + "|" + xml + "|" + llsd;
+    }
 }

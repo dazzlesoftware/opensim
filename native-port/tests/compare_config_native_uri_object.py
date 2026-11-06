@@ -1,11 +1,144 @@
 from pathlib import Path
-import argparse,subprocess,json,itertools
-p=argparse.ArgumentParser();p.add_argument('--native',required=True);p.add_argument('--dotnet',required=True);p.add_argument('--work',type=Path,required=True);a=p.parse_args();d=Path(__file__).resolve().parent;w=a.work.resolve();w.mkdir(parents=True,exist_ok=True)
-def enc(s):return '~' if s is None else s.encode('utf-16-be','surrogatepass').hex()or'-'
-schemes=['http','https','ws','wss','ftp','file','gopher','nntp','news','mailto','uuid','telnet','ldap','net.tcp','net.pipe','vsmacros','a+b','a.b','a-b'];bodies=['','body','body?x#f','/a/b','//host/a/b','//EXAMPLE:81/a?b#c','//user:pass@host:80/a','//:pass@host/a','//user%40name:pa%3ass@host/a','//[fe80::1%25zone]:81/a','///é?中#Ω','///C:/a b','é','body%41'];bodies += ['//host:81','//host:00081','//host:0','//host:65535','//host:80','//user@host:81','//user%2Fname:pass@host:81','//user%5Cname:p%3Fss@host:81','//é@höst:81/a','//[::1]:81','//[fe80::1%25zone]:81','//host/a%2fb/../c?é#Ω']
-bases=[None,'','relative','../é','C:\\a b\\c','file://server/share/a/../b','/tmp/a\\b']+[s+':'+b for s,b in itertools.product(schemes,bodies)];refs=[None,'','a','../x','?q','#f','/root','//other/a','a+b:c','http://host/a','file:///tmp/x','mailto:user@host','é',' a ','#','?','%00','a\ud800b','//[::1]:81/x']
-refs += ['http://host:81','http://host:00081','http://host:81?q','https://[::1]:444','a+b://host:81','a+b://[fe80::1%25zone]:81','mailto:user@host:81','file:///é?中#Ω']
-rows=[(op,b,r)for op,b,r in itertools.product([0,1,2],bases,refs)];payload='\n'.join(str(op)+' '+enc(b)+' '+enc(r)for op,b,r in rows)+'\n';(w/'inputs.txt').write_text(payload);subprocess.run([a.dotnet,'build',str(d/'config_native_uri_object_reference/OperationReference.csproj'),'-o',str(w/'app'),'--nologo','-v:q'],check=True);out={}
-for name,cmd in [('reference',[a.dotnet,str(w/'app/OperationReference.dll')]),('native',[str(Path(a.native).resolve()),'--probe'])]:
- r=subprocess.run(cmd,input=payload,text=True,capture_output=True);(w/(name+'.txt')).write_text(r.stdout);(w/(name+'-error.txt')).write_text(r.stderr);assert r.returncode==0,(name,r.returncode,r.stderr);out[name]=r.stdout.splitlines();assert len(out[name])==len(rows),(name,len(out[name]),len(rows))
-diff=[{'input':row,'expected':e,'actual':n}for row,e,n in zip(rows,out['reference'],out['native'])if e!=n];(w/'all-differences.json').write_text(json.dumps(diff,indent=2));report={'cases':len(rows),'differences':len(diff),'examples':diff[:15],'applicationParityVerified':False,'scope':'Actual new Uri(base,Uri) before/after getters and UriBuilder.Fragment mutation; complete application remains unfinished.'};(w/'results.json').write_text(json.dumps(report,indent=2));print(json.dumps({'cases':len(rows),'differences':len(diff)}));raise SystemExit(bool(diff))
+import argparse, subprocess, json, itertools
+
+p = argparse.ArgumentParser()
+p.add_argument('--native', required=True)
+p.add_argument('--dotnet', required=True)
+p.add_argument('--work', type=Path, required=True)
+a = p.parse_args()
+d = Path(__file__).resolve().parent
+w = a.work.resolve()
+w.mkdir(parents=True, exist_ok=True)
+
+
+def enc(s):
+    return '~' if s is None else s.encode('utf-16-be', 'surrogatepass').hex() or '-'
+
+
+schemes = [
+    'http',
+    'https',
+    'ws',
+    'wss',
+    'ftp',
+    'file',
+    'gopher',
+    'nntp',
+    'news',
+    'mailto',
+    'uuid',
+    'telnet',
+    'ldap',
+    'net.tcp',
+    'net.pipe',
+    'vsmacros',
+    'a+b',
+    'a.b',
+    'a-b',
+]
+bodies = [
+    '',
+    'body',
+    'body?x#f',
+    '/a/b',
+    '//host/a/b',
+    '//EXAMPLE:81/a?b#c',
+    '//user:pass@host:80/a',
+    '//:pass@host/a',
+    '//user%40name:pa%3ass@host/a',
+    '//[fe80::1%25zone]:81/a',
+    '///é?中#Ω',
+    '///C:/a b',
+    'é',
+    'body%41',
+]
+bodies += [
+    '//host:81',
+    '//host:00081',
+    '//host:0',
+    '//host:65535',
+    '//host:80',
+    '//user@host:81',
+    '//user%2Fname:pass@host:81',
+    '//user%5Cname:p%3Fss@host:81',
+    '//é@höst:81/a',
+    '//[::1]:81',
+    '//[fe80::1%25zone]:81',
+    '//host/a%2fb/../c?é#Ω',
+]
+bases = [None, '', 'relative', '../é', 'C:\\a b\\c', 'file://server/share/a/../b', '/tmp/a\\b'] + [
+    s + ':' + b for s, b in itertools.product(schemes, bodies)
+]
+refs = [
+    None,
+    '',
+    'a',
+    '../x',
+    '?q',
+    '#f',
+    '/root',
+    '//other/a',
+    'a+b:c',
+    'http://host/a',
+    'file:///tmp/x',
+    'mailto:user@host',
+    'é',
+    ' a ',
+    '#',
+    '?',
+    '%00',
+    'a\ud800b',
+    '//[::1]:81/x',
+]
+refs += [
+    'http://host:81',
+    'http://host:00081',
+    'http://host:81?q',
+    'https://[::1]:444',
+    'a+b://host:81',
+    'a+b://[fe80::1%25zone]:81',
+    'mailto:user@host:81',
+    'file:///é?中#Ω',
+]
+rows = [(op, b, r) for op, b, r in itertools.product([0, 1, 2], bases, refs)]
+payload = '\n'.join(str(op) + ' ' + enc(b) + ' ' + enc(r) for op, b, r in rows) + '\n'
+(w / 'inputs.txt').write_text(payload)
+subprocess.run(
+    [
+        a.dotnet,
+        'build',
+        str(d / 'config_native_uri_object_reference/OperationReference.csproj'),
+        '-o',
+        str(w / 'app'),
+        '--nologo',
+        '-v:q',
+    ],
+    check=True,
+)
+out = {}
+for name, cmd in [
+    ('reference', [a.dotnet, str(w / 'app/OperationReference.dll')]),
+    ('native', [str(Path(a.native).resolve()), '--probe']),
+]:
+    r = subprocess.run(cmd, input=payload, text=True, capture_output=True)
+    (w / (name + '.txt')).write_text(r.stdout)
+    (w / (name + '-error.txt')).write_text(r.stderr)
+    assert r.returncode == 0, (name, r.returncode, r.stderr)
+    out[name] = r.stdout.splitlines()
+    assert len(out[name]) == len(rows), (name, len(out[name]), len(rows))
+diff = [
+    {'input': row, 'expected': e, 'actual': n}
+    for row, e, n in zip(rows, out['reference'], out['native'])
+    if e != n
+]
+(w / 'all-differences.json').write_text(json.dumps(diff, indent=2))
+report = {
+    'cases': len(rows),
+    'differences': len(diff),
+    'examples': diff[:15],
+    'applicationParityVerified': False,
+    'scope': 'Actual new Uri(base,Uri) before/after getters and UriBuilder.Fragment mutation; complete application remains unfinished.',
+}
+(w / 'results.json').write_text(json.dumps(report, indent=2))
+print(json.dumps({'cases': len(rows), 'differences': len(diff)}))
+raise SystemExit(bool(diff))

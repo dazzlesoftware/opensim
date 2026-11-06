@@ -29,10 +29,12 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/services/login_orchestration.hpp"
 #include "opensim/services/login_completion.hpp"
 #include "opensim/framework/identity.hpp"
+#include "opensim/framework/sdk_uuid.hpp"
 #include "opensim/framework/text.hpp"
 #include "opensim/framework/invariant_number_parse.hpp"
 #include "opensim/framework/dotnet_regex_interpreter.hpp"
 #include "opensim/framework/execution_stack.hpp"
+#include "opensim/network/osd_value.hpp"
 #include <mutex>
 #include <algorithm>
 #include <stdexcept>
@@ -55,9 +57,6 @@ bool identifier_denied(const std::string& denied, const std::string& identifier)
     // Source string.IsNullOrWhiteSpace, followed by ordinal string.Contains.
     return !std::all_of(text.begin(), text.end(), unicode_whitespace) &&
            text.find(utf16(identifier)) != std::u16string::npos;
-}
-std::string llsd_string(const Value& value) {
-    return value.kind == Value::Kind::Boolean ? (value.boolean ? "1" : "0") : value.as_string();
 }
 }
 struct LoginService::ClientPattern {
@@ -201,11 +200,8 @@ Value LoginService::login(const LoginRequest& r) {
         if (!authentication)
             return login_failure("UserProblem");
         Uuid secure_session;
-        try {
-            secure_session = Uuid(authentication.token);
-        } catch (const std::invalid_argument&) {
+        if (!try_parse_sdk_uuid(utf16_replacing(authentication.token), secure_session))
             return login_failure("UserProblem");
-        }
         if (orchestrator_) {
             const auto scope = Uuid(r.scope == ZeroUuid ? account->scope_id : r.scope);
             auto prepared = orchestrator_->prepare(*account, scope, session, secure_session, r.start);
@@ -257,8 +253,11 @@ Value LoginService::set_level(std::string_view first, std::string_view last, std
         const auto account = store_.find(ZeroUuid, first, last);
         if (!account || account->user_level < 200)
             return result;
-        if (!(authenticate_ ? authenticate_(account->principal_id, password, 30, allow_web_keys_)
-                            : store_.authenticate(account->principal_id, password, 30, allow_web_keys_)))
+        const auto authentication =
+            authenticate_ ? authenticate_(account->principal_id, password, 30, allow_web_keys_)
+                          : store_.authenticate(account->principal_id, password, 30, allow_web_keys_);
+        Uuid token;
+        if (!authentication || !try_parse_sdk_uuid(utf16_replacing(authentication.token), token))
             return result;
         minimum_level_.store(level);
         return Value::object({{"success", Value(true)}});
@@ -276,7 +275,7 @@ Value LoginHandlers::xml_rpc_login(const Value& data, const std::string& ip) {
     r.last = data.get("last").as_string();
     r.password = data.contains("passwd") ? data.get("passwd").as_string()
                                          : "$1$" + data.get("web_login_key").as_string();
-    r.scope = normalize_uuid(optional(data, "scope_id", std::string(ZeroUuid)));
+    r.scope = construct_sdk_uuid(utf16(optional(data, "scope_id", std::string(ZeroUuid)))).str();
     if (data.contains("start") && data.get("start").kind == Value::Kind::Undefined)
         throw std::invalid_argument("Null XML-RPC start location");
     r.start = optional(data, "start");
@@ -293,16 +292,17 @@ Value LoginHandlers::llsd_login(const Value& data, const std::string& ip) {
         return login_failure("InvalidLLSD");
     LoginRequest r;
     r.llsd = true;
-    r.first = llsd_string(data.get("first"));
-    r.last = llsd_string(data.get("last"));
-    r.password = llsd_string(data.get("passwd"));
-    r.scope =
-        data.contains("scope_id") ? normalize_uuid(llsd_string(data.get("scope_id"))) : std::string(ZeroUuid);
-    r.start = llsd_string(data.get("start"));
-    r.version = llsd_string(data.get("version"));
-    r.channel = llsd_string(data.get("channel"));
-    r.mac = llsd_string(data.get("mac"));
-    r.id0 = llsd_string(data.get("id0"));
+    r.first = network::osd_string(data.get("first"));
+    r.last = network::osd_string(data.get("last"));
+    r.password = network::osd_string(data.get("passwd"));
+    r.scope = data.contains("scope_id")
+        ? construct_sdk_uuid(utf16(network::osd_string(data.get("scope_id")))).str()
+        : std::string(ZeroUuid);
+    r.start = network::osd_string(data.get("start"));
+    r.version = network::osd_string(data.get("version"));
+    r.channel = network::osd_string(data.get("channel"));
+    r.mac = network::osd_string(data.get("mac"));
+    r.id0 = network::osd_string(data.get("id0"));
     r.remote_ip = ip;
     return service_.login(r);
 }

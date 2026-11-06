@@ -1,9 +1,125 @@
-using System;using System.Text;using OpenMetaverse;using Nini.Config;using OpenSim.Services.Connectors;
-namespace log4net{public interface ILog{void Error(object a);void Debug(object a);void DebugFormat(string f,params object[] a);void ErrorFormat(string f,params object[] a);}public class Logger:ILog{public void Error(object a){}public void Debug(object a){}public void DebugFormat(string f,params object[] a){}public void ErrorFormat(string f,params object[] a){}}public static class LogManager{public static ILog GetLogger(Type t)=>new Logger();}}
-namespace OpenSim.Framework.ServiceAuth{public interface IServiceAuth{}public class BasicHttpAuthentication:IServiceAuth{public BasicHttpAuthentication(IConfigSource source,string section){}}}
-namespace OpenSim.Framework{public static partial class Util{public static Encoding UTF8NoBomEncoding=new UTF8Encoding(false);static log4net.ILog m_log=log4net.LogManager.GetLogger(typeof(Util));}public static class SynchronousRestFormsRequester{public static string MakeRequest(string method,string uri,string body,OpenSim.Framework.ServiceAuth.IServiceAuth auth)=>Program.Send(uri,body);}}
-class Program{
- static string Trace,Reply;static string H(string s)=>s==null?"-":s.Length==0?".":Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();static string Decode(string s)=>s=="-"?null:s=="."?"":Encoding.UTF8.GetString(Convert.FromHexString(s));
- public static string Send(string uri,string body){Trace+=H(uri)+":"+H(body)+";";if(Reply=="#throw")throw new Exception();return Reply;}
- static void Main(string[] args){string line;while((line=Console.ReadLine())!=null){var p=line.Split(' ');int mode=int.Parse(p[0]),lifetime=int.Parse(p[1]);string principal=Decode(p[2]),value=Decode(p[3]);Reply=Decode(p[4]);Trace="";string output;UUID real=new UUID("00000000-0000-0000-0000-000000000007");try{string profile=args.Length>0?args[0]:"uri";var connector=profile=="config"?new AuthenticationServicesConnector(new IniConfigSource(args[1])):profile=="default"?new AuthenticationServicesConnector():new AuthenticationServicesConnector(profile=="null"?null:"http://auth.invalid/base///");if(profile=="config"&&args.Length>2)connector.Initialise(new IniConfigSource(args[2]));UUID.TryParse(principal,out UUID id);if(mode<2)output=H(mode==1?connector.Authenticate(id,value,lifetime,out real):connector.Authenticate(id,value,lifetime));else if(mode==2)output=connector.Verify(id,value,lifetime)?"T":"F";else if(mode==3)output=connector.Release(id,value)?"T":"F";else if(mode==4)output=connector.SetPassword(id,value)?"T":"F";else if(mode==5)output=connector.GetAuthInfo(id)==null?"N":"Y";else output=connector.SetAuthInfo(value==null?null:new OpenSim.Services.Interfaces.AuthInfo())?"T":"F";}catch{output="E";}Console.WriteLine(Trace+"|"+output+"|"+real);}}
+using System;
+using System.Text;
+using OpenMetaverse;
+using Nini.Config;
+using OpenSim.Services.Connectors;
+namespace log4net
+{
+    public interface ILog
+    {
+        void Error(object a);
+        void Debug(object a);
+        void DebugFormat(string f, params object[] a);
+        void ErrorFormat(string f, params object[] a);
+    }
+    public class Logger : ILog
+    {
+        public void Error(object a)
+        {
+        }
+        public void Debug(object a)
+        {
+        }
+        public void DebugFormat(string f, params object[] a)
+        {
+        }
+        public void ErrorFormat(string f, params object[] a)
+        {
+        }
+    }
+    public static class LogManager
+    {
+        public static ILog GetLogger(Type t) => new Logger();
+    }
+}
+namespace OpenSim.Framework.ServiceAuth
+{
+    public interface IServiceAuth
+    {
+    }
+    public class BasicHttpAuthentication : IServiceAuth
+    {
+        public BasicHttpAuthentication(IConfigSource source, string section)
+        {
+        }
+    }
+}
+namespace OpenSim.Framework
+{
+    public static partial class Util
+    {
+        public static Encoding UTF8NoBomEncoding = new UTF8Encoding(false);
+        static log4net.ILog m_log = log4net.LogManager.GetLogger(typeof(Util));
+    }
+    public static class SynchronousRestFormsRequester
+    {
+        public static string MakeRequest(string method, string uri, string body,
+                                         OpenSim.Framework.ServiceAuth.IServiceAuth auth) =>
+            Program.Send(uri, body);
+    }
+}
+class Program
+{
+    static string Trace, Reply;
+    static string H(string s) => s == null ? "-"
+                                 : s.Length == 0
+                                     ? "."
+                                     : Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();
+    static string Decode(string s) => s == "-"   ? null
+                                      : s == "." ? ""
+                                                 : Encoding.UTF8.GetString(Convert.FromHexString(s));
+    public static string Send(string uri, string body)
+    {
+        Trace += H(uri) + ":" + H(body) + ";";
+        if (Reply == "#throw")
+            throw new Exception();
+        return Reply;
+    }
+    static void Main(string[] args)
+    {
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var p = line.Split(' ');
+            int mode = int.Parse(p[0]), lifetime = int.Parse(p[1]);
+            string principal = Decode(p[2]), value = Decode(p[3]);
+            Reply = Decode(p[4]);
+            Trace = "";
+            string output;
+            UUID real = new UUID("00000000-0000-0000-0000-000000000007");
+            try
+            {
+                string profile = args.Length > 0 ? args[0] : "uri";
+                var connector =
+                    profile == "config"    ? new AuthenticationServicesConnector(new IniConfigSource(args[1]))
+                    : profile == "default" ? new AuthenticationServicesConnector()
+                                           : new AuthenticationServicesConnector(
+                                                 profile == "null" ? null : "http://auth.invalid/base///");
+                if (profile == "config" && args.Length > 2)
+                    connector.Initialise(new IniConfigSource(args[2]));
+                UUID.TryParse(principal, out UUID id);
+                if (mode < 2)
+                    output = H(mode == 1 ? connector.Authenticate(id, value, lifetime, out real)
+                                         : connector.Authenticate(id, value, lifetime));
+                else if (mode == 2)
+                    output = connector.Verify(id, value, lifetime) ? "T" : "F";
+                else if (mode == 3)
+                    output = connector.Release(id, value) ? "T" : "F";
+                else if (mode == 4)
+                    output = connector.SetPassword(id, value) ? "T" : "F";
+                else if (mode == 5)
+                    output = connector.GetAuthInfo(id) == null ? "N" : "Y";
+                else
+                    output = connector.SetAuthInfo(value == null ? null
+                                                                 : new OpenSim.Services.Interfaces.AuthInfo())
+                                 ? "T"
+                                 : "F";
+            }
+            catch
+            {
+                output = "E";
+            }
+            Console.WriteLine(Trace + "|" + output + "|" + real);
+        }
+    }
 }

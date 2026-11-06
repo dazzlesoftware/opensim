@@ -120,7 +120,16 @@ SqliteGridUserStore::SqliteGridUserStore(const std::string& path, bool initializ
         Statement create(
             state_->db,
             "CREATE TABLE " + state_->table +
-                "(UserID VARCHAR(255) NOT NULL PRIMARY KEY,HomeRegionID CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',HomePosition CHAR(64) NOT NULL DEFAULT '<0,0,0>',HomeLookAt CHAR(64) NOT NULL DEFAULT '<0,0,0>',LastRegionID CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',LastPosition CHAR(64) NOT NULL DEFAULT '<0,0,0>',LastLookAt CHAR(64) NOT NULL DEFAULT '<0,0,0>',Online CHAR(5) NOT NULL DEFAULT 'false',Login CHAR(16) NOT NULL DEFAULT '0',Logout CHAR(16) NOT NULL DEFAULT '0')");
+                "(UserID VARCHAR(255) NOT NULL PRIMARY KEY,"
+                "HomeRegionID CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',"
+                "HomePosition CHAR(64) NOT NULL DEFAULT '<0,0,0>',"
+                "HomeLookAt CHAR(64) NOT NULL DEFAULT '<0,0,0>',"
+                "LastRegionID CHAR(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',"
+                "LastPosition CHAR(64) NOT NULL DEFAULT '<0,0,0>',"
+                "LastLookAt CHAR(64) NOT NULL DEFAULT '<0,0,0>',"
+                "Online CHAR(5) NOT NULL DEFAULT 'false',"
+                "Login CHAR(16) NOT NULL DEFAULT '0',"
+                "Logout CHAR(16) NOT NULL DEFAULT '0')");
         create.row();
     }
     Statement columns(state_->db, "PRAGMA table_info(" + state_->table + ")");

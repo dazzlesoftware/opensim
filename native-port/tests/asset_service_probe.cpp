@@ -1,12 +1,15 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/services/asset_store.hpp"
+#include "opensim/services/fs_asset_files.hpp"
+#include "opensim/services/native_asset_storage.hpp"
 #include "opensim/services/region_asset_runtime.hpp"
 #include "opensim/network/web_http_clients.hpp"
 #include "opensim/network/async_http_server.hpp"
 #include "opensim/services/get_assets_module.hpp"
 #include "opensim/server/http_route_registry.hpp"
 #include "opensim/server/poll_http_service.hpp"
+#include <future>
 #include <iostream>
 #include <sstream>
 #include <thread>
@@ -81,6 +84,307 @@ struct Store : AssetStore {
     }
 };
 int main(int argc, char **argv) try {
+    if (argc == 7 && std::string_view(argv[1]) == "--fs-files") {
+        const auto operation = std::string_view(argv[2]);
+        const FsAssetFiles files(argv[3], argv[4], std::string_view(argv[5]) == "osgrid");
+        if (operation == "stage") {
+            const auto bytes = unhex(argv[6]);
+            const auto hash = FsAssetFiles::digest(bytes);
+            files.stage(hash, bytes);
+            std::cout << hash << '\n';
+        } else if (operation == "read") {
+            const auto bytes = files.read(argv[6]);
+            std::cout << (bytes ? hex(*bytes) : "missing") << '\n';
+        } else if (operation == "flush") {
+            std::cout << files.flush() << '\n';
+        } else {
+            throw std::invalid_argument("Unknown filesystem asset probe operation");
+        }
+        return 0;
+    }
+    if (argc == 4 && std::string_view(argv[1]) == "--mysql-provider") {
+        const auto config = server::IniConfig::load(argv[2]);
+        auto backend = std::make_shared<NativeAssetStorageBackend>();
+        const auto store = AssetStorageFactory(backend).create(&config)->database;
+        const framework::Uuid id(argv[3]);
+        auto asset = store->get(id);
+        if (!asset || !asset->data)
+            throw std::runtime_error("MySQL provider could not reload the asset");
+        asset->flags(framework::Rewritable);
+        asset->description("Provider replacement");
+        if (!store->store(asset))
+            throw std::runtime_error("MySQL provider replacement failed");
+        const auto stored = store->get(id);
+        if (!stored || stored->flags() != framework::Rewritable ||
+            stored->description() != "Provider replacement" || !stored->data || *stored->data != *asset->data)
+            throw std::runtime_error("MySQL provider did not replace the asset fields");
+        const auto first = store->metadata_set(0, 1);
+        if (first.size() != 1 || first[0]->full_id() != id || first[0]->flags != framework::Rewritable ||
+            !first[0]->sha1 || !first[0]->sha1->empty())
+            throw std::runtime_error("MySQL provider metadata pagination differed from the original");
+        if (!store->erase(id.str()) || store->get(id) || !store->erase(id.str()))
+            throw std::runtime_error("MySQL provider did not report successful deletes");
+        return 0;
+    }
+    if (argc == 4 && std::string_view(argv[1]) == "--pgsql-provider") {
+        const auto config = server::IniConfig::load(argv[2]);
+        auto backend = std::make_shared<NativeAssetStorageBackend>();
+        const auto store = AssetStorageFactory(backend).create(&config)->database;
+        const framework::Uuid id(argv[3]);
+        auto asset = store->get(id);
+        if (!asset || !asset->data)
+            throw std::runtime_error("PostgreSQL provider could not reload the asset");
+        const auto flags = asset->flags();
+        asset->flags(framework::Rewritable);
+        asset->description("Provider update");
+        if (!store->store(asset))
+            throw std::runtime_error("PostgreSQL provider update failed");
+        const auto stored = store->get(id);
+        if (!stored || stored->flags() != flags || stored->description() != "Provider update" ||
+            !stored->data || *stored->data != *asset->data)
+            throw std::runtime_error("PostgreSQL provider did not preserve the original update semantics");
+        const auto first = store->metadata_set(0, 2);
+        if (!store->metadata_set(0, 1).empty() || first.size() != 1 || first[0]->full_id() != id ||
+            first[0]->description != "Provider update" || first[0]->flags != framework::Normal)
+            throw std::runtime_error("PostgreSQL provider metadata pagination differed from the original");
+        return 0;
+    }
+    if (argc == 6 && std::string_view(argv[1]) == "--asset-read-queues") {
+        auto clients = std::make_shared<network::WebHttpClients>(network::native_web_http_handler_factory());
+        clients->setup(false, false, nullptr, 32);
+        const auto config = server::IniConfig::load(argv[2]);
+        auto events = std::make_shared<SceneCapabilityEvents>(SceneCapabilityEvents::Error{});
+        RegionAssetRuntime runtime(config, events, "Region asset queue isolation", {}, {}, {}, clients);
+        const auto service = runtime.asset_service();
+        const std::string remote = argv[3];
+        const std::string local_id = argv[4];
+        std::vector<std::future<AssetService::Asset>> results;
+        for (int index = 0; index < 3; ++index) {
+            const auto id = std::string(argv[5]) + std::to_string(index);
+            auto result = std::make_shared<std::promise<AssetService::Asset>>();
+            results.push_back(result->get_future());
+            service->get(id, remote, false, [result](auto asset) { result->set_value(std::move(asset)); });
+        }
+        auto local_result = std::make_shared<std::promise<AssetService::Asset>>();
+        auto local = local_result->get_future();
+        if (!service->get_async(local_id, {}, [local_result](const auto&, std::any, auto asset) {
+                local_result->set_value(std::move(asset));
+            }) || local.wait_for(std::chrono::seconds(8)) != std::future_status::ready || !local.get())
+            throw std::runtime_error("Local asset read was blocked by remote reads");
+        for (auto& result : results)
+            if (result.wait_for(std::chrono::seconds(8)) != std::future_status::ready || !result.get())
+                throw std::runtime_error("Remote asset read did not complete");
+        return 0;
+    }
+    if (argc == 4 && (std::string_view(argv[1]) == "--foreign-read" ||
+                      std::string_view(argv[1]) == "--foreign-read-async")) {
+        auto clients = std::make_shared<network::WebHttpClients>(network::native_web_http_handler_factory());
+        clients->setup(false, false, nullptr, 32);
+        const auto config = server::IniConfig::load(argv[2]);
+        auto events = std::make_shared<SceneCapabilityEvents>(SceneCapabilityEvents::Error{});
+        RegionAssetRuntime runtime(config, events, "Foreign asset read test", {}, {}, {}, clients);
+        const auto service = runtime.asset_service();
+        AssetService::Asset asset;
+        const std::string id = argv[3];
+        if (std::string_view(argv[1]) == "--foreign-read-async") {
+            auto result = std::make_shared<std::promise<AssetService::Asset>>();
+            auto future = result->get_future();
+            if (!service->get_async(id, 42, [result, id](const auto& requested, std::any sender, auto value) {
+                    if (requested == id && std::any_cast<int>(sender) == 42)
+                        result->set_value(std::move(value));
+                }) || future.wait_for(std::chrono::seconds(5)) != std::future_status::ready)
+                throw std::runtime_error("Foreign URL read did not deliver its callback");
+            asset = future.get();
+        } else {
+            asset = service->get_asset(id);
+        }
+        if (asset && asset->data && *asset->data == std::vector<std::uint8_t>{0, 1, 255})
+            std::cout << asset->id();
+        std::cout << '\n';
+        return 0;
+    }
+    if (argc >= 4 && std::string_view(argv[1]) == "--foreign-exists") {
+        auto clients = std::make_shared<network::WebHttpClients>(network::native_web_http_handler_factory());
+        clients->setup(false, false, nullptr, 32);
+        const auto config = server::IniConfig::load(argv[2]);
+        auto events = std::make_shared<SceneCapabilityEvents>(SceneCapabilityEvents::Error{});
+        RegionAssetRuntime runtime(config, events, "Foreign asset existence test", {}, {}, {}, clients);
+        const std::vector<std::string> ids(argv + 3, argv + argc);
+        for (const bool exists : runtime.asset_service()->assets_exist(ids))
+            std::cout << (exists ? '1' : '0');
+        std::cout << '\n';
+        return 0;
+    }
+    if (argc == 5 && std::string_view(argv[1]) == "--grid-exists") {
+        auto clients = std::make_shared<network::WebHttpClients>(network::native_web_http_handler_factory());
+        clients->setup(false, false, nullptr, 32);
+        const auto config = server::IniConfig::load(argv[2]);
+        const auto connector = make_grid_asset_service(config, clients, [](auto) { return false; });
+        for (const bool exists : connector->assets_exist({argv[3], argv[4]}))
+            std::cout << (exists ? '1' : '0');
+        std::cout << '\n';
+        return 0;
+    }
+    if (argc == 3 && std::string_view(argv[1]) == "--managed-grid") {
+        auto clients = std::make_shared<network::WebHttpClients>(network::native_web_http_handler_factory());
+        clients->setup(false, false, nullptr, 32);
+        const auto config = server::IniConfig::load(argv[2]);
+        std::vector<std::function<void()>> queued;
+        const auto connector = make_grid_asset_service(config, clients, [&](auto task) {
+            queued.push_back(std::move(task));
+            return true;
+        });
+        const framework::Uuid id("91919191-9191-4191-8191-919191919191");
+        const auto key = id.str();
+        const std::string missing = "81818181-8181-4181-8181-818181818181";
+        const std::vector<std::uint8_t> expected{0, 1, 255};
+        const auto metadata = connector->get_metadata(key);
+        if (!metadata || metadata->id() != key || metadata->name != "Grid write & read" ||
+            metadata->content_type() != "application/vnd.ll.lsltext")
+            throw std::runtime_error("Managed Robust metadata differed");
+        const auto data = connector->get_data(key);
+        if (!data || *data != expected)
+            throw std::runtime_error("Managed Robust raw data differed");
+        if (connector->assets_exist({missing, key, key}) != std::vector<bool>{false, true, true})
+            throw std::runtime_error("Managed Robust batch existence differed");
+        std::vector<int> delivered;
+        const auto callback = [&](const auto &requested, const auto &sender, const auto &asset) {
+            if (requested == key && asset && asset->data && *asset->data == expected)
+                delivered.push_back(std::any_cast<int>(sender));
+            if (std::any_cast<int>(sender) == 42)
+                throw std::runtime_error("Fixture callback failure");
+        };
+        if (!connector->get_async(key, 42, callback) || !connector->get_async(key, 43, callback) ||
+            queued.size() != 1)
+            throw std::runtime_error("Duplicate grid asset reads were not coalesced");
+        queued.front()();
+        queued.clear();
+        if (!connector->get_async(key, 44, callback) || queued.size() != 1)
+            throw std::runtime_error("Completed grid asset read remained queued");
+        queued.front()();
+        if (delivered != std::vector<int>{42, 43, 44})
+            throw std::runtime_error("Managed Robust asynchronous asset read differed");
+        if (connector->update_content(key, std::make_shared<std::vector<std::uint8_t>>(3, 7)))
+            throw std::runtime_error("Managed Robust unexpectedly allowed an SQLite content update");
+        if (!connector->erase(key) || connector->get_asset(key) ||
+            connector->assets_exist({key}) != std::vector<bool>{false})
+            throw std::runtime_error("Managed Robust did not delete the native asset");
+        std::cout << "PASS: native grid connector interoperates with the managed Robust host\n";
+        return 0;
+    }
+    if (argc == 4 && std::string_view(argv[1]) == "--grid-async-retry") {
+        auto clients = std::make_shared<network::WebHttpClients>(network::native_web_http_handler_factory());
+        clients->setup(false, false, nullptr, 32);
+        const auto config = server::IniConfig::load(argv[2]);
+        std::vector<std::function<void()>> queued;
+        bool accept = false;
+        const auto connector = make_grid_asset_service(config, clients, [&](auto task) {
+            if (!accept)
+                return false;
+            queued.push_back(std::move(task));
+            return true;
+        });
+        const std::string key = argv[3];
+        std::vector<int> delivered;
+        const auto callback = [&](const auto& requested, std::any sender, const auto& asset) {
+            const auto index = std::any_cast<int>(sender);
+            if (requested == key && static_cast<bool>(asset) == (index == 3))
+                delivered.push_back(index);
+        };
+        if (connector->get_async(key, 0, callback) || !delivered.empty())
+            throw std::runtime_error("Rejected queue request was accepted");
+        accept = true;
+        if (!connector->get_async(key, 1, callback) || !connector->get_async(key, 2, callback) ||
+            queued.size() != 1)
+            throw std::runtime_error("Failed grid read was not coalesced");
+        queued.front()();
+        queued.clear();
+        if (delivered != std::vector<int>{1, 2})
+            throw std::runtime_error("Failed grid read did not notify both callers");
+        if (!connector->get_async(key, 3, callback) || queued.size() != 1)
+            throw std::runtime_error("Grid read could not be retried");
+        queued.front()();
+        if (delivered != std::vector<int>{1, 2, 3})
+            throw std::runtime_error("Grid read retry did not deliver the asset");
+        return 0;
+    }
+    if (argc == 4 && std::string_view(argv[1]) == "--grid-metadata") {
+        auto clients = std::make_shared<network::WebHttpClients>(network::native_web_http_handler_factory());
+        clients->setup(false, false, nullptr, 32);
+        const auto config = server::IniConfig::load(argv[2]);
+        const auto connector = make_grid_asset_service(config, clients, [](auto) { return false; });
+        const auto metadata = connector->get_metadata(argv[3]);
+        if (!metadata || !metadata->sha1 || metadata->type != 10)
+            throw std::runtime_error("Managed asset metadata or its SHA1 was lost");
+        const auto& bytes = *metadata->sha1;
+        const auto sha1 = hex({reinterpret_cast<const char*>(bytes.data()), bytes.size()});
+        std::cout << metadata->creation_date.ticks() << '|' << metadata->creation_date.kind() << '|'
+                  << metadata->content_type() << '|' << sha1 << '\n'
+                  << serialize_remote_asset_metadata(*metadata);
+        return 0;
+    }
+    if (argc == 4 && (std::string_view(argv[1]) == "--grid-mutate" ||
+                      std::string_view(argv[1]) == "--grid-mutation-reply")) {
+        auto clients = std::make_shared<network::WebHttpClients>(network::native_web_http_handler_factory());
+        clients->setup(false, false, nullptr, 32);
+        const auto config = server::IniConfig::load(argv[2]);
+        auto events = std::make_shared<SceneCapabilityEvents>(SceneCapabilityEvents::Error{});
+        RegionAssetRuntime runtime(config, events, "Grid asset mutation test", {}, {}, {}, clients);
+        const framework::Uuid id(argv[3]);
+        const std::vector<std::uint8_t> original{0, 1, 255};
+        const auto replacement = std::make_shared<std::vector<std::uint8_t>>(3, 7);
+        const auto service = runtime.asset_service();
+        if (std::string_view(argv[1]) == "--grid-mutation-reply") {
+            std::cout << service->update_content(id.str(), replacement) << service->erase(id.str()) << '\n';
+            return 0;
+        }
+        const auto has_bytes = [&](const std::vector<std::uint8_t> &expected) {
+            const auto received = runtime.get(id);
+            return received && received->data && *received->data == expected;
+        };
+        const auto foreign_id = "http://foreign.example/assets/" + id.str();
+        if (service->update_content(foreign_id, replacement) || service->erase(foreign_id))
+            throw std::runtime_error("Region connector accepted a foreign asset mutation");
+        if (!has_bytes(original))
+            throw std::runtime_error("Could not read the original grid asset");
+        if (service->update_content(id.str(), replacement) || !has_bytes(original))
+            throw std::runtime_error("Rejected grid update changed the stored bytes");
+        if (!service->update_content(id.str(), replacement) || !has_bytes(*replacement))
+            throw std::runtime_error("Accepted grid update did not change the stored bytes");
+        if (!service->erase(id.str()) || runtime.get(id))
+            throw std::runtime_error("Deleted grid asset was still available");
+        return 0;
+    }
+    if ((argc == 3 && (std::string_view(argv[1]) == "--grid-store" ||
+                       std::string_view(argv[1]) == "--grid-store-reply")) ||
+        (argc == 4 && std::string_view(argv[1]) == "--foreign-store")) {
+        auto clients = std::make_shared<network::WebHttpClients>(network::native_web_http_handler_factory());
+        clients->setup(false, false, nullptr, 32);
+        const auto config = server::IniConfig::load(argv[2]);
+        auto events = std::make_shared<SceneCapabilityEvents>(SceneCapabilityEvents::Error{});
+        RegionAssetRuntime runtime(config, events, "Grid asset write test", {}, {}, {}, clients);
+        const framework::Uuid id("91919191-9191-4191-8191-919191919191");
+        auto asset = std::make_shared<framework::AssetBase>(id, "Grid write & read", 10, id.str());
+        if (argc == 4)
+            asset->id(argv[3]);
+        asset->data = std::make_shared<std::vector<std::uint8_t>>(
+            std::initializer_list<std::uint8_t>{0, 1, 255});
+        const auto stored = runtime.store(asset);
+        if (argc == 4 || std::string_view(argv[1]) == "--grid-store-reply") {
+            std::cout << stored.value_or("") << '\n';
+            return 0;
+        }
+        if (!stored || stored->empty()) {
+            std::cout << "rejected\n";
+            return 0;
+        }
+        const auto received = runtime.get(framework::Uuid(*stored));
+        if (!received || received->full_id().str() != *stored || !received->data ||
+            *received->data != *asset->data || received->name() != asset->name())
+            throw std::runtime_error("Stored grid asset could not be read back");
+        std::cout << "stored|" << *stored << '\n';
+        return 0;
+    }
     if (argc >= 4 && argc <= 6 && std::string_view(argv[1]) == "--remote") {
         auto clients = std::make_shared<network::WebHttpClients>(network::native_web_http_handler_factory());
         clients->setup(false, false, nullptr, 32);

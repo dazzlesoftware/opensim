@@ -99,7 +99,8 @@ HttpResponse GridUserEndpoint::handle(const HttpRequest& request) {
         return response;
     response.body = service_result(false);
     try {
-        const auto fields = parse_service_form(framework::trim_utf8(request.body));
+        const auto body = read_service_body(request.body);
+        const auto fields = parse_service_form(framework::trim_utf8(body));
         const auto method = fields.find("METHOD");
         if (method == fields.end())
             return response;

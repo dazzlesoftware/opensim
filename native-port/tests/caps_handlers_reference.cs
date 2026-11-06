@@ -1,6 +1,146 @@
-using System;using System.Collections;using System.Collections.Generic;using System.Linq;using System.Text;using OpenMetaverse;using OpenSim.Framework.Capabilities;using OpenSim.Framework.Servers.HttpServer;
-namespace OpenSim.Framework.Servers {}
-namespace OpenSim.Framework.Servers.HttpServer {public interface IRequestHandler{string Path{get;}}public interface ISimpleStreamHandler{string Path{get;}}public interface IHttpServer{bool UseSSL{get;}void AddStreamHandler(IRequestHandler h);void RemoveStreamHandler(string m,string p);void AddSimpleStreamHandler(ISimpleStreamHandler h);void RemoveSimpleStreamHandler(string p);}}
-class Handler:IRequestHandler,ISimpleStreamHandler{public string Path{get;set;}public Handler(string p){Path=p;}}
-class Listener:IHttpServer{public bool UseSSL{get;set;}public string trace="",fail="";void Log(string s){trace+=s+";";if(s==fail)throw new Exception();}public void AddStreamHandler(IRequestHandler h)=>Log("A"+h.Path);public void RemoveStreamHandler(string m,string p)=>Log(m+p);public void AddSimpleStreamHandler(ISimpleStreamHandler h)=>Log("S"+h.Path);public void RemoveSimpleStreamHandler(string p)=>Log("R"+p);}
-class CapsReference{static string Hex(string s)=>Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();static string Dump(IDictionary m){var a=new List<string>();foreach(DictionaryEntry e in m)a.Add(Hex((string)e.Key)+":"+(e.Value==null?"-":Hex((string)e.Value)));a.Sort(StringComparer.Ordinal);return string.Join(",",a)+(a.Count>0?",":"");}static void Main(){string line;while((line=Console.ReadLine())!=null){var a=line.Split(' ').Select(int.Parse).ToArray();string cap=(a[1]&8)!=0?"試験😀<&'\"":"X";var l=new Listener{UseSSL=a[0]!=0};var c=new CapsHandlers(l,"host&\"",9000);var n=new Handler("/normal<&'\"");var s=new Handler("/simple");if((a[1]&16)!=0){n.Path=null;s.Path=null;}c["SEED"]=new Handler("/seed");if((a[1]&1)!=0)c.AddSimpleHandler(cap,s,false);if((a[1]&2)!=0)c[cap]=n;if((a[1]&4)!=0)c["Other"]=n;l.trace="";l.fail=new[]{"","POST/normal<&'\"","PUT/normal<&'\"","GET/normal<&'\"","DELETE/normal<&'\"","R/simple","A/normal<&'\"","S/simple"}[a[3]];string result="OK";try{switch(a[2]){case 0:c.Remove(cap);break;case 1:c[cap]=n;break;case 2:c[cap]=null;break;case 3:c.AddSimpleHandler(cap,s);break;case 4:c.AddSimpleHandler(cap,s,false);break;case 5:result=ReferenceEquals(c[cap],n)?"N":"?";break;case 6:c.Remove(null);break;case 7:c[null]=n;break;case 8:result=c.ContainsCap(cap)?"1":"0";break;}}catch{result="EX";}var names=c.Caps;Array.Sort(names,StringComparer.Ordinal);var req=new List<string>{cap,"SEED","Other","missing",cap};var xml=new osUTF8();c.GetCapsDetailsLLSDxml(new HashSet<string>(req),xml);var snapshot=c.GetCapsHandlers();snapshot.Remove("SEED");Console.WriteLine(result+"|"+Hex(l.trace)+"|"+string.Concat(names.Select(v=>v+","))+"|"+Dump(c.GetCapsDetails(true,null))+"|"+Dump(c.GetCapsDetails(true,req))+"|"+Dump((IDictionary)c.GetCapsLocalPaths())+"|"+Convert.ToHexString(xml.ToArray()).ToLowerInvariant()+"|"+(c.ContainsCap("SEED")?"1":"0"));}}}
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using OpenMetaverse;
+using OpenSim.Framework.Capabilities;
+using OpenSim.Framework.Servers.HttpServer;
+namespace OpenSim.Framework.Servers
+{
+}
+namespace OpenSim.Framework.Servers.HttpServer
+{
+    public interface IRequestHandler
+    {
+        string Path { get; }
+    }
+    public interface ISimpleStreamHandler
+    {
+        string Path { get; }
+    }
+    public interface IHttpServer
+    {
+        bool UseSSL { get; }
+        void AddStreamHandler(IRequestHandler h);
+        void RemoveStreamHandler(string m, string p);
+        void AddSimpleStreamHandler(ISimpleStreamHandler h);
+        void RemoveSimpleStreamHandler(string p);
+    }
+}
+class Handler : IRequestHandler, ISimpleStreamHandler
+{
+    public string Path { get; set; }
+    public Handler(string p)
+    {
+        Path = p;
+    }
+}
+class Listener : IHttpServer
+{
+    public bool UseSSL { get; set; }
+    public string trace = "", fail = "";
+    void Log(string s)
+    {
+        trace += s + ";";
+        if (s == fail)
+            throw new Exception();
+    }
+    public void AddStreamHandler(IRequestHandler h) => Log("A" + h.Path);
+    public void RemoveStreamHandler(string m, string p) => Log(m + p);
+    public void AddSimpleStreamHandler(ISimpleStreamHandler h) => Log("S" + h.Path);
+    public void RemoveSimpleStreamHandler(string p) => Log("R" + p);
+}
+class CapsReference
+{
+    static string Hex(string s) => Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();
+    static string Dump(IDictionary m)
+    {
+        var a = new List<string>();
+        foreach (DictionaryEntry e in m)
+            a.Add(Hex((string)e.Key) + ":" + (e.Value == null ? "-" : Hex((string)e.Value)));
+        a.Sort(StringComparer.Ordinal);
+        return string.Join(",", a) + (a.Count > 0 ? "," : "");
+    }
+    static void Main()
+    {
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var a = line.Split(' ').Select(int.Parse).ToArray();
+            string cap = (a[1] & 8) != 0 ? "試験😀<&'\"" : "X";
+            var l = new Listener { UseSSL = a[0] != 0 };
+            var c = new CapsHandlers(l, "host&\"", 9000);
+            var n = new Handler("/normal<&'\"");
+            var s = new Handler("/simple");
+            if ((a[1] & 16) != 0)
+            {
+                n.Path = null;
+                s.Path = null;
+            }
+            c["SEED"] = new Handler("/seed");
+            if ((a[1] & 1) != 0)
+                c.AddSimpleHandler(cap, s, false);
+            if ((a[1] & 2) != 0)
+                c[cap] = n;
+            if ((a[1] & 4) != 0)
+                c["Other"] = n;
+            l.trace = "";
+            l.fail = new[] {
+                "",         "POST/normal<&'\"", "PUT/normal<&'\"", "GET/normal<&'\"", "DELETE/normal<&'\"",
+                "R/simple", "A/normal<&'\"",    "S/simple"
+            }[a[3]];
+            string result = "OK";
+            try
+            {
+                switch (a[2])
+                {
+                case 0:
+                    c.Remove(cap);
+                    break;
+                case 1:
+                    c[cap] = n;
+                    break;
+                case 2:
+                    c[cap] = null;
+                    break;
+                case 3:
+                    c.AddSimpleHandler(cap, s);
+                    break;
+                case 4:
+                    c.AddSimpleHandler(cap, s, false);
+                    break;
+                case 5:
+                    result = ReferenceEquals(c[cap], n) ? "N" : "?";
+                    break;
+                case 6:
+                    c.Remove(null);
+                    break;
+                case 7:
+                    c[null] = n;
+                    break;
+                case 8:
+                    result = c.ContainsCap(cap) ? "1" : "0";
+                    break;
+                }
+            }
+            catch
+            {
+                result = "EX";
+            }
+            var names = c.Caps;
+            Array.Sort(names, StringComparer.Ordinal);
+            var req = new List<string> { cap, "SEED", "Other", "missing", cap };
+            var xml = new osUTF8();
+            c.GetCapsDetailsLLSDxml(new HashSet<string>(req), xml);
+            var snapshot = c.GetCapsHandlers();
+            snapshot.Remove("SEED");
+            Console.WriteLine(result + "|" + Hex(l.trace) + "|" + string.Concat(names.Select(v => v + ",")) +
+                              "|" + Dump(c.GetCapsDetails(true, null)) + "|" +
+                              Dump(c.GetCapsDetails(true, req)) + "|" +
+                              Dump((IDictionary)c.GetCapsLocalPaths()) + "|" +
+                              Convert.ToHexString(xml.ToArray()).ToLowerInvariant() + "|" +
+                              (c.ContainsCap("SEED") ? "1" : "0"));
+        }
+    }
+}

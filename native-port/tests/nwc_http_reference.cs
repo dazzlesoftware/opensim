@@ -1,17 +1,260 @@
-using System;using System.IO;using System.Collections;using System.Collections.Generic;using System.Globalization;using System.Text;using System.Net;using System.Net.Http;using System.Reflection;using System.Xml.Linq;using System.Threading;using GridRegion=OpenSim.Services.Interfaces.GridRegion;using Nwc.XmlRpc;using OpenMetaverse;using OpenSim.Framework;using log4net;
-namespace log4net {public interface ILog{void Debug(object value);void Error(object value);void InfoFormat(string format,params object[] values);void DebugFormat(string format,params object[] values);void ErrorFormat(string format,params object[] values);void WarnFormat(string format,params object[] values);}class Log:ILog{public void Debug(object v){HttpHost.Logs.Add(v.ToString());}public void Error(object v){HttpHost.Logs.Add(v.ToString());}public void InfoFormat(string f,params object[] v){HttpHost.Logs.Add(string.Format(f,v));}public void DebugFormat(string f,params object[] v){HttpHost.Logs.Add(string.Format(f,v));}public void ErrorFormat(string f,params object[] v){HttpHost.Logs.Add(string.Format(f,v));}public void WarnFormat(string f,params object[] v){HttpHost.Logs.Add(string.Format(f,v));}}public static class LogManager{public static ILog GetLogger(Type type)=>new Log();}}
-namespace OpenSim.Framework {public class GroupMembershipData{}public interface IClientAPI{}public static partial class WebUtil {static readonly ILog m_log=LogManager.GetLogger(typeof(WebUtil));public static int RequestNumber;public static int DebugLevel=>HttpHost.Level;public const int LongCallTime=3000,MaxRequestDiagLength=200;public static HttpClient GetNewGlobalHttpClient(int timeout)=>HttpHost.Client(timeout>0?timeout:30000);}public static partial class Util{public static int EnvironmentTickCount()=>Environment.TickCount;public static int EnvironmentTickCountSubtract(int first)=>unchecked(Environment.TickCount-first)&int.MaxValue;}}
-static class HttpHost {
- public static List<string> Logs=new();public static int Level;
- static readonly SocketsHttpHandler handler=new SocketsHttpHandler{UseCookies=false,UseProxy=false,AllowAutoRedirect=true,MaxAutomaticRedirections=10,AutomaticDecompression=DecompressionMethods.None,ConnectTimeout=TimeSpan.FromSeconds(120),PreAuthenticate=false,MaxConnectionsPerServer=200,PooledConnectionIdleTimeout=TimeSpan.FromSeconds(31),PooledConnectionLifetime=TimeSpan.FromMinutes(3)};
- public static HttpClient Client(int timeout){var client=new HttpClient(handler,false){Timeout=TimeSpan.FromMilliseconds(timeout),MaxResponseContentBufferSize=250*1024*1024};client.DefaultRequestHeaders.ExpectContinue=false;return client;}
- public static string H(string s){if(s==null)return "-";if(s.Length==0)return ".";string o="";foreach(char c in s)o+=((int)c&255).ToString("x2")+((int)c>>8).ToString("x2");return o;}
- static string D(string h){if(h=="-")return null;if(h==".")return "";var b=Convert.FromHexString(h);string o="";for(int i=0;i<b.Length;i+=2)o+=(char)(b[i]|b[i+1]<<8);return o;}
- static string Dump(object value){if(value==null)return "N";if(value is string s)return "S:"+H(s);if(value is int i)return "I:"+i;if(value is bool b)return b?"T":"F";if(value is double d)return "R:"+BitConverter.DoubleToInt64Bits(d).ToString("x16");if(value is DateTime t)return "D:"+t.Ticks;if(value is byte[] bytes)return "B:"+Convert.ToHexString(bytes).ToLowerInvariant();if(value is ArrayList list){var a=new List<string>();foreach(var x in list)a.Add(Dump(x));return "A["+string.Join(',',a)+"]";}if(value is IDictionary map){var keys=new List<string>();foreach(string k in map.Keys)keys.Add(k);keys.Sort(StringComparer.Ordinal);var a=new List<string>();foreach(var k in keys)a.Add(H(k)+"="+Dump(map[k]));return "M{"+string.Join(',',a)+"}";}return "X";}
- static UUID Id(int n)=>new UUID("00000000-0000-0000-0000-"+n.ToString("x12"));
- static UserProfileProperties Seed(string p)=>new UserProfileProperties{UserId=Id(1),PartnerId=Id(2),ImageId=Id(3),FirstLifeImageId=Id(4),WebUrl="seed url",AboutText=p,FirstLifeText="seed life",WantToMask=47,SkillsMask=-31,WantToText="seed wants",SkillsText="seed skills",Language="seed language",PublishProfile=true,PublishMature=true};
- static string Props(UserProfileProperties p)=>p==null?"N":p.UserId+":"+p.PartnerId+":"+p.ImageId+":"+p.FirstLifeImageId+":"+H(p.WebUrl)+":"+H(p.AboutText)+":"+H(p.FirstLifeText)+":"+p.WantToMask+":"+H(p.WantToText)+":"+p.SkillsMask+":"+H(p.SkillsText)+":"+H(p.Language)+":"+p.PublishProfile+":"+p.PublishMature;
-  public static string Vec(Vector3 v)=>BitConverter.SingleToInt32Bits(v.X).ToString("x8")+":"+BitConverter.SingleToInt32Bits(v.Y).ToString("x8")+":"+BitConverter.SingleToInt32Bits(v.Z).ToString("x8");
-  public static string Region(GridRegion r)=>r==null?"N":r.RegionID+":"+r.RegionLocX+":"+r.RegionLocY+":"+r.RegionSizeX+":"+r.RegionSizeY+":"+H(r.RegionName)+":"+H(r.ExternalHostName)+":"+r.HttpPort+":"+H(r.RawServerURI)+":"+H(r.ServerURI)+":"+(r.InternalEndPoint==null?"N":r.InternalEndPoint.ToString());
- public static void Main(){CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;string line;while((line=Console.ReadLine())!=null){var a=line.Split(' ');int mode=int.Parse(a[0]),timeout=int.Parse(a[1]);string method=D(a[2]),payload=D(a[3]),url=D(a[4]);Level=mode==3?5:0;Logs.Clear();UserProfileProperties props=mode==1||mode==3?Seed(payload):null;Vector3 position=new Vector3(9,8,7),look=new Vector3(6,5,4);string boolReason="seed";string result;try{if(mode==6)result="G:"+Region(new OpenSim.Services.Connectors.Hypergrid.UserAgentServiceConnector(url).GetHomeRegion(Id(1),out position,out look));else if(mode==7){var names=new List<string>();foreach(var id in new OpenSim.Services.Connectors.Hypergrid.UserAgentServiceConnector(url).GetOnlineFriends(Id(1),new List<string>()))names.Add(id.ToString());result="F:"+string.Join(",",names);}else if(mode==5)result="B:"+new OpenSim.Services.Connectors.Hypergrid.UserAgentServiceConnector(url).Bool(out boolReason);else if(mode==4)result="U:"+Dump(new OpenSim.Services.Connectors.Hypergrid.UserAgentServiceConnector(url).GetUserInfo(Id(1)));else if(mode==1||mode==3)result="P:"+(new OpenSim.Services.UserProfilesService.OpenProfileClient(url).RequestAvatarPropertiesUsingOpenProfile(ref props)?1:0);else{using var client=Client(timeout);var r=new XmlRpcRequest(method,new ArrayList{payload}).Send(url,client);result="R:"+(r.IsFault?1:0)+":"+Dump(r.Value)+";C:"+r.FaultCode+";S:"+H(r.FaultString);}}catch(Exception e){result="E:"+e.GetType().FullName+":"+H(e.Message);}Logs.RemoveAll(x=>x.StartsWith("[LOGHTTP]: HTTP OUT ")&&x.Contains(" took "));Console.WriteLine(result+"|"+Props(props)+"|"+(mode==3||mode==4||mode==5||mode==6||mode==7?H(string.Join("\n",Logs)):"-")+"|"+(mode==5?H(boolReason):"-")+"|"+(mode==6?Vec(position):"-")+"|"+(mode==6?Vec(look):"-"));}}
+using System;
+using System.IO;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
+using System.Net;
+using System.Net.Http;
+using System.Reflection;
+using System.Xml.Linq;
+using System.Threading;
+using GridRegion = OpenSim.Services.Interfaces.GridRegion;
+using Nwc.XmlRpc;
+using OpenMetaverse;
+using OpenSim.Framework;
+using log4net;
+namespace log4net
+{
+    public interface ILog
+    {
+        void Debug(object value);
+        void Error(object value);
+        void InfoFormat(string format, params object[] values);
+        void DebugFormat(string format, params object[] values);
+        void ErrorFormat(string format, params object[] values);
+        void WarnFormat(string format, params object[] values);
+    }
+    class Log : ILog
+    {
+        public void Debug(object v)
+        {
+            HttpHost.Logs.Add(v.ToString());
+        }
+        public void Error(object v)
+        {
+            HttpHost.Logs.Add(v.ToString());
+        }
+        public void InfoFormat(string f, params object[] v)
+        {
+            HttpHost.Logs.Add(string.Format(f, v));
+        }
+        public void DebugFormat(string f, params object[] v)
+        {
+            HttpHost.Logs.Add(string.Format(f, v));
+        }
+        public void ErrorFormat(string f, params object[] v)
+        {
+            HttpHost.Logs.Add(string.Format(f, v));
+        }
+        public void WarnFormat(string f, params object[] v)
+        {
+            HttpHost.Logs.Add(string.Format(f, v));
+        }
+    }
+    public static class LogManager
+    {
+        public static ILog GetLogger(Type type) => new Log();
+    }
+}
+namespace OpenSim.Framework
+{
+    public class GroupMembershipData
+    {
+    }
+    public interface IClientAPI
+    {
+    }
+    public static partial class WebUtil
+    {
+        static readonly ILog m_log = LogManager.GetLogger(typeof(WebUtil));
+        public static int RequestNumber;
+        public static int DebugLevel => HttpHost.Level;
+        public const int LongCallTime = 3000, MaxRequestDiagLength = 200;
+        public static HttpClient GetNewGlobalHttpClient(int timeout) => HttpHost.Client(timeout > 0 ? timeout
+                                                                                                    : 30000);
+    }
+    public static partial class Util
+    {
+        public static int EnvironmentTickCount() => Environment.TickCount;
+        public static int EnvironmentTickCountSubtract(int first) => unchecked(Environment.TickCount -
+                                                                               first) &
+                                                                     int.MaxValue;
+    }
+}
+static class HttpHost
+{
+    public static List<string> Logs = new();
+    public static int Level;
+    static readonly SocketsHttpHandler handler =
+        new SocketsHttpHandler { UseCookies = false,
+                                 UseProxy = false,
+                                 AllowAutoRedirect = true,
+                                 MaxAutomaticRedirections = 10,
+                                 AutomaticDecompression = DecompressionMethods.None,
+                                 ConnectTimeout = TimeSpan.FromSeconds(120),
+                                 PreAuthenticate = false,
+                                 MaxConnectionsPerServer = 200,
+                                 PooledConnectionIdleTimeout = TimeSpan.FromSeconds(31),
+                                 PooledConnectionLifetime = TimeSpan.FromMinutes(3) };
+    public static HttpClient Client(int timeout)
+    {
+        var client = new HttpClient(handler, false) { Timeout = TimeSpan.FromMilliseconds(timeout),
+                                                      MaxResponseContentBufferSize = 250 * 1024 * 1024 };
+        client.DefaultRequestHeaders.ExpectContinue = false;
+        return client;
+    }
+    public static string H(string s)
+    {
+        if (s == null)
+            return "-";
+        if (s.Length == 0)
+            return ".";
+        string o = "";
+        foreach (char c in s)
+            o += ((int)c & 255).ToString("x2") + ((int)c >> 8).ToString("x2");
+        return o;
+    }
+    static string D(string h)
+    {
+        if (h == "-")
+            return null;
+        if (h == ".")
+            return "";
+        var b = Convert.FromHexString(h);
+        string o = "";
+        for (int i = 0; i < b.Length; i += 2)
+            o += (char)(b[i] | b[i + 1] << 8);
+        return o;
+    }
+    static string Dump(object value)
+    {
+        if (value == null)
+            return "N";
+        if (value is string s)
+            return "S:" + H(s);
+        if (value is int i)
+            return "I:" + i;
+        if (value is bool b)
+            return b ? "T" : "F";
+        if (value is double d)
+            return "R:" + BitConverter.DoubleToInt64Bits(d).ToString("x16");
+        if (value is DateTime t)
+            return "D:" + t.Ticks;
+        if (value is byte[] bytes)
+            return "B:" + Convert.ToHexString(bytes).ToLowerInvariant();
+        if (value is ArrayList list)
+        {
+            var a = new List<string>();
+            foreach (var x in list)
+                a.Add(Dump(x));
+            return "A[" + string.Join(',', a) + "]";
+        }
+        if (value is IDictionary map)
+        {
+            var keys = new List<string>();
+            foreach (string k in map.Keys)
+                keys.Add(k);
+            keys.Sort(StringComparer.Ordinal);
+            var a = new List<string>();
+            foreach (var k in keys)
+                a.Add(H(k) + "=" + Dump(map[k]));
+            return "M{" + string.Join(',', a) + "}";
+        }
+        return "X";
+    }
+    static UUID Id(int n) => new UUID("00000000-0000-0000-0000-" + n.ToString("x12"));
+    static UserProfileProperties Seed(string p) => new UserProfileProperties { UserId = Id(1),
+                                                                               PartnerId = Id(2),
+                                                                               ImageId = Id(3),
+                                                                               FirstLifeImageId = Id(4),
+                                                                               WebUrl = "seed url",
+                                                                               AboutText = p,
+                                                                               FirstLifeText = "seed life",
+                                                                               WantToMask = 47,
+                                                                               SkillsMask = -31,
+                                                                               WantToText = "seed wants",
+                                                                               SkillsText = "seed skills",
+                                                                               Language = "seed language",
+                                                                               PublishProfile = true,
+                                                                               PublishMature = true };
+    static string Props(UserProfileProperties p) =>
+        p == null ? "N"
+                  : p.UserId + ":" + p.PartnerId + ":" + p.ImageId + ":" + p.FirstLifeImageId + ":" +
+                        H(p.WebUrl) + ":" + H(p.AboutText) + ":" + H(p.FirstLifeText) + ":" + p.WantToMask +
+                        ":" + H(p.WantToText) + ":" + p.SkillsMask + ":" + H(p.SkillsText) + ":" +
+                        H(p.Language) + ":" + p.PublishProfile + ":" + p.PublishMature;
+    public static string Vec(Vector3 v) => BitConverter.SingleToInt32Bits(v.X).ToString("x8") +
+                                           ":" + BitConverter.SingleToInt32Bits(v.Y).ToString("x8") +
+                                           ":" + BitConverter.SingleToInt32Bits(v.Z).ToString("x8");
+    public static string Region(GridRegion r) =>
+        r == null ? "N"
+                  : r.RegionID + ":" + r.RegionLocX + ":" + r.RegionLocY + ":" + r.RegionSizeX +
+                        ":" + r.RegionSizeY + ":" + H(r.RegionName) + ":" + H(r.ExternalHostName) +
+                        ":" + r.HttpPort + ":" + H(r.RawServerURI) + ":" + H(r.ServerURI) + ":" +
+                        (r.InternalEndPoint == null ? "N" : r.InternalEndPoint.ToString());
+    public static void Main()
+    {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var a = line.Split(' ');
+            int mode = int.Parse(a[0]), timeout = int.Parse(a[1]);
+            string method = D(a[2]), payload = D(a[3]), url = D(a[4]);
+            Level = mode == 3 ? 5 : 0;
+            Logs.Clear();
+            UserProfileProperties props = mode == 1 || mode == 3 ? Seed(payload) : null;
+            Vector3 position = new Vector3(9, 8, 7), look = new Vector3(6, 5, 4);
+            string boolReason = "seed";
+            string result;
+            try
+            {
+                if (mode == 6)
+                    result =
+                        "G:" + Region(new OpenSim.Services.Connectors.Hypergrid.UserAgentServiceConnector(url)
+                                          .GetHomeRegion(Id(1), out position, out look));
+                else if (mode == 7)
+                {
+                    var names = new List<string>();
+                    foreach (var id in new OpenSim.Services.Connectors.Hypergrid
+                                 .UserAgentServiceConnector(url)
+                                 .GetOnlineFriends(Id(1), new List<string>()))
+                        names.Add(id.ToString());
+                    result = "F:" + string.Join(",", names);
+                }
+                else if (mode == 5)
+                    result =
+                        "B:" + new OpenSim.Services.Connectors.Hypergrid.UserAgentServiceConnector(url).Bool(
+                                   out boolReason);
+                else if (mode == 4)
+                    result =
+                        "U:" + Dump(new OpenSim.Services.Connectors.Hypergrid.UserAgentServiceConnector(url)
+                                        .GetUserInfo(Id(1)));
+                else if (mode == 1 || mode == 3)
+                    result = "P:" + (new OpenSim.Services.UserProfilesService.OpenProfileClient(url)
+                                             .RequestAvatarPropertiesUsingOpenProfile(ref props)
+                                         ? 1
+                                         : 0);
+                else
+                {
+                    using var client = Client(timeout);
+                    var r = new XmlRpcRequest(method, new ArrayList { payload }).Send(url, client);
+                    result = "R:" + (r.IsFault ? 1 : 0) + ":" + Dump(r.Value) + ";C:" + r.FaultCode +
+                             ";S:" + H(r.FaultString);
+                }
+            }
+            catch (Exception e)
+            {
+                result = "E:" + e.GetType().FullName + ":" + H(e.Message);
+            }
+            Logs.RemoveAll(x => x.StartsWith("[LOGHTTP]: HTTP OUT ") && x.Contains(" took "));
+            Console.WriteLine(result + "|" + Props(props) + "|" +
+                              (mode == 3 || mode == 4 || mode == 5 || mode == 6 || mode == 7
+                                   ? H(string.Join("\n", Logs))
+                                   : "-") +
+                              "|" + (mode == 5 ? H(boolReason) : "-") + "|" +
+                              (mode == 6 ? Vec(position) : "-") + "|" + (mode == 6 ? Vec(look) : "-"));
+        }
+    }
 }

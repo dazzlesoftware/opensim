@@ -26,13 +26,55 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 using System;
-namespace log4net {
-    public interface ILog {void Debug(string value);void Debug(string value,Exception error);void DebugFormat(string value,params object[] args);void ErrorFormat(string value,params object[] args);}
-    class Log:ILog {public void Debug(string value){}public void Debug(string value,Exception error){}public void DebugFormat(string value,params object[] args){}public void ErrorFormat(string value,params object[] args){}}
-    public static class LogManager {public static ILog GetLogger(Type type)=>new Log();}
+namespace log4net
+{
+    public interface ILog
+    {
+        void Debug(string value);
+        void Debug(string value, Exception error);
+        void DebugFormat(string value, params object[] args);
+        void ErrorFormat(string value, params object[] args);
+    }
+    class Log : ILog
+    {
+        public void Debug(string value)
+        {
+        }
+        public void Debug(string value, Exception error)
+        {
+        }
+        public void DebugFormat(string value, params object[] args)
+        {
+        }
+        public void ErrorFormat(string value, params object[] args)
+        {
+        }
+    }
+    public static class LogManager
+    {
+        public static ILog GetLogger(Type type) => new Log();
+    }
 }
-namespace OpenSim.Framework {public static partial class Util {public static double GetTimeStampMS()=>Program.Now;}}
-namespace OpenSim.Framework.Console {public class Placeholder {}}
-namespace OpenSim.Services.Base {
-    public class ServiceBase {public ServiceBase(Nini.Config.IConfigSource config){}protected T LoadPlugin<T>(string name,object[] args)=>(T)(object)Program.Database;}
+namespace OpenSim.Framework
+{
+    public static partial class Util
+    {
+        public static double GetTimeStampMS() => Program.Now;
+    }
+}
+namespace OpenSim.Framework.Console
+{
+    public class Placeholder
+    {
+    }
+}
+namespace OpenSim.Services.Base
+{
+    public class ServiceBase
+    {
+        public ServiceBase(Nini.Config.IConfigSource config)
+        {
+        }
+        protected T LoadPlugin<T>(string name, object[] args) => (T)(object)Program.Database;
+    }
 }

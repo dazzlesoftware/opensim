@@ -1,2 +1,62 @@
-using System;using System.IO;using System.Text;
-class Program{static string H(string s){if(string.IsNullOrEmpty(s))return "-";var b=new StringBuilder();foreach(char c in s)b.Append(((int)c).ToString("x4"));return b.ToString();}static string E(Exception e)=>e.GetType().FullName+":"+unchecked((uint)e.HResult).ToString("x8")+":"+H(e.Message)+":"+H((e as ObjectDisposedException)?.ObjectName);static void Main(){string line;while((line=Console.ReadLine())!=null){var a=line.Split(' ');int count=int.Parse(a[0]);var bytes=new byte[count];for(int i=0;i<count;++i)bytes[i]=(byte)i;using var stream=new MemoryStream(bytes);for(int i=1;i<a.Length;++i){if(i>1)Console.Write('/');try{var c=a[i];if(c=="S")Console.Write(stream.CanSeek?"1":"0");else if(c=="L")Console.Write(stream.Length);else if(c=="P")Console.Write(stream.Position);else if(c=="C"){stream.Close();Console.Write("C");}else if(c[0]=='R'){var output=new byte[int.Parse(c.Substring(1))];var n=stream.Read(output);Console.Write(n+":"+Convert.ToHexString(output.AsSpan(0,n)).ToLowerInvariant());}}catch(Exception e){Console.Write(E(e));}}Console.WriteLine();}}}
+using System;
+using System.IO;
+using System.Text;
+class Program
+{
+    static string H(string s)
+    {
+        if (string.IsNullOrEmpty(s))
+            return "-";
+        var b = new StringBuilder();
+        foreach (char c in s)
+            b.Append(((int)c).ToString("x4"));
+        return b.ToString();
+    }
+    static string E(Exception e) => e.GetType().FullName + ":" + unchecked((uint)e.HResult).ToString("x8") +
+                                    ":" + H(e.Message) + ":" +
+                                    H((e as ObjectDisposedException)?.ObjectName);
+    static void Main()
+    {
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var a = line.Split(' ');
+            int count = int.Parse(a[0]);
+            var bytes = new byte[count];
+            for (int i = 0; i < count; ++i)
+                bytes[i] = (byte)i;
+            using var stream = new MemoryStream(bytes);
+            for (int i = 1; i < a.Length; ++i)
+            {
+                if (i > 1)
+                    Console.Write('/');
+                try
+                {
+                    var c = a[i];
+                    if (c == "S")
+                        Console.Write(stream.CanSeek ? "1" : "0");
+                    else if (c == "L")
+                        Console.Write(stream.Length);
+                    else if (c == "P")
+                        Console.Write(stream.Position);
+                    else if (c == "C")
+                    {
+                        stream.Close();
+                        Console.Write("C");
+                    }
+                    else if (c[0] == 'R')
+                    {
+                        var output = new byte[int.Parse(c.Substring(1))];
+                        var n = stream.Read(output);
+                        Console.Write(n + ":" + Convert.ToHexString(output.AsSpan(0, n)).ToLowerInvariant());
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.Write(E(e));
+                }
+            }
+            Console.WriteLine();
+        }
+    }
+}

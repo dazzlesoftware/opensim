@@ -1,8 +1,109 @@
-using System;using System.Globalization;using OpenSim.Framework;
-namespace log4net{public interface ILog{void Debug(object x);void DebugFormat(string f,params object[] a);void Error(object x);void ErrorFormat(string f,params object[] a);void InfoFormat(string f,params object[] a);}public class Logger:ILog{public void Debug(object x){}public void DebugFormat(string f,params object[] a){}public void Error(object x){}public void ErrorFormat(string f,params object[] a){}public void InfoFormat(string f,params object[] a){}}public static class LogManager{public static Logger GetLogger(Type t)=>new Logger();}}
-namespace OpenSim.Framework{public static class Constants{public const int TerrainPatchSize=16;public const uint RegionSize=256;}}
-class SceneWorldTerrainReference{
- static float F(string s)=>BitConverter.UInt32BitsToSingle(Convert.ToUInt32(s,16));static string H(float f)=>BitConverter.SingleToUInt32Bits(f).ToString("x");
- static unsafe void Main(){CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;var t=new TerrainData(32,32,0);for(int x=0;x<32;x++)for(int y=0;y<32;y++)t[x,y]=((x*17-y*11)%37)*.25f;t.ClearTaint();string line;while((line=Console.ReadLine())!=null){var p=line.Split(' ');try{switch(p[0]){case "h":Console.Write(H(t.GetHeight(F(p[1]),F(p[2]))));break;case "p":{float* b=stackalloc float[256];t.GetPatchBlock(b,int.Parse(p[1]),int.Parse(p[2]),F(p[3]),F(p[4]));for(int i=0;i<256;i++)Console.Write(H(b[i])+",");break;}case "m":t.GetPatchMinMax(int.Parse(p[1]),int.Parse(p[2]),out float min,out float max);Console.Write(H(min)+","+H(max));break;case "s":t[int.Parse(p[1]),int.Parse(p[2])]=F(p[3]);Console.Write(t.GetTaints().TaitedCount());break;case "t":Console.Write((t.IsTaintedAtPatch(int.Parse(p[1]),int.Parse(p[2]),p[3]=="1")?1:0)+","+t.GetTaints().TaitedCount());break;case "n":Console.Write(t.GetAndClearNextTaint(int.Parse(p[1]))+","+t.GetTaints().TaitedCount());break;case "c":t.ClearTaint();Console.Write(t.GetTaints().TaitedCount());break;case "a":t.TaintAllTerrain();Console.Write(t.GetTaints().TaitedCount());break;}}catch{Console.Write("EX");}Console.WriteLine();}}
+using System;
+using System.Globalization;
+using OpenSim.Framework;
+namespace log4net
+{
+    public interface ILog
+    {
+        void Debug(object x);
+        void DebugFormat(string f, params object[] a);
+        void Error(object x);
+        void ErrorFormat(string f, params object[] a);
+        void InfoFormat(string f, params object[] a);
+    }
+    public class Logger : ILog
+    {
+        public void Debug(object x)
+        {
+        }
+        public void DebugFormat(string f, params object[] a)
+        {
+        }
+        public void Error(object x)
+        {
+        }
+        public void ErrorFormat(string f, params object[] a)
+        {
+        }
+        public void InfoFormat(string f, params object[] a)
+        {
+        }
+    }
+    public static class LogManager
+    {
+        public static Logger GetLogger(Type t) => new Logger();
+    }
 }
-
+namespace OpenSim.Framework
+{
+    public static class Constants
+    {
+        public const int TerrainPatchSize = 16;
+        public const uint RegionSize = 256;
+    }
+}
+class SceneWorldTerrainReference
+{
+    static float F(string s) => BitConverter.UInt32BitsToSingle(Convert.ToUInt32(s, 16));
+    static string H(float f) => BitConverter.SingleToUInt32Bits(f).ToString("x");
+    static unsafe void Main()
+    {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        var t = new TerrainData(32, 32, 0);
+        for (int x = 0; x < 32; x++)
+            for (int y = 0; y < 32; y++)
+                t[x, y] = ((x * 17 - y * 11) % 37) * .25f;
+        t.ClearTaint();
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var p = line.Split(' ');
+            try
+            {
+                switch (p[0])
+                {
+                case "h":
+                    Console.Write(H(t.GetHeight(F(p[1]), F(p[2]))));
+                    break;
+                case "p": {
+                    float *b = stackalloc float[256];
+                    t.GetPatchBlock(b, int.Parse(p[1]), int.Parse(p[2]), F(p[3]), F(p[4]));
+                    for (int i = 0; i < 256; i++)
+                        Console.Write(H(b[i]) + ",");
+                    break;
+                }
+                case "m":
+                    t.GetPatchMinMax(int.Parse(p[1]), int.Parse(p[2]), out float min, out float max);
+                    Console.Write(H(min) + "," + H(max));
+                    break;
+                case "s":
+                    t[int.Parse(p[1]), int.Parse(p[2])] = F(p[3]);
+                    Console.Write(t.GetTaints().TaitedCount());
+                    break;
+                case "t":
+                    Console.Write(
+                        (t.IsTaintedAtPatch(int.Parse(p[1]), int.Parse(p[2]), p[3] == "1") ? 1 : 0) + "," +
+                        t.GetTaints().TaitedCount());
+                    break;
+                case "n":
+                    Console.Write(t.GetAndClearNextTaint(int.Parse(p[1])) + "," +
+                                  t.GetTaints().TaitedCount());
+                    break;
+                case "c":
+                    t.ClearTaint();
+                    Console.Write(t.GetTaints().TaitedCount());
+                    break;
+                case "a":
+                    t.TaintAllTerrain();
+                    Console.Write(t.GetTaints().TaitedCount());
+                    break;
+                }
+            }
+            catch
+            {
+                Console.Write("EX");
+            }
+            Console.WriteLine();
+        }
+    }
+}

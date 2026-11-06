@@ -1,7 +1,141 @@
-using System;using System.IO;using System.Xml;using System.Text;using System.Reflection;using System.Globalization;
-class Program{
-const BindingFlags F=BindingFlags.Instance|BindingFlags.NonPublic|BindingFlags.Public;
-static string D(string s){if(s=="-")return "";var chars=new char[s.Length/4];for(int i=0;i<chars.Length;i++)chars[i]=(char)Convert.ToUInt16(s.Substring(i*4,4),16);return new string(chars);}
-static string E(string s){if(s.Length==0)return "-";var b=new StringBuilder();foreach(char c in s)b.Append(((int)c).ToString("x4"));return b.ToString();}
-static void Main(){CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;CultureInfo.CurrentUICulture=CultureInfo.InvariantCulture;string? line;while((line=Console.ReadLine())!=null){var a=line.Split('|');var r=XmlReader.Create(new StringReader(D(a[0])),new XmlReaderSettings{DtdProcessing=DtdProcessing.Parse,MaxCharactersInDocument=a[1]=="J"?D(a[0]).Length+1:0,MaxCharactersFromEntities=a[1]=="L"?Math.Max(1,D(a[0]).Length-1):10000000});var t=r.GetType();object? P(string n)=>t.GetProperty("DtdParserProxy_"+n,F)!.GetValue(r);object? M(string n,params object?[] values)=>t.GetMethod("DtdParserProxy_"+n,F)!.Invoke(r,values);var b=new StringBuilder();string result="";try{int position=int.Parse(a[2]);while(position>0&&(int)P("ParsingBufferLength")!<position+2){if((int)M("ReadData")! ==0)break;}t.GetProperty("DtdParserProxy_CurrentPosition",F)!.SetValue(r,position);switch(a[1]){case "Q":M("PushInternalDtd","urn:dtd",null);break;case "J":case "H":M("PushInternalDtd","urn:dtd",D(a[0]));break;case "S":case "T":case "X":case "F":case "L":case "B":case "K":{var et=t.Assembly.GetType("System.Xml.Schema.SchemaEntity")!;var entity=Activator.CreateInstance(et,F,null,new object[]{new XmlQualifiedName("entity"),false},null)!;foreach(var pair in new (string,object)[]{("Text",D(a[0])),("Line",a[1]=="B"?int.MaxValue:2),("Pos",a[1]=="B"?int.MaxValue:3),("DeclaredURI","urn:entity")})et.GetProperty(pair.Item1,F)!.SetValue(entity,pair.Item2);if(a[1]=="F")et.GetProperty("IsExternal",F)!.SetValue(entity,true);object?[] push={entity,0};result=M("PushEntity",push)+":"+push[1];if(a[1]=="B")M("ParseComment",b);if(a[1]=="K")r.Close();if(a[1]=="X"){object?[] second={entity,0};M("PushEntity",second);}if(a[1]=="T"){object?[] pop={null,0};result+="/"+M("PopEntity",pop)+":"+pop[1]+":"+(ReferenceEquals(entity,pop[0])?"same":"other");}break;}case "Z":{object?[] pop={null,0};result=M("PopEntity",pop)+":"+pop[1]+":"+(pop[0]==null?"null":"entity");break;}case "N":result=M("ParseNumericCharRef",b)!.ToString()!;break;case "E":result=M("ParseNamedCharRef",true,b)!.ToString()!;break;case "U":result=M("ParseNamedCharRef",false,b)!.ToString()!;break;case "C":M("ParseComment",b);break;case "P":M("ParsePI",b);break;case "R":result=M("ReadData")!.ToString()!;break;}result="OK:"+result;}catch(Exception e){while(e is TargetInvocationException&&e.InnerException!=null)e=e.InnerException;result="E:"+e.GetType().FullName+":"+unchecked((uint)e.HResult)+":"+E(e.Message);}var chars=(char[])P("ParsingBuffer")!;int used=(int)P("ParsingBufferLength")!;Console.WriteLine(result+"|"+E(b.ToString())+"|"+P("CurrentPosition")+":"+P("LineNo")+":"+P("LineStartPosition")+":"+P("IsEof")+":"+P("IsEntityEolNormalized")+":"+P("EntityStackLength")+"|"+(chars==null?"~":E(new string(chars,0,used))));}}
+using System;
+using System.IO;
+using System.Xml;
+using System.Text;
+using System.Reflection;
+using System.Globalization;
+class Program
+{
+    const BindingFlags F = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+    static string D(string s)
+    {
+        if (s == "-")
+            return "";
+        var chars = new char[s.Length / 4];
+        for (int i = 0; i < chars.Length; i++)
+            chars[i] = (char)Convert.ToUInt16(s.Substring(i * 4, 4), 16);
+        return new string(chars);
+    }
+    static string E(string s)
+    {
+        if (s.Length == 0)
+            return "-";
+        var b = new StringBuilder();
+        foreach (char c in s)
+            b.Append(((int)c).ToString("x4"));
+        return b.ToString();
+    }
+    static void Main()
+    {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
+        string? line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var a = line.Split('|');
+            var r = XmlReader.Create(new StringReader(D(a[0])), new XmlReaderSettings {
+                DtdProcessing = DtdProcessing.Parse,
+                MaxCharactersInDocument = a[1] == "J" ? D(a[0]).Length + 1 : 0,
+                MaxCharactersFromEntities = a[1] == "L" ? Math.Max(1, D(a[0]).Length - 1) : 10000000
+            });
+            var t = r.GetType();
+            object ? P(string n) => t.GetProperty("DtdParserProxy_" + n, F)!.GetValue(r);
+            object ? M(string n, params object?[] values) =>
+                         t.GetMethod("DtdParserProxy_" + n, F)!.Invoke(r, values);
+            var b = new StringBuilder();
+            string result = "";
+            try
+            {
+                int position = int.Parse(a[2]);
+                while (position > 0 && (int)P("ParsingBufferLength")! < position + 2)
+                {
+                    if ((int)M("ReadData")! == 0)
+                        break;
+                }
+                t.GetProperty("DtdParserProxy_CurrentPosition", F)!.SetValue(r, position);
+                switch (a[1])
+                {
+                case "Q":
+                    M("PushInternalDtd", "urn:dtd", null);
+                    break;
+                case "J":
+                case "H":
+                    M("PushInternalDtd", "urn:dtd", D(a[0]));
+                    break;
+                case "S":
+                case "T":
+                case "X":
+                case "F":
+                case "L":
+                case "B":
+                case "K": {
+                    var et = t.Assembly.GetType("System.Xml.Schema.SchemaEntity")!;
+                    var entity = Activator.CreateInstance(
+                        et, F, null, new object[] { new XmlQualifiedName("entity"), false }, null)!;
+                    foreach (var pair in new(string, object)[] { ("Text", D(a[0])),
+                                                                 ("Line", a[1] == "B" ? int.MaxValue : 2),
+                                                                 ("Pos", a[1] == "B" ? int.MaxValue : 3),
+                                                                 ("DeclaredURI", "urn:entity") })
+                        et.GetProperty(pair.Item1, F)!.SetValue(entity, pair.Item2);
+                    if (a[1] == "F")
+                        et.GetProperty("IsExternal", F)!.SetValue(entity, true);
+                    object?[] push = { entity, 0 };
+                    result = M("PushEntity", push) + ":" + push[1];
+                    if (a[1] == "B")
+                        M("ParseComment", b);
+                    if (a[1] == "K")
+                        r.Close();
+                    if (a[1] == "X")
+                    {
+                        object?[] second = { entity, 0 };
+                        M("PushEntity", second);
+                    }
+                    if (a[1] == "T")
+                    {
+                        object?[] pop = { null, 0 };
+                        result += "/" + M("PopEntity", pop) + ":" + pop[1] + ":" +
+                                  (ReferenceEquals(entity, pop[0]) ? "same" : "other");
+                    }
+                    break;
+                }
+                case "Z": {
+                    object?[] pop = { null, 0 };
+                    result = M("PopEntity", pop) + ":" + pop[1] + ":" + (pop[0] == null ? "null" : "entity");
+                    break;
+                }
+                case "N":
+                    result = M("ParseNumericCharRef", b)!.ToString()!;
+                    break;
+                case "E":
+                    result = M("ParseNamedCharRef", true, b)!.ToString()!;
+                    break;
+                case "U":
+                    result = M("ParseNamedCharRef", false, b)!.ToString()!;
+                    break;
+                case "C":
+                    M("ParseComment", b);
+                    break;
+                case "P":
+                    M("ParsePI", b);
+                    break;
+                case "R":
+                    result = M("ReadData")!.ToString()!;
+                    break;
+                }
+                result = "OK:" + result;
+            }
+            catch (Exception e)
+            {
+                while (e is TargetInvocationException && e.InnerException != null)
+                    e = e.InnerException;
+                result = "E:" + e.GetType().FullName + ":" + unchecked((uint)e.HResult) + ":" + E(e.Message);
+            }
+            var chars = (char[])P("ParsingBuffer")!;
+            int used = (int)P("ParsingBufferLength")!;
+            Console.WriteLine(result + "|" + E(b.ToString()) + "|" + P("CurrentPosition") + ":" +
+                              P("LineNo") + ":" + P("LineStartPosition") + ":" + P("IsEof") + ":" +
+                              P("IsEntityEolNormalized") + ":" + P("EntityStackLength") + "|" +
+                              (chars == null ? "~" : E(new string(chars, 0, used))));
+        }
+    }
 }

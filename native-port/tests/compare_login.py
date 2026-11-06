@@ -60,6 +60,8 @@ def cases():
                 {"first": "A", "last": "B", "web_login_key": "12345678-1234-1234-1234-123456789012"},
                 {"first": "A", "last": "B", "web_login_key": "00000000-0000-0000-0000-000000000000"},
                 {**base, "scope_id": "ABCDEF01-2345-6789-ABCD-EF0123456789"},
+                {**base, "scope_id": " ABCDEF01-2345-6789-ABCD-EF0123456789suffix"},
+                {**base, "scope_id": "{ABCDEF01-2345-6789-ABCD-EF0123456789}"},
                 {**base, "scope_id": "bad"}, {**base, "start": "uri:Welcome&128&128&25"},
                 {**base, "version": "6.6.3", "channel": "Firestorm", "mac": "hash", "id0": "other"},
                 {**base, "first": "O'Connor & 試験", "passwd": "<&>\"'"},
@@ -89,6 +91,10 @@ def cases():
             else:
                 ET.SubElement(mapping, "string").text = value
         yield "llsd\t" + ET.tostring(root, encoding="unicode")
+    for value in ("0.1", "1.25e-6", "1e20"):
+        yield ("llsd\t<llsd><map><key>first</key><string>Test</string>"
+               "<key>last</key><string>User</string><key>passwd</key><string>secret</string>"
+               f"<key>version</key><real>{value}</real></map></llsd>")
     for level in [0, 200, "-100", "invalid", None, 2147483647, -2147483648, " +1 "]:
         yield "level\t" + xmlrpc.client.dumps(({**base, "level": level},), methodname="set_login_level", allow_none=True).replace("\n", "")
     levels=["+-1","-+1","++1","--1","+ -1","+1","-0","000001","2147483648","-2147483649","9"*1000,"1\0","1\0\0","1 \0","1\0 ","\0",""," ","2147483647","-2147483648"]

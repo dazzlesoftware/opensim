@@ -60,6 +60,7 @@ class MovementAnimator {
                                          const MovementAnimationEffects& effects = {});
     MovementAnimationSnapshot snapshot() const;
     MotionControlState state() const;
+    void restore_state(MotionControlState, std::string movement_animation = {});
 
   private:
     struct Impl;

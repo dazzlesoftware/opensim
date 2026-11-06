@@ -1,2 +1,43 @@
-using System;using System.Linq;using System.Reflection;
-class Program{static void Main(){var type=typeof(Uri).Assembly.GetType("System.UriHelper");var method=type.GetMethods(BindingFlags.Static|BindingFlags.NonPublic).Single(m=>m.Name=="EscapeString"&&m.GetParameters()[0].ParameterType==typeof(string));string[]names={"Unreserved","UnreservedReserved","UnreservedReservedExceptHash","UnreservedReservedExceptQuestionMarkHash"};string line;while((line=Console.ReadLine())!=null){var p=line.Split(' ');int set=int.Parse(p[0]),existing=int.Parse(p[1]);string input=null;if(p[2]!="~"){input="";if(p[2]!="-")for(int i=0;i<p[2].Length;i+=4)input+=(char)Convert.ToUInt16(p[2].Substring(i,4),16);}object values=type.GetField(names[set],BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic).GetValue(null);try{string result=(string)method.Invoke(null,new object[]{input,existing!=0,values});Console.WriteLine("S:"+(ReferenceEquals(input,result)?1:0)+":"+string.Concat(result.Select(c=>((int)c).ToString("x4"))));}catch(TargetInvocationException x){var e=x.InnerException;Console.WriteLine($"E:{e.GetType().FullName}:{unchecked((uint)e.HResult)}:{e.Message}");}}}}
+using System;
+using System.Linq;
+using System.Reflection;
+class Program
+{
+    static void Main()
+    {
+        var type = typeof(Uri).Assembly.GetType("System.UriHelper");
+        var method = type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
+                         .Single(m => m.Name == "EscapeString" &&
+                                      m.GetParameters()[0].ParameterType == typeof(string));
+        string[] names = { "Unreserved", "UnreservedReserved", "UnreservedReservedExceptHash",
+                           "UnreservedReservedExceptQuestionMarkHash" };
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var p = line.Split(' ');
+            int set = int.Parse(p[0]), existing = int.Parse(p[1]);
+            string input = null;
+            if (p[2] != "~")
+            {
+                input = "";
+                if (p[2] != "-")
+                    for (int i = 0; i < p[2].Length; i += 4)
+                        input += (char)Convert.ToUInt16(p[2].Substring(i, 4), 16);
+            }
+            object values =
+                type.GetField(names[set], BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                    .GetValue(null);
+            try
+            {
+                string result = (string)method.Invoke(null, new object[] { input, existing != 0, values });
+                Console.WriteLine("S:" + (ReferenceEquals(input, result) ? 1 : 0) + ":" +
+                                  string.Concat(result.Select(c => ((int)c).ToString("x4"))));
+            }
+            catch (TargetInvocationException x)
+            {
+                var e = x.InnerException;
+                Console.WriteLine($"E:{e.GetType().FullName}:{unchecked((uint)e.HResult)}:{e.Message}");
+            }
+        }
+    }
+}

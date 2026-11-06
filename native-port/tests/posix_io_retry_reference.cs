@@ -1,2 +1,56 @@
 // Actual BCL FileStream/Directory oracle. No replacement algorithm.
-using System;using System.IO;class Program{static void Main(string[] a){if(a.Length==1&&a[0]=="--runtime"){Console.WriteLine(Environment.Version);return;}try{if(a[0]=="zone-named"){TimeZoneInfo.ClearCachedData();Console.WriteLine("OK "+(TimeZoneInfo.FindSystemTimeZoneById("Owned").IsDaylightSavingTime(new DateTime(2024,7,1,0,0,0,DateTimeKind.Utc))?1:0));}else if(a[0]=="zone-local"){TimeZoneInfo.ClearCachedData();Console.WriteLine("OK "+TimeZoneInfo.Local.GetUtcOffset(new DateTime(2024,7,1,0,0,0,DateTimeKind.Utc)).Ticks);}else if(a[0]=="list")Console.WriteLine("OK "+Directory.GetFiles(a[1],"*").Length);else{using var f=new FileStream(a[1],a[0]=="read"?FileMode.Open:FileMode.Create,a[0]=="read"?FileAccess.Read:FileAccess.Write,a[0]=="read"?FileShare.Read:FileShare.None);if(a[0]=="read"){var b=new byte[32];Console.WriteLine("OK "+f.Read(b,0,32));}else{f.Write(new byte[]{65,66});f.Flush();Console.WriteLine("OK");}}}catch(Exception e){Console.WriteLine("ERR "+e.GetType().FullName);}}}
+using System;
+using System.IO;
+class Program
+{
+    static void Main(string[] a)
+    {
+        if (a.Length == 1 && a[0] == "--runtime")
+        {
+            Console.WriteLine(Environment.Version);
+            return;
+        }
+        try
+        {
+            if (a[0] == "zone-named")
+            {
+                TimeZoneInfo.ClearCachedData();
+                Console.WriteLine("OK " + (TimeZoneInfo.FindSystemTimeZoneById("Owned").IsDaylightSavingTime(
+                                               new DateTime(2024, 7, 1, 0, 0, 0, DateTimeKind.Utc))
+                                               ? 1
+                                               : 0));
+            }
+            else if (a[0] == "zone-local")
+            {
+                TimeZoneInfo.ClearCachedData();
+                Console.WriteLine(
+                    "OK " +
+                    TimeZoneInfo.Local.GetUtcOffset(new DateTime(2024, 7, 1, 0, 0, 0, DateTimeKind.Utc))
+                        .Ticks);
+            }
+            else if (a[0] == "list")
+                Console.WriteLine("OK " + Directory.GetFiles(a[1], "*").Length);
+            else
+            {
+                using var f = new FileStream(a[1], a[0] == "read" ? FileMode.Open : FileMode.Create,
+                                             a[0] == "read" ? FileAccess.Read : FileAccess.Write,
+                                             a[0] == "read" ? FileShare.Read : FileShare.None);
+                if (a[0] == "read")
+                {
+                    var b = new byte[32];
+                    Console.WriteLine("OK " + f.Read(b, 0, 32));
+                }
+                else
+                {
+                    f.Write(new byte[] { 65, 66 });
+                    f.Flush();
+                    Console.WriteLine("OK");
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("ERR " + e.GetType().FullName);
+        }
+    }
+}

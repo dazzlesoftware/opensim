@@ -13,6 +13,8 @@ on:
       - 'OpenSim/Region/Framework/Interfaces/ISimulatorFeaturesModule.cs'
       - 'OpenSim/Region/Framework/Scenes/**'
       - 'OpenSim/Region/CoreModules/Framework/Caps/**'
+      - 'OpenSim/Region/CoreModules/World/Estate/**'
+      - 'OpenSim/Region/CoreModules/World/Region/RestartModule.cs'
       - 'OpenSim/Region/CoreModules/Agent/Xfer/**'
       - 'OpenSim/Region/ScriptEngine/YEngine/**'
       - 'OpenSim/Region/ClientStack/Linden/UDP/**'
@@ -68,6 +70,13 @@ on:
       - 'OpenSim/Services/Connectors/Authentication/**'
       - 'OpenSim/Services/Connectors/BaseServiceConnector.cs'
       - 'OpenSim/Data/SQLite/**'
+      - 'OpenSim/Data/MySQL/**'
+      - 'OpenSim/Data/PGSQL/**'
+      - 'OpenSim/Server/ServerMain.cs'
+      - 'OpenSim/Server/Handlers/Asset/**'
+      - 'OpenSim/Services/FSAssetService/**'
+      - 'prebuild.xml'
+      - 'runprebuild.*'
       - '.github/workflows/native-port.yml'
   pull_request:
     paths:
@@ -81,6 +90,8 @@ on:
       - 'OpenSim/Region/Framework/Interfaces/ISimulatorFeaturesModule.cs'
       - 'OpenSim/Region/Framework/Scenes/**'
       - 'OpenSim/Region/CoreModules/Framework/Caps/**'
+      - 'OpenSim/Region/CoreModules/World/Estate/**'
+      - 'OpenSim/Region/CoreModules/World/Region/RestartModule.cs'
       - 'OpenSim/Region/CoreModules/Agent/Xfer/**'
       - 'OpenSim/Region/ScriptEngine/YEngine/**'
       - 'OpenSim/Region/ClientStack/Linden/UDP/**'
@@ -155,18 +166,101 @@ jobs:
         with:
           # Runtime 8.0.31 is the pinned compatibility oracle, never a production dependency.
           dotnet-version: '8.0.425'
-      - name: Configure C++ and reference comparison
-        if: runner.os != 'macOS'
-        run: cmake -S native-port -B native-port/build -DCMAKE_BUILD_TYPE=Release -DOPENSIM_DIFFERENTIAL_TESTS=ON
-      - name: Configure macOS with both OfflineIM SQL providers
+      - name: Generate original Robust projects on Windows
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: call runprebuild.bat
+      - name: Generate original Robust projects on Unix
+        if: runner.os != 'Windows'
+        run: bash runprebuild.sh
+      - name: Build the original Robust asset test host
+        shell: bash
+        run: |
+          for project in \
+            OpenSim/Server/Robust.csproj \
+            OpenSim/Services/AssetService/OpenSim.Services.AssetService.csproj \
+            OpenSim/Services/FSAssetService/OpenSim.Services.FSAssetService.csproj \
+            OpenSim/Data/SQLite/OpenSim.Data.SQLite.csproj \
+            OpenSim/Data/PGSQL/OpenSim.Data.PGSQL.csproj \
+            OpenSim/Data/MySQL/OpenSim.Data.MySQL.csproj
+          do
+            dotnet build -c Release "$project"
+          done
+      - name: Configure Windows with disposable SQL fixtures
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'mariadb-11.4.13-winx64.zip'
+          $uri = 'https://archive.mariadb.org/mariadb-11.4.13/winx64-packages/mariadb-11.4.13-winx64.zip'
+          curl.exe --fail --location --retry 3 --output $archive $uri
+          if ($LASTEXITCODE -ne 0) { throw 'MariaDB download failed' }
+          $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $archive).Hash
+          if ($hash -ne 'd62986d433eeebfde218560b276103831604a61e929e87f1a17f5aebd80257e2') {
+            throw 'MariaDB archive checksum mismatch'
+          }
+          tar.exe -xf $archive -C $env:RUNNER_TEMP
+          if ($LASTEXITCODE -ne 0) { throw 'MariaDB extraction failed' }
+          $mariaBin = Join-Path $env:RUNNER_TEMP 'mariadb-11.4.13-winx64/bin'
+          if (-not $env:PGBIN -or -not (Test-Path (Join-Path $env:PGBIN 'initdb.exe'))) {
+            throw 'PostgreSQL server tools are missing from the runner'
+          }
+          $toolchain = Join-Path $env:VCPKG_INSTALLATION_ROOT 'scripts/buildsystems/vcpkg.cmake'
+          cmake -S native-port -B native-port/build -DCMAKE_BUILD_TYPE=Release -DOPENSIM_DIFFERENTIAL_TESTS=ON `
+            "-DCMAKE_TOOLCHAIN_FILE=$toolchain" -DVCPKG_MANIFEST_FEATURES=offline-im-sql `
+            -DOPENSIM_REQUIRE_OFFLINE_IM_SQL=ON -DOPENSIM_REQUIRE_TLS=ON `
+            "-DOPENSIM_POSTGRES_TEST_BIN=$env:PGBIN" "-DOPENSIM_MARIADB_TEST_BIN=$mariaBin"
+      - name: Configure Linux with disposable SQL fixtures
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev libmariadb-dev libssl-dev libjpeg-dev libpng-dev libicu-dev libfreetype-dev fonts-liberation postgresql mariadb-server
+          pg_bin="$(pg_config --bindir)"
+          maria_bin="$(dirname "$(command -v mariadbd)")"
+          test -x "$pg_bin/initdb"
+          command -v mariadb-install-db
+          cmake -S native-port -B native-port/build -DCMAKE_BUILD_TYPE=Release -DOPENSIM_DIFFERENTIAL_TESTS=ON \
+            -DOPENSIM_REQUIRE_OFFLINE_IM_SQL=ON -DOPENSIM_REQUIRE_TLS=ON \
+            "-DOPENSIM_POSTGRES_TEST_BIN=$pg_bin" "-DOPENSIM_MARIADB_TEST_BIN=$maria_bin"
+      - name: Configure macOS with disposable SQL fixtures
         if: runner.os == 'macOS'
         run: |
-          brew install libpq mariadb-connector-c
+          brew install libpq mariadb-connector-c openssl@3 jpeg-turbo libpng freetype postgresql@17 mariadb@11.4
+          pg_bin="$(brew --prefix postgresql@17)/bin"
+          maria_bin="$(brew --prefix mariadb@11.4)/bin"
+          test -x "$pg_bin/initdb"
+          test -x "$maria_bin/mariadb-install-db"
           cmake -S native-port -B native-port/build -DCMAKE_BUILD_TYPE=Release -DOPENSIM_DIFFERENTIAL_TESTS=ON \
-            -DOPENSIM_REQUIRE_OFFLINE_IM_SQL=ON \
-            "-DCMAKE_PREFIX_PATH=$(brew --prefix libpq);$(brew --prefix mariadb-connector-c)"
+            -DOPENSIM_REQUIRE_OFFLINE_IM_SQL=ON -DOPENSIM_REQUIRE_TLS=ON \
+            "-DOPENSIM_POSTGRES_TEST_BIN=$pg_bin" "-DOPENSIM_MARIADB_TEST_BIN=$maria_bin" \
+            "-DCMAKE_PREFIX_PATH=$(brew --prefix libpq);$(brew --prefix mariadb-connector-c);$(brew --prefix jpeg-turbo);$(brew --prefix libpng);$(brew --prefix freetype)" \
+            "-DOPENSSL_ROOT_DIR=$(brew --prefix openssl@3)"
       - name: Build C++
         run: cmake --build native-port/build --config Release --parallel
+      - name: Verify Robust interoperability and region restart tests are enabled
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import subprocess
+
+          listing = subprocess.check_output([
+              "ctest", "--test-dir", "native-port/build", "-C", "Release", "--show-only=json-v1",
+          ])
+          tests = {test["name"]: test.get("command", []) for test in json.loads(listing)["tests"]}
+          required = ["managed_asset_wire_network", "mysql_asset_network", "pgsql_asset_network"]
+          for name in required:
+              if "--dotnet" not in tests.get(name, []):
+                  raise SystemExit(f"{name} is missing its original Robust reference host")
+          restart_tests = {
+              "os_parcel_landing_network": "--os-landing",
+              "region_restart_shutdown_network": "--restart-shutdown",
+              "region_script_listener_restart_network": "--script-restart",
+              "connected_region_primary_https_network": "--primary-https",
+          }
+          for name, scenario in restart_tests.items():
+              if scenario not in tests.get(name, []):
+                  raise SystemExit(f"{name} is missing its region restart scenario {scenario}")
+          PY
       - name: Test native behavior and compare original C#
         run: ctest --test-dir native-port/build -C Release -j2 --output-on-failure --output-junit ctest-results.xml
       - name: Retain native compatibility results
@@ -279,6 +373,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+      - run: sudo apt-get update && sudo apt-get install -y libjpeg-dev libpng-dev libicu-dev libfreetype-dev fonts-liberation
       - run: cmake -S native-port -B native-port/build -DCMAKE_BUILD_TYPE=Debug -DOPENSIM_SANITIZERS=ON -DOPENSIM_DIFFERENTIAL_TESTS=ON -DOPENSIM_REQUIRE_TLS=ON
       - run: cmake --build native-port/build --parallel
       - run: ctest --test-dir native-port/build --output-on-failure

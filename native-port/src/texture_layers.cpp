@@ -7,6 +7,10 @@
 #include <charconv>
 #include <cstddef>
 #include <cstring>
+#include <csetjmp>
+#include <cstdio>
+#include <cstdlib>
+#include <jpeglib.h>
 #include <limits>
 #include <memory>
 #include <mutex>
@@ -22,11 +26,15 @@
 
 namespace opensim::scene {
 namespace {
-// Layout exported by the bundled openjpeg-dotnet library. Its packet index
-// uses 20-byte entries, including two fields unused by OpenMetaverse.
+// Layout exported by the bundled openjpeg-dotnet libraries.
 struct PacketIndex {
     std::int32_t start, header_end, end;
+#ifdef _WIN32
     std::array<std::byte, 8> unused;
+#else
+    // The double distortion field has four bytes of alignment padding.
+    std::array<std::byte, 12> unused;
+#endif
 };
 struct ImageIndex {
     std::uint8_t* encoded = nullptr;
@@ -35,7 +43,11 @@ struct ImageIndex {
     std::int32_t width = 0, height = 0, layers = 0, resolutions = 0, components = 0, packets = 0;
     const PacketIndex* index = nullptr;
 };
+#ifdef _WIN32
 static_assert(sizeof(PacketIndex) == 20);
+#else
+static_assert(sizeof(PacketIndex) == 24);
+#endif
 static_assert(sizeof(void*) == 8 && sizeof(ImageIndex) == 56 && offsetof(ImageIndex, index) == 48);
 
 class Library {
@@ -50,7 +62,13 @@ public:
         : handle_(LoadLibraryExW(path.c_str(), nullptr,
                                 LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS))
 #else
+#if defined(__linux__)
+        // The bundled x86-64 codec has an unresolved JPIP index writer.
+        // Its DotNet entry points encode raw codestreams and never use it.
+        : handle_(dlopen(path.c_str(), RTLD_LAZY | RTLD_LOCAL))
+#else
         : handle_(dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL))
+#endif
 #endif
     {
         if (!handle_)
@@ -67,7 +85,8 @@ public:
     Library& operator=(const Library&) = delete;
 
     using Operation = bool (*)(ImageIndex*);
-    Operation operation(const char* name) const {
+    template <typename Function = Operation>
+    Function operation(const char* name) const {
 #ifdef _WIN32
         const auto address = GetProcAddress(handle_, name);
 #else
@@ -75,9 +94,69 @@ public:
 #endif
         if (!address)
             throw std::runtime_error(std::string("JPEG 2000 decoder is missing ") + name);
-        return reinterpret_cast<Operation>(address);
+        return reinterpret_cast<Function>(address);
     }
 };
+
+std::mutex decoder_mutex;
+
+struct JpegEncoding {
+    jpeg_compress_struct compressor{};
+    jpeg_error_mgr errors{};
+    std::jmp_buf error_jump;
+    unsigned char* output = nullptr;
+    unsigned long length = 0;
+
+    ~JpegEncoding() {
+        jpeg_destroy_compress(&compressor);
+        std::free(output);
+    }
+};
+
+std::string encode_jpeg(const ImageIndex& image, bool interleaved, int quality) {
+    if (!image.decoded || image.width <= 0 || image.height <= 0 ||
+        image.width > JPEG_MAX_DIMENSION || image.height > JPEG_MAX_DIMENSION ||
+        image.components < 1 || image.components > 5)
+        return {};
+    const auto encoding = std::make_unique<JpegEncoding>();
+    const int components = image.components < 3 ? 1 : 3;
+    std::vector<JSAMPLE> row(static_cast<std::size_t>(image.width) * components);
+    auto& compressor = encoding->compressor;
+    compressor.err = jpeg_std_error(&encoding->errors);
+    compressor.client_data = encoding.get();
+    encoding->errors.error_exit = [](j_common_ptr context) {
+        std::longjmp(static_cast<JpegEncoding*>(context->client_data)->error_jump, 1);
+    };
+    if (setjmp(encoding->error_jump))
+        return {};
+    jpeg_create_compress(&compressor);
+    jpeg_mem_dest(&compressor, &encoding->output, &encoding->length);
+    compressor.image_width = image.width;
+    compressor.image_height = image.height;
+    compressor.input_components = components;
+    compressor.in_color_space = components == 1 ? JCS_GRAYSCALE : JCS_RGB;
+    jpeg_set_defaults(&compressor);
+    jpeg_set_quality(&compressor, quality, TRUE);
+    jpeg_start_compress(&compressor, TRUE);
+    const auto* decoded = static_cast<const std::uint8_t*>(image.decoded);
+    const auto plane_size = static_cast<std::size_t>(image.width) * image.height;
+    while (compressor.next_scanline < compressor.image_height) {
+        const auto offset = static_cast<std::size_t>(compressor.next_scanline) * image.width;
+        for (int x = 0; x < image.width; ++x)
+            for (int channel = 0; channel < components; ++channel)
+                row[x * components + channel] = interleaved
+                    ? decoded[(offset + x) * image.components + channel]
+                    : decoded[channel * plane_size + offset + x];
+        auto* scanline = row.data();
+        jpeg_write_scanlines(&compressor, &scanline, 1);
+    }
+    jpeg_finish_compress(&compressor);
+    return {reinterpret_cast<const char*>(encoding->output), encoding->length};
+}
+
+std::string encode_map_jpeg(const ImageIndex& image) {
+    return encode_jpeg(image, false, 95);
+}
 
 bool has_codestream_signature(std::span<const std::uint8_t> bytes) {
     constexpr std::array<std::uint8_t, 12> jp2{0, 0, 0, 12, 'j', 'P', ' ', ' ', 13, 10, 135, 10};
@@ -116,6 +195,137 @@ std::vector<std::int32_t> read_layer_record(const framework::AssetBase& asset, s
 }
 }
 
+namespace {
+
+template <typename Result>
+auto open_map_decoder(const std::filesystem::path& path, Result (*convert)(const ImageIndex&)) {
+    auto library = std::make_shared<Library>(std::filesystem::canonical(path));
+    const auto allocate = library->operation("DotNetAllocEncoded");
+    const auto decode = library->operation("DotNetDecode");
+    const auto release = library->operation("DotNetFree");
+    return [library, allocate, decode, release, convert](std::span<const std::uint8_t> bytes) -> Result {
+        if (bytes.size() > std::numeric_limits<std::int32_t>::max() || !has_codestream_signature(bytes))
+            return {};
+        std::lock_guard lock(decoder_mutex);
+        ImageIndex image;
+        image.length = static_cast<std::int32_t>(bytes.size());
+        struct Release {
+            ImageIndex& image;
+            Library::Operation release;
+            ~Release() { release(&image); }
+        } cleanup{image, release};
+        if (!allocate(&image) || !image.encoded)
+            return {};
+        std::memcpy(image.encoded, bytes.data(), bytes.size());
+        return decode(&image) ? convert(image) : Result{};
+    };
+}
+
+MapBitmap copy_map_bitmap(const ImageIndex& image) {
+    if (!image.decoded || image.width <= 0 || image.height <= 0 ||
+        image.components < 1 || image.components > 5)
+        return {};
+    const auto pixels = std::uint64_t(image.width) * image.height;
+    const std::size_t channels = image.components == 2 || image.components >= 4 ? 4 : 3;
+    if (pixels > std::uint64_t(std::numeric_limits<std::int32_t>::max()) / channels)
+        return {};
+
+    MapBitmap bitmap{static_cast<std::uint32_t>(image.width), static_cast<std::uint32_t>(image.height),
+                     std::vector<std::uint8_t>(static_cast<std::size_t>(pixels) * channels), channels};
+    const auto* decoded = static_cast<const std::uint8_t*>(image.decoded);
+    const std::size_t alpha = image.components == 2 ? 1 : image.components - 1;
+    for (std::size_t pixel = 0; pixel < pixels; ++pixel) {
+        for (std::size_t channel = 0; channel < 3; ++channel) {
+            const auto plane = image.components < 3 ? 0 : channel;
+            bitmap.pixels[pixel * channels + channel] = decoded[plane * pixels + pixel];
+        }
+        if (channels == 4)
+            bitmap.pixels[pixel * channels + 3] = decoded[alpha * pixels + pixel];
+    }
+    return bitmap;
+}
+
+std::optional<std::array<std::uint8_t, 3>> average_texture_color(const ImageIndex& image) {
+    if (!image.decoded || image.width <= 0 || image.height <= 0 ||
+        image.components < 1 || image.components > 5)
+        return {};
+    const auto count = std::uint64_t(image.width) * image.height;
+    if (count > std::numeric_limits<std::int32_t>::max() / image.components)
+        return {};
+    const auto* decoded = static_cast<const std::uint8_t*>(image.decoded);
+    std::array<std::uint8_t, 3> color;
+    for (std::size_t channel = 0; channel < color.size(); ++channel) {
+        const auto plane = image.components < 3 ? 0 : channel;
+        const auto* samples = decoded + plane * count;
+        std::uint64_t sum = 0;
+        for (std::size_t pixel = 0; pixel < count; ++pixel)
+            sum += samples[pixel];
+        color[channel] = static_cast<std::uint8_t>(sum / count);
+    }
+    return color;
+}
+
+} // namespace
+
+std::string encode_map_bitmap_jpeg(const MapBitmap& bitmap) {
+    if (bitmap.channels != 3 || bitmap.width > JPEG_MAX_DIMENSION || bitmap.height > JPEG_MAX_DIMENSION ||
+        bitmap.pixels.size() != std::uint64_t(bitmap.width) * bitmap.height * bitmap.channels)
+        return {};
+    ImageIndex image;
+    image.width = static_cast<std::int32_t>(bitmap.width);
+    image.height = static_cast<std::int32_t>(bitmap.height);
+    image.components = 3;
+    image.decoded = const_cast<std::uint8_t*>(bitmap.pixels.data());
+    return encode_jpeg(image, true, 75);
+}
+
+MapJpegEncoder open_map_jpeg_encoder(const std::filesystem::path& path) {
+    return open_map_decoder(path, encode_map_jpeg);
+}
+
+MapTextureAverage open_map_texture_average(const std::filesystem::path& path) {
+    return open_map_decoder(path, average_texture_color);
+}
+
+MapBitmapDecoder open_map_bitmap_decoder(const std::filesystem::path& path) {
+    return open_map_decoder(path, copy_map_bitmap);
+}
+
+MapJpeg2000Encoder open_map_jpeg2000_encoder(const std::filesystem::path& path) {
+    auto library = std::make_shared<Library>(std::filesystem::canonical(path));
+    const auto allocate = library->operation("DotNetAllocDecoded");
+    const auto encode = library->operation<bool (*)(ImageIndex*, bool)>("DotNetEncode");
+    const auto release = library->operation("DotNetFree");
+    return [library, allocate, encode, release](std::span<const std::uint8_t> interleaved,
+                                               std::uint32_t width, std::uint32_t height,
+                                               std::size_t channels, bool lossless) -> std::vector<std::uint8_t> {
+        const auto pixels = std::uint64_t(width) * height;
+        if ((channels != 3 && channels != 4) || width == 0 || height == 0 ||
+            pixels > std::numeric_limits<std::int32_t>::max() / channels ||
+            interleaved.size() != pixels * channels)
+            return {};
+        std::lock_guard lock(decoder_mutex);
+        ImageIndex image;
+        image.width = static_cast<std::int32_t>(width);
+        image.height = static_cast<std::int32_t>(height);
+        image.components = static_cast<std::int32_t>(channels);
+        struct Release {
+            ImageIndex& image;
+            Library::Operation release;
+            ~Release() { release(&image); }
+        } cleanup{image, release};
+        if (!allocate(&image) || !image.decoded)
+            return {};
+        auto* decoded = static_cast<std::uint8_t*>(image.decoded);
+        for (std::size_t channel = 0; channel < channels; ++channel)
+            for (std::size_t pixel = 0; pixel < pixels; ++pixel)
+                decoded[channel * pixels + pixel] = interleaved[pixel * channels + channel];
+        if (!encode(&image, lossless) || !image.encoded || image.length <= 0)
+            return {};
+        return {image.encoded, image.encoded + image.length};
+    };
+}
+
 TextureLayerDecoder open_texture_layer_decoder(const std::filesystem::path& path,
                                                bool use_next_layer_boundary) {
     auto library = std::make_shared<Library>(std::filesystem::canonical(path));
@@ -127,7 +337,6 @@ TextureLayerDecoder open_texture_layer_decoder(const std::filesystem::path& path
         if (bytes.size() > std::numeric_limits<std::int32_t>::max() || !has_codestream_signature(bytes))
             return {};
 
-        static std::mutex decoder_mutex;
         std::lock_guard lock(decoder_mutex);
         ImageIndex image;
         image.length = static_cast<std::int32_t>(bytes.size());

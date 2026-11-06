@@ -1,13 +1,321 @@
-using System;using System.Collections.Generic;using System.Text;using System.Reflection;using Nini.Config;using OpenMetaverse;using OpenSim.Framework;using OpenSim.Region.Framework.Scenes;using OpenSim.Region.CoreModules.Avatar.Profile;
-namespace Mono.Addins{public class ExtensionAttribute:Attribute{public string Path{get;set;}public string NodeName{get;set;}public string Id{get;set;}}}
-namespace log4net{public interface ILog{void DebugFormat(string f,params object[] args);}public static class LogManager{public static ILog GetLogger(object t)=>Fixture.Log;}}
-namespace OpenSim.Region.Framework.Interfaces{public interface ISharedRegionModule{}public interface IScene{}}
-namespace OpenSim.Framework{public interface IClientAPI{OpenSim.Region.Framework.Interfaces.IScene Scene{get;}event Action<IClientAPI,UUID> OnRequestAvatarProperties;void SendAvatarProperties(UUID id,string about,string born,byte[] membership,string first,uint flags,UUID firstImage,UUID image,string url,UUID partner);void SendAvatarInterestsReply(UUID id,uint wants,string wantText,uint skills,string skillText,string languages);}public static class Util{public static DateTime ToDateTime(int seconds)=>DateTime.UnixEpoch.AddSeconds(seconds);}}
-namespace OpenSim.Services.Interfaces{public class UserAccount{public string FirstName,LastName;public int Created;}public interface IUserAccountService{UserAccount GetUserAccount(UUID scope,UUID avatar);}}
-namespace OpenSim.Region.Framework.Scenes{public class RegionInfo{public UUID ScopeID;}public class Events{public string Name;public event Action<IClientAPI> OnNewClient{add{Fixture.Trace+="subscribe"+Name+";";if((Fixture.Flags&256)!=0)throw new Exception("subscribe failed");Handlers+=value;}remove{Handlers-=value;}}public Action<IClientAPI> Handlers;public void Fire(IClientAPI client)=>Handlers?.Invoke(client);}public class Scene:OpenSim.Region.Framework.Interfaces.IScene{public string Name;public Events EventManager;public RegionInfo RegionInfo;public OpenSim.Services.Interfaces.IUserAccountService UserAccountService;public void RegisterModuleInterface<T>(T value){Fixture.Trace+="register"+Name+";";if((Fixture.Flags&128)!=0)throw new Exception("register failed");}public Scene(string name){Name=name;EventManager=new Events{Name=name};RegionInfo=new RegionInfo{ScopeID=new UUID(name=="A"?"00000000-0000-0000-0000-000000000001":"00000000-0000-0000-0000-000000000002")};UserAccountService=new Accounts(name);}}}
-class Accounts:OpenSim.Services.Interfaces.IUserAccountService{string Name;public Accounts(string name){Name=name;}public OpenSim.Services.Interfaces.UserAccount GetUserAccount(UUID scope,UUID avatar){Fixture.Trace+="get"+Name+":"+scope+":"+avatar+";";if(Fixture.Mode==2)throw new Exception("account failed");return Fixture.Mode==0?null:new OpenSim.Services.Interfaces.UserAccount{FirstName=Fixture.First,LastName=Fixture.Last,Created=Fixture.Created};}}
-class Other:OpenSim.Region.Framework.Interfaces.IScene{}
-class Client:IClientAPI{public Scene Concrete;public OpenSim.Region.Framework.Interfaces.IScene Scene=>(Fixture.Flags&2)!=0?new Other():(Fixture.Flags&4)!=0?null:Concrete;public event Action<IClientAPI,UUID> OnRequestAvatarProperties{add{Fixture.Trace+="request-sub;";Handlers+=value;}remove{Handlers-=value;}}public Action<IClientAPI,UUID> Handlers;public void Request(UUID avatar)=>Handlers?.Invoke(this,avatar);public void SendAvatarProperties(UUID id,string about,string born,byte[] membership,string first,uint flags,UUID firstImage,UUID image,string url,UUID partner){Fixture.Trace+="P:"+id+":"+Fixture.H(about)+":"+Fixture.H(born)+":"+Convert.ToHexString(membership).ToLowerInvariant()+":"+Fixture.H(first)+":"+flags+":"+firstImage+":"+image+":"+Fixture.H(url)+":"+partner+";";if((Fixture.Flags&32)!=0)throw new Exception("properties failed");}public void SendAvatarInterestsReply(UUID id,uint wants,string want,uint skills,string skill,string lang){Fixture.Trace+="I:"+id+":"+wants+":"+Fixture.H(want)+":"+skills+":"+Fixture.H(skill)+":"+Fixture.H(lang)+";";if((Fixture.Flags&64)!=0)throw new Exception("interests failed");}}
-class Log:log4net.ILog{public void DebugFormat(string f,params object[] args){Fixture.Trace+="log:"+string.Format(f,args)+";";}}
-static class Fixture{public static string Trace,First,Last;public static int Flags,Mode,Created;public static Log Log=new();public static string H(string text)=>text==null?"N":Convert.ToHexString(Encoding.UTF8.GetBytes(text)).ToLowerInvariant();public static string Text(string value){if(value=="-")return null;if(value==".")return "";var bytes=Convert.FromHexString(value);var chars=new char[bytes.Length/2];for(int i=0;i<chars.Length;++i)chars[i]=(char)(bytes[2*i]|bytes[2*i+1]<<8);return new string(chars);}}
-class Program{static void Main(){string line;while((line=Console.ReadLine())!=null){var p=line.Split(' ');if(p[0]=="B"){try{Console.WriteLine(Convert.ToHexString(Utils.StringToBytes(Fixture.Text(p[1]))).ToLowerInvariant());}catch(Exception e){Console.WriteLine("EX:"+Fixture.H(e.Message));}continue;}Fixture.Mode=int.Parse(p[0]);Fixture.Flags=int.Parse(p[1]);Fixture.Created=int.Parse(p[2]);Fixture.First=Fixture.Text(p[3]);Fixture.Last=Fixture.Text(p[4]);Fixture.Trace="";var module=new BasicProfileModule();var a=new Scene("A");var b=new Scene("B");if((Fixture.Flags&8)!=0)a.UserAccountService=null;if((Fixture.Flags&16)!=0)a.RegionInfo=null;var client=new Client{Concrete=b};string output="";var avatar=new UUID("00000000-0000-0000-0000-000000000003");for(int i=5;i<p.Length;++i){if(i>5)output+="/";try{switch(p[i]){case "I":module.Initialise(new IniConfigSource());break;case "J":var cfg=new IniConfigSource();cfg.AddConfig("UserProfiles");module.Initialise(cfg);break;case "Z":module.Initialise(null);break;case "A":module.AddRegion(a);break;case "B":module.AddRegion(b);break;case "N":module.AddRegion(null);break;case "R":module.RemoveRegion(a);break;case "T":module.RemoveRegion(b);break;case "U":module.RemoveRegion(null);break;case "C":module.Close();break;case "P":module.PostInitialise();break;case "L":module.RegionLoaded(null);break;case "E":a.EventManager.Fire((Fixture.Flags&1)!=0?null:client);break;case "F":b.EventManager.Fire(client);break;case "Q":module.RequestAvatarProperties((Fixture.Flags&1)!=0?null:client,avatar);break;case "V":client.Request(avatar);break;}output+="OK";}catch(Exception e){output+="EX:"+Fixture.H(e.Message);}var scenes=(List<Scene>)typeof(BasicProfileModule).GetField("m_Scenes",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(module);output+=":"+((bool)typeof(BasicProfileModule).GetField("m_Enabled",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(module)?"1":"0")+":";foreach(var scene in scenes)output+=scene==a?"A":scene==b?"B":"N";}Console.WriteLine(output+"|"+Fixture.H(Fixture.Trace)+"|"+module.Name+":"+(module.ReplaceableInterface==typeof(IProfileModule)?"I":"X"));}}}
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Reflection;
+using Nini.Config;
+using OpenMetaverse;
+using OpenSim.Framework;
+using OpenSim.Region.Framework.Scenes;
+using OpenSim.Region.CoreModules.Avatar.Profile;
+namespace Mono.Addins
+{
+    public class ExtensionAttribute : Attribute
+    {
+        public string Path { get; set; }
+        public string NodeName { get; set; }
+        public string Id { get; set; }
+    }
+}
+namespace log4net
+{
+    public interface ILog
+    {
+        void DebugFormat(string f, params object[] args);
+    }
+    public static class LogManager
+    {
+        public static ILog GetLogger(object t) => Fixture.Log;
+    }
+}
+namespace OpenSim.Region.Framework.Interfaces
+{
+    public interface ISharedRegionModule
+    {
+    }
+    public interface IScene
+    {
+    }
+}
+namespace OpenSim.Framework
+{
+    public interface IClientAPI
+    {
+        OpenSim.Region.Framework.Interfaces.IScene Scene { get; }
+        event Action<IClientAPI, UUID> OnRequestAvatarProperties;
+        void SendAvatarProperties(UUID id, string about, string born, byte[] membership, string first,
+                                  uint flags, UUID firstImage, UUID image, string url, UUID partner);
+        void SendAvatarInterestsReply(UUID id, uint wants, string wantText, uint skills, string skillText,
+                                      string languages);
+    }
+    public static class Util
+    {
+        public static DateTime ToDateTime(int seconds) => DateTime.UnixEpoch.AddSeconds(seconds);
+    }
+}
+namespace OpenSim.Services.Interfaces
+{
+    public class UserAccount
+    {
+        public string FirstName, LastName;
+        public int Created;
+    }
+    public interface IUserAccountService
+    {
+        UserAccount GetUserAccount(UUID scope, UUID avatar);
+    }
+}
+namespace OpenSim.Region.Framework.Scenes
+{
+    public class RegionInfo
+    {
+        public UUID ScopeID;
+    }
+    public class Events
+    {
+        public string Name;
+        public event Action<IClientAPI> OnNewClient
+        {
+            add
+            {
+                Fixture.Trace += "subscribe" + Name + ";";
+                if ((Fixture.Flags & 256) != 0)
+                    throw new Exception("subscribe failed");
+                Handlers += value;
+            }
+            remove
+            {
+                Handlers -= value;
+            }
+        }
+        public Action<IClientAPI> Handlers;
+        public void Fire(IClientAPI client) => Handlers?.Invoke(client);
+    }
+    public class Scene : OpenSim.Region.Framework.Interfaces.IScene
+    {
+        public string Name;
+        public Events EventManager;
+        public RegionInfo RegionInfo;
+        public OpenSim.Services.Interfaces.IUserAccountService UserAccountService;
+        public void RegisterModuleInterface<T>(T value)
+        {
+            Fixture.Trace += "register" + Name + ";";
+            if ((Fixture.Flags & 128) != 0)
+                throw new Exception("register failed");
+        }
+        public Scene(string name)
+        {
+            Name = name;
+            EventManager = new Events { Name = name };
+            RegionInfo =
+                new RegionInfo { ScopeID = new UUID(name == "A" ? "00000000-0000-0000-0000-000000000001"
+                                                                : "00000000-0000-0000-0000-000000000002") };
+            UserAccountService = new Accounts(name);
+        }
+    }
+}
+class Accounts : OpenSim.Services.Interfaces.IUserAccountService
+{
+    string Name;
+    public Accounts(string name)
+    {
+        Name = name;
+    }
+    public OpenSim.Services.Interfaces.UserAccount GetUserAccount(UUID scope, UUID avatar)
+    {
+        Fixture.Trace += "get" + Name + ":" + scope + ":" + avatar + ";";
+        if (Fixture.Mode == 2)
+            throw new Exception("account failed");
+        return Fixture.Mode == 0 ? null
+                                 : new OpenSim.Services.Interfaces.UserAccount { FirstName = Fixture.First,
+                                                                                 LastName = Fixture.Last,
+                                                                                 Created = Fixture.Created };
+    }
+}
+class Other : OpenSim.Region.Framework.Interfaces.IScene
+{
+}
+class Client : IClientAPI
+{
+    public Scene Concrete;
+    public OpenSim.Region.Framework.Interfaces.IScene Scene => (Fixture.Flags & 2) != 0   ? new Other()
+                                                               : (Fixture.Flags & 4) != 0 ? null
+                                                                                          : Concrete;
+    public event Action<IClientAPI, UUID> OnRequestAvatarProperties
+    {
+        add
+        {
+            Fixture.Trace += "request-sub;";
+            Handlers += value;
+        }
+        remove
+        {
+            Handlers -= value;
+        }
+    }
+    public Action<IClientAPI, UUID> Handlers;
+    public void Request(UUID avatar) => Handlers?.Invoke(this, avatar);
+    public void SendAvatarProperties(UUID id, string about, string born, byte[] membership, string first,
+                                     uint flags, UUID firstImage, UUID image, string url, UUID partner)
+    {
+        Fixture.Trace += "P:" + id + ":" + Fixture.H(about) + ":" + Fixture.H(born) + ":" +
+                         Convert.ToHexString(membership).ToLowerInvariant() + ":" + Fixture.H(first) + ":" +
+                         flags + ":" + firstImage + ":" + image + ":" + Fixture.H(url) + ":" + partner + ";";
+        if ((Fixture.Flags & 32) != 0)
+            throw new Exception("properties failed");
+    }
+    public void SendAvatarInterestsReply(UUID id, uint wants, string want, uint skills, string skill,
+                                         string lang)
+    {
+        Fixture.Trace += "I:" + id + ":" + wants + ":" + Fixture.H(want) + ":" + skills + ":" +
+                         Fixture.H(skill) + ":" + Fixture.H(lang) + ";";
+        if ((Fixture.Flags & 64) != 0)
+            throw new Exception("interests failed");
+    }
+}
+class Log : log4net.ILog
+{
+    public void DebugFormat(string f, params object[] args)
+    {
+        Fixture.Trace += "log:" + string.Format(f, args) + ";";
+    }
+}
+static class Fixture
+{
+    public static string Trace, First, Last;
+    public static int Flags, Mode, Created;
+    public static Log Log = new();
+    public static string H(string text) =>
+        text == null ? "N" : Convert.ToHexString(Encoding.UTF8.GetBytes(text)).ToLowerInvariant();
+    public static string Text(string value)
+    {
+        if (value == "-")
+            return null;
+        if (value == ".")
+            return "";
+        var bytes = Convert.FromHexString(value);
+        var chars = new char[bytes.Length / 2];
+        for (int i = 0; i < chars.Length; ++i)
+            chars[i] = (char)(bytes[2 * i] | bytes[2 * i + 1] << 8);
+        return new string(chars);
+    }
+}
+class Program
+{
+    static void Main()
+    {
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var p = line.Split(' ');
+            if (p[0] == "B")
+            {
+                try
+                {
+                    Console.WriteLine(
+                        Convert.ToHexString(Utils.StringToBytes(Fixture.Text(p[1]))).ToLowerInvariant());
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("EX:" + Fixture.H(e.Message));
+                }
+                continue;
+            }
+            Fixture.Mode = int.Parse(p[0]);
+            Fixture.Flags = int.Parse(p[1]);
+            Fixture.Created = int.Parse(p[2]);
+            Fixture.First = Fixture.Text(p[3]);
+            Fixture.Last = Fixture.Text(p[4]);
+            Fixture.Trace = "";
+            var module = new BasicProfileModule();
+            var a = new Scene("A");
+            var b = new Scene("B");
+            if ((Fixture.Flags & 8) != 0)
+                a.UserAccountService = null;
+            if ((Fixture.Flags & 16) != 0)
+                a.RegionInfo = null;
+            var client = new Client { Concrete = b };
+            string output = "";
+            var avatar = new UUID("00000000-0000-0000-0000-000000000003");
+            for (int i = 5; i < p.Length; ++i)
+            {
+                if (i > 5)
+                    output += "/";
+                try
+                {
+                    switch (p[i])
+                    {
+                    case "I":
+                        module.Initialise(new IniConfigSource());
+                        break;
+                    case "J":
+                        var cfg = new IniConfigSource();
+                        cfg.AddConfig("UserProfiles");
+                        module.Initialise(cfg);
+                        break;
+                    case "Z":
+                        module.Initialise(null);
+                        break;
+                    case "A":
+                        module.AddRegion(a);
+                        break;
+                    case "B":
+                        module.AddRegion(b);
+                        break;
+                    case "N":
+                        module.AddRegion(null);
+                        break;
+                    case "R":
+                        module.RemoveRegion(a);
+                        break;
+                    case "T":
+                        module.RemoveRegion(b);
+                        break;
+                    case "U":
+                        module.RemoveRegion(null);
+                        break;
+                    case "C":
+                        module.Close();
+                        break;
+                    case "P":
+                        module.PostInitialise();
+                        break;
+                    case "L":
+                        module.RegionLoaded(null);
+                        break;
+                    case "E":
+                        a.EventManager.Fire((Fixture.Flags & 1) != 0 ? null : client);
+                        break;
+                    case "F":
+                        b.EventManager.Fire(client);
+                        break;
+                    case "Q":
+                        module.RequestAvatarProperties((Fixture.Flags & 1) != 0 ? null : client, avatar);
+                        break;
+                    case "V":
+                        client.Request(avatar);
+                        break;
+                    }
+                    output += "OK";
+                }
+                catch (Exception e)
+                {
+                    output += "EX:" + Fixture.H(e.Message);
+                }
+                var scenes = (List<Scene>)typeof(BasicProfileModule)
+                                 .GetField("m_Scenes", BindingFlags.Instance | BindingFlags.NonPublic)
+                                 .GetValue(module);
+                output += ":" +
+                          ((bool)typeof(BasicProfileModule)
+                                   .GetField("m_Enabled", BindingFlags.Instance | BindingFlags.NonPublic)
+                                   .GetValue(module)
+                               ? "1"
+                               : "0") +
+                          ":";
+                foreach (var scene in scenes)
+                    output += scene == a ? "A" : scene == b ? "B" : "N";
+            }
+            Console.WriteLine(output + "|" + Fixture.H(Fixture.Trace) + "|" + module.Name + ":" +
+                              (module.ReplaceableInterface == typeof(IProfileModule) ? "I" : "X"));
+        }
+    }
+}

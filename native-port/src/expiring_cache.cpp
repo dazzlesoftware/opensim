@@ -133,7 +133,8 @@ void ExpiringCacheLock::enter(Mode mode) {
             recursion("Recursive upgradeable lock acquisitions not allowed in this mode.");
         if (s.writer == self)
             recursion(
-                "Upgradeable lock may not be acquired with write lock held in this mode. Acquiring Upgradeable lock gives the ability to read along with an option to upgrade to a writer.");
+                "Upgradeable lock may not be acquired with write lock held in this mode. Acquiring Upgradeable "
+                "lock gives the ability to read along with an option to upgrade to a writer.");
         if (s.readers.contains(self))
             recursion("Upgradeable lock may not be acquired with read lock held.");
         ++s.waiting;
@@ -147,7 +148,9 @@ void ExpiringCacheLock::enter(Mode mode) {
             recursion("Recursive write lock acquisitions not allowed in this mode.");
         if (s.readers.contains(self))
             recursion(
-                "Write lock may not be acquired with read lock held. This pattern is prone to deadlocks. Please ensure that read locks are released before taking a write lock. If an upgrade is necessary, use an upgrade lock in place of the read lock.");
+                "Write lock may not be acquired with read lock held. This pattern is prone to deadlocks. Please "
+                "ensure that read locks are released before taking a write lock. If an upgrade is necessary, use "
+                "an upgrade lock in place of the read lock.");
         ++s.waiting_writers;
         ++s.waiting;
         s.condition.wait(lock, [&] {
@@ -184,7 +187,8 @@ void ExpiringCacheLock::dispose() {
     auto self = std::this_thread::get_id();
     if (s.waiting || s.writer == self || s.upgrade == self || s.readers.contains(self))
         throw std::runtime_error(
-            "The lock is being disposed while still being used. It either is being held by a thread and/or has active waiters waiting to acquire the lock.");
+            "The lock is being disposed while still being used. It either is being held by a thread and/or "
+            "has active waiters waiting to acquire the lock.");
     s.disposed = true;
 }
 }

@@ -1,10 +1,113 @@
 // Actual .NET8 BCL oracle for System.IO.Enumeration.FileSystemName.
-using System;using System.Runtime.InteropServices;using System.IO.Enumeration;using System.Reflection;using System.Globalization;
-class Program {
- delegate int UpperOrdinal(ReadOnlySpan<char> source,Span<char> destination);
- static string? Decode(string value){if(value=="~")return null;if(value==".")return "";var b=Convert.FromHexString(value);var c=new char[b.Length/2];for(int i=0;i<c.Length;i++)c[i]=(char)(b[i*2]|b[i*2+1]<<8);return new string(c);}
- static string Encode(string value){if(value.Length==0)return ".";var b=new byte[value.Length*2];for(int i=0;i<value.Length;i++){b[i*2]=(byte)value[i];b[i*2+1]=(byte)(value[i]>>8);}return Convert.ToHexString(b).ToLowerInvariant();}
- static void Profile(){var upper=typeof(object).Assembly.GetType("System.Globalization.Ordinal")!.GetMethod("ToUpperOrdinal",BindingFlags.NonPublic|BindingFlags.Static)!.CreateDelegate<UpperOrdinal>();Span<char> source=stackalloc char[2],destination=stackalloc char[2];for(int c=0;c<=0xffff;c++){char mapped=char.ToUpperInvariant((char)c);if(mapped!=c)Console.WriteLine($"C|{c:x}|{(int)mapped:x}");}for(int c=0;c<=0x10ffff;c++){int length;if(c<=0xffff){source[0]=(char)c;length=1;}else{source[0]=(char)(((c-0x10000)>>10)+0xd800);source[1]=(char)(((c-0x10000)&1023)+0xdc00);length=2;}upper(source.Slice(0,length),destination);int mapped=length==1?destination[0]:char.ConvertToUtf32(destination[0],destination[1]);if(mapped!=c)Console.WriteLine($"O|{c:x}|{mapped:x}|{(MemoryExtensions.Equals(source.Slice(0,length),destination.Slice(0,length),StringComparison.OrdinalIgnoreCase)?1:0)}");}Console.WriteLine("END");}
- static void Main(){CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;for(string? line;(line=Console.ReadLine())!=null;){try{var a=line.Split(' ');switch(a[0]){case "META":Console.WriteLine($"{Environment.Version}|{typeof(object).Assembly.Location}|{Environment.GetEnvironmentVariable("DOTNET_SYSTEM_GLOBALIZATION_INVARIANT")}|{RuntimeInformation.OSDescription}");break;case "PROFILE":Profile();break;case "T":var input=Decode(a[1]);if(a.Length>2&&a[2]=="intern"&&input!=null)input=string.Intern(input);var output=FileSystemName.TranslateWin32Expression(input);Console.WriteLine($"{Encode(output)}|{(ReferenceEquals(input,output)?1:0)}|{(ReferenceEquals(output,"*")?1:0)}");break;case "M":Console.WriteLine((a[1]=="w"?FileSystemName.MatchesWin32Expression(Decode(a[3]).AsSpan(),Decode(a[4]).AsSpan(),a[2]=="1"):FileSystemName.MatchesSimpleExpression(Decode(a[3]).AsSpan(),Decode(a[4]).AsSpan(),a[2]=="1"))?"1":"0");break;default:throw new Exception("Unknown query");}}catch(Exception e){Console.WriteLine("EX:"+e.GetType().Name);}}}
+using System;
+using System.Runtime.InteropServices;
+using System.IO.Enumeration;
+using System.Reflection;
+using System.Globalization;
+class Program
+{
+    delegate int UpperOrdinal(ReadOnlySpan<char> source, Span<char> destination);
+    static string? Decode(string value)
+    {
+        if (value == "~")
+            return null;
+        if (value == ".")
+            return "";
+        var b = Convert.FromHexString(value);
+        var c = new char[b.Length / 2];
+        for (int i = 0; i < c.Length; i++)
+            c[i] = (char)(b[i * 2] | b[i * 2 + 1] << 8);
+        return new string(c);
+    }
+    static string Encode(string value)
+    {
+        if (value.Length == 0)
+            return ".";
+        var b = new byte[value.Length * 2];
+        for (int i = 0; i < value.Length; i++)
+        {
+            b[i * 2] = (byte)value[i];
+            b[i * 2 + 1] = (byte)(value[i] >> 8);
+        }
+        return Convert.ToHexString(b).ToLowerInvariant();
+    }
+    static void Profile()
+    {
+        var upper = typeof(object)
+                        .Assembly.GetType("System.Globalization.Ordinal")!
+                        .GetMethod("ToUpperOrdinal", BindingFlags.NonPublic |
+                                                         BindingFlags.Static)!.CreateDelegate<UpperOrdinal>();
+        Span<char> source = stackalloc char[2], destination = stackalloc char[2];
+        for (int c = 0; c <= 0xffff; c++)
+        {
+            char mapped = char.ToUpperInvariant((char)c);
+            if (mapped != c)
+                Console.WriteLine($"C|{c:x}|{(int)mapped:x}");
+        }
+        for (int c = 0; c <= 0x10ffff; c++)
+        {
+            int length;
+            if (c <= 0xffff)
+            {
+                source[0] = (char)c;
+                length = 1;
+            }
+            else
+            {
+                source[0] = (char)(((c - 0x10000) >> 10) + 0xd800);
+                source[1] = (char)(((c - 0x10000) & 1023) + 0xdc00);
+                length = 2;
+            }
+            upper(source.Slice(0, length), destination);
+            int mapped = length == 1 ? destination[0] : char.ConvertToUtf32(destination[0], destination[1]);
+            if (mapped != c)
+                Console.WriteLine(
+                    $"O|{c:x}|{mapped:x}|{(MemoryExtensions.Equals(source.Slice(0,length),destination.Slice(0,length),StringComparison.OrdinalIgnoreCase)?1:0)}");
+        }
+        Console.WriteLine("END");
+    }
+    static void Main()
+    {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        for (string? line; (line = Console.ReadLine()) != null;)
+        {
+            try
+            {
+                var a = line.Split(' ');
+                switch (a[0])
+                {
+                case "META":
+                    Console.WriteLine(
+                        $"{Environment.Version}|{typeof(object).Assembly.Location}|{Environment.GetEnvironmentVariable("DOTNET_SYSTEM_GLOBALIZATION_INVARIANT")}|{RuntimeInformation.OSDescription}");
+                    break;
+                case "PROFILE":
+                    Profile();
+                    break;
+                case "T":
+                    var input = Decode(a[1]);
+                    if (a.Length > 2 && a[2] == "intern" && input != null)
+                        input = string.Intern(input);
+                    var output = FileSystemName.TranslateWin32Expression(input);
+                    Console.WriteLine(
+                        $"{Encode(output)}|{(ReferenceEquals(input,output)?1:0)}|{(ReferenceEquals(output,"*")?1:0)}");
+                    break;
+                case "M":
+                    Console.WriteLine((a[1] == "w"
+                                           ? FileSystemName.MatchesWin32Expression(
+                                                 Decode(a[3]).AsSpan(), Decode(a[4]).AsSpan(), a[2] == "1")
+                                           : FileSystemName.MatchesSimpleExpression(
+                                                 Decode(a[3]).AsSpan(), Decode(a[4]).AsSpan(), a[2] == "1"))
+                                          ? "1"
+                                          : "0");
+                    break;
+                default:
+                    throw new Exception("Unknown query");
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("EX:" + e.GetType().Name);
+            }
+        }
+    }
 }
-

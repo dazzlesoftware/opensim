@@ -25,11 +25,75 @@ IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-using System;using System.IO;using System.Text;using System.Linq;using System.Net;using OpenMetaverse;using OpenSim.Data;using OpenSim.Services.Interfaces;using OpenSim.Services.GridService;using OpenSim.Framework.ServiceAuth;using OpenSim.Framework.Servers.HttpServer;using OpenSim.Server.Handlers.Grid;using GridRegion=OpenSim.Services.Interfaces.GridRegion;
-static class EndpointProgram {
- static string Hex(string value)=>Convert.ToHexString(Encoding.UTF8.GetBytes(value??"")).ToLowerInvariant();
- static void Main(string[] args){var config=new Nini.Config.IniConfigSource(args[0]);if(args.Length>1){System.Console.WriteLine(Hex(OpenSim.Server.Base.ServerUtils.BuildXmlResponse(new ExtraFeatures(config).Values)));return;}var store=new FaultRegionStore();string line;while((line=System.Console.ReadLine())!=null){var previous=store.Get("%",UUID.Zero);if(previous!=null)foreach(var row in previous)store.Delete(row.RegionID);var grid=new GridService(store,config,null);
- for(int i=1;i<=2;i++){var region=new GridRegion{RegionID=new UUID("00000000-0000-0000-0000-00000000000"+i),RegionName=i==1?"Alpha":"Beta",RegionLocX=25600+(i-1)*256,RegionLocY=25600,InternalEndPoint=new IPEndPoint(IPAddress.Any,9000),ExternalHostName="127.0.0.1"};var data=grid.RegionInfo2RegionData(region);data.Data["flags"]=i==1?"1031":"516";store.Store(data);}
- var fields=line.Split('|');var body=Encoding.UTF8.GetString(Convert.FromHexString(fields[0]));var authorization=Encoding.UTF8.GetString(Convert.FromHexString(fields[1]));var request=new IOSHttpRequest();if(authorization.Length>0)request.Headers["Authorization"]=authorization;if(fields[2]=="1")request.Headers["X-SecondLife-Shard"]="";var response=new IOSHttpResponse();var handler=new GridServerPostHandler(grid,ServiceAuth.Create(config,"GridService"));try{var result=handler.Handle("/grid",new MemoryStream(Encoding.UTF8.GetBytes(body)),request,response);System.Console.WriteLine(response.StatusCode+"|"+Convert.ToHexString(result).ToLowerInvariant()+"|"+Hex(response.ContentType)+"|"+Hex(response.Headers["WWW-Authenticate"]));}catch(FormatException){System.Console.WriteLine("BASE64_FORMAT_ERROR");}
- }}
+using System;
+using System.IO;
+using System.Text;
+using System.Linq;
+using System.Net;
+using OpenMetaverse;
+using OpenSim.Data;
+using OpenSim.Services.Interfaces;
+using OpenSim.Services.GridService;
+using OpenSim.Framework.ServiceAuth;
+using OpenSim.Framework.Servers.HttpServer;
+using OpenSim.Server.Handlers.Grid;
+using GridRegion = OpenSim.Services.Interfaces.GridRegion;
+static class EndpointProgram
+{
+    static string Hex(string value) =>
+        Convert.ToHexString(Encoding.UTF8.GetBytes(value ?? "")).ToLowerInvariant();
+    static void Main(string[] args)
+    {
+        var config = new Nini.Config.IniConfigSource(args[0]);
+        if (args.Length > 1)
+        {
+            System.Console.WriteLine(
+                Hex(OpenSim.Server.Base.ServerUtils.BuildXmlResponse(new ExtraFeatures(config).Values)));
+            return;
+        }
+        var store = new FaultRegionStore();
+        string line;
+        while ((line = System.Console.ReadLine()) != null)
+        {
+            var previous = store.Get("%", UUID.Zero);
+            if (previous != null)
+                foreach (var row in previous)
+                    store.Delete(row.RegionID);
+            var grid = new GridService(store, config, null);
+            for (int i = 1; i <= 2; i++)
+            {
+                var region = new GridRegion { RegionID = new UUID("00000000-0000-0000-0000-00000000000" + i),
+                                              RegionName = i == 1 ? "Alpha" : "Beta",
+                                              RegionLocX = 25600 + (i - 1) * 256,
+                                              RegionLocY = 25600,
+                                              InternalEndPoint = new IPEndPoint(IPAddress.Any, 9000),
+                                              ExternalHostName = "127.0.0.1" };
+                var data = grid.RegionInfo2RegionData(region);
+                data.Data["flags"] = i == 1 ? "1031" : "516";
+                store.Store(data);
+            }
+            var fields = line.Split('|');
+            var body = Convert.FromHexString(fields[0]);
+            var authorization = Encoding.UTF8.GetString(Convert.FromHexString(fields[1]));
+            var request = new IOSHttpRequest();
+            if (authorization.Length > 0)
+                request.Headers["Authorization"] = authorization;
+            if (fields[2] == "1")
+                request.Headers["X-SecondLife-Shard"] = "";
+            var response = new IOSHttpResponse();
+            var handler = new GridServerPostHandler(grid, ServiceAuth.Create(config, "GridService"));
+            try
+            {
+                var result = handler.Handle("/grid", new MemoryStream(body), request,
+                                            response);
+                System.Console.WriteLine(
+                    response.StatusCode + "|" + Convert.ToHexString(result).ToLowerInvariant() + "|" +
+                    Hex(response.ContentType) + "|" + Hex(response.Headers["WWW-Authenticate"]));
+            }
+            catch (FormatException)
+            {
+                System.Console.WriteLine("BASE64_FORMAT_ERROR");
+            }
+        }
+    }
 }

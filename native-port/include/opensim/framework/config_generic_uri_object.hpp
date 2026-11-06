@@ -17,6 +17,7 @@ ConfigUriObjectPtr config_generic_uri_clone(ConfigUriObjectPtr);
 enum class ConfigGenericUriComponent {Host,IdnHost,DnsSafeHost,UserInfo,AbsolutePath,Query};
 ConfigUriText config_generic_uri_component(ConfigUriObjectPtr,ConfigGenericUriComponent);
 std::int32_t config_generic_uri_port(ConfigUriObjectPtr);
+ConfigUriText config_generic_uri_authority(ConfigUriObjectPtr);
 // Uri.Equals remote URL for built-in HTTP proxy pool keys: HttpRequestUrl,
 // SafeUnescaped, excluding user information and fragment.
 ConfigUriText config_generic_uri_http_pool_identity(ConfigUriObjectPtr);

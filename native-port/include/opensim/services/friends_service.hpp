@@ -70,6 +70,8 @@ class IFriendsService {
 };
 bool friend_can_modify_objects(IFriendsService& service, framework::Uuid actor, framework::Uuid owner,
                                bool hypergrid);
+bool friend_is_confirmed(IFriendsService& service, framework::Uuid principal, framework::Uuid other,
+                               bool hypergrid);
 class FriendsService : public IFriendsService {
   public:
     explicit FriendsService(FriendsStore& store) : store_(store) {}

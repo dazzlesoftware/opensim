@@ -1,2 +1,39 @@
-using System;using System.Globalization;using OpenMetaverse;
-class Program{static void Main(){CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;string line;while((line=Console.ReadLine())!=null){try{string[] p=line.Split(' ');UUID id;if(p[0]=="B"){ulong h=ulong.Parse(p[1],NumberStyles.HexNumber);uint x=uint.Parse(p[2],NumberStyles.HexNumber),y=uint.Parse(p[3],NumberStyles.HexNumber);id=p[4]=="-"?Original.BuildFakeParcelID(h,x,y):Original.BuildFakeParcelID(h,x,y,uint.Parse(p[4],NumberStyles.HexNumber));}else id=new UUID(Convert.FromHexString(p[1]),0);bool valid=Original.ParseFakeParcelID(id,out ulong handle,out uint px,out uint py);Original.ParseFakeParcelID(id,out ulong _,out uint _,out uint _,out uint z);Console.WriteLine(id+":"+Convert.ToHexString(id.GetBytes()).ToLowerInvariant()+":"+(valid?1:0)+":"+handle.ToString("x16")+":"+px.ToString("x8")+":"+py.ToString("x8")+":"+z.ToString("x8"));}catch(Exception e){Console.WriteLine("EX:"+e.Message);}}}}
+using System;
+using System.Globalization;
+using OpenMetaverse;
+class Program
+{
+    static void Main()
+    {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            try
+            {
+                string[] p = line.Split(' ');
+                UUID id;
+                if (p[0] == "B")
+                {
+                    ulong h = ulong.Parse(p[1], NumberStyles.HexNumber);
+                    uint x = uint.Parse(p[2], NumberStyles.HexNumber),
+                         y = uint.Parse(p[3], NumberStyles.HexNumber);
+                    id = p[4] == "-"
+                             ? Original.BuildFakeParcelID(h, x, y)
+                             : Original.BuildFakeParcelID(h, x, y, uint.Parse(p[4], NumberStyles.HexNumber));
+                }
+                else
+                    id = new UUID(Convert.FromHexString(p[1]), 0);
+                bool valid = Original.ParseFakeParcelID(id, out ulong handle, out uint px, out uint py);
+                Original.ParseFakeParcelID(id, out ulong _, out uint _, out uint _, out uint z);
+                Console.WriteLine(id + ":" + Convert.ToHexString(id.GetBytes()).ToLowerInvariant() + ":" +
+                                  (valid ? 1 : 0) + ":" + handle.ToString("x16") + ":" + px.ToString("x8") +
+                                  ":" + py.ToString("x8") + ":" + z.ToString("x8"));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("EX:" + e.Message);
+            }
+        }
+    }
+}

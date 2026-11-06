@@ -1,24 +1,266 @@
-using System;using System.IO;using System.Text;using System.Linq;using System.Collections.Generic;using System.Globalization;using Nini.Config;using OpenSim.Framework;
-class BaseSource:ConfigSourceBase {}
-sealed class ConfigProxy:IConfig {
- readonly IConfig c;readonly Row row;public ConfigProxy(IConfig inner,Row r){c=inner;row=r;}
- public IConfigSource ConfigSource=>c.ConfigSource;public string Name{get=>c.Name;set=>c.Name=value;}public AliasText Alias=>c.Alias;
- public event ConfigKeyEventHandler KeySet{add=>c.KeySet+=value;remove=>c.KeySet-=value;}public event ConfigKeyEventHandler KeyRemoved{add=>c.KeyRemoved+=value;remove=>c.KeyRemoved-=value;}
- public int GetInt(string k,int f){row.Hit("I",k,f.ToString(CultureInfo.InvariantCulture));return c.GetInt(k,f);}public bool GetBoolean(string k,bool f){row.Hit("B",k,f?"1":"0");return c.GetBoolean(k,f);}public string GetString(string k,string f){row.Hit("T",k,Program.Enc(f));if(row.Mutation==8&&row.Calls==row.MutationAt)return null;return c.GetString(k,f);}
- public bool Contains(string k)=>c.Contains(k);public string Get(string k)=>c.Get(k);public string Get(string k,string f)=>c.Get(k,f);public string GetExpanded(string k)=>c.GetExpanded(k);public string GetString(string k)=>c.GetString(k);public int GetInt(string k)=>c.GetInt(k);public int GetInt(string k,bool a)=>c.GetInt(k,a);public int GetInt(string k,int f,bool a)=>c.GetInt(k,f,a);public long GetLong(string k)=>c.GetLong(k);public long GetLong(string k,long f)=>c.GetLong(k,f);public bool GetBoolean(string k)=>c.GetBoolean(k);public float GetFloat(string k)=>c.GetFloat(k);public float GetFloat(string k,float f)=>c.GetFloat(k,f);public double GetDouble(string k)=>c.GetDouble(k);public double GetDouble(string k,double f)=>c.GetDouble(k,f);public string[] GetKeys()=>c.GetKeys();public string[] GetValues()=>c.GetValues();public void Set(string k,object v)=>c.Set(k,v);public void Remove(string k)=>c.Remove(k);
+using System;
+using System.IO;
+using System.Text;
+using System.Linq;
+using System.Collections.Generic;
+using System.Globalization;
+using Nini.Config;
+using OpenSim.Framework;
+class BaseSource : ConfigSourceBase
+{
 }
-sealed class SourceProxy:IConfigSource {
- readonly IConfigSource source;readonly Row row;public SourceProxy(IConfigSource s,Row r){source=s;row=r;}public ConfigCollection Configs{get{row.Trace.Add("L:"+Program.Enc("Network"));if(row.Fault==-1)throw new InvalidOperationException("lookup fault");return source.Configs;}}public bool AutoSave{get=>source.AutoSave;set=>source.AutoSave=value;}public AliasText Alias=>source.Alias;
- public event EventHandler Saved{add=>source.Saved+=value;remove=>source.Saved-=value;}public event EventHandler Reloaded{add=>source.Reloaded+=value;remove=>source.Reloaded-=value;}public void Merge(IConfigSource s)=>source.Merge(s);public void Save()=>source.Save();public void Reload()=>source.Reload();public IConfig AddConfig(string n)=>source.AddConfig(n);public string GetExpanded(IConfig c,string k)=>source.GetExpanded(c,k);public void ExpandKeyValues()=>source.ExpandKeyValues();public void ReplaceKeyValues()=>source.ReplaceKeyValues();
+sealed class ConfigProxy : IConfig
+{
+    readonly IConfig c;
+    readonly Row row;
+    public ConfigProxy(IConfig inner, Row r)
+    {
+        c = inner;
+        row = r;
+    }
+    public IConfigSource ConfigSource => c.ConfigSource;
+    public string Name
+    {
+        get => c.Name;
+        set => c.Name = value;
+    }
+    public AliasText Alias => c.Alias;
+    public event ConfigKeyEventHandler KeySet
+    {
+        add => c.KeySet += value;
+        remove => c.KeySet -= value;
+    }
+    public event ConfigKeyEventHandler KeyRemoved
+    {
+        add => c.KeyRemoved += value;
+        remove => c.KeyRemoved -= value;
+    }
+    public int GetInt(string k, int f)
+    {
+        row.Hit("I", k, f.ToString(CultureInfo.InvariantCulture));
+        return c.GetInt(k, f);
+    }
+    public bool GetBoolean(string k, bool f)
+    {
+        row.Hit("B", k, f ? "1" : "0");
+        return c.GetBoolean(k, f);
+    }
+    public string GetString(string k, string f)
+    {
+        row.Hit("T", k, Program.Enc(f));
+        if (row.Mutation == 8 && row.Calls == row.MutationAt)
+            return null;
+        return c.GetString(k, f);
+    }
+    public bool Contains(string k) => c.Contains(k);
+    public string Get(string k) => c.Get(k);
+    public string Get(string k, string f) => c.Get(k, f);
+    public string GetExpanded(string k) => c.GetExpanded(k);
+    public string GetString(string k) => c.GetString(k);
+    public int GetInt(string k) => c.GetInt(k);
+    public int GetInt(string k, bool a) => c.GetInt(k, a);
+    public int GetInt(string k, int f, bool a) => c.GetInt(k, f, a);
+    public long GetLong(string k) => c.GetLong(k);
+    public long GetLong(string k, long f) => c.GetLong(k, f);
+    public bool GetBoolean(string k) => c.GetBoolean(k);
+    public float GetFloat(string k) => c.GetFloat(k);
+    public float GetFloat(string k, float f) => c.GetFloat(k, f);
+    public double GetDouble(string k) => c.GetDouble(k);
+    public double GetDouble(string k, double f) => c.GetDouble(k, f);
+    public string[] GetKeys() => c.GetKeys();
+    public string[] GetValues() => c.GetValues();
+    public void Set(string k, object v) => c.Set(k, v);
+    public void Remove(string k) => c.Remove(k);
 }
-sealed class Row {
- public NetworkServersInfo Info;public IConfigSource Source;public List<string> Trace=new();public int Fault,Mutation,MutationAt,Calls;
- public Row(int seed){Info=seed<0?new NetworkServersInfo(uint.MaxValue,0):new NetworkServersInfo();if(seed<=0)return;Info.HttpListenerPort=unchecked((uint)-seed);Info.secureInventoryServer=(seed&1)!=0;Info.isSandbox=(seed&2)!=0;Info.HttpUsesSSL=(seed&4)!=0;Info.HttpSSLCN=seed%3==0?null:"old-cn";Info.HttpSSLCertPath=seed%2==0?null:"old-path\ud800";Info.HttpSSLCNCertPass=seed%3==0?null:"old-pass\ufffe";Info.httpSSLPort=unchecked((uint)(seed*123457));Info.ssl_listener=(seed&1)!=0;Info.ssl_external=(seed&2)!=0;Info.https_port=uint.MaxValue-(uint)seed;Info.cert_path=seed%3==0?null:"cert-seed";Info.cert_pass=seed%2==0?null:"pass-seed";}
- public void Hit(string kind,string key,string fallback){Trace.Add(kind+":"+Program.Enc(key)+":"+fallback);Calls++;if(Calls==MutationAt){switch(Mutation){case 1:Info.ssl_listener=true;break;case 2:Info.ssl_listener=false;break;case 3:Info.HttpSSLCertPath="mutated-path";Info.HttpSSLCNCertPass="mutated-pass";Info.cert_path="mutated-cert";Info.cert_pass="mutated-certpass";break;case 4:Info.HttpSSLCertPath=null;Info.HttpSSLCNCertPass=null;Info.cert_path=null;Info.cert_pass=null;break;case 5:Source.Configs.Clear();Source.AddConfig("Network").Set("http_listener_sslport","31337");break;case 7:Info.loadFromConfiguration(Source);break;case 6:Info.HttpListenerPort=uint.MaxValue;Info.httpSSLPort=uint.MaxValue;Info.HttpUsesSSL=true;Info.ssl_external=true;Info.https_port=uint.MaxValue;break;}}if(Calls==Fault)throw new InvalidOperationException("getter fault");}
- public string Snapshot(){var n=Info;var c=new ConfigSettings();return string.Join(",",new[]{n.HttpListenerPort.ToString(),n.secureInventoryServer?"1":"0",n.isSandbox?"1":"0",n.HttpUsesSSL?"1":"0",Program.Enc(n.HttpSSLCN),Program.Enc(n.HttpSSLCertPath),Program.Enc(n.HttpSSLCNCertPass),n.httpSSLPort.ToString(),n.ssl_listener?"1":"0",n.ssl_external?"1":"0",n.https_port.ToString(),Program.Enc(n.cert_path),Program.Enc(n.cert_pass),Program.Enc(c.PhysicsEngine),Program.Enc(c.MeshEngineName),Program.Enc(c.ClientstackDll),Program.Enc(c.LibrariesXMLFile),ConfigSettings.DefaultRegionHttpPort.ToString()});}
+sealed class SourceProxy : IConfigSource
+{
+    readonly IConfigSource source;
+    readonly Row row;
+    public SourceProxy(IConfigSource s, Row r)
+    {
+        source = s;
+        row = r;
+    }
+    public ConfigCollection Configs
+    {
+        get {
+            row.Trace.Add("L:" + Program.Enc("Network"));
+            if (row.Fault == -1)
+                throw new InvalidOperationException("lookup fault");
+            return source.Configs;
+        }
+    }
+    public bool AutoSave
+    {
+        get => source.AutoSave;
+        set => source.AutoSave = value;
+    }
+    public AliasText Alias => source.Alias;
+    public event EventHandler Saved
+    {
+        add => source.Saved += value;
+        remove => source.Saved -= value;
+    }
+    public event EventHandler Reloaded
+    {
+        add => source.Reloaded += value;
+        remove => source.Reloaded -= value;
+    }
+    public void Merge(IConfigSource s) => source.Merge(s);
+    public void Save() => source.Save();
+    public void Reload() => source.Reload();
+    public IConfig AddConfig(string n) => source.AddConfig(n);
+    public string GetExpanded(IConfig c, string k) => source.GetExpanded(c, k);
+    public void ExpandKeyValues() => source.ExpandKeyValues();
+    public void ReplaceKeyValues() => source.ReplaceKeyValues();
 }
-class Program {
- public static string Dec(string s)=>s=="null"?null:s=="-"?"":new string(Enumerable.Range(0,s.Length/4).Select(i=>(char)Convert.ToUInt16(s.Substring(i*4,4),16)).ToArray());public static string Enc(string s)=>s==null?"null":s.Length==0?"-":string.Concat(s.Select(c=>((int)c).ToString("x4",CultureInfo.InvariantCulture)));
- static string Error(Exception e)=>e.GetType().FullName+":"+Enc(e.Message)+":"+unchecked((uint)e.HResult)+":"+(e is ArgumentException a?Enc(a.ParamName):"null");
- static void Main(){CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;CultureInfo.CurrentUICulture=CultureInfo.InvariantCulture;string line;while((line=Console.ReadLine())!=null){var a=line.Split(' ');int mode=int.Parse(a[0]);var r=new Row(int.Parse(a[1])){Fault=int.Parse(a[2]),Mutation=int.Parse(a[3]),MutationAt=int.Parse(a[4])};string error="ok";try{var ini=new IniConfigSource(new StringReader(Dec(a[5])));r.Source=ini;if(mode==0){var owner=new BaseSource();var c=ini.Configs["Network"];if(c!=null)owner.Configs.Add(new ConfigProxy(c,r));r.Info.loadFromConfiguration(new SourceProxy(owner,r));}else if(mode==3)r.Info.loadFromConfiguration(null);else if(mode==5){r.Trace.Add("bind-load");NetworkServersInfo absent=null;absent.loadFromConfiguration(ini);}else {if(mode==2){r.Trace.Add("bind-create");r.Trace.Add("bind-load");}r.Info.loadFromConfiguration(ini);}}catch(Exception e){error=Error(e);}Console.WriteLine(error+"/"+r.Snapshot()+"/"+string.Join(";",r.Trace));}}
+sealed class Row
+{
+    public NetworkServersInfo Info;
+    public IConfigSource Source;
+    public List<string> Trace = new();
+    public int Fault, Mutation, MutationAt, Calls;
+    public Row(int seed)
+    {
+        Info = seed < 0 ? new NetworkServersInfo(uint.MaxValue, 0) : new NetworkServersInfo();
+        if (seed <= 0)
+            return;
+        Info.HttpListenerPort = unchecked((uint)-seed);
+        Info.secureInventoryServer = (seed & 1) != 0;
+        Info.isSandbox = (seed & 2) != 0;
+        Info.HttpUsesSSL = (seed & 4) != 0;
+        Info.HttpSSLCN = seed % 3 == 0 ? null : "old-cn";
+        Info.HttpSSLCertPath = seed % 2 == 0 ? null : "old-path\ud800";
+        Info.HttpSSLCNCertPass = seed % 3 == 0 ? null : "old-pass\ufffe";
+        Info.httpSSLPort = unchecked((uint)(seed * 123457));
+        Info.ssl_listener = (seed & 1) != 0;
+        Info.ssl_external = (seed & 2) != 0;
+        Info.https_port = uint.MaxValue - (uint)seed;
+        Info.cert_path = seed % 3 == 0 ? null : "cert-seed";
+        Info.cert_pass = seed % 2 == 0 ? null : "pass-seed";
+    }
+    public void Hit(string kind, string key, string fallback)
+    {
+        Trace.Add(kind + ":" + Program.Enc(key) + ":" + fallback);
+        Calls++;
+        if (Calls == MutationAt)
+        {
+            switch (Mutation)
+            {
+            case 1:
+                Info.ssl_listener = true;
+                break;
+            case 2:
+                Info.ssl_listener = false;
+                break;
+            case 3:
+                Info.HttpSSLCertPath = "mutated-path";
+                Info.HttpSSLCNCertPass = "mutated-pass";
+                Info.cert_path = "mutated-cert";
+                Info.cert_pass = "mutated-certpass";
+                break;
+            case 4:
+                Info.HttpSSLCertPath = null;
+                Info.HttpSSLCNCertPass = null;
+                Info.cert_path = null;
+                Info.cert_pass = null;
+                break;
+            case 5:
+                Source.Configs.Clear();
+                Source.AddConfig("Network").Set("http_listener_sslport", "31337");
+                break;
+            case 7:
+                Info.loadFromConfiguration(Source);
+                break;
+            case 6:
+                Info.HttpListenerPort = uint.MaxValue;
+                Info.httpSSLPort = uint.MaxValue;
+                Info.HttpUsesSSL = true;
+                Info.ssl_external = true;
+                Info.https_port = uint.MaxValue;
+                break;
+            }
+        }
+        if (Calls == Fault)
+            throw new InvalidOperationException("getter fault");
+    }
+    public string Snapshot()
+    {
+        var n = Info;
+        var c = new ConfigSettings();
+        return string.Join(
+            ",", new[] { n.HttpListenerPort.ToString(), n.secureInventoryServer ? "1" : "0",
+                         n.isSandbox ? "1" : "0", n.HttpUsesSSL ? "1" : "0", Program.Enc(n.HttpSSLCN),
+                         Program.Enc(n.HttpSSLCertPath), Program.Enc(n.HttpSSLCNCertPass),
+                         n.httpSSLPort.ToString(), n.ssl_listener ? "1" : "0", n.ssl_external ? "1" : "0",
+                         n.https_port.ToString(), Program.Enc(n.cert_path), Program.Enc(n.cert_pass),
+                         Program.Enc(c.PhysicsEngine), Program.Enc(c.MeshEngineName),
+                         Program.Enc(c.ClientstackDll), Program.Enc(c.LibrariesXMLFile),
+                         ConfigSettings.DefaultRegionHttpPort.ToString() });
+    }
+}
+class Program
+{
+    public static string Dec(string s) =>
+        s == "null" ? null
+        : s == "-"  ? ""
+                    : new string(Enumerable.Range(0, s.Length / 4)
+                                     .Select(i => (char)Convert.ToUInt16(s.Substring(i * 4, 4), 16))
+                                     .ToArray());
+    public static string Enc(string s) =>
+        s == null       ? "null"
+        : s.Length == 0 ? "-"
+                        : string.Concat(s.Select(c => ((int)c).ToString("x4", CultureInfo.InvariantCulture)));
+    static string Error(Exception e) => e.GetType().FullName + ":" + Enc(e.Message) + ":" +
+                                        unchecked((uint)e.HResult) + ":" +
+                                        (e is ArgumentException a ? Enc(a.ParamName) : "null");
+    static void Main()
+    {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var a = line.Split(' ');
+            int mode = int.Parse(a[0]);
+            var r = new Row(int.Parse(a[1])) { Fault = int.Parse(a[2]), Mutation = int.Parse(a[3]),
+                                               MutationAt = int.Parse(a[4]) };
+            string error = "ok";
+            try
+            {
+                var ini = new IniConfigSource(new StringReader(Dec(a[5])));
+                r.Source = ini;
+                if (mode == 0)
+                {
+                    var owner = new BaseSource();
+                    var c = ini.Configs["Network"];
+                    if (c != null)
+                        owner.Configs.Add(new ConfigProxy(c, r));
+                    r.Info.loadFromConfiguration(new SourceProxy(owner, r));
+                }
+                else if (mode == 3)
+                    r.Info.loadFromConfiguration(null);
+                else if (mode == 5)
+                {
+                    r.Trace.Add("bind-load");
+                    NetworkServersInfo absent = null;
+                    absent.loadFromConfiguration(ini);
+                }
+                else
+                {
+                    if (mode == 2)
+                    {
+                        r.Trace.Add("bind-create");
+                        r.Trace.Add("bind-load");
+                    }
+                    r.Info.loadFromConfiguration(ini);
+                }
+            }
+            catch (Exception e)
+            {
+                error = Error(e);
+            }
+            Console.WriteLine(error + "/" + r.Snapshot() + "/" + string.Join(";", r.Trace));
+        }
+    }
 }

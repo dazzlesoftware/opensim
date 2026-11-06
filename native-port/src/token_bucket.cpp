@@ -52,13 +52,16 @@ TokenBucket::TokenBucket(TokenBucket* parent, float rate, float max_burst, Clock
 TokenBucket::~TokenBucket() {
     // Native lifetime protection: callers must quiesce access before destruction.
     // Explicit unregister remains available; no dangling child keys are retained.
-    if (auto* p = parent()) p->unregister_request(this);
+    if (auto* p = parent())
+        p->unregister_request(this);
     for (const auto& entry : children_)
-        if (!entry.lifetime.expired() && entry.child->parent_ == this) entry.child->parent_ = nullptr;
+        if (!entry.lifetime.expired() && entry.child->parent_ == this)
+            entry.child->parent_ = nullptr;
 }
 void TokenBucket::parent(TokenBucket* value) {
     for (auto* ancestor = value; ancestor; ancestor = ancestor->parent())
-        if (ancestor == this) throw std::invalid_argument("Token bucket parent cycle");
+        if (ancestor == this)
+            throw std::invalid_argument("Token bucket parent cycle");
     parent_ = value;
     parent_lifetime_ = value ? value->lifetime_ : std::weak_ptr<int>{};
 }
@@ -66,7 +69,8 @@ float TokenBucket::max_drip_rate() const noexcept { return max_drip_rate_; }
 void TokenBucket::max_drip_rate(float value) noexcept { max_drip_rate_ = value; }
 void TokenBucket::requested_burst(float value) noexcept {
     burst_ = value < 0 ? 0 : value;
-    if (burst_ > MaxBurst) burst_ = MaxBurst;
+    if (burst_ > MaxBurst)
+        burst_ = MaxBurst;
 }
 float TokenBucket::requested_drip_rate() const noexcept {
     return drip_rate_ == 0 ? total_drip_request_ : drip_rate_;
@@ -74,12 +78,14 @@ float TokenBucket::requested_drip_rate() const noexcept {
 void TokenBucket::requested_drip_rate(float value) {
     drip_rate_ = value < 0 ? 0 : value;
     total_drip_request_ = drip_rate_;
-    if (auto* p = parent()) p->register_request(this, drip_rate_);
+    if (auto* p = parent())
+        p->register_request(this, drip_rate_);
 }
 float TokenBucket::drip_rate() const {
     float rate = minimum(requested_drip_rate(), total_drip_request_);
     auto* p = parent();
-    if (!p) return rate;
+    if (!p)
+        return rate;
     rate *= p->drip_rate_modifier();
     return rate < MinDripRate ? MinDripRate : rate;
 }
@@ -89,30 +95,40 @@ float TokenBucket::drip_rate_modifier() const {
 }
 float TokenBucket::burst() const { return requested_burst() * drip_rate_modifier(); }
 void TokenBucket::register_request(TokenBucket* child, float request) {
-    if (!child) throw std::invalid_argument("Null token bucket child");
+    if (!child)
+        throw std::invalid_argument("Null token bucket child");
     {
         std::lock_guard lock(children_mutex_);
         auto found = std::find_if(children_.begin(), children_.end(),
             [child](const auto& entry) { return entry.child == child; });
-        if (found == children_.end()) children_.push_back({child, request, child->lifetime_});
-        else { found->request = request; found->lifetime = child->lifetime_; }
+        if (found == children_.end()) {
+            children_.push_back({child, request, child->lifetime_});
+        } else {
+            found->request = request;
+            found->lifetime = child->lifetime_;
+        }
         total_drip_request_ = 0;
-        for (const auto& entry : children_) total_drip_request_ += entry.request;
+        for (const auto& entry : children_)
+            total_drip_request_ += entry.request;
     }
-    if (auto* p = parent()) p->register_request(this, minimum(requested_drip_rate(), total_drip_request_));
+    if (auto* p = parent())
+        p->register_request(this, minimum(requested_drip_rate(), total_drip_request_));
 }
 void TokenBucket::unregister_request(TokenBucket* child) {
     {
         std::lock_guard lock(children_mutex_);
         std::erase_if(children_, [child](const auto& entry) { return entry.child == child; });
         total_drip_request_ = 0;
-        for (const auto& entry : children_) total_drip_request_ += entry.request;
+        for (const auto& entry : children_)
+            total_drip_request_ += entry.request;
     }
-    if (auto* p = parent()) p->register_request(this, minimum(requested_drip_rate(), total_drip_request_));
+    if (auto* p = parent())
+        p->register_request(this, minimum(requested_drip_rate(), total_drip_request_));
 }
 bool TokenBucket::remove_tokens(std::int32_t amount) {
     drip();
-    if (token_count_ <= 0 || std::isnan(token_count_)) return false;
+    if (token_count_ <= 0 || std::isnan(token_count_))
+        return false;
     token_count_ -= static_cast<float>(amount);
     return true;
 }
@@ -125,20 +141,24 @@ std::int32_t TokenBucket::get_cat_bytes_can_send(std::int32_t time_ms) const {
     return static_cast<std::int32_t>(count);
 }
 void TokenBucket::drip() {
-    if (drip_rate() == 0) return;
+    if (drip_rate() == 0)
+        return;
     const double now = clock_();
     const double delta = now - last_drip_;
     last_drip_ = now;
-    if (delta <= 0) return;
+    if (delta <= 0)
+        return;
     token_count_ += static_cast<float>(delta) * drip_rate();
     const float limit = burst();
-    if (token_count_ > limit) token_count_ = limit;
+    if (token_count_ > limit)
+        token_count_ = limit;
 }
 AdaptiveTokenBucket::AdaptiveTokenBucket(TokenBucket* parent, float rate, float max_burst,
     bool enabled, Clock clock) : TokenBucket(parent, rate, max_burst, std::move(clock)), enabled_(enabled) {
     max_drip_rate_ = rate == 0 ? total_drip_request_ : maximum(rate, MinimumFlow);
     drip_rate_ = enabled ? max_drip_rate_ * .5f : max_drip_rate_;
-    if (auto* p = this->parent()) p->register_request(this, drip_rate_);
+    if (auto* p = this->parent())
+        p->register_request(this, drip_rate_);
 }
 float AdaptiveTokenBucket::max_drip_rate() const noexcept {
     return max_drip_rate_ == 0 ? total_drip_request_ : max_drip_rate_;
@@ -148,18 +168,22 @@ void AdaptiveTokenBucket::max_drip_rate(float value) noexcept {
 }
 void AdaptiveTokenBucket::adjusted_drip_rate(float value) {
     const float max_rate = max_drip_rate();
-    if (MinimumFlow > max_rate) throw std::invalid_argument("Minimum flow exceeds maximum drip rate");
+    if (MinimumFlow > max_rate)
+        throw std::invalid_argument("Minimum flow exceeds maximum drip rate");
     drip_rate_ = value < MinimumFlow ? MinimumFlow : (value > max_rate ? max_rate : value);
-    if (auto* p = parent()) p->register_request(this, drip_rate_);
+    if (auto* p = parent())
+        p->register_request(this, drip_rate_);
 }
 void AdaptiveTokenBucket::expire_packets(std::int32_t count) {
-    if (!enabled_) return;
+    if (!enabled_)
+        return;
     const double result = adjusted_drip_rate() / std::pow(2.0, count);
     const auto integer = !std::isfinite(result) || result >= 9223372036854775808.0 || result < -9223372036854775808.0
         ? std::numeric_limits<std::int64_t>::min() : static_cast<std::int64_t>(result);
     adjusted_drip_rate(static_cast<float>(integer));
 }
 void AdaptiveTokenBucket::acknowledge_packets(std::int32_t count) {
-    if (enabled_) adjusted_drip_rate(adjusted_drip_rate() + static_cast<float>(count));
+    if (enabled_)
+        adjusted_drip_rate(adjusted_drip_rate() + static_cast<float>(count));
 }
 }

@@ -1,13 +1,18 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/network/sdk_llsd_binary.hpp"
+#include "opensim/network/osd_value.hpp"
 #include "opensim/network/sdk_llsd_xml.hpp"
 #include "opensim/framework/text.hpp"
 #include "opensim/framework/config_native_uri_object.hpp"
 #include "opensim/framework/invariant_datetime_context.hpp"
 #include <bit>
+#include <array>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
+#define Z_PREFIX
+#include "../third_party/zlib/zlib.h"
 namespace opensim::network {
 namespace {
 class BinaryParser {
@@ -86,7 +91,9 @@ class BinaryParser {
     std::u16string string() {
         return framework::utf16_replacing(consume(length()));
     }
-    Value element() {
+    Value element(std::size_t remaining_depth) {
+        if (!remaining_depth)
+            fail("Binary LLSD nesting limit exceeded.");
         whitespace();
         int marker = read();
         if (marker < 0)
@@ -167,7 +174,7 @@ class BinaryParser {
             auto count = length();
             result.kind = Value::Kind::Array;
             for (std::int32_t i = 0; i < count; ++i)
-                result.array.push_back(element());
+                result.array.push_back(element(remaining_depth - 1));
             if (!find_byte(']'))
                 fail("Binary LLSD parsing: Missing end marker in array.");
             return result;
@@ -179,7 +186,7 @@ class BinaryParser {
                 if (!find_byte('k'))
                     fail("Binary LLSD parsing: Missing key marker in map.");
                 auto key = string();
-                result.set(sdk_map_key_bytes(key), element());
+                result.set(sdk_map_key_bytes(key), element(remaining_depth - 1));
             }
             if (!find_byte('}'))
                 fail("Binary LLSD parsing: Missing end marker in map.");
@@ -193,16 +200,137 @@ class BinaryParser {
   public:
     explicit BinaryParser(std::string_view bytes) : bytes_(bytes) {
     }
-    Value parse() {
+    Value parse(std::size_t max_depth = std::numeric_limits<std::size_t>::max()) {
         whitespace();
         if (!find("<? llsd/binary ?>"))
             find("<?llsd/binary?>");
         whitespace();
-        return element();
+        return element(max_depth);
     }
+    std::size_t consumed() const { return position_; }
 };
 }
 Value deserialize_sdk_llsd_binary(std::string_view bytes) {
     return BinaryParser(bytes).parse();
+}
+Value deserialize_sdk_llsd_binary_prefix(std::string_view bytes, std::size_t& consumed, std::size_t max_depth) {
+    BinaryParser parser(bytes);
+    auto value = parser.parse(max_depth);
+    consumed = parser.consumed();
+    return value;
+}
+
+namespace {
+void append_number(std::string& output, std::uint64_t value, unsigned count) {
+    while (count != 0) {
+        --count;
+        output += static_cast<char>((value >> (count * 8)) & 255);
+    }
+}
+void append_sized(std::string& output, std::string_view bytes) {
+    append_number(output, bytes.size(), 4);
+    output += bytes;
+}
+void append_material_value(std::string& output, const Value& input) {
+    const auto& value = input.view();
+    switch (value.kind) {
+    case Value::Kind::Undefined:
+        output += '!';
+        break;
+    case Value::Kind::Boolean:
+        output += value.boolean ? '1' : '0';
+        break;
+    case Value::Kind::Integer:
+        output += 'i';
+        append_number(output, static_cast<std::uint32_t>(value.integer), 4);
+        break;
+    case Value::Kind::Real:
+        output += 'r';
+        append_number(output, std::bit_cast<std::uint64_t>(value.real), 8);
+        break;
+    case Value::Kind::Uuid: {
+        const auto id = osd_uuid(value);
+        output += 'u';
+        output.append(reinterpret_cast<const char*>(id.bytes().data()), id.bytes().size());
+        break;
+    }
+    case Value::Kind::String:
+        output += 's';
+        append_sized(output, osd_string(value));
+        break;
+    case Value::Kind::Binary: {
+        output += 'b';
+        const auto bytes = osd_binary(value);
+        append_number(output, bytes->size(), 4);
+        output.append(bytes->begin(), bytes->end());
+        break;
+    }
+    case Value::Kind::Array:
+        output += '[';
+        append_number(output, value.array.size(), 4);
+        for (const auto& entry : value.array)
+            append_material_value(output, entry);
+        output += ']';
+        break;
+    case Value::Kind::Map:
+        output += '{';
+        append_number(output, value.map.size(), 4);
+        for (const auto& key : value.ordered_keys()) {
+            output += 'k';
+            append_sized(output, key);
+            append_material_value(output, value.map.at(key));
+        }
+        output += '}';
+        break;
+    default:
+        throw std::invalid_argument("Unsupported material LLSD binary type");
+    }
+}
+std::string zlib_payload(std::string_view bytes, bool compress) {
+    if (bytes.size() > std::numeric_limits<uInt>::max())
+        throw std::invalid_argument("Compressed LLSD input is too large");
+    z_stream stream{};
+    const int initialized = compress ? deflateInit(&stream, Z_BEST_COMPRESSION) : inflateInit(&stream);
+    if (initialized != Z_OK)
+        throw std::runtime_error("Cannot initialize compressed LLSD");
+    struct EndStream {
+        z_stream& stream;
+        bool compress;
+        ~EndStream() {
+            if (compress)
+                deflateEnd(&stream);
+            else
+                inflateEnd(&stream);
+        }
+    } end{stream, compress};
+    stream.next_in = reinterpret_cast<Bytef*>(const_cast<char*>(bytes.data()));
+    stream.avail_in = static_cast<uInt>(bytes.size());
+    std::array<char, 8192> buffer{};
+    std::string output;
+    for (;;) {
+        stream.next_out = reinterpret_cast<Bytef*>(buffer.data());
+        stream.avail_out = static_cast<uInt>(buffer.size());
+        const int status = compress ? deflate(&stream, Z_FINISH) : inflate(&stream, Z_NO_FLUSH);
+        output.append(buffer.data(), buffer.size() - stream.avail_out);
+        if (!compress && output.size() > 16 * 1024 * 1024)
+            throw std::invalid_argument("Expanded LLSD exceeds the material request limit");
+        if (status == Z_STREAM_END)
+            return output;
+        if (status != Z_OK)
+            throw std::invalid_argument("Invalid compressed LLSD");
+    }
+}
+}
+Value deserialize_zipped_llsd_binary(std::string_view bytes) {
+    return deserialize_sdk_llsd_binary(zlib_payload(bytes, false));
+}
+Value deserialize_zipped_llsd_binary(std::string_view bytes, std::size_t max_depth) {
+    const auto binary = zlib_payload(bytes, false);
+    return BinaryParser(binary).parse(max_depth);
+}
+std::string serialize_zipped_llsd_binary(const Value& value) {
+    std::string binary;
+    append_material_value(binary, value);
+    return zlib_payload(binary, true);
 }
 }

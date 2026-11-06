@@ -1,23 +1,212 @@
 """Original VerifyClient/CheckClient/WaitGetScenePresence and actual DTO/circuit manager."""
-import argparse,hashlib,itertools,json,subprocess
+
+import argparse, hashlib, itertools, json, subprocess
 from pathlib import Path
-from compare_agent_data import ROOT,build_reference
+from compare_agent_data import ROOT, build_reference
 from compare_presence_endpoint import extract
+
+
 def main():
- p=argparse.ArgumentParser();p.add_argument('--native',required=True);p.add_argument('--dotnet',required=True);p.add_argument('--work',type=Path,required=True);a=p.parse_args();w=a.work.resolve();w.mkdir(parents=True,exist_ok=True);source=ROOT/'OpenSim/Region/Framework/Scenes/Scene.cs';s=source.read_text(encoding='utf-8-sig');methods=extract(s,r'private bool VerifyClient\(')+extract(s,r'public override bool CheckClient\(')+extract(s,r'protected virtual ScenePresence WaitGetScenePresence\(').replace('Thread.Sleep(250)','Sleep(250)');contract_source=ROOT/'OpenSim/Region/Framework/Interfaces/IEntityTransferModule.cs';contract=extract(contract_source.read_text(encoding='utf-8-sig'),r'public interface IUserAgentVerificationModule');constants=extract((ROOT/'OpenSim/Framework/Constants.cs').read_text(encoding='utf-8-sig'),r'public enum TeleportFlags');wrapper=w/'Methods.cs';wrapper.write_text('using System;using OpenMetaverse;using OpenSim.Framework;public partial class ClientReference{'+methods+'}'+contract+'namespace OpenSim.Framework{public static class Constants{'+constants+'}}',encoding='utf-8');assembly=build_reference(a.dotnet,w,[wrapper,ROOT/'native-port/tests/scene_client_verification_reference.cs',*[ROOT/'OpenSim/Framework'/f for f in ['AgentCircuitData.cs','AgentCircuitManager.cs','AuthenticateResponse.cs','Login.cs']]],'ClientReference')
- flags=[0,1,128,1073741824,1073741952,4294967295];cases=[{'mode':mode,'flags':flag,'module':module,'null_endpoint':null,'verified':verified,'missing':missing} for mode,flag,module,null,verified,missing in itertools.product(['check','verify'],flags,[True,False],[True,False],[True,False],[True,False])]
- profiles=[{}, {'null_handler':True},{'null_region':True},{'presence':False},{'service':False},{'client':False},{'logout_result':False},{'close_result':False},{'override_wait':True},{'override_wait':True,'override_presence':False},{'null_circuit':True}]+[{'after':n} for n in [0,1,2,119,120,121,122]]+[{'failure':op} for op in ['get','region','debug','module','verify','presence','sleep','warn','presence-service','client','session','logout','agent-id','close','remove','cleanup-error','wait-override']]
- for profile,mode,flag in itertools.product(profiles,['check','verify','wait'],[0,128,1073741824]):cases.append({**profile,'mode':mode,'flags':flag,'verified':False})
- for mutation,op,mode in itertools.product(['drop','replace','rename','actor_id','drop_actor','null_handler','replace_input','detach'],['get','region','debug','module','verify','presence','presence-service','client','session','logout','agent-id','close','remove'],['check','verify']):cases.append({'flags':1073741824,'verified':False,'mutation':mutation,'mutation_op':op,'mode':mode})
- for ip,flag,verified in itertools.product(['127.0.0.1','::1','2001:DB8:0:0::1','::ffff:192.0.2.1','fe80::1%42'],flags,[True,False]):cases.append({'ip':ip,'flags':flag,'verified':verified})
- for first,last,region,flag in itertools.product([None,'','試験😀'],[None,'Last'],[None,'','Region 😀'],[128,1073741824]):cases.append({'first':first,'last':last,'region':region,'flags':flag,'verified':False})
- for profile in [{'service':False,'failure':'cleanup-error'},{'client':False,'failure':'cleanup-error'},{'presence':False,'failure':'warn'},{'presence':False,'failure':'cleanup-error'},{'override_wait':True,'failure':'wait-override'},{'null_handler':True,'failure':'get'}]:cases.append(dict(profile,flags=1073741824,verified=False))
- commands=[json.dumps(c,ensure_ascii=False,separators=(',',':')).encode().hex() for c in cases];rows=[]
- for command in [[a.dotnet,str(assembly)],[a.native]]:
-  r=subprocess.run(command,input='\n'.join(commands)+'\n',capture_output=True,text=True,timeout=180);assert r.returncode==0,r.stdout[-1000:]+r.stderr;rows.append(r.stdout.splitlines())
- assert len(rows[0])==len(rows[1])==len(cases)
- diffs=[{'input':c,'source':x,'native':y} for c,x,y in zip(cases,*rows) if x!=y]
- (w/'scene-client-verification-results.json').write_text(json.dumps({'passed':not diffs,'observations':len(cases),'sourceSha256':hashlib.sha256(source.read_bytes()).hexdigest(),'verificationContractSha256':hashlib.sha256(contract_source.read_bytes()).hexdigest(),'scope':'Complete original three method bodies; sleep callback projection. Actual original circuit DTO/manager and controlled module/presence/client/service/log dependencies. Trace/state/partial cleanup, virtual wait,121 lookups/120 sleeps, endpoint normalization, callback failures/reentrancy and out bool. CLR stack-frame text normalized at cleanup log; production HG verifier, full scene/client lifecycle, concurrent runtime and world/platform remain pending.','differences':diffs[:6]},indent=2),encoding='utf-8')
- if diffs:raise AssertionError(json.dumps(diffs[:2],ensure_ascii=False))
- print(f'PASS: {len(cases)} scene client verification source observations')
-if __name__=='__main__':main()
+    p = argparse.ArgumentParser()
+    p.add_argument('--native', required=True)
+    p.add_argument('--dotnet', required=True)
+    p.add_argument('--work', type=Path, required=True)
+    a = p.parse_args()
+    w = a.work.resolve()
+    w.mkdir(parents=True, exist_ok=True)
+    source = ROOT / 'OpenSim/Region/Framework/Scenes/Scene.cs'
+    s = source.read_text(encoding='utf-8-sig')
+    methods = (
+        extract(s, r'private bool VerifyClient\(')
+        + extract(s, r'public override bool CheckClient\(')
+        + extract(s, r'protected virtual ScenePresence WaitGetScenePresence\(').replace(
+            'Thread.Sleep(250)', 'Sleep(250)'
+        )
+    )
+    contract_source = ROOT / 'OpenSim/Region/Framework/Interfaces/IEntityTransferModule.cs'
+    contract = extract(
+        contract_source.read_text(encoding='utf-8-sig'),
+        r'public interface IUserAgentVerificationModule',
+    )
+    constants = extract(
+        (ROOT / 'OpenSim/Framework/Constants.cs').read_text(encoding='utf-8-sig'),
+        r'public enum TeleportFlags',
+    )
+    wrapper = w / 'Methods.cs'
+    wrapper.write_text(
+        'using System;using OpenMetaverse;using OpenSim.Framework;public partial class ClientReference{'
+        + methods
+        + '}'
+        + contract
+        + 'namespace OpenSim.Framework{public static class Constants{'
+        + constants
+        + '}}',
+        encoding='utf-8',
+    )
+    assembly = build_reference(
+        a.dotnet,
+        w,
+        [
+            wrapper,
+            ROOT / 'native-port/tests/scene_client_verification_reference.cs',
+            *[
+                ROOT / 'OpenSim/Framework' / f
+                for f in [
+                    'AgentCircuitData.cs',
+                    'AgentCircuitManager.cs',
+                    'AuthenticateResponse.cs',
+                    'Login.cs',
+                ]
+            ],
+        ],
+        'ClientReference',
+    )
+    flags = [0, 1, 128, 1073741824, 1073741952, 4294967295]
+    cases = [
+        {
+            'mode': mode,
+            'flags': flag,
+            'module': module,
+            'null_endpoint': null,
+            'verified': verified,
+            'missing': missing,
+        }
+        for mode, flag, module, null, verified, missing in itertools.product(
+            ['check', 'verify'], flags, [True, False], [True, False], [True, False], [True, False]
+        )
+    ]
+    profiles = (
+        [
+            {},
+            {'null_handler': True},
+            {'null_region': True},
+            {'presence': False},
+            {'service': False},
+            {'client': False},
+            {'logout_result': False},
+            {'close_result': False},
+            {'override_wait': True},
+            {'override_wait': True, 'override_presence': False},
+            {'null_circuit': True},
+        ]
+        + [{'after': n} for n in [0, 1, 2, 119, 120, 121, 122]]
+        + [
+            {'failure': op}
+            for op in [
+                'get',
+                'region',
+                'debug',
+                'module',
+                'verify',
+                'presence',
+                'sleep',
+                'warn',
+                'presence-service',
+                'client',
+                'session',
+                'logout',
+                'agent-id',
+                'close',
+                'remove',
+                'cleanup-error',
+                'wait-override',
+            ]
+        ]
+    )
+    for profile, mode, flag in itertools.product(
+        profiles, ['check', 'verify', 'wait'], [0, 128, 1073741824]
+    ):
+        cases.append({**profile, 'mode': mode, 'flags': flag, 'verified': False})
+    for mutation, op, mode in itertools.product(
+        [
+            'drop',
+            'replace',
+            'rename',
+            'actor_id',
+            'drop_actor',
+            'null_handler',
+            'replace_input',
+            'detach',
+        ],
+        [
+            'get',
+            'region',
+            'debug',
+            'module',
+            'verify',
+            'presence',
+            'presence-service',
+            'client',
+            'session',
+            'logout',
+            'agent-id',
+            'close',
+            'remove',
+        ],
+        ['check', 'verify'],
+    ):
+        cases.append(
+            {
+                'flags': 1073741824,
+                'verified': False,
+                'mutation': mutation,
+                'mutation_op': op,
+                'mode': mode,
+            }
+        )
+    for ip, flag, verified in itertools.product(
+        ['127.0.0.1', '::1', '2001:DB8:0:0::1', '::ffff:192.0.2.1', 'fe80::1%42'],
+        flags,
+        [True, False],
+    ):
+        cases.append({'ip': ip, 'flags': flag, 'verified': verified})
+    for first, last, region, flag in itertools.product(
+        [None, '', '試験😀'], [None, 'Last'], [None, '', 'Region 😀'], [128, 1073741824]
+    ):
+        cases.append(
+            {'first': first, 'last': last, 'region': region, 'flags': flag, 'verified': False}
+        )
+    for profile in [
+        {'service': False, 'failure': 'cleanup-error'},
+        {'client': False, 'failure': 'cleanup-error'},
+        {'presence': False, 'failure': 'warn'},
+        {'presence': False, 'failure': 'cleanup-error'},
+        {'override_wait': True, 'failure': 'wait-override'},
+        {'null_handler': True, 'failure': 'get'},
+    ]:
+        cases.append(dict(profile, flags=1073741824, verified=False))
+    commands = [
+        json.dumps(c, ensure_ascii=False, separators=(',', ':')).encode().hex() for c in cases
+    ]
+    rows = []
+    for command in [[a.dotnet, str(assembly)], [a.native]]:
+        r = subprocess.run(
+            command, input='\n'.join(commands) + '\n', capture_output=True, text=True, timeout=180
+        )
+        assert r.returncode == 0, r.stdout[-1000:] + r.stderr
+        rows.append(r.stdout.splitlines())
+    assert len(rows[0]) == len(rows[1]) == len(cases)
+    diffs = [{'input': c, 'source': x, 'native': y} for c, x, y in zip(cases, *rows) if x != y]
+    (w / 'scene-client-verification-results.json').write_text(
+        json.dumps(
+            {
+                'passed': not diffs,
+                'observations': len(cases),
+                'sourceSha256': hashlib.sha256(source.read_bytes()).hexdigest(),
+                'verificationContractSha256': hashlib.sha256(
+                    contract_source.read_bytes()
+                ).hexdigest(),
+                'scope': 'Complete original three method bodies; sleep callback projection. Actual original circuit DTO/manager and controlled module/presence/client/service/log dependencies. Trace/state/partial cleanup, virtual wait,121 lookups/120 sleeps, endpoint normalization, callback failures/reentrancy and out bool. CLR stack-frame text normalized at cleanup log; production HG verifier, full scene/client lifecycle, concurrent runtime and world/platform remain pending.',
+                'differences': diffs[:6],
+            },
+            indent=2,
+        ),
+        encoding='utf-8',
+    )
+    if diffs:
+        raise AssertionError(json.dumps(diffs[:2], ensure_ascii=False))
+    print(f'PASS: {len(cases)} scene client verification source observations')
+
+
+if __name__ == '__main__':
+    main()

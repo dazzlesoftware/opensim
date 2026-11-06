@@ -1,2 +1,102 @@
-using System;using System.Text;using OpenMetaverse;using OpenMetaverse.StructuredData;using OpenSim.Framework;
-class RecordsReference{static UUID Id(int n)=>new UUID("00000000-0000-0000-0000-00000000000"+n);static string H(string s)=>Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();static OSD Typed(string type)=>type switch{"binary"=>OSD.FromBinary(new byte[]{0x12,0x34,0x56,0x78}),"unsigned"=>OSD.FromUInteger(uint.MaxValue),"long"=>OSD.FromLong(0x1234567887654321L),"uuid"=>OSD.FromUUID(Id(7)),"date"=>OSD.FromDate(new DateTime(2026,10,29,12,34,56,DateTimeKind.Utc)),"uri"=>OSD.FromUri(new Uri("http://example.com/path")),_=>new OSD()};static void Main(){string line;while((line=Console.ReadLine())!=null){var command=(OSDMap)OSDParser.DeserializeJson(Encoding.UTF8.GetString(Convert.FromHexString(line)));int profile=command["profile"].AsInteger();bool group=command["model"].AsString()=="group",animation=command["model"].AsString()=="animation",failed=false;var anim=new Animation((profile&1)!=0?Id(7):UUID.Zero,(profile&1)!=0?-1:0,(profile&1)!=0?Id(8):UUID.Zero);var g=new AgentGroupData((profile&1)!=0?Id(7):UUID.Zero,(profile&1)!=0?ulong.MaxValue:0,(profile&1)!=0);var c=new ControllerData((profile&1)!=0?Id(7):UUID.Zero,(profile&1)!=0?Id(8):UUID.Zero,(profile&1)!=0?uint.MaxValue:0,(profile&1)!=0?0x80000000u:0);OSD data=command["data"];if(command.ContainsKey("typed"))((OSDMap)data)[command["field"].AsString()]=Typed(command["typed"].AsString());try{var map=command["null_map"].AsBoolean()?null:(OSDMap)data;if((profile&8)!=0){var raw=(OSDArray)command["raw"];if(animation)anim=new Animation(Id(7),int.Parse(raw[0].AsString()),Id(8));else if(group)g=new AgentGroupData(Id(7),ulong.Parse(raw[0].AsString()),raw[1].AsBoolean());else c=new ControllerData(Id(7),Id(8),uint.Parse(raw[0].AsString()),uint.Parse(raw[1].AsString()));}else if(animation){if((profile&2)!=0)anim=new Animation(map);else anim.UnpackUpdateMessage(map);if((profile&4)!=0)anim.UnpackUpdateMessage((OSDMap)command["next"]);}else if(group){if((profile&2)!=0)g=new AgentGroupData(map);else g.UnpackUpdateMessage(map);if((profile&4)!=0)g.UnpackUpdateMessage((OSDMap)command["next"]);}else{if((profile&2)!=0)c=new ControllerData(map);else c.UnpackUpdateMessage(map);if((profile&4)!=0)c.UnpackUpdateMessage((OSDMap)command["next"]);}}catch{failed=true;}string output=(failed?1:0)+"|"+H(OSDParser.SerializeJsonString(animation?anim.PackUpdateMessage():group?g.PackUpdateMessage():c.PackUpdateMessage(),true));if(animation){var same=new Animation(anim.AnimID,anim.SequenceNum,anim.ObjectID);var different=new Animation(anim.AnimID,anim.SequenceNum^1,anim.ObjectID);output+="|"+H(anim.ToString())+"|"+(anim.Equals(null)?1:0)+(anim.Equals(anim)?1:0)+(anim.Equals(same)?1:0)+(anim.Equals(different)?1:0)+"|"+(anim.GetHashCode()==anim.GetHashCode()?1:0);}Console.WriteLine(output);}}}
+using System;
+using System.Text;
+using OpenMetaverse;
+using OpenMetaverse.StructuredData;
+using OpenSim.Framework;
+class RecordsReference
+{
+    static UUID Id(int n) => new UUID("00000000-0000-0000-0000-00000000000" + n);
+    static string H(string s) => Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();
+    static OSD Typed(string type) => type switch {
+        "binary" => OSD.FromBinary(new byte[] { 0x12, 0x34, 0x56, 0x78 }),
+        "unsigned" => OSD.FromUInteger(uint.MaxValue),
+        "long" => OSD.FromLong(0x1234567887654321L),
+        "uuid" => OSD.FromUUID(Id(7)),
+        "date" => OSD.FromDate(new DateTime(2026, 10, 29, 12, 34, 56, DateTimeKind.Utc)),
+        "uri" => OSD.FromUri(new Uri("http://example.com/path")),
+        _ => new OSD()
+    };
+    static void Main()
+    {
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var command =
+                (OSDMap)OSDParser.DeserializeJson(Encoding.UTF8.GetString(Convert.FromHexString(line)));
+            int profile = command["profile"].AsInteger();
+            bool group = command["model"].AsString() == "group",
+                 animation = command["model"].AsString() == "animation", failed = false;
+            var anim = new Animation((profile & 1) != 0 ? Id(7) : UUID.Zero, (profile & 1) != 0 ? -1 : 0,
+                                     (profile & 1) != 0 ? Id(8) : UUID.Zero);
+            var g = new AgentGroupData((profile & 1) != 0 ? Id(7) : UUID.Zero,
+                                       (profile & 1) != 0 ? ulong.MaxValue : 0, (profile & 1) != 0);
+            var c = new ControllerData(
+                (profile & 1) != 0 ? Id(7) : UUID.Zero, (profile & 1) != 0 ? Id(8) : UUID.Zero,
+                (profile & 1) != 0 ? uint.MaxValue : 0, (profile & 1) != 0 ? 0x80000000u : 0);
+            OSD data = command["data"];
+            if (command.ContainsKey("typed"))
+                ((OSDMap)data) [command ["field"].AsString()] = Typed(command["typed"].AsString());
+            try
+            {
+                var map = command["null_map"].AsBoolean() ? null : (OSDMap)data;
+                if ((profile & 8) != 0)
+                {
+                    var raw = (OSDArray)command["raw"];
+                    if (animation)
+                        anim = new Animation(Id(7), int.Parse(raw[0].AsString()), Id(8));
+                    else if (group)
+                        g = new AgentGroupData(Id(7), ulong.Parse(raw[0].AsString()), raw[1].AsBoolean());
+                    else
+                        c = new ControllerData(Id(7), Id(8), uint.Parse(raw[0].AsString()),
+                                               uint.Parse(raw[1].AsString()));
+                }
+                else if (animation)
+                {
+                    if ((profile & 2) != 0)
+                        anim = new Animation(map);
+                    else
+                        anim.UnpackUpdateMessage(map);
+                    if ((profile & 4) != 0)
+                        anim.UnpackUpdateMessage((OSDMap)command["next"]);
+                }
+                else if (group)
+                {
+                    if ((profile & 2) != 0)
+                        g = new AgentGroupData(map);
+                    else
+                        g.UnpackUpdateMessage(map);
+                    if ((profile & 4) != 0)
+                        g.UnpackUpdateMessage((OSDMap)command["next"]);
+                }
+                else
+                {
+                    if ((profile & 2) != 0)
+                        c = new ControllerData(map);
+                    else
+                        c.UnpackUpdateMessage(map);
+                    if ((profile & 4) != 0)
+                        c.UnpackUpdateMessage((OSDMap)command["next"]);
+                }
+            }
+            catch
+            {
+                failed = true;
+            }
+            string output = (failed ? 1 : 0) + "|" +
+                            H(OSDParser.SerializeJsonString(animation ? anim.PackUpdateMessage()
+                                                            : group   ? g.PackUpdateMessage()
+                                                                      : c.PackUpdateMessage(),
+                                                            true));
+            if (animation)
+            {
+                var same = new Animation(anim.AnimID, anim.SequenceNum, anim.ObjectID);
+                var different = new Animation(anim.AnimID, anim.SequenceNum ^ 1, anim.ObjectID);
+                output += "|" + H(anim.ToString()) + "|" + (anim.Equals(null) ? 1 : 0) +
+                          (anim.Equals(anim) ? 1 : 0) + (anim.Equals(same) ? 1 : 0) +
+                          (anim.Equals(different) ? 1 : 0) + "|" +
+                          (anim.GetHashCode() == anim.GetHashCode() ? 1 : 0);
+            }
+            Console.WriteLine(output);
+        }
+    }
+}

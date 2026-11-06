@@ -778,6 +778,14 @@ class GenericUriObject final : public ConfigUriObject {
         }
         return (state_.flags & 0x800000ull) ? state_.offsets.port_value : state_.syntax->default_port;
     }
+    Text authority() const {
+        std::lock_guard lock(mutex_);
+        const auto value = network_component(ConfigGenericUriComponent::Host);
+        if (!(state_.flags & 0x800000ull))
+            return value;
+        auto authority = *value + u':' + utf16_replacing(std::to_string(state_.offsets.port_value));
+        return std::make_shared<const std::u16string>(std::move(authority));
+    }
     Text path_parts(int format) const {
         std::lock_guard lock(mutex_);
         return parts(format, 16);
@@ -1053,6 +1061,12 @@ std::int32_t config_generic_uri_port(ConfigUriObjectPtr uri) {
     if (!native)
         throw std::invalid_argument("Generic URI port requires its native absolute object");
     return native->port_source();
+}
+ConfigUriText config_generic_uri_authority(ConfigUriObjectPtr uri) {
+    auto native = std::dynamic_pointer_cast<const GenericUriObject>(uri);
+    if (!native)
+        throw std::invalid_argument("Generic URI authority requires its native absolute object");
+    return native->authority();
 }
 ConfigUriText config_generic_uri_http_pool_identity(ConfigUriObjectPtr uri) {
     auto native = std::dynamic_pointer_cast<const GenericUriObject>(uri);

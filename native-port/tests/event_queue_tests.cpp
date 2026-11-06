@@ -166,6 +166,9 @@ void run() {
     check(event_queue_inner_xml(network::Value(int32_t(0))) == "<integer>0</integer>",
           "legacy zero differs from queue ID");
     check(event_queue_inner_xml(network::Value{}) == "<undef />", "legacy undefined");
+    network::Value date("1970-01-01T00:00:00Z");
+    date.kind = network::Value::Kind::Date;
+    check(event_queue_inner_xml(date) == "<date />", "legacy epoch date");
 }
 }
 #ifndef EVENT_QUEUE_PROBE

@@ -1,3 +1,68 @@
-using System;using System.Reflection;
-unsafe class Program{private delegate void Unescape(char* p,int start,ref int end,char a,char b,char c);static void Main(){var method=typeof(Uri).GetMethod("Compress",BindingFlags.NonPublic|BindingFlags.Static,null,new[]{typeof(char[]),typeof(int),typeof(int).MakeByRefType(),typeof(UriParser)},null);string line;while((line=Console.ReadLine())!=null){int mode=line[0]-'0';var field=typeof(UriParser).GetField(mode==0?"FileUri":mode==1?"UnixFileUri":"GopherUri",BindingFlags.NonPublic|BindingFlags.Static);char[] chars=new char[(line.Length-2)/4];for(int i=0;i<chars.Length;i++)chars[i]=(char)Convert.ToUInt16(line.Substring(2+4*i,4),16);if(mode>=6){var value=new Uri(new string(chars),(UriKind)(mode-6));Console.WriteLine((value.IsAbsoluteUri?"A:":"R:")+string.Concat(System.Linq.Enumerable.Select(value.OriginalString,c=>((int)c).ToString("x4"))));continue;}if(mode>=5){var parse=typeof(Uri).GetMethod("ParseScheme",BindingFlags.Static|BindingFlags.NonPublic);object[] a={new string(chars),Enum.ToObject(typeof(Uri).GetNestedType("Flags",BindingFlags.NonPublic),0UL),null};var error=parse.Invoke(null,a);string scheme=a[2]==null?"":(string)typeof(UriParser).GetField("_scheme",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(a[2]);Console.WriteLine(Convert.ToInt32(error)+":"+Convert.ToUInt64(a[1])+":"+string.Concat(System.Linq.Enumerable.Select(scheme,c=>((int)c).ToString("x4"))));continue;}int count=chars.Length;if(mode>=3){var unescape=typeof(Uri).GetMethod("UnescapeOnly",BindingFlags.NonPublic|BindingFlags.Static).CreateDelegate<Unescape>();fixed(char* ptr=chars)unescape(ptr,0,ref count,'.','/',mode==3?'\\':'\uffff');}else{object[]args={chars,0,chars.Length,field.GetValue(null)};method.Invoke(null,args);count=(int)args[2];}string output="";for(int i=0;i<count;i++)output+=((int)chars[i]).ToString("x4");Console.WriteLine(output);}}}
-
+using System;
+using System.Reflection;
+unsafe class Program
+{
+    private delegate void Unescape(char *p, int start, ref int end, char a, char b, char c);
+    static void Main()
+    {
+        var method = typeof(Uri).GetMethod(
+            "Compress", BindingFlags.NonPublic | BindingFlags.Static, null,
+            new[] { typeof(char[]), typeof(int), typeof(int).MakeByRefType(), typeof(UriParser) }, null);
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            int mode = line[0] - '0';
+            var field = typeof(UriParser).GetField(mode == 0   ? "FileUri"
+                                                   : mode == 1 ? "UnixFileUri"
+                                                               : "GopherUri",
+                                                   BindingFlags.NonPublic | BindingFlags.Static);
+            char[] chars = new char[(line.Length - 2) / 4];
+            for (int i = 0; i < chars.Length; i++)
+                chars[i] = (char)Convert.ToUInt16(line.Substring(2 + 4 * i, 4), 16);
+            if (mode >= 6)
+            {
+                var value = new Uri(new string(chars), (UriKind)(mode - 6));
+                Console.WriteLine((value.IsAbsoluteUri ? "A:" : "R:") +
+                                  string.Concat(System.Linq.Enumerable.Select(value.OriginalString,
+                                                                              c => ((int)c).ToString("x4"))));
+                continue;
+            }
+            if (mode >= 5)
+            {
+                var parse =
+                    typeof(Uri).GetMethod("ParseScheme", BindingFlags.Static | BindingFlags.NonPublic);
+                object[] a = { new string(chars),
+                               Enum.ToObject(typeof(Uri).GetNestedType("Flags", BindingFlags.NonPublic), 0UL),
+                               null };
+                var error = parse.Invoke(null, a);
+                string scheme = a[2] == null
+                                    ? ""
+                                    : (string) typeof(UriParser)
+                                          .GetField("_scheme", BindingFlags.Instance | BindingFlags.NonPublic)
+                                          .GetValue(a[2]);
+                Console.WriteLine(
+                    Convert.ToInt32(error) + ":" + Convert.ToUInt64(a[1]) + ":" +
+                    string.Concat(System.Linq.Enumerable.Select(scheme, c => ((int)c).ToString("x4"))));
+                continue;
+            }
+            int count = chars.Length;
+            if (mode >= 3)
+            {
+                var unescape = typeof(Uri)
+                                   .GetMethod("UnescapeOnly", BindingFlags.NonPublic | BindingFlags.Static)
+                                   .CreateDelegate<Unescape>();
+                fixed(char *ptr = chars) unescape(ptr, 0, ref count, '.', '/', mode == 3 ? '\\' : '\uffff');
+            }
+            else
+            {
+                object[] args = { chars, 0, chars.Length, field.GetValue(null) };
+                method.Invoke(null, args);
+                count = (int)args[2];
+            }
+            string output = "";
+            for (int i = 0; i < count; i++)
+                output += ((int)chars[i]).ToString("x4");
+            Console.WriteLine(output);
+        }
+    }
+}

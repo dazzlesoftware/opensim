@@ -26,17 +26,16 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "opensim/services/region_store.hpp"
+#include "opensim/framework/culture_prefix.hpp"
+#include "opensim/framework/text.hpp"
 #include <bit>
 #include <mutex>
 #include <unordered_map>
 #include <stdexcept>
 namespace opensim::services {
 namespace {
-std::string lower(std::string value) {
-    for (auto& c : value)
-        if (c >= 'A' && c <= 'Z')
-            c = static_cast<char>(c + 32);
-    return value;
+std::string lower(std::string_view value) {
+    return framework::utf8(framework::invariant_lower_utf16(framework::utf16(value)));
 }
 std::int32_t add(std::int32_t a, std::int32_t b) {
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(a) + static_cast<std::uint32_t>(b));
@@ -86,7 +85,7 @@ std::shared_ptr<RegionData> NullRegionStore::at(std::int32_t x, std::int32_t y, 
 std::shared_ptr<RegionData> NullRegionStore::specific(const std::string& wanted, const framework::Uuid&) {
     std::lock_guard lock(state_->mutex);
     for (const auto& slot : state_->slots)
-        if (slot.row && lower(name(*slot.row)) == lower(wanted))
+        if (slot.row && framework::invariant_equals_ignore_case(name(*slot.row), wanted))
             return slot.row;
     return nullptr;
 }
@@ -114,8 +113,9 @@ std::optional<RegionRows> NullRegionStore::find(const std::string& pattern, cons
         if (slot.row) {
             const auto value = lower(name(*slot.row));
             if (prefix && suffix ? value.find(clean) != std::string::npos
-                : suffix         ? value.starts_with(clean)
-                : prefix         ? value.ends_with(clean)
+                : suffix         ? framework::invariant_starts_with(value, clean)
+                : prefix         ? framework::invariant_ends_with_utf16(framework::utf16(value),
+                                                                       framework::utf16(clean))
                                  : value == clean)
                 result.push_back(slot.row);
         }

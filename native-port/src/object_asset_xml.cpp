@@ -2,9 +2,13 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/scene/object_asset_xml.hpp"
 #include "opensim/framework/text.hpp"
+#include "opensim/framework/sdk_quaternion.hpp"
 #include "opensim/network/osd_value.hpp"
 #include <algorithm>
 #include <charconv>
+#include <cmath>
+#include <limits>
+#include <sstream>
 #include <stdexcept>
 #include <pugixml.hpp>
 
@@ -18,20 +22,30 @@ void element(framework::NativeXmlTextWriter &writer, const char16_t *name, const
     writer.write_string(framework::utf16(value));
     writer.write_end_element();
 }
-void write_object_asset_shape(framework::NativeXmlTextWriter &writer, const SceneObject &part) {
+void binary_element(framework::NativeXmlTextWriter &writer, const char16_t *name,
+                    std::span<const std::uint8_t> data) {
+    start(writer, name);
+    writer.write_base64(data, 0, static_cast<std::int32_t>(data.size()));
+    writer.write_end_element();
+}
+void read_binary_element(pugi::xml_node field, std::vector<std::uint8_t> &bytes) {
+    if (!field)
+        return;
+    network::Value value;
+    value.kind = network::Value::Kind::Binary;
+    value.text = field.child_value();
+    bytes = *network::osd_binary(value);
+}
+void write_object_asset_shape(framework::NativeXmlTextWriter &writer, const ObjectAssetPart &snapshot) {
     const auto number = [&](const char16_t *name, int value) {
         element(writer, name, std::to_string(value));
     };
-    const auto bytes = [&](const char16_t *name, std::span<const std::uint8_t> data) {
-        writer.write_start_element({}, std::u16string(name), {});
-        writer.write_base64(data, 0, static_cast<std::int32_t>(data.size()));
-        writer.write_end_element();
-    };
+    const auto &part = snapshot.object;
     const auto &shape = part.shape;
     writer.write_start_element({}, std::u16string(u"Shape"), {});
     number(u"ProfileCurve", shape.profile_curve);
-    bytes(u"TextureEntry", part.texture_entry);
-    bytes(u"ExtraParams", part.extra_params);
+    binary_element(writer, u"TextureEntry", part.texture_entry);
+    binary_element(writer, u"ExtraParams", part.extra_params);
     number(u"PathBegin", shape.path_begin);
     number(u"PathCurve", shape.path_curve);
     number(u"PathEnd", shape.path_end);
@@ -51,8 +65,13 @@ void write_object_asset_shape(framework::NativeXmlTextWriter &writer, const Scen
     number(u"ProfileEnd", shape.profile_end);
     number(u"ProfileHollow", shape.profile_hollow);
     number(u"State", shape.state);
+    number(u"LastAttachPoint", snapshot.last_attachment_point);
     number(u"ProfileShape", shape.profile_curve & 0x0f);
     number(u"HollowShape", shape.profile_curve & 0xf0);
+    if (!part.face_media_xml.empty())
+        element(writer, u"Media", part.face_media_xml);
+    if (!part.material_overrides.empty())
+        binary_element(writer, u"MatOvrd", part.material_overrides);
     writer.write_end_element();
 }
 void write_part(framework::NativeXmlTextWriter &writer, const ObjectAssetPart &snapshot,
@@ -144,7 +163,7 @@ void write_part(framework::NativeXmlTextWriter &writer, const ObjectAssetPart &s
     element(writer, u"TouchName", part.touch_name);
     number(u"LinkNum", link_number);
     number(u"ClickAction", part.click_action);
-    write_object_asset_shape(writer, part);
+    write_object_asset_shape(writer, snapshot);
     vector(u"Scale", part.scale);
     quaternion(u"SitTargetOrientation", part.sit_target_orientation);
     vector(u"SitTargetPosition", part.sit_target_position);
@@ -176,9 +195,13 @@ void write_part(framework::NativeXmlTextWriter &writer, const ObjectAssetPart &s
     number(u"CollisionSoundVolume", part.collision_sound_volume);
     if (!part.media_url.empty())
         element(writer, u"MediaUrl", part.media_url);
+    vector(u"AttachedPos", snapshot.attachment_position);
     constexpr std::array pay_names{u"PayPrice0", u"PayPrice1", u"PayPrice2", u"PayPrice3", u"PayPrice4"};
     for (std::size_t i = 0; i < pay_names.size(); ++i)
         number(pay_names[i], part.pay_prices[i]);
+    number(u"Buoyancy", root.buoyancy);
+    vector(u"Force", root.force);
+    vector(u"Torque", root.torque);
     number(u"PhysicsShapeType", part.physics.shape);
     if (part.physics.density != 1000.f)
         number(u"Density", part.physics.density);
@@ -192,7 +215,21 @@ void write_part(framework::NativeXmlTextWriter &writer, const ObjectAssetPart &s
     number(u"SoundGain", part.looped_sound_gain);
     number(u"SoundFlags", part.sound_flags);
     number(u"SoundRadius", part.sound_radius);
+    if (!part.texture_animation.empty())
+        binary_element(writer, u"TextureAnimation", part.texture_animation);
+    if (!part.dynamic_attributes_xml.empty()) {
+        pugi::xml_document document;
+        if (document.load_string(part.dynamic_attributes_xml.c_str()) && document.child("llsd")) {
+            std::ostringstream xml;
+            document.child("llsd").print(xml, "", pugi::format_raw);
+            start(writer, u"DynAttrs");
+            writer.write_raw(framework::utf16(xml.str()));
+            writer.write_end_element();
+        }
+    }
     element(writer, u"SoundQueueing", part.sound_queueing ? "true" : "false");
+    if (!part.object_animations.empty())
+        binary_element(writer, u"SOPAnims", part.object_animations);
     writer.write_end_element();
 }
 }
@@ -210,12 +247,81 @@ void write_object_asset_xml(framework::NativeXmlTextWriter &writer, const Object
         writer.write_end_element();
     }
     writer.write_end_element();
-    if (root.object.rez_start_string)
-        element(writer, u"StartStr", *root.object.rez_start_string);
+    // The managed OriginalXml reader consumes linkset data before the rez string.
     if (!root.object.linkset_data.empty()) {
         start(writer, u"lnkstdt");
         writer.write_base64(root.object.linkset_data, 0,
                             static_cast<std::int32_t>(root.object.linkset_data.size()));
+        writer.write_end_element();
+    }
+    if (root.object.rez_start_string)
+        element(writer, u"StartStr", *root.object.rez_start_string);
+    writer.write_end_element();
+}
+void write_crossing_object_xml(framework::NativeXmlTextWriter& writer, const ObjectAssetPart& root,
+                               std::span<const ObjectAssetPart> children) {
+    start(writer, u"SceneObjectGroup");
+    write_part(writer, root, root.object, children.empty() ? 0 : 1);
+    start(writer, u"OtherParts");
+    std::size_t link_number = 2;
+    for (const auto& child : children)
+        write_part(writer, child, root.object, link_number++);
+    writer.write_end_element();
+    if (root.object.rez_start_string)
+        element(writer, u"StartStr", *root.object.rez_start_string);
+    if (!root.object.linkset_data.empty())
+        binary_element(writer, u"lnkstdt", root.object.linkset_data);
+    writer.write_end_element();
+}
+void write_coalesced_object_asset_xml(framework::NativeXmlTextWriter& writer,
+                                      std::span<const ObjectAssetLinkset> linksets) {
+    const auto limit = std::numeric_limits<float>::max();
+    framework::Vector3 minimum{limit, limit, limit}, maximum{-limit, -limit, -limit};
+    for (const auto& linkset : linksets) {
+        const auto& root = linkset.parts.front().object;
+        for (const auto& snapshot : linkset.parts) {
+            const auto& part = snapshot.object;
+            auto center = root.position;
+            auto rotation = root.rotation;
+            if (part.id != root.id) {
+                const auto offset = framework::sdk_rotate_vector(part.position, root.rotation);
+                center = {center.x + offset.x, center.y + offset.y, center.z + offset.z};
+                rotation = framework::sdk_multiply_quaternion(root.rotation, part.rotation);
+            }
+            const auto x = framework::sdk_rotate_vector({part.scale.x * .5f, 0, 0}, rotation);
+            const auto y = framework::sdk_rotate_vector({0, part.scale.y * .5f, 0}, rotation);
+            const auto z = framework::sdk_rotate_vector({0, 0, part.scale.z * .5f}, rotation);
+            const framework::Vector3 half_extent{std::abs(x.x) + std::abs(y.x) + std::abs(z.x),
+                                                 std::abs(x.y) + std::abs(y.y) + std::abs(z.y),
+                                                 std::abs(x.z) + std::abs(y.z) + std::abs(z.z)};
+            minimum.x = std::min(minimum.x, center.x - half_extent.x);
+            minimum.y = std::min(minimum.y, center.y - half_extent.y);
+            minimum.z = std::min(minimum.z, center.z - half_extent.z);
+            maximum.x = std::max(maximum.x, center.x + half_extent.x);
+            maximum.y = std::max(maximum.y, center.y + half_extent.y);
+            maximum.z = std::max(maximum.z, center.z + half_extent.z);
+        }
+    }
+    const auto attribute = [&](const char16_t* name, float value) {
+        char buffer[64];
+        const auto result = std::to_chars(buffer, buffer + sizeof(buffer), value);
+        if (result.ec != std::errc{})
+            throw std::runtime_error("Cannot format coalesced object asset bounds");
+        writer.write_start_attribute({}, std::u16string(name), {});
+        writer.write_string(framework::utf16(std::string(buffer, result.ptr)));
+        writer.write_end_attribute();
+    };
+    start(writer, u"CoalescedObject");
+    attribute(u"x", maximum.x - minimum.x);
+    attribute(u"y", maximum.y - minimum.y);
+    attribute(u"z", maximum.z - minimum.z);
+    for (const auto& linkset : linksets) {
+        const auto& root = linkset.parts.front();
+        start(writer, u"SceneObjectGroup");
+        attribute(u"offsetx", root.object.position.x - minimum.x);
+        attribute(u"offsety", root.object.position.y - minimum.y);
+        attribute(u"offsetz", root.object.position.z - minimum.z);
+        write_object_asset_xml(writer, root, std::span(linkset.parts).subspan(1));
         writer.write_end_element();
     }
     writer.write_end_element();
@@ -325,17 +431,10 @@ void read_shape(pugi::xml_node node, SceneObject &part) {
     read_number(node, "ProfileEnd", shape.profile_end);
     read_number(node, "ProfileHollow", shape.profile_hollow);
     read_number(node, "State", shape.state);
-    const auto binary = [&](const char *name, auto &bytes) {
-        const auto field = node.child(name);
-        if (!field)
-            return;
-        network::Value value;
-        value.kind = network::Value::Kind::Binary;
-        value.text = field.child_value();
-        bytes = *network::osd_binary(value);
-    };
-    binary("TextureEntry", part.texture_entry);
-    binary("ExtraParams", part.extra_params);
+    read_binary_element(node.child("TextureEntry"), part.texture_entry);
+    read_binary_element(node.child("ExtraParams"), part.extra_params);
+    read_binary_element(node.child("MatOvrd"), part.material_overrides);
+    part.face_media_xml = node.child_value("Media");
 }
 framework::TaskInventoryItem read_task_item(pugi::xml_node node) {
     framework::TaskInventoryItem item;
@@ -403,6 +502,7 @@ ObjectAssetPart read_part(pugi::xml_node node, bool root) {
         part.flags = allowed_drop.text().as_bool() ? part.flags | 0x10000u : part.flags & ~0x10000u;
     read_number(node, "CollisionSoundVolume", part.collision_sound_volume);
     read_number(node, "SoundGain", part.looped_sound_gain);
+    read_binary_element(node.child("TextureAnimation"), part.texture_animation);
     read_number(node, "SoundFlags", part.sound_flags);
     read_number(node, "SoundRadius", part.sound_radius);
     part.sound_queueing = std::string_view(node.child_value("SoundQueueing")) == "true";
@@ -414,6 +514,9 @@ ObjectAssetPart read_part(pugi::xml_node node, bool root) {
     read_number(node, "Friction", part.physics.friction);
     read_number(node, "Bounce", part.physics.restitution);
     read_number(node, "GravityModifier", part.physics.gravity);
+    read_number(node, "Buoyancy", part.buoyancy);
+    read_xyz(node.child("Force"), part.force);
+    read_xyz(node.child("Torque"), part.torque);
     const auto color = node.child("Color");
     constexpr std::array channels{"A", "R", "G", "B"};
     for (const auto channel : channels) {
@@ -425,6 +528,10 @@ ObjectAssetPart read_part(pugi::xml_node node, bool root) {
     }
     read_number(node, "InventorySerial", result.inventory_serial);
     read_xyz(node.child(root ? "GroupPosition" : "OffsetPosition"), part.position);
+    read_xyz(node.child("AttachedPos"), result.attachment_position);
+    read_number(node.child("Shape"), "LastAttachPoint", result.last_attachment_point);
+    part.last_attachment_point = result.last_attachment_point;
+    part.saved_attachment_position = result.attachment_position;
     const auto rotation = node.child("RotationOffset");
     read_xyz(rotation, part.rotation);
     read_number(rotation, rotation.child("W") ? "W" : "w", part.rotation.w);
@@ -446,6 +553,12 @@ ObjectAssetPart read_part(pugi::xml_node node, bool root) {
     read_xyz(node.child("AngularVelocity"), part.angular_velocity);
     read_xyz(node.child("Acceleration"), part.acceleration);
     read_shape(node.child("Shape"), part);
+    if (const auto attrs = node.child("DynAttrs").child("llsd")) {
+        std::ostringstream xml;
+        attrs.print(xml, "", pugi::format_raw);
+        part.dynamic_attributes_xml = xml.str();
+    }
+    read_binary_element(node.child("SOPAnims"), part.object_animations);
     for (const auto item : node.child("TaskInventory").children("TaskInventoryItem"))
         result.inventory.push_back(read_task_item(item));
     part.inventory_empty = result.inventory.empty();

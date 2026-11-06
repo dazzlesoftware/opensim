@@ -1,0 +1,5 @@
+// Generated from the original MySQL AssetStore.migrations resource.
+#pragma once
+namespace opensim::services {
+inline constexpr char MysqlAssetStoreMigration[] = R"OSIMSQL(@MYSQL_ASSET_MIGRATION_SQL@)OSIMSQL";
+}

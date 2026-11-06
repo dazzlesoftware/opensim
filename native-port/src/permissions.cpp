@@ -35,10 +35,14 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace opensim::framework {
 std::string PermissionsUtil::permissions_to_string(std::uint32_t perms) {
     std::string result;
-    if (perms & bits(PermissionMask::Modify)) result += 'M';
-    if (perms & bits(PermissionMask::Copy)) result += 'C';
-    if (perms & bits(PermissionMask::Transfer)) result += 'T';
-    if (perms & bits(PermissionMask::Export)) result += 'X';
+    if (perms & bits(PermissionMask::Modify))
+        result += 'M';
+    if (perms & bits(PermissionMask::Copy))
+        result += 'C';
+    if (perms & bits(PermissionMask::Transfer))
+        result += 'T';
+    if (perms & bits(PermissionMask::Export))
+        result += 'X';
     return result.empty() ? "." : result;
 }
 std::string PermissionsUtil::log_permissions(const std::string& name, const std::string& message,
@@ -51,19 +55,23 @@ std::string PermissionsUtil::log_permissions(const std::string& name, const std:
     };
     out << "Permissions of \"" << name << "\" at \"" << message << "\": Base ";
     append(base);
-    out << ", Current "; append(current);
-    out << ", NextOwner "; append(next);
+    out << ", Current ";
+    append(current);
+    out << ", NextOwner ";
+    append(next);
     return out.str();
 }
 void PermissionsUtil::apply_folded_permissions(std::uint32_t source, std::uint32_t& target) noexcept {
     auto folded = source & bits(PermissionMask::FoldedMask);
-    if (folded == 0 || folded == bits(PermissionMask::FoldedMask)) return;
+    if (folded == 0 || folded == bits(PermissionMask::FoldedMask))
+        return;
     folded <<= bits(PermissionMask::FoldingShift);
     target &= folded | ~bits(PermissionMask::UnfoldedMask);
 }
 void PermissionsUtil::apply_no_mod_folded_permissions(std::uint32_t source, std::uint32_t& target) noexcept {
     auto folded = source & bits(PermissionMask::FoldedMask);
-    if (folded == 0 || folded == bits(PermissionMask::FoldedMask)) return;
+    if (folded == 0 || folded == bits(PermissionMask::FoldedMask))
+        return;
     folded <<= bits(PermissionMask::FoldingShift);
     target &= folded | ~bits(PermissionMask::UnfoldedMask) | bits(PermissionMask::Modify);
 }

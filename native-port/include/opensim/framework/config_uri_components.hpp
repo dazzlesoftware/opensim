@@ -44,6 +44,7 @@ public:
     ConfigUriText scheme() const;
     bool is_http() const;
     ConfigUriText host() const;
+    ConfigUriText authority() const;
     ConfigUriText idn_host() const;
     ConfigUriText dns_safe_host() const;
     std::int32_t port() const;

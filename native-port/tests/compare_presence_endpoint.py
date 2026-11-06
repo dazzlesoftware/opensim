@@ -70,12 +70,15 @@ def main():
     bodies = ["", "METHOD=login&UserID=remote&SessionID="+session, "METHOD=unknown", "METHOD[]=getagent", "METHOD=getagent&SessionID=bad", "METHOD=getagent&SessionID="+session, "METHOD=getagent&SessionID=00000000-0000-0000-0000-000000000002", "METHOD=getagent&SessionID=00000000-0000-0000-0000-000000000099", "METHOD=getagents&uuids=alpha", "METHOD=getagents&uuids[]=alpha&uuids[]=missing&uuids[]=alpha", "METHOD=getagents&uuids[]=missing", "METHOD=report&SessionID="+session+"&RegionID=00000000-0000-0000-0000-000000000099", "METHOD=logout&SessionID="+session, "METHOD=logoutregion&RegionID=00000000-0000-0000-0000-000000000003", "METHOD=getagent=ignored&METHOD=logout&SessionID="+session, "METHOD=getagents&uuids[]=alpha&uuids=ignored&uuids[]=alpha", "METHOD=getagents&uuids%5b%5d=%u0061lpha", "METHOD=getagents&uuids[]=%FF"]
     bodies.append("METHOD=getagents&uuids[]="+urllib.parse.quote("beta <&> \r\n試験"))
     modes = [("none", "", False), ("basic", "", False), ("basic", "Basic "+base64.b64encode(b"u:p").decode(), False), ("basic", " Basic "+base64.b64encode(b"u:p:ignored").decode()+" ", False), ("basic", "basic dTpw", False), ("basic", "Basic invalid!", False), ("none", "", True), ("allow", "Basic dTpw", True)]
+    encoded_lookup = "METHOD=getagent&SessionID=" + session
+    bodies = [body.encode() for body in bodies]
+    bodies.extend(encoded_lookup.encode(encoding) for encoding in ("utf-8-sig", "utf-16", "utf-32"))
     differences = []
     count = 0
     for index, (mode, authorization, shard) in enumerate(modes):
         config = work / f"config-{index}.ini"
         config.write_text("[PresenceService]\n" + ("AuthType=BasicHttpAuthentication\nHttpAuthUsername=u\nHttpAuthPassword=p\n" if mode != "none" else "") + ("AllowllHTTPRequestIn=true\n" if mode == "allow" else ""))
-        lines = [body.encode().hex()+"|"+authorization.encode().hex()+"|"+str(int(shard)) for body in bodies]
+        lines = [body.hex()+"|"+authorization.encode().hex()+"|"+str(int(shard)) for body in bodies]
         data = "\n".join(lines)+"\n"
         results = []
         for executable in [command, [args.native]]:
@@ -85,7 +88,7 @@ def main():
             results.append(run.stdout.splitlines())
         if any(len(rows) != len(lines) for rows in results):
             raise AssertionError("Endpoint output length differs")
-        differences.extend({"mode": index, "body": body, "reference": expected, "native": actual} for body, expected, actual in zip(bodies, *results) if expected != actual)
+        differences.extend({"mode": index, "body": repr(body), "reference": expected, "native": actual} for body, expected, actual in zip(bodies, *results) if expected != actual)
         count += len(lines)
     forms = ["", "&&", "=empty&%20=space", "x", "x=", "x=   ", "x=+", "x=%20", "x=one=two", "x=a&x=b", "x[]=a&x[]=b", "x=a&x[]=b", "x[]=a&x=b&x[]=c", "[]=ignored", "%5b%5d=ignored", "x=%u0061", "x=%uD83D%uDE00", "x=%uD800", "x=%FF", "x=%E2%82", "x=%ED%A0%80", "x=%F0%80%80%80", "x=%2B+%26%3D", "x=%bad%ZZ%", "x=試験&%u540D=%u5024", "x%5b%5d=%u0061&x[]=", "a=1&b[]=2&b[]=3& c =4"]
     lines = "\n".join(form.encode().hex() for form in forms)+"\n"

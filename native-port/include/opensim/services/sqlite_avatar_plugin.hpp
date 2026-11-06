@@ -4,6 +4,19 @@
 #include "opensim/services/avatar_service.hpp"
 #include "opensim/services/sqlite_generic_table.hpp"
 namespace opensim::services {
+using AttachmentScriptStates = std::map<framework::Uuid, std::vector<std::uint8_t>>;
+class SqliteAttachmentScriptStore {
+  public:
+    explicit SqliteAttachmentScriptStore(std::shared_ptr<SqliteDatabase> database);
+    AttachmentScriptStates load(framework::Uuid owner, framework::Uuid item, framework::Uuid asset);
+    void save(framework::Uuid owner, framework::Uuid item, framework::Uuid asset,
+              const AttachmentScriptStates& states);
+
+  private:
+    std::shared_ptr<SqliteDatabase> database_;
+    SqliteTableOperations table_;
+};
+
 class SqliteAvatarPlugin : public AvatarStore {
   public:
     SqliteAvatarPlugin(const std::string& connection, std::string realm = "Avatars", MigrationLog log = {},

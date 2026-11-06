@@ -1,2 +1,96 @@
-using System;using System.Text;
-class Program{static string? D(string s){if(s=="~")return null;if(s=="-")return "";var b=new StringBuilder();for(int i=0;i<s.Length;i+=4)b.Append((char)Convert.ToInt32(s.Substring(i,4),16));return b.ToString();}static string H(string s){var b=new StringBuilder();foreach(char c in s)b.Append(((int)c).ToString("x4"));return b.Length==0?"-":b.ToString();}static string E(Exception e)=>"E:"+e.GetType().FullName+":"+e.HResult+":"+H(e.Message)+":"+(e is ArgumentException a&&a.ParamName!=null?H(a.ParamName):"~")+":"+(e is ArgumentOutOfRangeException r&&r.ActualValue!=null?r.ActualValue.ToString():"~");static void Main(){string? row;while((row=Console.ReadLine())!=null){var p=row.Split(' ');try{int op=int.Parse(p[0]);var bt=D(p[1]);var rt=D(p[2]);Uri? b=bt==null?null:new Uri(bt,UriKind.RelativeOrAbsolute),r=null;Uri result;if(op<2){r=rt==null?null:new Uri(rt,UriKind.RelativeOrAbsolute);if(op==1)foreach(var u in new[]{b,r})if(u!=null)for(int n=0;n<4;n++)try{_ = n switch{0=>u.ToString(),1=>u.AbsoluteUri,2=>u.LocalPath,_=>u.Fragment};}catch{}result=new Uri(b!,r!);}else{var builder=new UriBuilder(b!);builder.Fragment=rt;result=builder.Uri;}Console.Write((ReferenceEquals(result,b)?"B":ReferenceEquals(result,r)?"R":"N")+":"+(result.IsAbsoluteUri?"A":"R"));foreach(char c in "otalfsotalfs"){Console.Write("|"+c+":");try{Console.Write(H(c switch{'o'=>result.OriginalString,'t'=>result.ToString(),'a'=>result.AbsoluteUri,'l'=>result.LocalPath,'f'=>result.Fragment,_=>result.Scheme}));}catch(Exception e){Console.Write(E(e));}}}catch(Exception e){Console.Write(E(e));}Console.WriteLine();}}}
+using System;
+using System.Text;
+class Program
+{
+    static string? D(string s)
+    {
+        if (s == "~")
+            return null;
+        if (s == "-")
+            return "";
+        var b = new StringBuilder();
+        for (int i = 0; i < s.Length; i += 4)
+            b.Append((char)Convert.ToInt32(s.Substring(i, 4), 16));
+        return b.ToString();
+    }
+    static string H(string s)
+    {
+        var b = new StringBuilder();
+        foreach (char c in s)
+            b.Append(((int)c).ToString("x4"));
+        return b.Length == 0 ? "-" : b.ToString();
+    }
+    static string E(Exception e) => "E:" + e.GetType().FullName + ":" + e.HResult + ":" + H(e.Message) + ":" +
+                                    (e is ArgumentException a && a.ParamName != null ? H(a.ParamName) : "~") +
+                                    ":" +
+                                    (e is ArgumentOutOfRangeException r && r.ActualValue != null
+                                         ? r.ActualValue.ToString()
+                                         : "~");
+    static void Main()
+    {
+        string? row;
+        while ((row = Console.ReadLine()) != null)
+        {
+            var p = row.Split(' ');
+            try
+            {
+                int op = int.Parse(p[0]);
+                var bt = D(p[1]);
+                var rt = D(p[2]);
+                Uri? b = bt == null ? null : new Uri(bt, UriKind.RelativeOrAbsolute), r = null;
+                Uri result;
+                if (op < 2)
+                {
+                    r = rt == null ? null : new Uri(rt, UriKind.RelativeOrAbsolute);
+                    if (op == 1)
+                        foreach (var u in new[] { b, r })
+                            if (u != null)
+                                for (int n = 0; n < 4; n++)
+                                    try
+                                    {
+                                        _ = n switch {
+                                            0 => u.ToString(),
+                                            1 => u.AbsoluteUri,
+                                            2 => u.LocalPath,
+                                            _ => u.Fragment
+                                        };
+                                    }
+                                    catch
+                                    {
+                                    }
+                    result = new Uri(b!, r!);
+                }
+                else
+                {
+                    var builder = new UriBuilder(b!);
+                    builder.Fragment = rt;
+                    result = builder.Uri;
+                }
+                Console.Write((ReferenceEquals(result, b)   ? "B"
+                               : ReferenceEquals(result, r) ? "R"
+                                                            : "N") +
+                              ":" + (result.IsAbsoluteUri ? "A" : "R"));
+                foreach (char c in "otalfsotalfs")
+                {
+                    Console.Write("|" + c + ":");
+                    try
+                    {
+                        Console.Write(H(c switch { 'o' => result.OriginalString, 't' => result.ToString(),
+                                                   'a' => result.AbsoluteUri, 'l' => result.LocalPath,
+                                                   'f' => result.Fragment,
+                                                   _ => result.Scheme }));
+                    }
+                    catch (Exception e)
+                    {
+                        Console.Write(E(e));
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.Write(E(e));
+            }
+            Console.WriteLine();
+        }
+    }
+}

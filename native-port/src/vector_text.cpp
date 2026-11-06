@@ -72,7 +72,7 @@ std::string number(float value) {
     scientific[separator] = 'E';
     return scientific;
 }
-bool floating(std::u16string_view input, float& value) {
+bool floating(std::u16string_view input, float& value, bool allow_grouping = false) {
     const auto nul = input.find(char16_t{});
     const bool has_nul = nul != std::u16string_view::npos;
     if (has_nul && !std::all_of(input.begin() + static_cast<std::ptrdiff_t>(nul), input.end(),
@@ -122,7 +122,13 @@ bool floating(std::u16string_view input, float& value) {
         ascii.push_back(static_cast<char>(c));
     }
     std::size_t pos = 0, digits = 0, before = 0, first_nonzero = std::string::npos;
-    while (pos < ascii.size() && ascii[pos] >= '0' && ascii[pos] <= '9') {
+    while (pos < ascii.size()) {
+        if (allow_grouping && before && ascii[pos] == ',') {
+            ++pos;
+            continue;
+        }
+        if (ascii[pos] < '0' || ascii[pos] > '9')
+            break;
         if (ascii[pos] != '0' && first_nonzero == std::string::npos)
             first_nonzero = digits;
         ++pos;
@@ -157,6 +163,8 @@ bool floating(std::u16string_view input, float& value) {
     }
     if (pos != ascii.size())
         return false;
+    if (allow_grouping)
+        std::erase(ascii, ',');
     const auto converted =
         std::from_chars(ascii.data(), ascii.data() + ascii.size(), value, std::chars_format::general);
     if (converted.ec == std::errc::result_out_of_range) {
@@ -173,6 +181,9 @@ bool floating(std::u16string_view input, float& value) {
 bool parse_invariant_float(std::string_view text, float& value) {
     const auto converted = utf16(text);
     return floating(converted, value);
+}
+bool parse_invariant_float_with_grouping(std::string_view text, float& value) {
+    return floating(utf16(text), value, true);
 }
 std::string vector3_string(const Vector3& value) {
     return "<" + number(value.x) + ", " + number(value.y) + ", " + number(value.z) + ">";

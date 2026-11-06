@@ -1,42 +1,461 @@
 // Actual bundled Nini.dll oracle and test-only System.Xml method provider.
 // No translated XmlConfigSource implementation is used in either mode.
-using System;using System.IO;using System.Xml;using System.Text;using System.Reflection;using System.Collections;using System.Collections.Generic;using System.Linq;using System.Globalization;using Nini.Config;
-static class XmlFixture {
- public static string Enc(string s)=>s==null?"~":s.Length==0?"-":string.Concat(s.Select(c=>((int)c).ToString("x4")));
- public static string Dec(string s){if(s=="~")return null;if(s=="-")return "";var a=new char[s.Length/4];for(int i=0;i<a.Length;i++)a[i]=(char)Convert.ToUInt16(s.Substring(i*4,4),16);return new string(a);}
- public static string Error(Exception e){var x=e as XmlException;return "E "+e.GetType().FullName+" "+unchecked((uint)e.HResult)+" "+Enc((e as ArgumentException)?.ParamName)+" "+Enc(e.Message)+" "+Enc(x?.SourceUri)+" "+(x==null?"~":x.LineNumber.ToString())+" "+(x==null?"~":x.LinePosition.ToString())+" "+Enc((e as FileNotFoundException)?.FileName)+" "+Enc((e as ObjectDisposedException)?.ObjectName);}
- public sealed class Writer:StringWriter {public int Calls,Flushes,Closes,Fail;void Hit(){if(++Calls==Fail)throw new InvalidOperationException("writer fault");}public override void Write(char c){Hit();base.Write(c);}public override void Write(string s){Hit();base.Write(s);}public override void Write(char[] c,int o,int n){Hit();base.Write(c,o,n);}public override void Flush(){++Flushes;base.Flush();}protected override void Dispose(bool b){++Closes;base.Dispose(b);}public string State()=>Enc(ToString())+","+Calls+","+Flushes+","+Closes;}
- public sealed class Stream:MemoryStream {public int Calls,Flushes,Closes,Fail;void Hit(){if(++Calls==Fail)throw new InvalidOperationException("stream fault");}public override void Write(byte[] b,int o,int n){Hit();base.Write(b,o,n);}public override void Write(ReadOnlySpan<byte> b){Hit();base.Write(b);}public override void Flush(){++Flushes;base.Flush();}protected override void Dispose(bool b){++Closes;base.Dispose(b);}public string State()=>Convert.ToHexString(ToArray()).ToLowerInvariant()+","+Calls+","+Flushes+","+Closes;}
- static XmlReader Reader(string text,int mode)=>text==null?null:XmlReader.Create(new StringReader(text),new XmlReaderSettings{DtdProcessing=(DtdProcessing)mode});
- static readonly Dictionary<int,object> objects=new();static readonly Dictionary<object,int> ids=new(ReferenceEqualityComparer.Instance);static int next=1;
- static int Id(object o){if(o==null)return 0;if(!ids.TryGetValue(o,out int id)){id=next++;ids.Add(o,id);objects.Add(id,o);}return id;}
- static T Obj<T>(string id)where T:class=>id=="0"?null:(T)objects[int.Parse(id)];
- public static string Dom(string line){try{var a=line.Split(' ');switch(a[0]){
- case "FILEWRITE":File.WriteAllText(Dec(a[1]),Dec(a[2]),new UTF8Encoding(false));return "OK";
- case "RESET":objects.Clear();ids.Clear();next=1;return "OK";
- case "DNEW":return Id(new XmlDocument()).ToString();case "WPLAIN":return Id(new StringWriter()).ToString();case "WNEW":return Id(new Writer{Fail=int.Parse(a[1])}).ToString();case "SNEW":return Id(new Stream{Fail=int.Parse(a[1])}).ToString();case "RNEW":return Id(Reader(Dec(a[1]),int.Parse(a[2]))).ToString();
- case "DROOT":return Id(Obj<XmlDocument>(a[1]).DocumentElement).ToString();case "OUTER":return "T "+Enc(Obj<XmlDocument>(a[1]).OuterXml);
- case "TYPE":return ((int)Obj<XmlNode>(a[1]).NodeType).ToString();case "NAME":return "T "+Enc(Obj<XmlNode>(a[1]).Name);case "VALUE":return "T "+Enc(Obj<XmlNode>(a[1]).Value);case "SETVAL":Obj<XmlNode>(a[1]).Value=Dec(a[2]);break;
- case "ATTR":return Id(Obj<XmlNode>(a[1]).Attributes[Dec(a[2])]).ToString();case "ENUM":return Id(Obj<XmlNode>(a[1]).ChildNodes.GetEnumerator()).ToString();case "MOVE":return Obj<IEnumerator>(a[1]).MoveNext()?"1":"0";case "CURRENT":return Id(Obj<IEnumerator>(a[1]).Current).ToString();
- case "APP":Obj<XmlNode>(a[1]).AppendChild(Obj<XmlNode>(a[2]));break;case "REMOVE":Obj<XmlNode>(a[1]).RemoveChild(Obj<XmlNode>(a[2]));break;case "APPATTR":Obj<XmlNode>(a[1]).Attributes.Append(Obj<XmlAttribute>(a[2]));break;
- case "DELEM":return Id(Obj<XmlDocument>(a[1]).CreateElement(Dec(a[2]))).ToString();case "DATTR":return Id(Obj<XmlDocument>(a[1]).CreateAttribute(Dec(a[2]))).ToString();
- case "LOADXML":Obj<XmlDocument>(a[1]).LoadXml(Dec(a[2]));break;case "LOADFILE":Obj<XmlDocument>(a[1]).Load(Dec(a[2]));break;case "LOADREADER":Obj<XmlDocument>(a[1]).Load(Obj<XmlReader>(a[2]));break;
- case "SAVEFILE":Obj<XmlDocument>(a[1]).Save(Dec(a[2]));break;case "SAVEWRITER":Obj<XmlDocument>(a[1]).Save(Obj<TextWriter>(a[2]));break;case "SAVESTREAM":Obj<XmlDocument>(a[1]).Save(Obj<Stream>(a[2]));break;
- case "WW":Obj<TextWriter>(a[1]).Write(Dec(a[2]));break;case "WFLUSH":Obj<TextWriter>(a[1]).Flush();break;case "WCLOSE":Obj<TextWriter>(a[1]).Close();break;case "SCLOSE":Obj<Stream>(a[1]).Close();break;case "WTOS":return "T "+Enc(Obj<TextWriter>(a[1]).ToString());case "WSTATE":return Obj<Writer>(a[1]).State();case "SSTATE":return Obj<Stream>(a[1]).State();case "RSTATE":var r=Obj<XmlReader>(a[1]);return (int)r.ReadState+","+(r.EOF?1:0)+","+(int)r.NodeType+","+r.Depth;case "RSTEP":var step=Obj<XmlReader>(a[1]);int count=int.Parse(a[2]);if(count<0)step.Close();else for(int i=0;i<count;i++)step.Read();break;case "RCLOSE":Obj<XmlReader>(a[1]).Close();break;
- default:throw new Exception("Unknown DOM command");}return "OK";}catch(Exception e){return Error(e);}}
- static readonly FieldInfo DocField=typeof(XmlConfigSource).GetField("configDoc",BindingFlags.NonPublic|BindingFlags.Instance);
- public static string Flow(string line){var sources=new XmlConfigSource[3];string trace="",fault="";int nth=1,seen=0,mutation=0;Writer lastWriter=null;Stream lastStream=null;XmlReader lastReader=null;
-  void Hit(string name,int i,XmlConfigSource source){trace+=name+";";if(name==fault&&++seen==nth){if(mutation==1)source.Configs.Clear();else if(mutation==2)source.Load(Reader("<Nini><Section Name='Injected'><Key Name='new' Value='created'/></Section></Nini>",0));else throw new InvalidOperationException("event fault");}}
-  void AttachConfig(IConfig config,int i,XmlConfigSource source){if(config==null)return;config.KeySet+=(o,e)=>Hit("k"+i+":"+Enc(config.Name)+":"+Enc(e.KeyName)+":"+Enc(e.KeyValue),i,source);config.KeyRemoved+=(o,e)=>Hit("d"+i+":"+Enc(config.Name)+":"+Enc(e.KeyName)+":"+Enc(e.KeyValue),i,source);}
-  void Attach(XmlConfigSource source,int i){source.Saved+=(o,e)=>Hit("s"+i,i,source);source.Reloaded+=(o,e)=>Hit("r"+i,i,source);source.Configs.ConfigAdded+=(o,e)=>{AttachConfig(e.Config,i,source);Hit("a"+i+":"+Enc(e.Config?.Name),i,source);};source.Configs.ConfigRemoved+=(o,e)=>Hit("c"+i+":"+Enc(e.Config?.Name),i,source);foreach(IConfig c in source.Configs)AttachConfig(c,i,source);}
-  string Snapshot(int i,object prior){var source=sources[i];if(source==null)return "~";var doc=(XmlDocument)DocField.GetValue(source);string state=Enc(source.SavePath)+","+(!ReferenceEquals(prior,doc)?1:0)+",";foreach(IConfig c in source.Configs){int owner=Array.FindIndex(sources,s=>ReferenceEquals(s,c.ConfigSource));state+="["+Enc(c.Name)+":"+owner;foreach(string k in c.GetKeys()){string value;try{value=Enc(c.Get(k));}catch(Exception e){value=Error(e);}state+=":"+Enc(k)+"="+value;}state+="]";}try{state+=";"+Enc(doc?.OuterXml);}catch(Exception e){state+=";"+Error(e);}return state;}
-  var output=new List<string>();foreach(var operation in line.Split('|')){var a=operation.Split(' ');int i=int.Parse(a[1]);var s=sources[i];object old=s==null?null:DocField.GetValue(s);string result="OK";try{string T(int n)=>Dec(a[n]);switch(a[0]){
-   case "NEW":sources[i]=new XmlConfigSource();Attach(sources[i],i);break;case "PATH":sources[i]=new XmlConfigSource(T(2));Attach(sources[i],i);break;case "READER":lastReader=Reader(T(2),int.Parse(a[3]));sources[i]=new XmlConfigSource(lastReader);Attach(sources[i],i);break;
-   case "LOADLAST":if(lastReader!=null){int count=int.Parse(a[2]);if(count<0)lastReader.Close();else for(int z=0;z<count;z++)lastReader.Read();}s.Load(lastReader);break;case "LOADP":s.Load(T(2));break;case "LOADR":lastReader=Reader(T(2),int.Parse(a[3]));s.Load(lastReader);break;case "STRING":result="T "+Enc(s.ToString());break;case "SAVE":s.Save();break;case "SAVEP":s.Save(T(2));break;case "SAVEW":lastWriter=int.Parse(a[2])==-2?null:new Writer{Fail=Math.Max(0,int.Parse(a[2]))};if(int.Parse(a[2])==-1)lastWriter.Close();s.Save(lastWriter);break;case "SAVES":lastStream=int.Parse(a[2])==-2?null:new Stream{Fail=Math.Max(0,int.Parse(a[2]))};if(int.Parse(a[2])==-1)lastStream.Close();s.Save(lastStream);break;case "RELOAD":s.Reload();break;
-   case "AUTO":s.AutoSave=a[2]=="1";break;case "ADD":s.AddConfig(T(2));break;case "SET":(s.Configs[T(2)]??s.AddConfig(T(2))).Set(T(3),T(4));break;case "RAWADD":((ConfigBase)(s.Configs[T(2)]??s.AddConfig(T(2)))).Add(T(3),T(4));break;case "REM":s.Configs[T(2)].Remove(T(3));break;case "DROPSEC":s.Configs.Remove(s.Configs[T(2)]);break;case "CLEAR":s.Configs.Clear();break;case "MERGE":s.Merge(sources[int.Parse(a[2])]);break;
-   case "FILE":File.WriteAllText(T(2),T(3),new UTF8Encoding(false));break;
-   case "FAIL":fault=Dec(a[2]);nth=int.Parse(a[3]);seen=0;mutation=int.Parse(a[4]);break;case "IOSTATE":result=(lastWriter==null?"~":lastWriter.State())+";"+(lastStream==null?"~":lastStream.State())+";"+(lastReader==null?"~":(int)lastReader.ReadState+","+(lastReader.EOF?1:0)+","+(int)lastReader.NodeType+","+lastReader.Depth);break;
-   default:throw new Exception("Unknown source command");}}catch(Exception e){result=Error(e);}output.Add(result+"#"+Snapshot(i,old));}return string.Join("/",output)+"!"+Enc(trace);
- }
- public static void Main(string[] args){CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;CultureInfo.CurrentUICulture=CultureInfo.InvariantCulture;for(string line;(line=Console.ReadLine())!=null;)Console.WriteLine(args.Length>0&&args[0]=="--dom"?Dom(line):Flow(line));}
+using System;
+using System.IO;
+using System.Xml;
+using System.Text;
+using System.Reflection;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Globalization;
+using Nini.Config;
+static class XmlFixture
+{
+    public static string Enc(string s) => s == null ? "~"
+                                          : s.Length == 0
+                                              ? "-"
+                                              : string.Concat(s.Select(c => ((int)c).ToString("x4")));
+    public static string Dec(string s)
+    {
+        if (s == "~")
+            return null;
+        if (s == "-")
+            return "";
+        var a = new char[s.Length / 4];
+        for (int i = 0; i < a.Length; i++)
+            a[i] = (char)Convert.ToUInt16(s.Substring(i * 4, 4), 16);
+        return new string(a);
+    }
+    public static string Error(Exception e)
+    {
+        var x = e as XmlException;
+        return "E " + e.GetType().FullName + " " + unchecked((uint)e.HResult) + " " +
+               Enc((e as ArgumentException)?.ParamName) + " " + Enc(e.Message) + " " + Enc(x?.SourceUri) +
+               " " + (x == null ? "~" : x.LineNumber.ToString()) + " " +
+               (x == null ? "~" : x.LinePosition.ToString()) + " " +
+               Enc((e as FileNotFoundException)?.FileName) + " " +
+               Enc((e as ObjectDisposedException)?.ObjectName);
+    }
+    public sealed class Writer : StringWriter
+    {
+        public int Calls, Flushes, Closes, Fail;
+        void Hit()
+        {
+            if (++Calls == Fail)
+                throw new InvalidOperationException("writer fault");
+        }
+        public override void Write(char c)
+        {
+            Hit();
+            base.Write(c);
+        }
+        public override void Write(string s)
+        {
+            Hit();
+            base.Write(s);
+        }
+        public override void Write(char[] c, int o, int n)
+        {
+            Hit();
+            base.Write(c, o, n);
+        }
+        public override void Flush()
+        {
+            ++Flushes;
+            base.Flush();
+        }
+        protected override void Dispose(bool b)
+        {
+            ++Closes;
+            base.Dispose(b);
+        }
+        public string State() => Enc(ToString()) + "," + Calls + "," + Flushes + "," + Closes;
+    }
+    public sealed class Stream : MemoryStream
+    {
+        public int Calls, Flushes, Closes, Fail;
+        void Hit()
+        {
+            if (++Calls == Fail)
+                throw new InvalidOperationException("stream fault");
+        }
+        public override void Write(byte[] b, int o, int n)
+        {
+            Hit();
+            base.Write(b, o, n);
+        }
+        public override void Write(ReadOnlySpan<byte> b)
+        {
+            Hit();
+            base.Write(b);
+        }
+        public override void Flush()
+        {
+            ++Flushes;
+            base.Flush();
+        }
+        protected override void Dispose(bool b)
+        {
+            ++Closes;
+            base.Dispose(b);
+        }
+        public string State() => Convert.ToHexString(ToArray()).ToLowerInvariant() + "," + Calls +
+                                 "," + Flushes + "," + Closes;
+    }
+    static XmlReader Reader(string text, int mode) =>
+        text == null ? null
+                     : XmlReader.Create(new StringReader(text),
+                                        new XmlReaderSettings { DtdProcessing = (DtdProcessing)mode });
+    static readonly Dictionary<int, object> objects = new();
+    static readonly Dictionary<object, int> ids = new(ReferenceEqualityComparer.Instance);
+    static int next = 1;
+    static int Id(object o)
+    {
+        if (o == null)
+            return 0;
+        if (!ids.TryGetValue(o, out int id))
+        {
+            id = next++;
+            ids.Add(o, id);
+            objects.Add(id, o);
+        }
+        return id;
+    }
+    static T Obj<T>(string id)
+        where T : class => id == "0" ? null : (T) objects[int.Parse(id)];
+    public static string Dom(string line)
+    {
+        try
+        {
+            var a = line.Split(' ');
+            switch (a[0])
+            {
+            case "FILEWRITE":
+                File.WriteAllText(Dec(a[1]), Dec(a[2]), new UTF8Encoding(false));
+                return "OK";
+            case "RESET":
+                objects.Clear();
+                ids.Clear();
+                next = 1;
+                return "OK";
+            case "DNEW":
+                return Id(new XmlDocument()).ToString();
+            case "WPLAIN":
+                return Id(new StringWriter()).ToString();
+            case "WNEW":
+                return Id(new Writer { Fail = int.Parse(a[1]) }).ToString();
+            case "SNEW":
+                return Id(new Stream { Fail = int.Parse(a[1]) }).ToString();
+            case "RNEW":
+                return Id(Reader(Dec(a[1]), int.Parse(a[2]))).ToString();
+            case "DROOT":
+                return Id(Obj<XmlDocument>(a[1]).DocumentElement).ToString();
+            case "OUTER":
+                return "T " + Enc(Obj<XmlDocument>(a[1]).OuterXml);
+            case "TYPE":
+                return ((int)Obj<XmlNode>(a[1]).NodeType).ToString();
+            case "NAME":
+                return "T " + Enc(Obj<XmlNode>(a[1]).Name);
+            case "VALUE":
+                return "T " + Enc(Obj<XmlNode>(a[1]).Value);
+            case "SETVAL":
+                Obj<XmlNode>(a[1]).Value = Dec(a[2]);
+                break;
+            case "ATTR":
+                return Id(Obj<XmlNode>(a[1]).Attributes[Dec(a[2])]).ToString();
+            case "ENUM":
+                return Id(Obj<XmlNode>(a[1]).ChildNodes.GetEnumerator()).ToString();
+            case "MOVE":
+                return Obj<IEnumerator>(a[1]).MoveNext() ? "1" : "0";
+            case "CURRENT":
+                return Id(Obj<IEnumerator>(a[1]).Current).ToString();
+            case "APP":
+                Obj<XmlNode>(a[1]).AppendChild(Obj<XmlNode>(a[2]));
+                break;
+            case "REMOVE":
+                Obj<XmlNode>(a[1]).RemoveChild(Obj<XmlNode>(a[2]));
+                break;
+            case "APPATTR":
+                Obj<XmlNode>(a[1]).Attributes.Append(Obj<XmlAttribute>(a[2]));
+                break;
+            case "DELEM":
+                return Id(Obj<XmlDocument>(a[1]).CreateElement(Dec(a[2]))).ToString();
+            case "DATTR":
+                return Id(Obj<XmlDocument>(a[1]).CreateAttribute(Dec(a[2]))).ToString();
+            case "LOADXML":
+                Obj<XmlDocument>(a[1]).LoadXml(Dec(a[2]));
+                break;
+            case "LOADFILE":
+                Obj<XmlDocument>(a[1]).Load(Dec(a[2]));
+                break;
+            case "LOADREADER":
+                Obj<XmlDocument>(a[1]).Load(Obj<XmlReader>(a[2]));
+                break;
+            case "SAVEFILE":
+                Obj<XmlDocument>(a[1]).Save(Dec(a[2]));
+                break;
+            case "SAVEWRITER":
+                Obj<XmlDocument>(a[1]).Save(Obj<TextWriter>(a[2]));
+                break;
+            case "SAVESTREAM":
+                Obj<XmlDocument>(a[1]).Save(Obj<Stream>(a[2]));
+                break;
+            case "WW":
+                Obj<TextWriter>(a[1]).Write(Dec(a[2]));
+                break;
+            case "WFLUSH":
+                Obj<TextWriter>(a[1]).Flush();
+                break;
+            case "WCLOSE":
+                Obj<TextWriter>(a[1]).Close();
+                break;
+            case "SCLOSE":
+                Obj<Stream>(a[1]).Close();
+                break;
+            case "WTOS":
+                return "T " + Enc(Obj<TextWriter>(a[1]).ToString());
+            case "WSTATE":
+                return Obj<Writer>(a[1]).State();
+            case "SSTATE":
+                return Obj<Stream>(a[1]).State();
+            case "RSTATE":
+                var r = Obj<XmlReader>(a[1]);
+                return (int)r.ReadState + "," + (r.EOF ? 1 : 0) + "," + (int)r.NodeType + "," + r.Depth;
+            case "RSTEP":
+                var step = Obj<XmlReader>(a[1]);
+                int count = int.Parse(a[2]);
+                if (count < 0)
+                    step.Close();
+                else
+                    for (int i = 0; i < count; i++)
+                        step.Read();
+                break;
+            case "RCLOSE":
+                Obj<XmlReader>(a[1]).Close();
+                break;
+            default:
+                throw new Exception("Unknown DOM command");
+            }
+            return "OK";
+        }
+        catch (Exception e)
+        {
+            return Error(e);
+        }
+    }
+    static readonly FieldInfo DocField =
+        typeof(XmlConfigSource).GetField("configDoc", BindingFlags.NonPublic | BindingFlags.Instance);
+    public static string Flow(string line)
+    {
+        var sources = new XmlConfigSource[3];
+        string trace = "", fault = "";
+        int nth = 1, seen = 0, mutation = 0;
+        Writer lastWriter = null;
+        Stream lastStream = null;
+        XmlReader lastReader = null;
+        void Hit(string name, int i, XmlConfigSource source)
+        {
+            trace += name + ";";
+            if (name == fault && ++seen == nth)
+            {
+                if (mutation == 1)
+                    source.Configs.Clear();
+                else if (mutation == 2)
+                    source.Load(Reader(
+                        "<Nini><Section Name='Injected'><Key Name='new' Value='created'/></Section></Nini>",
+                        0));
+                else
+                    throw new InvalidOperationException("event fault");
+            }
+        }
+        void AttachConfig(IConfig config, int i, XmlConfigSource source)
+        {
+            if (config == null)
+                return;
+            config.KeySet += (o, e) => Hit(
+                "k" + i + ":" + Enc(config.Name) + ":" + Enc(e.KeyName) + ":" + Enc(e.KeyValue), i, source);
+            config.KeyRemoved += (o, e) => Hit(
+                "d" + i + ":" + Enc(config.Name) + ":" + Enc(e.KeyName) + ":" + Enc(e.KeyValue), i, source);
+        }
+        void Attach(XmlConfigSource source, int i)
+        {
+            source.Saved += (o, e) => Hit("s" + i, i, source);
+            source.Reloaded += (o, e) => Hit("r" + i, i, source);
+            source.Configs.ConfigAdded += (o, e) =>
+            {
+                AttachConfig(e.Config, i, source);
+                Hit("a" + i + ":" + Enc(e.Config?.Name), i, source);
+            };
+            source.Configs.ConfigRemoved += (o, e) => Hit("c" + i + ":" + Enc(e.Config?.Name), i, source);
+            foreach (IConfig c in source.Configs)
+                AttachConfig(c, i, source);
+        }
+        string Snapshot(int i, object prior)
+        {
+            var source = sources[i];
+            if (source == null)
+                return "~";
+            var doc = (XmlDocument)DocField.GetValue(source);
+            string state = Enc(source.SavePath) + "," + (!ReferenceEquals(prior, doc) ? 1 : 0) + ",";
+            foreach (IConfig c in source.Configs)
+            {
+                int owner = Array.FindIndex(sources, s => ReferenceEquals(s, c.ConfigSource));
+                state += "[" + Enc(c.Name) + ":" + owner;
+                foreach (string k in c.GetKeys())
+                {
+                    string value;
+                    try
+                    {
+                        value = Enc(c.Get(k));
+                    }
+                    catch (Exception e)
+                    {
+                        value = Error(e);
+                    }
+                    state += ":" + Enc(k) + "=" + value;
+                }
+                state += "]";
+            }
+            try
+            {
+                state += ";" + Enc(doc?.OuterXml);
+            }
+            catch (Exception e)
+            {
+                state += ";" + Error(e);
+            }
+            return state;
+        }
+        var output = new List<string>();
+        foreach (var operation in line.Split('|'))
+        {
+            var a = operation.Split(' ');
+            int i = int.Parse(a[1]);
+            var s = sources[i];
+            object old = s == null ? null : DocField.GetValue(s);
+            string result = "OK";
+            try
+            {
+                string T(int n) => Dec(a[n]);
+                switch (a[0])
+                {
+                case "NEW":
+                    sources[i] = new XmlConfigSource();
+                    Attach(sources[i], i);
+                    break;
+                case "PATH":
+                    sources[i] = new XmlConfigSource(T(2));
+                    Attach(sources[i], i);
+                    break;
+                case "READER":
+                    lastReader = Reader(T(2), int.Parse(a[3]));
+                    sources[i] = new XmlConfigSource(lastReader);
+                    Attach(sources[i], i);
+                    break;
+                case "LOADLAST":
+                    if (lastReader != null)
+                    {
+                        int count = int.Parse(a[2]);
+                        if (count < 0)
+                            lastReader.Close();
+                        else
+                            for (int z = 0; z < count; z++)
+                                lastReader.Read();
+                    }
+                    s.Load(lastReader);
+                    break;
+                case "LOADP":
+                    s.Load(T(2));
+                    break;
+                case "LOADR":
+                    lastReader = Reader(T(2), int.Parse(a[3]));
+                    s.Load(lastReader);
+                    break;
+                case "STRING":
+                    result = "T " + Enc(s.ToString());
+                    break;
+                case "SAVE":
+                    s.Save();
+                    break;
+                case "SAVEP":
+                    s.Save(T(2));
+                    break;
+                case "SAVEW":
+                    lastWriter =
+                        int.Parse(a[2]) == -2 ? null : new Writer { Fail = Math.Max(0, int.Parse(a[2])) };
+                    if (int.Parse(a[2]) == -1)
+                        lastWriter.Close();
+                    s.Save(lastWriter);
+                    break;
+                case "SAVES":
+                    lastStream =
+                        int.Parse(a[2]) == -2 ? null : new Stream { Fail = Math.Max(0, int.Parse(a[2])) };
+                    if (int.Parse(a[2]) == -1)
+                        lastStream.Close();
+                    s.Save(lastStream);
+                    break;
+                case "RELOAD":
+                    s.Reload();
+                    break;
+                case "AUTO":
+                    s.AutoSave = a[2] == "1";
+                    break;
+                case "ADD":
+                    s.AddConfig(T(2));
+                    break;
+                case "SET":
+                    (s.Configs[T(2)] ?? s.AddConfig(T(2))).Set(T(3), T(4));
+                    break;
+                case "RAWADD":
+                    ((ConfigBase)(s.Configs[T(2)] ?? s.AddConfig(T(2)))).Add(T(3), T(4));
+                    break;
+                case "REM":
+                    s.Configs[T(2)].Remove(T(3));
+                    break;
+                case "DROPSEC":
+                    s.Configs.Remove(s.Configs[T(2)]);
+                    break;
+                case "CLEAR":
+                    s.Configs.Clear();
+                    break;
+                case "MERGE":
+                    s.Merge(sources[int.Parse(a[2])]);
+                    break;
+                case "FILE":
+                    File.WriteAllText(T(2), T(3), new UTF8Encoding(false));
+                    break;
+                case "FAIL":
+                    fault = Dec(a[2]);
+                    nth = int.Parse(a[3]);
+                    seen = 0;
+                    mutation = int.Parse(a[4]);
+                    break;
+                case "IOSTATE":
+                    result =
+                        (lastWriter == null ? "~" : lastWriter.State()) + ";" +
+                        (lastStream == null ? "~" : lastStream.State()) + ";" +
+                        (lastReader == null ? "~"
+                                            : (int)lastReader.ReadState + "," + (lastReader.EOF ? 1 : 0) +
+                                                  "," + (int)lastReader.NodeType + "," + lastReader.Depth);
+                    break;
+                default:
+                    throw new Exception("Unknown source command");
+                }
+            }
+            catch (Exception e)
+            {
+                result = Error(e);
+            }
+            output.Add(result + "#" + Snapshot(i, old));
+        }
+        return string.Join("/", output) + "!" + Enc(trace);
+    }
+    public static void Main(string[] args)
+    {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
+        for (string line; (line = Console.ReadLine()) != null;)
+            Console.WriteLine(args.Length > 0 && args[0] == "--dom" ? Dom(line) : Flow(line));
+    }
 }

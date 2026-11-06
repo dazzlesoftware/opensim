@@ -1,8 +1,83 @@
 #pragma warning disable SYSLIB0006
-using System;using System.Collections;using System.Globalization;using System.Text;using Nini.Config;
-class Program{
-static string Dec(string s){if(s=="-")return null;if(s==".")return "";var v=new char[s.Length/4];for(int i=0;i<v.Length;i++)v[i]=(char)(Convert.ToInt32(s.Substring(i*4,2),16)|(Convert.ToInt32(s.Substring(i*4+2,2),16)<<8));return new string(v);}static string Hex(string s){if(s==null)return "-";if(s.Length==0)return ".";var b=new StringBuilder();foreach(char c in s)b.Append(((byte)c).ToString("x2")).Append(((byte)(c>>8)).ToString("x2"));return b.ToString();}static string Error(Exception e)=>"EX:"+e.GetType().FullName+":"+unchecked((uint)e.HResult)+":"+Hex(e.Message)+":"+Hex((e as ArgumentException)?.ParamName);
-static readonly CaseInsensitiveComparer comparer=new(CultureInfo.InvariantCulture);
-static string Run(string row){var a=row.Split(' ');string left=Dec(a[1]);try{if(a[0]=="L"){var output=CultureInfo.InvariantCulture.TextInfo.ToLower(left);return "L:"+Hex(output)+(Object.ReferenceEquals(output,left)?"@R":"@N");}string right=Dec(a[2]);if(a[0]=="E"){int c=comparer.Compare(left,right);string aliasResult="-";if(left!=null&&right!=null){var alias=new AliasText();alias.AddAlias("Key",left,17);aliasResult=alias.ContainsInt("kEy",right)?"1":"0";}return "C:"+c+":"+aliasResult;}return "I:"+CultureInfo.InvariantCulture.CompareInfo.IndexOf(left,right,int.Parse(a[3]),CompareOptions.None);}catch(Exception e){return Error(e);}}
-static void Main(string[] args){CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;CultureInfo.CurrentUICulture=CultureInfo.InvariantCulture;if(args.Length>0&&args[0]=="--runtime"){Console.WriteLine(Environment.Version);Console.WriteLine(typeof(CultureInfo).Assembly.Location);Console.WriteLine(CultureInfo.InvariantCulture.CompareInfo.Version.FullVersion);return;}string row;while((row=Console.ReadLine())!=null)Console.WriteLine(Run(row));}
+using System;
+using System.Collections;
+using System.Globalization;
+using System.Text;
+using Nini.Config;
+class Program
+{
+    static string Dec(string s)
+    {
+        if (s == "-")
+            return null;
+        if (s == ".")
+            return "";
+        var v = new char[s.Length / 4];
+        for (int i = 0; i < v.Length; i++)
+            v[i] = (char)(Convert.ToInt32(s.Substring(i * 4, 2), 16) |
+                          (Convert.ToInt32(s.Substring(i * 4 + 2, 2), 16) << 8));
+        return new string(v);
+    }
+    static string Hex(string s)
+    {
+        if (s == null)
+            return "-";
+        if (s.Length == 0)
+            return ".";
+        var b = new StringBuilder();
+        foreach (char c in s)
+            b.Append(((byte)c).ToString("x2")).Append(((byte)(c >> 8)).ToString("x2"));
+        return b.ToString();
+    }
+    static string Error(Exception e) => "EX:" + e.GetType().FullName + ":" + unchecked((uint)e.HResult) +
+                                        ":" + Hex(e.Message) + ":" +
+                                        Hex((e as ArgumentException)?.ParamName);
+    static readonly CaseInsensitiveComparer comparer = new(CultureInfo.InvariantCulture);
+    static string Run(string row)
+    {
+        var a = row.Split(' ');
+        string left = Dec(a[1]);
+        try
+        {
+            if (a[0] == "L")
+            {
+                var output = CultureInfo.InvariantCulture.TextInfo.ToLower(left);
+                return "L:" + Hex(output) + (Object.ReferenceEquals(output, left) ? "@R" : "@N");
+            }
+            string right = Dec(a[2]);
+            if (a[0] == "E")
+            {
+                int c = comparer.Compare(left, right);
+                string aliasResult = "-";
+                if (left != null && right != null)
+                {
+                    var alias = new AliasText();
+                    alias.AddAlias("Key", left, 17);
+                    aliasResult = alias.ContainsInt("kEy", right) ? "1" : "0";
+                }
+                return "C:" + c + ":" + aliasResult;
+            }
+            return "I:" + CultureInfo.InvariantCulture.CompareInfo.IndexOf(left, right, int.Parse(a[3]),
+                                                                           CompareOptions.None);
+        }
+        catch (Exception e)
+        {
+            return Error(e);
+        }
+    }
+    static void Main(string[] args)
+    {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
+        if (args.Length > 0 && args[0] == "--runtime")
+        {
+            Console.WriteLine(Environment.Version);
+            Console.WriteLine(typeof(CultureInfo).Assembly.Location);
+            Console.WriteLine(CultureInfo.InvariantCulture.CompareInfo.Version.FullVersion);
+            return;
+        }
+        string row;
+        while ((row = Console.ReadLine()) != null)
+            Console.WriteLine(Run(row));
+    }
 }

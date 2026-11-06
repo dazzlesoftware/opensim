@@ -6,6 +6,12 @@
 #include "opensim/framework/culture_prefix.hpp"
 #include "opensim/services/sqlite_connection.hpp"
 #include "opensim/services/user_account.hpp"
+#ifdef OPENSIM_HAVE_POSTGRESQL
+#include "pgsql_asset_store.hpp"
+#endif
+#ifdef OPENSIM_HAVE_MYSQL
+#include "mysql_asset_store.hpp"
+#endif
 namespace opensim::services {
 namespace {
 template <class T> T &required(const std::shared_ptr<T> &value) {
@@ -77,6 +83,14 @@ void NativeAssetStorageBackend::register_loader(std::string module, LoaderFactor
 std::shared_ptr<InitializableAssetStore> NativeAssetStorageBackend::load_store(const std::string &module) {
     if (auto entry = stores_.find(module); entry != stores_.end())
         return entry->second();
+#ifdef OPENSIM_HAVE_POSTGRESQL
+    if (module == "OpenSim.Data.PGSQL.dll" || module == "OpenSim.Data.PGSQL.dll:PGSQLAssetData")
+        return make_pgsql_asset_store(log_);
+#endif
+#ifdef OPENSIM_HAVE_MYSQL
+    if (module == "OpenSim.Data.MySQL.dll" || module == "OpenSim.Data.MySQL.dll:MySQLAssetData")
+        return make_mysql_asset_store(log_);
+#endif
     if (module == "OpenSim.Data.SQLite.dll" || module == "OpenSim.Data.SQLite.dll:SQLiteAssetData") {
         auto self = shared_from_this();
         return std::make_shared<SqliteAssetPlugin>(

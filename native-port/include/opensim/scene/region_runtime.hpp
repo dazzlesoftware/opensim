@@ -1,6 +1,9 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #pragma once
+#include <chrono>
+#include <filesystem>
+#include <map>
 #include "opensim/scene/viewer_region.hpp"
 #include "opensim/scene/basic_profile.hpp"
 #include "opensim/scene/profile_requests.hpp"
@@ -11,9 +14,11 @@
 #include "opensim/scene/inventory_new.hpp"
 #include "opensim/framework/asset_base.hpp"
 #include "opensim/scene/texture_layers.hpp"
+#include "opensim/scene/map_tile.hpp"
 #include "opensim/framework/task_inventory_item.hpp"
 #include "opensim/services/agent_launch.hpp"
 #include "opensim/services/simulation_agent_updates.hpp"
+#include "opensim/services/simulation_objects.hpp"
 #include "opensim/services/presence_service.hpp"
 #include "opensim/services/user_account.hpp"
 #include "opensim/services/scene_capabilities.hpp"
@@ -22,10 +27,11 @@ namespace opensim::scene {
 // Host policies remain explicit while estate/parcel modules are being ported.
 // Both login admission and viewer traffic use the same circuit/presence state.
 struct RegionInstantMessage;
+using AttachmentScriptStates = std::map<framework::Uuid, std::vector<std::uint8_t>>;
 struct EstateRegionSettings {
     std::uint32_t flags;
     std::int32_t agent_limit, maturity;
-    float object_bonus;
+    double object_bonus;
 };
 struct ViewerGroupTitle {
     framework::Uuid role;
@@ -86,8 +92,39 @@ struct AgentPreferences {
 struct RegionSpawnPoint {
     float yaw = 0, pitch = 0, distance = 0;
 };
-struct RegionPolicies {
+struct EstateSettings {
+    framework::Uuid owner;
+    float estate_billable_factor = 0.f;
+    std::string estate_name = "My Estate";
+    std::string estate_abuse_email;
+    std::uint32_t estate_detail_only_flags = 0x04020000u;
+    std::vector<framework::Uuid> estate_managers, estate_users, estate_groups, estate_bans;
+    std::uint32_t estate_menu_flags = 0x10000006u;
+    std::uint32_t estate_handshake_only_flags = 0x00108020u;
+    std::uint32_t estate_id = 0, parent_estate_id = 1;
+    std::int32_t estate_price_per_meter = 1, estate_redirect_x = 0, estate_redirect_y = 0;
+};
+
+struct EstateAccessChanges {
+    std::optional<bool> user, group, manager, ban;
+
+    explicit operator bool() const {
+        return user || group || manager || ban;
+    }
+};
+
+using RelatedEstateAccessEdit = std::function<EstateAccessChanges(EstateSettings&)>;
+
+struct RegionPolicies : EstateSettings {
+    bool media_on_a_prim_enabled = true;
+    bool materials_enabled = true;
     bool environment_enabled = false;
+    bool parcel_dwell_enabled = false;
+    std::function<std::chrono::steady_clock::time_point()> parcel_dwell_clock;
+    std::function<void(framework::Uuid, float)> persist_parcel_dwell;
+    bool force_parcel_bans = true;
+    bool show_parcel_ban_lines = true;
+    float ban_line_safe_height = 100.f;
     std::function<void(std::optional<framework::Uuid>, std::optional<std::string>)> persist_environment;
     network::CircuitTransportOptions circuit_transport;
     int udp_receive_buffer_bytes = 0;
@@ -113,17 +150,26 @@ struct RegionPolicies {
     std::optional<network::lludp::Packet> sample_economy_data;
     bool sample_economy_sell_enabled = true;
     std::function<std::optional<services::GridRegion>(std::uint64_t)> teleport_destination;
+    std::function<bool(services::GridRegion&, framework::Vector3,
+                       std::shared_ptr<services::SimulationObject>)> send_crossing_object;
+    bool allow_script_crossing = true;
+    bool allow_avatar_crossing = true;
+    std::function<std::optional<services::GridRegion>(framework::Uuid)> parcel_region_by_id;
+    std::function<network::Value(const services::GridRegion&, std::uint64_t, std::uint32_t, std::uint32_t)>
+        remote_parcel_data;
+    std::function<void(std::function<void()>)> schedule_region_lookup;
+    std::function<std::uint64_t(framework::Uuid)> lookup_region_handle;
     std::function<bool(const framework::Uuid&, const framework::Uuid&)> teleport_arrived;
     std::function<void(services::GridRegion&, framework::Uuid, framework::Uuid)> cancel_teleport_destination;
     bool disable_teleport_cancellation = false;
     std::function<void(const std::string&)> release_teleport_source;
-    std::function<std::string(services::GridRegion&, const ViewerAgent&, framework::Vector3,
+    std::function<std::string(services::GridRegion&, const ViewerAgent&, framework::Vector3, bool,
                               services::LoginTransferContext&)>
         teleport_access;
     std::function<std::optional<network::lludp::Packet>(
         const services::GridRegion&, services::GridRegion&, services::GridRegion&, const ViewerAgent&,
         framework::Vector3, framework::Vector3, services::LoginTransferContext&, const framework::Uuid&,
-        std::uint32_t, std::string&)>
+        std::uint32_t, const framework::AgentData*, std::string&)>
         teleport_create;
     std::function<std::string(const ViewerAgent&, framework::Uuid, network::lludp::Packet&)> resolve_landmark;
     std::function<void(const RegionInstantMessage&)> forward_instant_message;
@@ -134,6 +180,7 @@ struct RegionPolicies {
         grant_friend_rights;
     std::function<std::vector<RegionInstantMessage>(framework::Uuid)> pending_friendships;
     std::function<std::vector<framework::Uuid>(framework::Uuid)> online_friends;
+    std::function<bool(framework::Uuid, framework::Uuid)> is_friend;
     std::function<void(framework::Uuid, framework::Uuid, bool)> friend_status_changed;
     std::function<std::vector<RegionInstantMessage>(framework::Uuid)> retrieve_offline_messages;
     std::function<bool(framework::Uuid sender, framework::Uuid recipient)> can_instant_message;
@@ -148,14 +195,55 @@ struct RegionPolicies {
     std::function<bool(const framework::AgentCircuitData&, std::string_view)> verify_foreign_client;
     std::function<bool(const std::shared_ptr<framework::AgentCircuitData>&, std::string&)> authorize;
     std::function<bool(framework::Uuid, const framework::Vector3&, std::string&)> can_rez;
+    bool enforce_parcel_rez_permissions = false;
     std::function<bool(framework::Uuid, const SceneObject&)> can_edit;
+    std::function<bool(framework::Uuid, const SceneObject&)> object_owner_rights;
     std::function<bool(framework::Uuid, const SceneObject&)> can_move;
     std::function<std::shared_ptr<const ScriptParcel>(framework::Vector3)> script_parcel_at;
     std::function<std::vector<std::shared_ptr<const ScriptParcel>>()> list_parcels;
     std::function<void(std::shared_ptr<const ScriptParcel>, bool persist)> update_parcel_access;
+    std::function<void(std::shared_ptr<const ScriptParcel>)> update_parcel_clean_time;
+    std::function<void(std::shared_ptr<const ScriptParcel>)> update_parcel_music;
+    std::function<void(std::shared_ptr<const ScriptParcel>)> update_parcel_media;
+    std::function<void(std::shared_ptr<const ScriptParcel>)> update_parcel_properties;
+    std::function<void(const std::vector<std::shared_ptr<const ScriptParcel>>&,
+                       const std::vector<framework::Uuid>&)> update_parcel_topology;
+    std::function<void(std::shared_ptr<const ScriptParcel>, bool reset_claim)> update_parcel_ownership;
+    std::function<void(std::shared_ptr<const ScriptParcel>)> update_parcel_purchase;
+    std::function<void(std::shared_ptr<const ScriptParcel>)> mark_parcel_as_content;
+    framework::Uuid administrator_parcel_owner, administrator_parcel_group;
+    std::string administrator_parcel_name = "Admin Parcel";
     std::function<bool(framework::Uuid)> is_local_grid_user;
     std::function<std::optional<services::UserAccount>(framework::Uuid)> script_account;
     std::function<std::optional<services::GridRegion>(std::string_view, bool)> script_grid_region;
+    std::function<std::vector<services::GridRegion>(const std::string&)> map_region_search;
+    std::function<std::vector<services::GridRegion>(int, int, int, int)> map_region_range;
+    bool map_layer_enabled = true;
+    MapJpegEncoder encode_map_jpeg;
+    MapJpeg2000Encoder encode_map_jpeg2000;
+    TexturedMapPalette map_palette;
+    std::function<std::optional<MapColor>(framework::Uuid)> map_texture_average;
+    bool textured_map_tiles = false;
+    bool draw_map_object_volumes = false;
+    bool warp_map_tiles = false;
+    bool average_warp_map_textures = false;
+    bool texture_warp_prims = true;
+    float warp_prim_min_height = -100.f;
+    float warp_prim_max_height = 4086.f;
+    std::filesystem::path static_map_file;
+    bool generate_map_on_startup = true;
+    std::function<MapBitmap(framework::Uuid)> load_map_asset;
+    std::filesystem::path map_tiles_directory;
+    int map_export_view_distance = 255;
+    bool map_export_scale = false;
+    bool map_export_region_name = false;
+    std::chrono::seconds map_tile_refresh{0};
+    bool local_map_assets = false;
+    std::function<void(std::shared_ptr<framework::AssetBase>)> store_map_tile;
+    std::function<void(framework::Uuid terrain, framework::Uuid parcel)> save_map_tiles;
+    std::function<void()> publish_map_tiles;
+    int map_item_failure_seconds = 600;
+    std::function<network::Value(std::uint64_t)> request_remote_map_items;
     std::function<framework::Uuid(std::string_view, std::string_view, std::string_view)> script_account_key;
     std::function<bool(framework::Uuid, framework::Uuid, framework::Vector3, framework::Vector3)> set_home;
     std::function<std::int32_t(std::int32_t)> script_parcel_capacity;
@@ -171,6 +259,7 @@ struct RegionPolicies {
     float nonphysical_prim_max = 256.f;
     float physical_prim_min = 0.01f;
     float physical_prim_max = 10.f;
+    int physical_linkset_capacity = 0;
     std::function<void()> parcel_prim_count_tainted;
     std::function<std::uint32_t(framework::Uuid, const SceneObject&)> client_flags;
     std::function<bool(framework::Uuid, const SceneObject&)> can_edit_inventory;
@@ -180,36 +269,45 @@ struct RegionPolicies {
     bool implicit_gods = false;
     std::function<bool(framework::Uuid)> estate_manager;
     bool estate_manager_is_god = false;
-    float estate_billable_factor = 0.f;
-    std::string estate_name = "My Estate";
-    std::string estate_abuse_email;
-    std::uint32_t estate_detail_only_flags = 0x04020000u;
-    std::vector<framework::Uuid> estate_managers, estate_users, estate_groups, estate_bans;
-    std::function<void(framework::Uuid, framework::Uuid, std::optional<bool>, std::optional<bool>,
-                       std::optional<bool>, std::optional<bool>)>
+    bool estate_owner_is_god = false;
+    std::function<EstateSettings()> reload_estate_settings;
+    std::function<void(const EstateSettings&)> persist_estate_settings;
+    bool estate_change_info_cap_enabled = false;
+    bool allow_viewer_restart = true;
+    bool skip_restart_delay_when_empty = false;
+    std::function<void(bool)> restart_region;
+    std::function<bool(const EstateSettings&, framework::Uuid, framework::Uuid,
+                       const EstateAccessChanges&, const RelatedEstateAccessEdit&)>
         persist_estate_access;
     std::function<void(framework::Uuid, std::uint32_t)> persist_estate_covenant;
     std::function<void(framework::Uuid, const std::vector<RegionSpawnPoint>&)> persist_telehub;
-    std::function<void(framework::Uuid)> forward_estate_covenant;
-    std::function<void(framework::Uuid, std::string, std::string)> forward_estate_message;
-    std::function<void(std::optional<framework::Uuid>)> forward_estate_teleport_home;
+    std::function<void(std::uint32_t)> forward_estate_update;
+    std::function<void(std::uint32_t, framework::Uuid)> forward_estate_covenant;
+    std::function<void(std::uint32_t, framework::Uuid, std::string, std::string)> forward_estate_message;
+    std::function<void(std::uint32_t, std::optional<framework::Uuid>)> forward_estate_teleport_home;
     bool estate_communications = false;
     bool bypass_estate_permissions = false;
     bool strict_estate_access = true;
-    std::uint32_t estate_menu_flags = 0x10000006u;
-    std::uint32_t estate_handshake_only_flags = 0x00108020u;
     bool enforce_estate_age = false;
     bool enforce_estate_identity = false;
     std::function<std::uint32_t(framework::Uuid)> account_profile_flags;
     bool telehub_allow_landmarks = false;
     std::string spawn_point_routing = "closest";
     bool use_sl_landing_behavior = false;
-    std::uint32_t estate_id = 0, parent_estate_id = 1;
-    std::int32_t estate_price_per_meter = 1, estate_redirect_x = 0, estate_redirect_y = 0;
     std::uint32_t region_agent_capacity = 100, region_object_capacity = 15000;
     std::string region_type;
+    int script_whisper_range = 10;
+    int script_chat_range = 20;
+    int script_shout_range = 100;
+    bool object_chat_enabled = true;
+    int object_whisper_range = 10;
+    int object_say_range = 20;
+    int object_shout_range = 100;
+    int max_listens_per_region = 1000;
+    int max_listens_per_script = 65;
     std::function<bool(framework::Uuid, const SceneObject&, const TaskInventoryFileItem&)> can_edit_script;
     std::function<void(std::shared_ptr<framework::AssetBase>)> store_asset;
+    std::function<void(framework::Uuid)> expire_material_asset_cache;
     std::function<std::optional<std::string>(std::shared_ptr<framework::AssetBase>)> store_inventory_asset;
     std::function<bool(framework::Uuid, framework::Uuid, framework::Uuid)> can_edit_inventory_notecard;
     std::function<bool(framework::Uuid, framework::Uuid)> can_edit_user_inventory_script;
@@ -232,7 +330,17 @@ struct RegionPolicies {
     std::optional<LegacyInventoryBackend> inventory;
     // Real avatar inventory storage remains alive until the region stops.
     services::InventoryService* inventory_service = nullptr;
+    bool coalesce_returned_objects = true;
+    bool use_trash_on_delete = true;
+    bool attachments_enabled = true;
+    bool wear_replaces_all = true;
+    bool prim_limits_enabled = false;
+    int max_prims_per_user = -1;
     std::function<bool(framework::Uuid, const framework::AvatarAppearance&)> save_appearance;
+    std::function<AttachmentScriptStates(framework::Uuid, framework::Uuid, framework::Uuid)>
+        load_attachment_scripts;
+    std::function<void(framework::Uuid, framework::Uuid, framework::Uuid, const AttachmentScriptStates&)>
+        save_attachment_scripts;
     int appearance_save_delay_seconds = 5;
     int appearance_send_delay_seconds = 2;
     std::function<bool(framework::Uuid, framework::Uuid, framework::Uuid)> can_copy_task_inventory;
@@ -246,6 +354,7 @@ struct RegionPolicies {
     std::function<std::vector<framework::Uuid>(framework::Uuid)> estate_group_memberships;
     std::function<std::vector<std::shared_ptr<services::EventGroupMembership>>(framework::Uuid)>
         viewer_group_memberships;
+    std::function<std::optional<std::string>(framework::Uuid)> group_record_name;
     std::function<std::optional<ActiveViewerGroup>(framework::Uuid, std::optional<framework::Uuid>)>
         viewer_active_group;
     std::function<std::vector<ViewerGroupTitle>(framework::Uuid, framework::Uuid)> viewer_group_titles;
@@ -272,6 +381,8 @@ struct RegionPolicies {
     bool legacy_sit_offsets = true;
     std::int32_t script_heap_limit_bytes = 1024 * 1024;
     float script_delay_factor = 1.f;
+    float script_distance_factor = 1.f;
+    bool disable_underground_movement = true;
     std::optional<std::string> script_url_host;
     std::string script_http_shard = "OpenSim";
     std::string script_http_user_agent;
@@ -306,8 +417,12 @@ struct RegionInstantMessage {
     std::u16string sender_name, message;
     std::vector<std::uint8_t> bucket;
 };
-class RegionRuntime final : public services::ISimulationLogin, public services::ISimulationAgentUpdates {
+class RegionRuntime final : public services::ISimulationLogin, public services::ISimulationAgentUpdates,
+                            public services::ISimulationObjects {
   public:
+    std::shared_ptr<framework::AgentTransferScene> get_scene(const framework::Uuid& region) override;
+    bool create_object(services::GridRegion* destination, const framework::Vector3& position,
+                       std::shared_ptr<services::SimulationObject> object, bool local_call) override;
     bool kick_viewer(framework::Uuid, std::u16string_view reason);
     bool receive_grid_moderation(const RegionInstantMessage&);
     bool alert_viewer(framework::Uuid, const std::string& message);
@@ -325,7 +440,13 @@ class RegionRuntime final : public services::ISimulationLogin, public services::
     network::UdpEndpoint start(std::shared_ptr<server::RegistryCapabilityListener> listener,
                                std::shared_ptr<server::RegistryCapabilityListener> secure_script_listener = {},
                                std::shared_ptr<server::RegistryCapabilityListener> plain_script_listener = {});
+    void generate_startup_map_tiles();
+    bool world_map_enabled() const;
+    void generate_map_from_console();
+    void export_world_map(const std::filesystem::path& path) const;
     void poll(double host_sleep_ms = 0.);
+    void schedule_restart(std::vector<int> alerts, std::string message, bool notice);
+    void abort_restart(const std::string& message);
     void stop(const std::function<void()>& save_scene = {});
     bool can_edit_task_inventory(framework::Uuid object, framework::Uuid agent) const;
     bool can_edit_task_script(framework::Uuid item, framework::Uuid object, framework::Uuid agent) const;
@@ -342,6 +463,15 @@ class RegionRuntime final : public services::ISimulationLogin, public services::
     std::int32_t active_script_count() const;
 
     services::GridRegion descriptor() const;
+    std::optional<network::HttpResponse> remote_map_items(const network::HttpRequest&) const;
+    std::optional<network::HttpResponse> region_map_image(const network::HttpRequest&) const;
+    std::string data_snapshot(std::string_view requested_region, int period,
+                              std::string_view grid_name, std::string_view gatekeeper,
+                              bool expose_all_parcels = false,
+                              const std::filesystem::path& cache_directory = {}) const;
+    std::string read_data_snapshot_cache(const std::filesystem::path& directory) const;
+    std::uint64_t data_snapshot_revision() const;
+    network::Value land_data(std::uint64_t handle, std::uint32_t x, std::uint32_t y) const;
     World& world();
     ViewerRegion& viewers();
     void load_terrain_baseline(int format, std::string_view blob);
@@ -355,15 +485,22 @@ class RegionRuntime final : public services::ISimulationLogin, public services::
     bool use_estate_sun() const;
     void load_environment_day(EnvironmentDay day);
     void set_scripts_enabled(bool enabled);
+    using TaskScriptStates = std::map<framework::Uuid, std::vector<std::uint8_t>>;
+    enum class TaskInventoryRestoreSource { Runtime, RegionStart };
     void restore_task_inventory(framework::Uuid part,
-                                const std::vector<std::shared_ptr<framework::TaskInventoryItem>>& items);
+                                const std::vector<std::shared_ptr<framework::TaskInventoryItem>>& items,
+                                const TaskScriptStates& script_states = {},
+                                TaskInventoryRestoreSource source = TaskInventoryRestoreSource::Runtime);
+    TaskScriptStates snapshot_task_script_states(framework::Uuid part) const;
     std::optional<std::vector<framework::TaskInventoryItem>>
     snapshot_task_inventory(framework::Uuid part) const;
     void set_region_setting_flags(std::uint32_t flags);
     void set_region_maturity(std::int32_t maturity);
+    void load_region_map_images(std::optional<framework::Uuid> terrain, std::optional<framework::Uuid> parcel);
     void set_region_telehub(framework::Uuid object, std::vector<RegionSpawnPoint> points = {});
-    void set_region_menu_limits(int agent_limit, float object_bonus);
+    void set_region_menu_limits(int agent_limit, double object_bonus);
     void set_estate_covenant(framework::Uuid covenant, std::uint32_t timestamp);
+    void receive_estate_update(std::uint32_t estate);
     void receive_estate_covenant(std::uint32_t estate, framework::Uuid covenant);
     void receive_estate_message(std::uint32_t estate, const std::string& message);
     void receive_estate_teleport_home(std::uint32_t estate, std::optional<framework::Uuid> target);
@@ -376,13 +513,11 @@ class RegionRuntime final : public services::ISimulationLogin, public services::
     bool query_access(services::GridRegion&, const framework::Uuid&, const std::optional<std::string>&, bool,
                       const framework::Vector3&, std::vector<framework::Uuid>&,
                       services::LoginTransferContext&, std::string&) override;
-    std::shared_ptr<framework::AgentTransferScene> get_scene(const framework::Uuid&) override {
-        return {};
-    }
     bool confirm_teleport_arrival(framework::Uuid agent, framework::Uuid token);
     bool close_agent_session(framework::Uuid agent, std::string_view session);
     bool update_agent(services::GridRegion&, const std::shared_ptr<framework::AgentData>&,
                       services::LoginTransferContext&) override;
+    void snapshot_attachments(const ViewerAgent& avatar, framework::AgentData& data);
     bool update_agent(services::GridRegion&, const std::shared_ptr<framework::AgentPosition>&) override {
         return false;
     }

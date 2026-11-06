@@ -1,2 +1,37 @@
-using System;using System.IO;using System.IO.Compression;
-class GzipReference{static void Main(){string line;while((line=Console.ReadLine())!=null){try{byte[] bytes=line.Substring(2)=="."?Array.Empty<byte>():Convert.FromHexString(line.Substring(2));using var output=new MemoryStream();if(line[0]=='C'){using(var gzip=new GZipStream(output,CompressionMode.Compress,true)){gzip.Write(bytes,0,bytes.Length);}}else{using var input=new MemoryStream(bytes);using var gzip=new GZipStream(input,CompressionMode.Decompress);gzip.CopyTo(output);}Console.WriteLine(Convert.ToHexString(output.ToArray()).ToLowerInvariant());}catch{Console.WriteLine("EX");}}}}
+using System;
+using System.IO;
+using System.IO.Compression;
+class GzipReference
+{
+    static void Main()
+    {
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            try
+            {
+                byte[] bytes =
+                    line.Substring(2) == "." ? Array.Empty<byte>() : Convert.FromHexString(line.Substring(2));
+                using var output = new MemoryStream();
+                if (line[0] == 'C')
+                {
+                    using (var gzip = new GZipStream(output, CompressionMode.Compress, true))
+                    {
+                        gzip.Write(bytes, 0, bytes.Length);
+                    }
+                }
+                else
+                {
+                    using var input = new MemoryStream(bytes);
+                    using var gzip = new GZipStream(input, CompressionMode.Decompress);
+                    gzip.CopyTo(output);
+                }
+                Console.WriteLine(Convert.ToHexString(output.ToArray()).ToLowerInvariant());
+            }
+            catch
+            {
+                Console.WriteLine("EX");
+            }
+        }
+    }
+}

@@ -1,4 +1,5 @@
 #include "opensim/scene/texture_layers.hpp"
+#include "opensim/scene/map_tile.hpp"
 #include "opensim/services/flotsam_cache_files.hpp"
 #include <fstream>
 #include <future>
@@ -13,6 +14,34 @@ int main(int argc, char** argv) {
         const std::vector<std::uint8_t> bytes{std::istreambuf_iterator<char>(fixture), {}};
         const auto next_boundary = opensim::scene::open_texture_layer_decoder(argv[1], true);
         const auto packet_boundary = opensim::scene::open_texture_layer_decoder(argv[1], false);
+        const auto encode_map = opensim::scene::open_map_jpeg2000_encoder(argv[1]);
+        const auto jpeg_map = opensim::scene::open_map_jpeg_encoder(argv[1]);
+        const std::vector<float> heights(256 * 256, 21.f);
+        const auto pixels = opensim::scene::render_shaded_map_tile(heights, 256, 256, 20.f);
+        const auto encoded_map = encode_map(pixels, 256, 256, 3, true);
+        const auto jpeg = jpeg_map(encoded_map);
+        if (encoded_map.size() < 4 || encoded_map[0] != 0xff || encoded_map[1] != 0x4f ||
+            !jpeg.starts_with("\xff\xd8") || !jpeg.ends_with("\xff\xd9") ||
+            !encode_map(pixels, 128, 256, 3, true).empty())
+            throw std::runtime_error("Generated terrain tile did not round-trip through the native codecs");
+        const auto average = opensim::scene::open_map_texture_average(argv[1]);
+        const std::array<std::uint8_t, 3> expected_color{165, 100, 33};
+        std::vector<std::uint8_t> flat_texture;
+        flat_texture.reserve(64 * 64 * expected_color.size());
+        for (int pixel = 0; pixel < 64 * 64; ++pixel)
+            flat_texture.insert(flat_texture.end(), expected_color.begin(), expected_color.end());
+        if (average(encode_map(flat_texture, 64, 64, 3, true)) != expected_color ||
+            average(std::vector<std::uint8_t>{1, 2, 3}))
+            throw std::runtime_error("JPEG 2000 terrain texture average differs");
+        const auto decode_bitmap = opensim::scene::open_map_bitmap_decoder(argv[1]);
+        std::vector<std::uint8_t> rgba_texture;
+        rgba_texture.reserve(64 * 64 * 4);
+        for (int pixel = 0; pixel < 64 * 64; ++pixel)
+            rgba_texture.insert(rgba_texture.end(), {165, 100, 33, 96});
+        const auto rgba_bitmap = decode_bitmap(encode_map(rgba_texture, 64, 64, 4, true));
+        if (rgba_bitmap.width != 64 || rgba_bitmap.height != 64 ||
+            rgba_bitmap.channels != 4 || rgba_bitmap.pixels != rgba_texture)
+            throw std::runtime_error("JPEG 2000 RGBA map bitmap differs");
         using opensim::scene::TextureLayer;
         if (next_boundary(bytes) != std::vector<TextureLayer>{{0, 580}, {581, 1987}, {1988, 7983},
                                                               {7984, 31969}, {31970, 36044}} ||
@@ -51,6 +80,77 @@ int main(int argc, char** argv) {
                 std::filesystem::remove_all(path, error);
             }
         } cleanup{directory};
+        const auto indexed_bmp = directory / "indexed.bmp";
+        const std::array<std::uint8_t, 70> indexed_bytes{
+            'B', 'M', 70, 0, 0, 0, 0, 0, 0, 0, 62, 0, 0, 0,
+            40, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 1, 0, 1, 0,
+            0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 255, 0, 255, 0, 0, 0,
+            0x80, 0xff, 0xff, 0xff, 0x40, 0xff, 0xff, 0xff,
+        };
+        {
+            std::ofstream file(indexed_bmp, std::ios::binary);
+            file.write(reinterpret_cast<const char*>(indexed_bytes.data()), indexed_bytes.size());
+        }
+        const auto bitmap = opensim::scene::load_static_map_bitmap(indexed_bmp);
+        if (bitmap.width != 2 || bitmap.height != 2 || bitmap.channels != 3 ||
+            bitmap.pixels != std::vector<std::uint8_t>{255, 0, 0, 0, 0, 255, 0, 0, 255, 255, 0, 0})
+            throw std::runtime_error("Indexed BMP palette, padding or orientation differs");
+
+        const auto check_bmp = [&](std::span<const std::uint8_t> bytes, std::size_t channels,
+                                   std::vector<std::uint8_t> pixels,
+                                   std::uint32_t width = 2, std::uint32_t height = 1) {
+            const auto path = directory / "fixture.bmp";
+            {
+                std::ofstream file(path, std::ios::binary);
+                file.write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+            }
+            const auto decoded = opensim::scene::load_static_map_bitmap(path);
+            if (decoded.width != width || decoded.height != height || decoded.channels != channels ||
+                decoded.pixels != pixels)
+                throw std::runtime_error("BMP fixture pixels differ");
+        };
+        const std::array<std::uint8_t, 70> rgb565{
+            0x42, 0x4d, 0x46, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00,
+            0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0xff, 0xff,
+            0xff, 0xff, 0x01, 0x00, 0x10, 0x00, 0x03, 0x00, 0x00, 0x00, 0x04, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf8, 0x00, 0x00, 0xe0, 0x07,
+            0x00, 0x00, 0x1f, 0x00, 0x00, 0x00, 0x00, 0xf8, 0xe0, 0x07,
+        };
+        check_bmp(rgb565, 3, {255, 0, 0, 0, 255, 0});
+        const std::array<std::uint8_t, 78> rgba{
+            0x42, 0x4d, 0x4e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46, 0x00,
+            0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0xff, 0xff,
+            0xff, 0xff, 0x01, 0x00, 0x20, 0x00, 0x03, 0x00, 0x00, 0x00, 0x08, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff,
+            0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0x11, 0x33,
+            0xaa, 0x80, 0xee, 0x22, 0x44, 0xff,
+        };
+        check_bmp(rgba, 4, {17, 51, 170, 128, 238, 34, 68, 255});
+
+        const std::array<std::uint8_t, 78> rle4{
+            0x42, 0x4d, 0x4e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00,
+            0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x02, 0x00,
+            0x00, 0x00, 0x01, 0x00, 0x04, 0x00, 0x02, 0x00, 0x00, 0x00, 0x0c, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0xff, 0x00, 0x00, 0xff, 0x00, 0x00, 0x05, 0x12, 0x00, 0x00, 0x00, 0x05,
+            0x21, 0x21, 0x20, 0x00, 0x00, 0x01,
+        };
+        check_bmp(rle4, 3, {0, 255, 0, 255, 0, 0, 0, 255, 0, 255, 0, 0, 0, 255, 0, 255, 0, 0, 0, 255, 0, 255, 0, 0, 0, 255, 0, 255, 0, 0}, 5, 2);
+        const std::array<std::uint8_t, 80> rle8{
+            0x42, 0x4d, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x42, 0x00,
+            0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x02, 0x00,
+            0x00, 0x00, 0x01, 0x00, 0x08, 0x00, 0x01, 0x00, 0x00, 0x00, 0x0e, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0xff, 0x00, 0x00, 0xff, 0x00, 0x00, 0x01, 0x01, 0x00, 0x02, 0x01, 0x01,
+            0x00, 0x03, 0x02, 0x01, 0x02, 0x00, 0x00, 0x01,
+        };
+        check_bmp(rle8, 3, {0, 0, 0, 0, 0, 0, 0, 255, 0, 255, 0, 0, 0, 255, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 5, 2);
+
         using namespace opensim::services;
         const auto open_storage = [&] {
             auto backend = native_flotsam_file_backend({});

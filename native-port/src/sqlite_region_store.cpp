@@ -26,7 +26,9 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "opensim/services/region_store.hpp"
+#include "opensim/framework/culture_prefix.hpp"
 #include "opensim/framework/filesystem.hpp"
+#include "opensim/framework/text.hpp"
 #include <sqlite3.h>
 #include <algorithm>
 #include <bit>
@@ -36,6 +38,21 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdexcept>
 namespace opensim::services {
 namespace {
+void lower_region_name(sqlite3_context* context, int, sqlite3_value** values) {
+    const auto* text = sqlite3_value_text(values[0]);
+    if (!text) {
+        sqlite3_result_null(context);
+        return;
+    }
+    try {
+        const std::string_view name(reinterpret_cast<const char*>(text), sqlite3_value_bytes(values[0]));
+        const auto lower = framework::utf8(framework::invariant_lower_utf16(framework::utf16(name)));
+        sqlite3_result_text64(context, lower.data(), lower.size(), SQLITE_TRANSIENT, SQLITE_UTF8);
+    } catch (const std::exception& error) {
+        sqlite3_result_error(context, error.what(), -1);
+    }
+}
+
 std::string quoted(const std::string& name) {
     std::string value = "\"";
     for (auto c : name) {
@@ -146,11 +163,50 @@ SqliteRegionStore::SqliteRegionStore(const std::string& path, bool initialize, c
     if (sqlite3_open_v2(path.c_str(), &state_->db, flags, nullptr) != SQLITE_OK)
         throw std::runtime_error(state_->db ? sqlite3_errmsg(state_->db) : "SQLite allocation failed");
     sqlite3_busy_timeout(state_->db, 5000);
+    if (sqlite3_create_function_v2(state_->db, "opensim_region_lower", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+                                   nullptr, lower_region_name, nullptr, nullptr, nullptr) != SQLITE_OK)
+        throw std::runtime_error(sqlite3_errmsg(state_->db));
     if (initialize) {
         Statement create(
             state_->db,
             "CREATE TABLE " + state_->table +
-                "(uuid TEXT NOT NULL PRIMARY KEY,regionHandle TEXT,regionName VARCHAR(128) NOT NULL,regionRecvKey VARCHAR(128),regionSendKey VARCHAR(128),regionSecret VARCHAR(128),regionDataURI VARCHAR(128),serverIP VARCHAR(64),serverPort INTEGER,serverURI VARCHAR(255),locX INTEGER,locY INTEGER,locZ INTEGER,eastOverrideHandle TEXT,westOverrideHandle TEXT,southOverrideHandle TEXT,northOverrideHandle TEXT,regionAssetURI VARCHAR(255),regionAssetRecvKey VARCHAR(128),regionAssetSendKey VARCHAR(128),regionUserURI VARCHAR(255),regionUserRecvKey VARCHAR(128),regionUserSendKey VARCHAR(128),regionMapTexture TEXT,serverHttpPort INTEGER,serverRemotingPort INTEGER,owner_uuid TEXT NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',originUUID TEXT NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',access INTEGER DEFAULT 0,ScopeID TEXT DEFAULT '00000000-0000-0000-0000-000000000000',sizeX INTEGER NOT NULL DEFAULT 0,sizeY INTEGER NOT NULL DEFAULT 0,flags INTEGER NOT NULL DEFAULT 0,last_seen INTEGER NOT NULL DEFAULT 0,PrincipalID TEXT NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',Token VARCHAR(255) NOT NULL DEFAULT '0',parcelMapTexture TEXT)");
+                "(uuid TEXT NOT NULL PRIMARY KEY,"
+                "regionHandle TEXT,"
+                "regionName VARCHAR(128) NOT NULL,"
+                "regionRecvKey VARCHAR(128),"
+                "regionSendKey VARCHAR(128),"
+                "regionSecret VARCHAR(128),"
+                "regionDataURI VARCHAR(128),"
+                "serverIP VARCHAR(64),"
+                "serverPort INTEGER,"
+                "serverURI VARCHAR(255),"
+                "locX INTEGER,"
+                "locY INTEGER,"
+                "locZ INTEGER,"
+                "eastOverrideHandle TEXT,"
+                "westOverrideHandle TEXT,"
+                "southOverrideHandle TEXT,"
+                "northOverrideHandle TEXT,"
+                "regionAssetURI VARCHAR(255),"
+                "regionAssetRecvKey VARCHAR(128),"
+                "regionAssetSendKey VARCHAR(128),"
+                "regionUserURI VARCHAR(255),"
+                "regionUserRecvKey VARCHAR(128),"
+                "regionUserSendKey VARCHAR(128),"
+                "regionMapTexture TEXT,"
+                "serverHttpPort INTEGER,"
+                "serverRemotingPort INTEGER,"
+                "owner_uuid TEXT NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',"
+                "originUUID TEXT NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',"
+                "access INTEGER DEFAULT 0,"
+                "ScopeID TEXT DEFAULT '00000000-0000-0000-0000-000000000000',"
+                "sizeX INTEGER NOT NULL DEFAULT 0,"
+                "sizeY INTEGER NOT NULL DEFAULT 0,"
+                "flags INTEGER NOT NULL DEFAULT 0,"
+                "last_seen INTEGER NOT NULL DEFAULT 0,"
+                "PrincipalID TEXT NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000',"
+                "Token VARCHAR(255) NOT NULL DEFAULT '0',"
+                "parcelMapTexture TEXT)");
         create.row();
     }
     Statement columns(state_->db, "PRAGMA table_info(" + state_->table + ")");
@@ -169,13 +225,13 @@ std::shared_ptr<RegionData> SqliteRegionStore::get(const framework::Uuid& id, co
 std::shared_ptr<RegionData> SqliteRegionStore::specific(const std::string& name,
                                                         const framework::Uuid& scope) {
     std::lock_guard lock(state_->mutex);
-    auto rows = state_->query("lower(regionName)=lower(?)", {name}, scope);
+    auto rows = state_->query("opensim_region_lower(regionName)=opensim_region_lower(?)", {name}, scope);
     return rows.empty() ? nullptr : rows.front();
 }
 std::optional<RegionRows> SqliteRegionStore::find(const std::string& pattern, const framework::Uuid& scope) {
     std::lock_guard lock(state_->mutex);
-    return state_->query("lower(regionName) LIKE lower(?) ESCAPE '\\'", {pattern}, scope,
-                         " ORDER BY lower(regionName)");
+    return state_->query("opensim_region_lower(regionName) LIKE opensim_region_lower(?) ESCAPE '\\'",
+                         {pattern}, scope, " ORDER BY opensim_region_lower(regionName)");
 }
 std::shared_ptr<RegionData> SqliteRegionStore::at(std::int32_t x, std::int32_t y,
                                                   const framework::Uuid& scope) {

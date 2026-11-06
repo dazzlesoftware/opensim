@@ -1,2 +1,16 @@
 // Actual .NET8 File.SetLastAccessTime(path, DateTime.Now) clock observation.
-using System;using System.IO;class Program{static void Main(string[] args){var path=args[0];var modified=File.GetLastWriteTimeUtc(path);var before=DateTime.UtcNow.Ticks;File.SetLastAccessTime(path,DateTime.Now);var after=DateTime.UtcNow.Ticks;Console.WriteLine($"{before}|{File.GetLastAccessTimeUtc(path).Ticks}|{after}|{(modified==File.GetLastWriteTimeUtc(path)?1:0)}|1");}}
+using System;
+using System.IO;
+class Program
+{
+    static void Main(string[] args)
+    {
+        var path = args[0];
+        var modified = File.GetLastWriteTimeUtc(path);
+        var before = DateTime.UtcNow.Ticks;
+        File.SetLastAccessTime(path, DateTime.Now);
+        var after = DateTime.UtcNow.Ticks;
+        Console.WriteLine(
+            $"{before}|{File.GetLastAccessTimeUtc(path).Ticks}|{after}|{(modified==File.GetLastWriteTimeUtc(path)?1:0)}|1");
+    }
+}

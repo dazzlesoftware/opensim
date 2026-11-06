@@ -1,8 +1,163 @@
-using System;using System.IO;using System.Text;using System.Collections.Generic;using OpenMetaverse.StructuredData;using OpenSim.Framework.Servers.HttpServer;
-class LogStub{public string Trace="";public void Error(string s){Trace+=s+"\n";}}
-class OSHttpRequest{public Stream InputStream;}
-class OSHttpResponse{public byte[] RawBuffer;public int StatusCode=200;}
-static class Util{public static byte[] UTF8NBGetbytes(string s)=>Encoding.UTF8.GetBytes(s);}
-class Input:MemoryStream{public string Trace="";public Input(byte[] b):base(b){}protected override void Dispose(bool disposing){Trace+="D";base.Dispose(disposing);}}
-partial class Wrapper{public Dictionary<string,JsonRPCMethod> jsonRpcHandlers=new();public LogStub m_log=new();public int Mode;OSD Decode(Stream s){if(Mode==1)throw new LitJson.JsonException("injected parse failure");if(Mode==2)throw new InvalidOperationException("controlled decoder failure");return OSDParser.DeserializeJson(s);}public void Run(OSHttpRequest request,OSHttpResponse response)=>HandleJsonRpcRequests(request,response);}
-class Program{static string H(string s)=>Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();static void Main(){System.Globalization.CultureInfo.CurrentCulture=System.Globalization.CultureInfo.InvariantCulture;string line;while((line=Console.ReadLine())!=null){var a=line.Split(' ');int profile=int.Parse(a[1]),mode=int.Parse(a[2]);string output,disposed="";var w=new Wrapper{Mode=mode};Input input=null;try{if(a[0]=="S"){var r=new JsonRpcResponse();if((profile&1)!=0)r.Id="id";if((profile&2)!=0)r.JsonRpc="2.0";if((profile&4)!=0)r.Result=new OSDMap{{"zero",OSD.FromInteger(0)},{"answer",OSD.FromInteger(42)}};if((profile&8)!=0){r.Error.Code=-3;r.Error.Message="bad";}r.Error.Data=OSD.FromString("unused");output=H(r.Serialize());if((mode&1)!=0)r.Result=null;if((mode&2)!=0)r.Error.Code=0;if((mode&4)!=0)r.Error=new JsonRpcError();if((mode&8)!=0)r.Reply=new OSDMap();output+="/"+H(r.Serialize());}else{JsonRPCMethod handler=(OSDMap request,ref JsonRpcResponse r)=>{switch(profile){case 1:r.Result=new OSDMap{{"answer",OSD.FromInteger(42)}};return true;case 2:return false;case 3:r.Error.Code=-3;r.Error.Message="custom";return false;case 4:throw new InvalidOperationException("fixture handler failure");case 5:r.Error.Code=-4;r.Error.Data=OSD.FromString("ignored");return true;case 6:r=new JsonRpcResponse{Id="replacement",Result=new OSDArray()};return true;case 7:r.Error=null;return true;case 8:r=null;return false;case 9:r.Result=OSD.FromInteger(0);return false;default:return true;}};string registered="";if(profile!=0){registered+=w.AddJsonRPCHandler("test",handler)?"1":"0";registered+=w.AddJsonRPCHandler("test",null)?"1":"0";w.AddJsonRPCHandler("removed",null);w.RemoveJsonRPCHandler("removed");w.AddJsonRPCHandler("again",null);foreach(var key in w.GetJsonRpcHandlerKeys())registered+=":"+key;}input=new Input(a[3]=="-"?Array.Empty<byte>():Convert.FromHexString(a[3]));var response=new OSHttpResponse();w.Run(new OSHttpRequest{InputStream=input},response);output=response.StatusCode+":"+Convert.ToHexString(response.RawBuffer).ToLowerInvariant()+"|"+registered;}}catch(Exception){output="EX";}if(input!=null)disposed=input.Trace;Console.WriteLine(output+"|"+H(w.m_log.Trace)+"|"+disposed);}}}
+using System;
+using System.IO;
+using System.Text;
+using System.Collections.Generic;
+using OpenMetaverse.StructuredData;
+using OpenSim.Framework.Servers.HttpServer;
+class LogStub
+{
+    public string Trace = "";
+    public void Error(string s)
+    {
+        Trace += s + "\n";
+    }
+}
+class OSHttpRequest
+{
+    public Stream InputStream;
+}
+class OSHttpResponse
+{
+    public byte[] RawBuffer;
+    public int StatusCode = 200;
+}
+static class Util
+{
+    public static byte[] UTF8NBGetbytes(string s) => Encoding.UTF8.GetBytes(s);
+}
+class Input : MemoryStream
+{
+    public string Trace = "";
+    public Input(byte[] b) : base(b)
+    {
+    }
+    protected override void Dispose(bool disposing)
+    {
+        Trace += "D";
+        base.Dispose(disposing);
+    }
+}
+partial class Wrapper
+{
+    public Dictionary<string, JsonRPCMethod> jsonRpcHandlers = new();
+    public LogStub m_log = new();
+    public int Mode;
+    OSD Decode(Stream s)
+    {
+        if (Mode == 1)
+            throw new LitJson.JsonException("injected parse failure");
+        if (Mode == 2)
+            throw new InvalidOperationException("controlled decoder failure");
+        return OSDParser.DeserializeJson(s);
+    }
+    public void Run(OSHttpRequest request, OSHttpResponse response) => HandleJsonRpcRequests(request,
+                                                                                             response);
+}
+class Program
+{
+    static string H(string s) => Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();
+    static void Main()
+    {
+        System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var a = line.Split(' ');
+            int profile = int.Parse(a[1]), mode = int.Parse(a[2]);
+            string output, disposed = "";
+            var w = new Wrapper { Mode = mode };
+            Input input = null;
+            try
+            {
+                if (a[0] == "S")
+                {
+                    var r = new JsonRpcResponse();
+                    if ((profile & 1) != 0)
+                        r.Id = "id";
+                    if ((profile & 2) != 0)
+                        r.JsonRpc = "2.0";
+                    if ((profile & 4) != 0)
+                        r.Result =
+                            new OSDMap { { "zero", OSD.FromInteger(0) }, { "answer", OSD.FromInteger(42) } };
+                    if ((profile & 8) != 0)
+                    {
+                        r.Error.Code = -3;
+                        r.Error.Message = "bad";
+                    }
+                    r.Error.Data = OSD.FromString("unused");
+                    output = H(r.Serialize());
+                    if ((mode & 1) != 0)
+                        r.Result = null;
+                    if ((mode & 2) != 0)
+                        r.Error.Code = 0;
+                    if ((mode & 4) != 0)
+                        r.Error = new JsonRpcError();
+                    if ((mode & 8) != 0)
+                        r.Reply = new OSDMap();
+                    output += "/" + H(r.Serialize());
+                }
+                else
+                {
+                    JsonRPCMethod handler = (OSDMap request, ref JsonRpcResponse r) =>
+                    {
+                        switch (profile)
+                        {
+                        case 1:
+                            r.Result = new OSDMap { { "answer", OSD.FromInteger(42) } };
+                            return true;
+                        case 2:
+                            return false;
+                        case 3:
+                            r.Error.Code = -3;
+                            r.Error.Message = "custom";
+                            return false;
+                        case 4:
+                            throw new InvalidOperationException("fixture handler failure");
+                        case 5:
+                            r.Error.Code = -4;
+                            r.Error.Data = OSD.FromString("ignored");
+                            return true;
+                        case 6:
+                            r = new JsonRpcResponse { Id = "replacement", Result = new OSDArray() };
+                            return true;
+                        case 7:
+                            r.Error = null;
+                            return true;
+                        case 8:
+                            r = null;
+                            return false;
+                        case 9:
+                            r.Result = OSD.FromInteger(0);
+                            return false;
+                        default:
+                            return true;
+                        }
+                    };
+                    string registered = "";
+                    if (profile != 0)
+                    {
+                        registered += w.AddJsonRPCHandler("test", handler) ? "1" : "0";
+                        registered += w.AddJsonRPCHandler("test", null) ? "1" : "0";
+                        w.AddJsonRPCHandler("removed", null);
+                        w.RemoveJsonRPCHandler("removed");
+                        w.AddJsonRPCHandler("again", null);
+                        foreach (var key in w.GetJsonRpcHandlerKeys())
+                            registered += ":" + key;
+                    }
+                    input = new Input(a[3] == "-" ? Array.Empty<byte>() : Convert.FromHexString(a[3]));
+                    var response = new OSHttpResponse();
+                    w.Run(new OSHttpRequest { InputStream = input }, response);
+                    output = response.StatusCode + ":" +
+                             Convert.ToHexString(response.RawBuffer).ToLowerInvariant() + "|" + registered;
+                }
+            }
+            catch (Exception)
+            {
+                output = "EX";
+            }
+            if (input != null)
+                disposed = input.Trace;
+            Console.WriteLine(output + "|" + H(w.m_log.Trace) + "|" + disposed);
+        }
+    }
+}

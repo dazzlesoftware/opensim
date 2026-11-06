@@ -2514,6 +2514,66 @@ int main(int argc, char** argv) {
             }
             transmit(grab);
             wait([&](const auto& list) { return chat(list, argv[7]); });
+            if (std::any_of(argv + 1, argv + argc, [](const char* option) {
+                    return std::string_view(option) == "--verify-ground-bounds";
+                })) {
+                auto release = send("ObjectDeGrab");
+                release.block("ObjectData")["LocalID"] = std::uint64_t(local);
+                transmit(release);
+                auto sit = send("AgentUpdate");
+                sit.block("AgentData")["ControlFlags"] = std::uint64_t{0x20000 | 0x40000 | 0x08000000};
+                sit.block("AgentData")["State"] = std::uint64_t{4};
+                transmit(sit);
+                const auto wait_for_animation = [&](Uuid id) {
+                    wait([&](const auto& list) {
+                        for (const auto& packet : list) {
+                            if (packet.spec->name != "AvatarAnimation" ||
+                                std::get<Uuid>(packet.block("Sender").at("ID")) != agent)
+                                continue;
+                            const auto animations = packet.blocks.find("AnimationList");
+                            if (animations != packet.blocks.end())
+                                for (const auto& animation : animations->second)
+                                    if (std::get<Uuid>(animation.at("AnimID")) == id)
+                                        return true;
+                        }
+                        return false;
+                    });
+                };
+                wait_for_animation(Uuid("1a2bd58e-87ff-0df8-0b4c-53e047b0bb6e"));
+                grab.sequence = sequence++;
+                transmit(grab);
+                wait([&](const auto& list) { return chat(list, "Ground bounds 1"); });
+                release.sequence = sequence++;
+                transmit(release);
+                auto stand = send("AgentUpdate");
+                stand.block("AgentData")["ControlFlags"] = std::uint64_t{0x10000};
+                transmit(stand);
+                auto flight = send("AgentUpdate");
+                flight.block("AgentData")["ControlFlags"] = std::uint64_t{0x2000};
+                transmit(flight);
+                auto run = send("SetAlwaysRun");
+                run.block("AgentData")["AlwaysRun"] = true;
+                transmit(run);
+                const Uuid busy("efcf670c-2d18-8128-973a-034ebc806b67");
+                auto animation = send("AgentAnimation");
+                animation.blocks["AnimationList"].push_back({{"AnimID", busy}, {"StartAnim", true}});
+                transmit(animation);
+                wait_for_animation(busy);
+                grab.sequence = sequence++;
+                transmit(grab);
+                wait([&](const auto& list) { return chat(list, "Flight flags 1"); });
+                release.sequence = sequence++;
+                transmit(release);
+                animation.sequence = sequence++;
+                animation.blocks["AnimationList"].front()["StartAnim"] = false;
+                transmit(animation);
+                run.sequence = sequence++;
+                run.block("AgentData")["AlwaysRun"] = false;
+                transmit(run);
+                flight.sequence = sequence++;
+                flight.block("AgentData")["ControlFlags"] = std::uint64_t{0};
+                transmit(flight);
+            }
             if (std::string_view(argv[6]) == "Rotating fixture")
                 wait([&](const auto& list) {
                     return chat(list, "Touch avatar " + agent.str() +

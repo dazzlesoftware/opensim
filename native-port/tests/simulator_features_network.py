@@ -1,42 +1,294 @@
 """Actual native SimulatorFeatures/LSLSyntax registered through scene events and seed discovery."""
-import argparse,http.client,json,ssl,subprocess,urllib.parse,xml.etree.ElementTree as ET
+
+import argparse, http.client, json, ssl, subprocess, urllib.parse, xml.etree.ElementTree as ET
 from pathlib import Path
+
+
 def decode(data):
- def node(e):
-  if e.tag=='map':
-   items=list(e);return {items[i].text:node(items[i+1]) for i in range(0,len(items),2)}
-  if e.tag=='array':return [node(v) for v in e]
-  if e.tag=='integer':return int(e.text or '0')
-  if e.tag=='real':return float(e.text or '0')
-  if e.tag=='boolean':return e.text=='1'
-  return e.text or ''
- return node(list(ET.fromstring(data))[0])
+    def node(e):
+        if e.tag == 'map':
+            items = list(e)
+            return {items[i].text: node(items[i + 1]) for i in range(0, len(items), 2)}
+        if e.tag == 'array':
+            return [node(v) for v in e]
+        if e.tag == 'integer':
+            return int(e.text or '0')
+        if e.tag == 'real':
+            return float(e.text or '0')
+        if e.tag == 'boolean':
+            return e.text == '1'
+        return e.text or ''
+
+    return node(list(ET.fromstring(data))[0])
+
+
 def main():
- p=argparse.ArgumentParser();p.add_argument('--server',required=True);p.add_argument('--work',required=True,type=Path);p.add_argument('--tls',action='store_true');a=p.parse_args();w=a.work.resolve();w.mkdir(parents=True,exist_ok=True);(w/'features.ini').write_text('[SimulatorFeatures]\nExportSupported=true\nScriptSyntax=true\n',encoding='utf-8');(w/'ScriptSyntax.xml').write_text('01234567-89ab-cdef-0123-456789abcdef\r\n <!-- ignored --> \n<map>\n<string>世界😀</string>\n</map>\n',encoding='utf-8');command=[str(Path(a.server).resolve())]
- if a.tls:command += [str(Path(__file__).parent.resolve()/'fixtures/localhost-cert.pem'),str(Path(__file__).parent.resolve()/'fixtures/localhost-key.pem')]
- proc=subprocess.Popen(command,cwd=w,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True);checks=[]
- def check(value,label):assert value,label;checks.append(label)
- try:
-  line=proc.stdout.readline();assert line.startswith('LISTENING '),line+proc.stderr.read();port=int(line.split()[1])
-  def request(path,body='',method='POST',ctype='application/llsd+xml'):
-   uri=urllib.parse.urlparse(path);host=uri.hostname or '127.0.0.1';c=http.client.HTTPSConnection(host,uri.port or port,timeout=10,context=ssl._create_unverified_context()) if a.tls else http.client.HTTPConnection(host,uri.port or port,timeout=10)
-   try:c.request(method,uri.path or path,body,headers={'Content-Type':ctype});r=c.getresponse();return r.status,r.read(),dict((k.lower(),v) for k,v in r.getheaders())
-   finally:c.close()
-  def control(path,body=''):check(request(path,body)[0]==200,'control '+path)
-  def seed(path='/CAPS/features0000',pbr=False):
-   names=['SimulatorFeatures','LSLSyntax','EventQueueGet']+(['VTPBR'] if pbr else []);body='<llsd><array>'+''.join('<string>'+n+'</string>' for n in names)+'</array></llsd>';code,data,_=request(path,body);assert code==200,(code,data);return decode(data)
-  caps=seed();check(set(caps)=={'SimulatorFeatures','LSLSyntax','EventQueueGet'},'native scene registration advertises features, syntax and event queue');feature=caps['SimulatorFeatures'];syntax=caps['LSLSyntax'];check(urllib.parse.urlparse(feature).scheme==('https' if a.tls else 'http') and urllib.parse.urlparse(feature).port==port,'feature URL uses actual listener protocol/port')
-  check(request(feature)[0:2]==(404,b''),'feature endpoint rejects POST');code,data,headers=request(feature,method='GET');features=decode(data);check(code==200 and headers['content-type']=='text/html;charset=UTF-8','source feature response status/default content type');check(features['MaxAgentAttachments']==38 and features['MaxAgentGroups']==60 and features['MaxTextureResolution']==2048,'source default viewer limits');check(features['PhysicsShapeTypes']=={'convex':True,'none':True,'prim':True} and features['MeshUploadEnabled'] and features['BakesOnMeshEnabled'],'source mesh/physics/bakes feature declarations');check(features['LSLSyntaxId']=='01234567-89ab-cdef-0123-456789abcdef','syntax file ID advertised');check('PBRTerrainEnabled' not in features and 'PBRMaterialSwatchEnabled' not in features,'PBR response flags follow seed negotiation');check(features['OpenSimExtras']['ExportSupported'] is False and features['OpenSimExtras']['Custom']=='grid-value' and features['OpenSimExtras']['Result']=='Success','grid extras override configured export support');agent='00000000-0000-0000-0000-000000000007';check(features['OpenSimExtras']['destination-guide-url']==f'https://guide/?a={agent}&b={agent}','both destination-guide agent placeholders replaced');check(features['Callback']==agent and features['Follower'] and features['AnimatedObjects']['AnimatedObjectMaxTris']==1,'ordered feature callbacks mutate request copy');check(decode(request('/baseline')[1])['AnimatedObjectMaxTris']==150000,'deep-copy nested mutations preserve module data');check(decode(request('/get-features')[1])=={},'source GetFeatures empty-map overload behavior retained')
-  check(request(syntax)[0:2]==(404,b''),'syntax endpoint rejects POST');check(request(syntax,method='GET')[0:2]==(200,'<map><string>世界😀</string></map>'.encode()),'native syntax bytes trim lines and skip comments');control('/reload');check(request(syntax,method='GET')[1]=='<map><string>世界😀</string></map>'.encode(),'process-wide syntax cache ignores later file rewrite')
-  seed(pbr=True);features=decode(request(feature,method='GET')[1]);check(features['PBRTerrainEnabled'] and features['PBRMaterialSwatchEnabled'],'seed TPBR negotiation enables terrain/swatch features');control('/reset');control('/size','512');seed(pbr=True);features=decode(request(feature,method='GET')[1]);check('PBRTerrainEnabled' not in features,'variable-size region VTPBR does not enable terrain flag')
-  control('/mode','1');features=decode(request(feature,method='GET')[1]);check(features['Partial'] and features['Follower'],'callback failure retains partial changes and continues');control('/mode','2');features=decode(request(feature,method='GET')[1]);check(features=={'Replacement':True,'Follower':True},'callback replaces ref feature map');control('/mode','3');check(request(feature,method='GET')[0:2]==(500,b''),'null callback map becomes source simple-handler500');control('/mode','4');check(decode(request(feature,method='GET')[1])=={'Recovered':True},'later callback recovers null ref map');control('/mode','0')
-  persistent=http.client.HTTPSConnection('127.0.0.1',port,timeout=10,context=ssl._create_unverified_context()) if a.tls else http.client.HTTPConnection('127.0.0.1',port,timeout=10)
-  try:
-   for i in range(1,21):
-    persistent.request('GET',urllib.parse.urlparse(feature).path);reply=persistent.getresponse();payload=reply.read();headers=dict((k.lower(),v) for k,v in reply.getheaders());check(reply.status==200 and headers.get('server')=='OSWebServer' and (headers.get('keep-alive')==f'timeout=60, max={20-i}' if i<20 else headers.get('connection')=='close' and 'keep-alive' not in headers),'source feature response keepalive budget '+str(i))
-  finally:persistent.close()
-  control('/detach');check(request(feature,method='GET')[0]==200,'module removal leaves existing capability delegates active');control('/register','detached');check(seed('/CAPS/detached0000')=={'EventQueueGet':caps['EventQueueGet']} and request(feature,method='GET')[0]==404,'detached module does not register on replacement Caps');control('/attach');control('/register','reattached');caps=seed('/CAPS/reattached0000',True);feature=caps['SimulatorFeatures'];check(request(feature,method='GET')[0]==200 and request(caps['LSLSyntax'],method='GET')[1]=='<map><string>世界😀</string></map>'.encode(),'reattachment registers new feature routes using static syntax cache');control('/capture');control('/dispose');check(request(feature,method='GET')[0]==404,'caps disposal removes feature route');check(request('/selected',method='GET')[0]==200 and 'PBRTerrainEnabled' not in decode(request('/selected',method='GET')[1]),'selected handler retains module/Caps and observes disposed flags');state=json.loads(request('/state')[1]);check(state['simple']==state['polls']==state['errors']==0 and state['calls']==state['followers'],'route cleanup, callback continuation and native owner state');check(request('/ready')[0]==503,'world readiness remains explicitly incomplete')
-  proc.stdin.write('stop\n');proc.stdin.flush();proc.wait(timeout=10);assert proc.returncode==0,proc.stderr.read();check(True,'module/capability teardown releases registered routes');(w/'simulator-features-network-results.json').write_text(json.dumps({'passed':True,'checks':checks,'tls':a.tls,'scope':'Native module, real scene capability events/Caps/seed/registry, default syntax filesystem reader and TCP/TLS. Controlled world/grid/authorization providers; full simulator/world and platform execution pending.'},indent=2),encoding='utf-8');print(f'PASS: {len(checks)} simulator feature network observations')
- finally:
-  if proc.poll() is None:proc.kill();proc.wait(timeout=5)
-if __name__=='__main__':main()
+    p = argparse.ArgumentParser()
+    p.add_argument('--server', required=True)
+    p.add_argument('--work', required=True, type=Path)
+    p.add_argument('--tls', action='store_true')
+    a = p.parse_args()
+    w = a.work.resolve()
+    w.mkdir(parents=True, exist_ok=True)
+    (w / 'features.ini').write_text(
+        '[SimulatorFeatures]\nExportSupported=true\nScriptSyntax=true\n', encoding='utf-8'
+    )
+    (w / 'ScriptSyntax.xml').write_text(
+        '01234567-89ab-cdef-0123-456789abcdef\r\n <!-- ignored --> \n<map>\n<string>世界😀</string>\n</map>\n',
+        encoding='utf-8',
+    )
+    command = [str(Path(a.server).resolve())]
+    if a.tls:
+        command += [
+            str(Path(__file__).parent.resolve() / 'fixtures/localhost-cert.pem'),
+            str(Path(__file__).parent.resolve() / 'fixtures/localhost-key.pem'),
+        ]
+    proc = subprocess.Popen(
+        command,
+        cwd=w,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    checks = []
+
+    def check(value, label):
+        assert value, label
+        checks.append(label)
+
+    try:
+        line = proc.stdout.readline()
+        assert line.startswith('LISTENING '), line + proc.stderr.read()
+        port = int(line.split()[1])
+
+        def request(path, body='', method='POST', ctype='application/llsd+xml'):
+            uri = urllib.parse.urlparse(path)
+            host = uri.hostname or '127.0.0.1'
+            c = (
+                http.client.HTTPSConnection(
+                    host, uri.port or port, timeout=10, context=ssl._create_unverified_context()
+                )
+                if a.tls
+                else http.client.HTTPConnection(host, uri.port or port, timeout=10)
+            )
+            try:
+                c.request(method, uri.path or path, body, headers={'Content-Type': ctype})
+                r = c.getresponse()
+                return r.status, r.read(), dict((k.lower(), v) for k, v in r.getheaders())
+            finally:
+                c.close()
+
+        def control(path, body=''):
+            check(request(path, body)[0] == 200, 'control ' + path)
+
+        def seed(path='/CAPS/features0000', pbr=False):
+            names = ['SimulatorFeatures', 'LSLSyntax', 'EventQueueGet'] + (['VTPBR'] if pbr else [])
+            body = (
+                '<llsd><array>'
+                + ''.join('<string>' + n + '</string>' for n in names)
+                + '</array></llsd>'
+            )
+            code, data, _ = request(path, body)
+            assert code == 200, (code, data)
+            return decode(data)
+
+        caps = seed()
+        check(
+            set(caps) == {'SimulatorFeatures', 'LSLSyntax', 'EventQueueGet'},
+            'native scene registration advertises features, syntax and event queue',
+        )
+        feature = caps['SimulatorFeatures']
+        syntax = caps['LSLSyntax']
+        check(
+            urllib.parse.urlparse(feature).scheme == ('https' if a.tls else 'http')
+            and urllib.parse.urlparse(feature).port == port,
+            'feature URL uses actual listener protocol/port',
+        )
+        check(request(feature)[0:2] == (404, b''), 'feature endpoint rejects POST')
+        code, data, headers = request(feature, method='GET')
+        features = decode(data)
+        check(
+            code == 200 and headers['content-type'] == 'text/html;charset=UTF-8',
+            'source feature response status/default content type',
+        )
+        check(
+            features['MaxAgentAttachments'] == 38
+            and features['MaxAgentGroups'] == 60
+            and features['MaxTextureResolution'] == 2048,
+            'source default viewer limits',
+        )
+        check(
+            features['PhysicsShapeTypes'] == {'convex': True, 'none': True, 'prim': True}
+            and features['MeshUploadEnabled']
+            and features['BakesOnMeshEnabled'],
+            'source mesh/physics/bakes feature declarations',
+        )
+        check(
+            features['LSLSyntaxId'] == '01234567-89ab-cdef-0123-456789abcdef',
+            'syntax file ID advertised',
+        )
+        check(
+            'PBRTerrainEnabled' not in features and 'PBRMaterialSwatchEnabled' not in features,
+            'PBR response flags follow seed negotiation',
+        )
+        check(
+            features['OpenSimExtras']['ExportSupported'] is False
+            and features['OpenSimExtras']['Custom'] == 'grid-value'
+            and features['OpenSimExtras']['Result'] == 'Success',
+            'grid extras override configured export support',
+        )
+        agent = '00000000-0000-0000-0000-000000000007'
+        check(
+            features['OpenSimExtras']['destination-guide-url']
+            == f'https://guide/?a={agent}&b={agent}',
+            'both destination-guide agent placeholders replaced',
+        )
+        check(
+            features['Callback'] == agent
+            and features['Follower']
+            and features['AnimatedObjects']['AnimatedObjectMaxTris'] == 1,
+            'ordered feature callbacks mutate request copy',
+        )
+        check(
+            decode(request('/baseline')[1])['AnimatedObjectMaxTris'] == 150000,
+            'deep-copy nested mutations preserve module data',
+        )
+        check(
+            decode(request('/get-features')[1]) == {},
+            'source GetFeatures empty-map overload behavior retained',
+        )
+        check(request(syntax)[0:2] == (404, b''), 'syntax endpoint rejects POST')
+        check(
+            request(syntax, method='GET')[0:2]
+            == (200, '<map><string>世界😀</string></map>'.encode()),
+            'native syntax bytes trim lines and skip comments',
+        )
+        control('/reload')
+        check(
+            request(syntax, method='GET')[1] == '<map><string>世界😀</string></map>'.encode(),
+            'process-wide syntax cache ignores later file rewrite',
+        )
+        seed(pbr=True)
+        features = decode(request(feature, method='GET')[1])
+        check(
+            features['PBRTerrainEnabled'] and features['PBRMaterialSwatchEnabled'],
+            'seed TPBR negotiation enables terrain/swatch features',
+        )
+        control('/reset')
+        control('/size', '512')
+        seed(pbr=True)
+        features = decode(request(feature, method='GET')[1])
+        check(
+            'PBRTerrainEnabled' not in features,
+            'variable-size region VTPBR does not enable terrain flag',
+        )
+        control('/mode', '1')
+        features = decode(request(feature, method='GET')[1])
+        check(
+            features['Partial'] and features['Follower'],
+            'callback failure retains partial changes and continues',
+        )
+        control('/mode', '2')
+        features = decode(request(feature, method='GET')[1])
+        check(
+            features == {'Replacement': True, 'Follower': True}, 'callback replaces ref feature map'
+        )
+        control('/mode', '3')
+        check(
+            request(feature, method='GET')[0:2] == (500, b''),
+            'null callback map becomes source simple-handler500',
+        )
+        control('/mode', '4')
+        check(
+            decode(request(feature, method='GET')[1]) == {'Recovered': True},
+            'later callback recovers null ref map',
+        )
+        control('/mode', '0')
+        persistent = (
+            http.client.HTTPSConnection(
+                '127.0.0.1', port, timeout=10, context=ssl._create_unverified_context()
+            )
+            if a.tls
+            else http.client.HTTPConnection('127.0.0.1', port, timeout=10)
+        )
+        try:
+            for i in range(1, 21):
+                persistent.request('GET', urllib.parse.urlparse(feature).path)
+                reply = persistent.getresponse()
+                payload = reply.read()
+                headers = dict((k.lower(), v) for k, v in reply.getheaders())
+                check(
+                    reply.status == 200
+                    and headers.get('server') == 'OSWebServer'
+                    and (
+                        headers.get('keep-alive') == f'timeout=60, max={20-i}'
+                        if i < 20
+                        else headers.get('connection') == 'close' and 'keep-alive' not in headers
+                    ),
+                    'source feature response keepalive budget ' + str(i),
+                )
+        finally:
+            persistent.close()
+        control('/detach')
+        check(
+            request(feature, method='GET')[0] == 200,
+            'module removal leaves existing capability delegates active',
+        )
+        control('/register', 'detached')
+        check(
+            seed('/CAPS/detached0000') == {'EventQueueGet': caps['EventQueueGet']}
+            and request(feature, method='GET')[0] == 404,
+            'detached module does not register on replacement Caps',
+        )
+        control('/attach')
+        control('/register', 'reattached')
+        caps = seed('/CAPS/reattached0000', True)
+        feature = caps['SimulatorFeatures']
+        check(
+            request(feature, method='GET')[0] == 200
+            and request(caps['LSLSyntax'], method='GET')[1]
+            == '<map><string>世界😀</string></map>'.encode(),
+            'reattachment registers new feature routes using static syntax cache',
+        )
+        control('/capture')
+        control('/dispose')
+        check(request(feature, method='GET')[0] == 404, 'caps disposal removes feature route')
+        check(
+            request('/selected', method='GET')[0] == 200
+            and 'PBRTerrainEnabled' not in decode(request('/selected', method='GET')[1]),
+            'selected handler retains module/Caps and observes disposed flags',
+        )
+        state = json.loads(request('/state')[1])
+        check(
+            state['simple'] == state['polls'] == state['errors'] == 0
+            and state['calls'] == state['followers'],
+            'route cleanup, callback continuation and native owner state',
+        )
+        check(request('/ready')[0] == 503, 'world readiness remains explicitly incomplete')
+        proc.stdin.write('stop\n')
+        proc.stdin.flush()
+        proc.wait(timeout=10)
+        assert proc.returncode == 0, proc.stderr.read()
+        check(True, 'module/capability teardown releases registered routes')
+        (w / 'simulator-features-network-results.json').write_text(
+            json.dumps(
+                {
+                    'passed': True,
+                    'checks': checks,
+                    'tls': a.tls,
+                    'scope': 'Native module, real scene capability events/Caps/seed/registry, default syntax filesystem reader and TCP/TLS. Controlled world/grid/authorization providers; full simulator/world and platform execution pending.',
+                },
+                indent=2,
+            ),
+            encoding='utf-8',
+        )
+        print(f'PASS: {len(checks)} simulator feature network observations')
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait(timeout=5)
+
+
+if __name__ == '__main__':
+    main()

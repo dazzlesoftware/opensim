@@ -1,20 +1,301 @@
-using System;using System.Collections;using System.Collections.Generic;using System.Globalization;using System.Reflection;using Nwc.XmlRpc;using OpenMetaverse;using OpenSim.Framework;using Nini.Config;using GridRegion=OpenSim.Services.Interfaces.GridRegion;
-namespace Fixture {
- public static class Host {
-  public static int Mode;public static Vector3 Position,Look;public static string Fail,Xml,Reason;public static List<string> Events=new();public static XmlRpcResponse Response;
-  public static void Hit(string text){Events.Add(text);if(Fail==text.Split(':')[0])throw new InvalidOperationException(Fail);}
-  public static string H(string s){if(s==null)return "-";if(s.Length==0)return ".";var o=new System.Text.StringBuilder(s.Length*4);foreach(char c in s)o.Append(((int)c&255).ToString("x2")).Append(((int)c>>8).ToString("x2"));return o.ToString();}
-  public static string D(string h){if(h=="-")return null;if(h==".")return "";var bytes=Convert.FromHexString(h);var chars=new char[bytes.Length/2];for(int i=0;i<chars.Length;i++)chars[i]=(char)(bytes[2*i]|bytes[2*i+1]<<8);return new string(chars);}
-  public static string Dump(object v){if(v==null)return "N";if(v is string s)return "S:"+H(s);if(v is int i)return "I:"+i;if(v is bool b)return b?"T":"F";if(v is double d)return "R:"+BitConverter.DoubleToInt64Bits(d).ToString("x16");if(v is DateTime t)return "D:"+t.Ticks;if(v is byte[] bytes)return "B:"+Convert.ToHexString(bytes).ToLowerInvariant();if(v is ArrayList list){var a=new List<string>();foreach(var x in list)a.Add(Dump(x));return "A["+string.Join(',',a)+"]";}if(v is IDictionary map){var keys=new List<string>();foreach(string k in map.Keys)keys.Add(k);keys.Sort(StringComparer.Ordinal);var a=new List<string>();foreach(var k in keys)a.Add(H(k)+"="+Dump(map[k]));return "M{"+string.Join(',',a)+"}";}return "X";}
-  public static string Vec(Vector3 v)=>BitConverter.SingleToInt32Bits(v.X).ToString("x8")+":"+BitConverter.SingleToInt32Bits(v.Y).ToString("x8")+":"+BitConverter.SingleToInt32Bits(v.Z).ToString("x8");
-  public static string Region(GridRegion r)=>r==null?"N":r.RegionID+":"+r.RegionLocX+":"+r.RegionLocY+":"+r.RegionSizeX+":"+r.RegionSizeY+":"+H(r.RegionName)+":"+H(r.ExternalHostName)+":"+r.HttpPort+":"+H(r.RawServerURI)+":"+H(r.ServerURI)+":"+(r.InternalEndPoint==null?"N":r.InternalEndPoint.ToString());
-  public static void Main(){CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;string line;while((line=Console.ReadLine())!=null){var a=line.Split(' ');int mode=Mode=int.Parse(a[0]);bool config=a[1]=="1";Fail=a[2];var url=D(a[3]);Xml=D(a[4]);Events.Clear();Response=null;Reason="seed";Position=new Vector3(9,8,7);Look=new Vector3(6,5,4);UserAgentServiceConnector connector=null;string result;try{connector=config?new UserAgentServiceConnector(new Config{Url=url}):new UserAgentServiceConnector(url);UUID id=new UUID("00000000-0000-0000-0000-000000000001");if(mode==0){var info=connector.GetUserInfo(id);bool same=true;foreach(var p in info)if(!object.ReferenceEquals(p.Value,((Hashtable)Response.Value)[p.Key]))same=false;result=Dump(info)+":"+same;}else if(mode==1)result=Dump(connector.GetServerURLs(id));else if(mode==2)result="S:"+H(connector.LocateUser(id));else if(mode==3)result="S:"+H(connector.GetUUI(id,new UUID("00000000-0000-0000-0000-000000000002")));else if(mode==4)result="U:"+connector.GetUUID(D(a[5]),D(a[6]));else if(mode==6)result="B:"+connector.Bool(out Reason);else if(mode==7)result="B:"+connector.VerifyAgent(id,D(a[5]));else if(mode==8)result="B:"+connector.VerifyClient(id,D(a[5]));else if(mode==9)result="B:"+connector.IsAgentComingHome(id,D(a[5]));else if(mode==10){connector.LogoutAgent(id,new UUID("00000000-0000-0000-0000-000000000002"));result="V";}else if(mode==11){connector.SetClientToken(id,D(a[5]));result="V";}else if(mode==12)result="G:"+Region(connector.GetHomeRegion(id,out Position,out Look));else if(mode>=13&&mode<=15){var first=D(a[5]);List<string> friends=first==null?null:first=="empty"?new():new(){first,D(a[6])};var list=mode==13?connector.GetOnlineFriends(id,friends):connector.StatusNotification(friends,id,mode==14);var names=new List<string>();foreach(var value in list)names.Add(value.ToString());result="F:"+string.Join(",",names);}else result="C";}catch(Exception e){result="E:"+e.GetType().FullName+":"+H(e.Message);}var server=connector==null?null:(string)typeof(UserAgentServiceConnector).GetField("m_ServerURL",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(connector);Console.WriteLine(result+"|"+H(server)+"|"+H(string.Join("\n",Events))+"|"+H(Reason)+"|"+Vec(Position)+"|"+Vec(Look));}}
- }
- public class TextObject {bool fail;public TextObject(bool f){fail=f;}public override string ToString(){Host.Hit("text");if(fail)throw new InvalidOperationException("text");return null;}}
- public class OrderedMap:Hashtable {public OrderedMap(Hashtable input){foreach(var key in input.Keys){var value=input[key];if(value is string s&&s=="__throw__")value=new TextObject(true);else if(value is string n&&n=="__null__")value=new TextObject(false);Add(key,value);}}public override ICollection Keys {get{var keys=new List<string>();foreach(string k in base.Keys)keys.Add(k);keys.Sort(StringComparer.Ordinal);return keys;}}}
- public class Client:IDisposable {public void Dispose(){Host.Hit("close");}}
- public class Request {string method;IList args;public Request(string name,IList p){method=name;args=p;}public XmlRpcResponse Send(string url,Client client){Host.Hit("send:"+Host.H(method)+":"+Host.H(url)+":"+Host.Dump(args[0]));if(Host.Xml=="NULL")return null;var response=(XmlRpcResponse)new XmlRpcResponseDeserializer().Deserialize(Host.Xml);if(Host.Mode>=13&&Host.Mode<=15&&!response.IsFault&&response.Value is Hashtable map)response.Value=new OrderedMap(map);return Host.Response=response;}}
- public class Log {public void DebugFormat(string f,params object[] v){Host.Hit("debug:"+string.Format(f,v));}public void Error(string t){Host.Hit("error:"+t);}public void ErrorFormat(string f,params object[] v){Host.Hit("error:"+string.Format(f,v));}public void WarnFormat(string f,params object[] v){Host.Hit("warn:"+string.Format(f,v));}}
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Reflection;
+using Nwc.XmlRpc;
+using OpenMetaverse;
+using OpenSim.Framework;
+using Nini.Config;
+using GridRegion = OpenSim.Services.Interfaces.GridRegion;
+namespace Fixture
+{
+    public static class Host
+    {
+        public static int Mode;
+        public static Vector3 Position, Look;
+        public static string Fail, Xml, Reason;
+        public static List<string> Events = new();
+        public static XmlRpcResponse Response;
+        public static void Hit(string text)
+        {
+            Events.Add(text);
+            if (Fail == text.Split(':')[0])
+                throw new InvalidOperationException(Fail);
+        }
+        public static string H(string s)
+        {
+            if (s == null)
+                return "-";
+            if (s.Length == 0)
+                return ".";
+            var o = new System.Text.StringBuilder(s.Length * 4);
+            foreach (char c in s)
+                o.Append(((int)c & 255).ToString("x2")).Append(((int)c >> 8).ToString("x2"));
+            return o.ToString();
+        }
+        public static string D(string h)
+        {
+            if (h == "-")
+                return null;
+            if (h == ".")
+                return "";
+            var bytes = Convert.FromHexString(h);
+            var chars = new char[bytes.Length / 2];
+            for (int i = 0; i < chars.Length; i++)
+                chars[i] = (char)(bytes[2 * i] | bytes[2 * i + 1] << 8);
+            return new string(chars);
+        }
+        public static string Dump(object v)
+        {
+            if (v == null)
+                return "N";
+            if (v is string s)
+                return "S:" + H(s);
+            if (v is int i)
+                return "I:" + i;
+            if (v is bool b)
+                return b ? "T" : "F";
+            if (v is double d)
+                return "R:" + BitConverter.DoubleToInt64Bits(d).ToString("x16");
+            if (v is DateTime t)
+                return "D:" + t.Ticks;
+            if (v is byte[] bytes)
+                return "B:" + Convert.ToHexString(bytes).ToLowerInvariant();
+            if (v is ArrayList list)
+            {
+                var a = new List<string>();
+                foreach (var x in list)
+                    a.Add(Dump(x));
+                return "A[" + string.Join(',', a) + "]";
+            }
+            if (v is IDictionary map)
+            {
+                var keys = new List<string>();
+                foreach (string k in map.Keys)
+                    keys.Add(k);
+                keys.Sort(StringComparer.Ordinal);
+                var a = new List<string>();
+                foreach (var k in keys)
+                    a.Add(H(k) + "=" + Dump(map[k]));
+                return "M{" + string.Join(',', a) + "}";
+            }
+            return "X";
+        }
+        public static string Vec(Vector3 v) => BitConverter.SingleToInt32Bits(v.X).ToString("x8") +
+                                               ":" + BitConverter.SingleToInt32Bits(v.Y).ToString("x8") +
+                                               ":" + BitConverter.SingleToInt32Bits(v.Z).ToString("x8");
+        public static string Region(GridRegion r) =>
+            r == null ? "N"
+                      : r.RegionID + ":" + r.RegionLocX + ":" + r.RegionLocY + ":" + r.RegionSizeX +
+                            ":" + r.RegionSizeY + ":" + H(r.RegionName) + ":" + H(r.ExternalHostName) +
+                            ":" + r.HttpPort + ":" + H(r.RawServerURI) + ":" + H(r.ServerURI) + ":" +
+                            (r.InternalEndPoint == null ? "N" : r.InternalEndPoint.ToString());
+        public static void Main()
+        {
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            string line;
+            while ((line = Console.ReadLine()) != null)
+            {
+                var a = line.Split(' ');
+                int mode = Mode = int.Parse(a[0]);
+                bool config = a[1] == "1";
+                Fail = a[2];
+                var url = D(a[3]);
+                Xml = D(a[4]);
+                Events.Clear();
+                Response = null;
+                Reason = "seed";
+                Position = new Vector3(9, 8, 7);
+                Look = new Vector3(6, 5, 4);
+                UserAgentServiceConnector connector = null;
+                string result;
+                try
+                {
+                    connector = config ? new UserAgentServiceConnector(new Config { Url = url })
+                                       : new UserAgentServiceConnector(url);
+                    UUID id = new UUID("00000000-0000-0000-0000-000000000001");
+                    if (mode == 0)
+                    {
+                        var info = connector.GetUserInfo(id);
+                        bool same = true;
+                        foreach (var p in info)
+                            if (!object.ReferenceEquals(p.Value, ((Hashtable)Response.Value)[p.Key]))
+                                same = false;
+                        result = Dump(info) + ":" + same;
+                    }
+                    else if (mode == 1)
+                        result = Dump(connector.GetServerURLs(id));
+                    else if (mode == 2)
+                        result = "S:" + H(connector.LocateUser(id));
+                    else if (mode == 3)
+                        result =
+                            "S:" + H(connector.GetUUI(id, new UUID("00000000-0000-0000-0000-000000000002")));
+                    else if (mode == 4)
+                        result = "U:" + connector.GetUUID(D(a[5]), D(a[6]));
+                    else if (mode == 6)
+                        result = "B:" + connector.Bool(out Reason);
+                    else if (mode == 7)
+                        result = "B:" + connector.VerifyAgent(id, D(a[5]));
+                    else if (mode == 8)
+                        result = "B:" + connector.VerifyClient(id, D(a[5]));
+                    else if (mode == 9)
+                        result = "B:" + connector.IsAgentComingHome(id, D(a[5]));
+                    else if (mode == 10)
+                    {
+                        connector.LogoutAgent(id, new UUID("00000000-0000-0000-0000-000000000002"));
+                        result = "V";
+                    }
+                    else if (mode == 11)
+                    {
+                        connector.SetClientToken(id, D(a[5]));
+                        result = "V";
+                    }
+                    else if (mode == 12)
+                        result = "G:" + Region(connector.GetHomeRegion(id, out Position, out Look));
+                    else if (mode >= 13 && mode <= 15)
+                    {
+                        var first = D(a[5]);
+                        List<string> friends = first == null      ? null
+                                               : first == "empty" ? new()
+                                                                  : new() { first, D(a[6]) };
+                        var list = mode == 13 ? connector.GetOnlineFriends(id, friends)
+                                              : connector.StatusNotification(friends, id, mode == 14);
+                        var names = new List<string>();
+                        foreach (var value in list)
+                            names.Add(value.ToString());
+                        result = "F:" + string.Join(",", names);
+                    }
+                    else
+                        result = "C";
+                }
+                catch (Exception e)
+                {
+                    result = "E:" + e.GetType().FullName + ":" + H(e.Message);
+                }
+                var server = connector == null ? null
+                                               : (string) typeof(UserAgentServiceConnector)
+                                                     .GetField("m_ServerURL",
+                                                               BindingFlags.Instance | BindingFlags.NonPublic)
+                                                     .GetValue(connector);
+                Console.WriteLine(result + "|" + H(server) + "|" + H(string.Join("\n", Events)) + "|" +
+                                  H(Reason) + "|" + Vec(Position) + "|" + Vec(Look));
+            }
+        }
+    }
+    public class TextObject
+    {
+        bool fail;
+        public TextObject(bool f)
+        {
+            fail = f;
+        }
+        public override string ToString()
+        {
+            Host.Hit("text");
+            if (fail)
+                throw new InvalidOperationException("text");
+            return null;
+        }
+    }
+    public class OrderedMap : Hashtable
+    {
+        public OrderedMap(Hashtable input)
+        {
+            foreach (var key in input.Keys)
+            {
+                var value = input[key];
+                if (value is string s && s == "__throw__")
+                    value = new TextObject(true);
+                else if (value is string n && n == "__null__")
+                    value = new TextObject(false);
+                Add(key, value);
+            }
+        }
+        public override ICollection Keys
+        {
+            get {
+                var keys = new List<string>();
+                foreach (string k in base.Keys)
+                    keys.Add(k);
+                keys.Sort(StringComparer.Ordinal);
+                return keys;
+            }
+        }
+    }
+    public class Client : IDisposable
+    {
+        public void Dispose()
+        {
+            Host.Hit("close");
+        }
+    }
+    public class Request
+    {
+        string method;
+        IList args;
+        public Request(string name, IList p)
+        {
+            method = name;
+            args = p;
+        }
+        public XmlRpcResponse Send(string url, Client client)
+        {
+            Host.Hit("send:" + Host.H(method) + ":" + Host.H(url) + ":" + Host.Dump(args[0]));
+            if (Host.Xml == "NULL")
+                return null;
+            var response = (XmlRpcResponse) new XmlRpcResponseDeserializer().Deserialize(Host.Xml);
+            if (Host.Mode >= 13 && Host.Mode <= 15 && !response.IsFault && response.Value is Hashtable map)
+                response.Value = new OrderedMap(map);
+            return Host.Response = response;
+        }
+    }
+    public class Log
+    {
+        public void DebugFormat(string f, params object[] v)
+        {
+            Host.Hit("debug:" + string.Format(f, v));
+        }
+        public void Error(string t)
+        {
+            Host.Hit("error:" + t);
+        }
+        public void ErrorFormat(string f, params object[] v)
+        {
+            Host.Hit("error:" + string.Format(f, v));
+        }
+        public void WarnFormat(string f, params object[] v)
+        {
+            Host.Hit("warn:" + string.Format(f, v));
+        }
+    }
 }
-namespace Nini.Config {public interface IConfigSource{}public class Config:IConfigSource{public string Url;}}
-namespace OpenSim.Framework {public class GridInfo{public string HomeURL;public GridInfo(IConfigSource c){HomeURL=((Config)c).Url;}}public static class WebUtil {public static Fixture.Client GetNewGlobalHttpClient(int n){Fixture.Host.Hit("factory:"+n);return new();}}}
+namespace Nini.Config
+{
+    public interface IConfigSource
+    {
+    }
+    public class Config : IConfigSource
+    {
+        public string Url;
+    }
+}
+namespace OpenSim.Framework
+{
+    public class GridInfo
+    {
+        public string HomeURL;
+        public GridInfo(IConfigSource c)
+        {
+            HomeURL = ((Config)c).Url;
+        }
+    }
+    public static class WebUtil
+    {
+        public static Fixture.Client GetNewGlobalHttpClient(int n)
+        {
+            Fixture.Host.Hit("factory:" + n);
+            return new();
+        }
+    }
+}

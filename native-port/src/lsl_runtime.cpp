@@ -1,6 +1,8 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/script/lsl_runtime.hpp"
+#include "opensim/framework/avatar_visual_parameter.hpp"
+#include "opensim/framework/sha256.hpp"
 #include "opensim/scene/script_control.hpp"
 #include "opensim/framework/text.hpp"
 #include "opensim/framework/identity.hpp"
@@ -14,6 +16,7 @@
 #include "opensim/framework/culture_prefix.hpp"
 #include "opensim/framework/config_uri_escape.hpp"
 #include "opensim/framework/config_uri_unescape.hpp"
+#include "opensim/framework/primitive_base_shape.hpp"
 #include "opensim/framework/sdk_uuid.hpp"
 #include <bit>
 #include <chrono>
@@ -267,6 +270,8 @@ struct Expression {
         RequestSecureUrl,
         ReleaseUrl,
         FreeUrls,
+        SimulatorHostname,
+        EnvironmentValue,
         HttpHeader,
         HttpResponse,
         HttpContentType,
@@ -293,13 +298,32 @@ struct Expression {
         ObjectAcceleration,
         ObjectScale,
         ObjectName,
+        TextureProperty,
+        SetTextureProperty,
+        SetLinkedTextureProperty,
+        SetTextureAnimation,
+        SendLinkMessage,
+        PhysicsMaterial,
+        SetPhysicsMaterial,
+        SetBuoyancy,
+        SetForce,
+        GetForce,
+        SetTorque,
+        GetTorque,
+        SetForceAndTorque,
         ObjectDescription,
         StartString,
         StartParameter,
         ScriptPermissions,
         ScriptPermissionsKey,
+        CameraPosition,
+        CameraRotation,
+        CameraFov,
+        CameraAspect,
         AnimationState,
         AnimationList,
+        SetRegionPosition,
+        ObjectAnimationNames,
         AnimationOverride,
         LinksetDataRead,
         LinksetDataWrite,
@@ -333,6 +357,11 @@ struct Expression {
         OverMyLand,
         ScriptDanger,
         ParcelDetails,
+        ParcelMaxPrims,
+        ParcelPrimCount,
+        ParcelPrimOwners,
+        ParcelMusicUrl,
+        ParcelMediaQuery,
         AgentList,
         RegionAgentNames,
         AgentIpAddress,
@@ -348,13 +377,18 @@ struct Expression {
         RegionCorner,
         RegionTimeDilation,
         RegionFPS,
+        SimulatorStats,
         ObjectKey,
         CreatorKey,
         GenerateKey,
         OwnerKey,
         LookupOwnerKey,
         SameGroup,
+        IsFriend,
         AgentSize,
+        AgentInfo,
+        BoundingBox,
+        VisualParams,
         KeyToName,
         NameToKey,
         Username,
@@ -370,13 +404,20 @@ struct Expression {
         RequestSimulatorData,
         AgentLanguage,
         AttachmentPoint,
+        ObjectStatus,
         AttachedList,
         LinkNumber,
         LinkKey,
         LinkName,
+        PrimMedia,
+        SetPrimMedia,
+        ClearPrimMedia,
         LinkSides,
         PrimCount,
         ObjectPrimCount,
+        ObjectMass,
+        ScriptMass,
+        ScriptMassMks,
         DetectedKey,
         DetectedName,
         DetectedOwner,
@@ -458,7 +499,12 @@ struct Expression {
         Wallclock,
         TimeOfDay,
         Elapsed,
-        ElapsedReset
+        ElapsedReset,
+        DeprecatedCommand,
+        Listen,
+        ListenControl,
+        ListenRemove,
+        RegionSayTo
     };
     Op op = Op::Literal;
     unsigned height = 1;
@@ -470,6 +516,31 @@ struct Expression {
     LslValue value = std::int32_t(0);
     std::unique_ptr<Expression> left, right, z, w;
     std::vector<std::unique_ptr<Expression>> elements;
+};
+struct DeprecatedCommand {
+    std::string_view name;
+    std::string_view replacement;
+    std::initializer_list<Type> parameters;
+    int script_delay = 0;
+};
+const DeprecatedCommand deprecated_commands[] = {
+    {"llSound", "llPlaySound", {Type::String, Type::Float, Type::Integer, Type::Integer}},
+    {"llSoundPreload", "llPreloadSound", {Type::String}},
+    {"llMakeExplosion", "llParticleSystem",
+     {Type::Integer, Type::Float, Type::Float, Type::Float, Type::Float, Type::String, Type::Vector}, 100},
+    {"llMakeFountain", "llParticleSystem",
+     {Type::Integer, Type::Float, Type::Float, Type::Float, Type::Float, Type::Integer, Type::String,
+      Type::Vector, Type::Float}, 100},
+    {"llMakeSmoke", "llParticleSystem",
+     {Type::Integer, Type::Float, Type::Float, Type::Float, Type::Float, Type::String, Type::Vector}, 100},
+    {"llMakeFire", "llParticleSystem",
+     {Type::Integer, Type::Float, Type::Float, Type::Float, Type::Float, Type::String, Type::Vector}, 100},
+    {"llTakeCamera", "llSetCameraParams", {Type::String}},
+    {"llReleaseCamera", "llClearCameraParams", {Type::String}},
+    {"llRemoteLoadScript", "llRemoteLoadScriptPin", {Type::String, Type::String, Type::Integer, Type::Integer}, 3000},
+    {"llRemoteDataSetRegion", "llOpenRemoteDataChannel", {}},
+    {"llSetPrimURL", "llSetPrimMediaParams", {Type::String}, 2000},
+    {"llRefreshPrimURL", "", {}, 20000},
 };
 enum class DrawingFormat { Arguments, LineFrom, Polygon, Color, DeprecatedColor };
 struct DrawingCommand {
@@ -592,6 +663,7 @@ LslValue default_value(Type type) {
 }
 struct Instruction {
     bool owner = false;
+    LslChatType chat_type = LslChatType::Say;
     bool sound = false;
     bool play_sound = false;
     bool trigger_sound = false;
@@ -604,12 +676,19 @@ struct Instruction {
     bool reset_time = false;
     bool reset_linkset_data = false;
     bool start_animation = false;
+    std::unique_ptr<Expression> object_position;
+    std::array<std::unique_ptr<Expression>, 5> rez_arguments;
+    bool rez_at_root = false;
+    std::unique_ptr<Expression> status_mask, status_value;
+    bool object_animation = false;
     std::unique_ptr<Expression> animation_avatar;
     bool reset_script = false;
     std::unique_ptr<Expression> unsit_avatar;
     std::unique_ptr<Expression> force_sit_avatar;
     std::unique_ptr<Expression> force_sit_target;
     std::unique_ptr<Expression> region_water_height;
+    std::unique_ptr<Expression> parcel_music_url;
+    std::unique_ptr<Expression> parcel_media_commands;
     bool estate_sun = false;
     std::unique_ptr<Expression> sun_use_estate, sun_fixed, sun_hour;
     std::unique_ptr<Expression> sit_target_link, sit_target_position, sit_target_rotation;
@@ -618,13 +697,16 @@ struct Instruction {
     std::unique_ptr<Expression> sit_flags_link, sit_flags_value;
     std::unique_ptr<Expression> seat_camera_link, seat_camera_eye, seat_camera_at, seat_camera_mouselook;
     std::unique_ptr<Expression> script_control_name, script_control_run;
+    std::array<std::unique_ptr<Expression>, 3> taken_controls;
+    bool release_controls = false;
     bool return_event = false;
     bool jump_when_true = false;
     std::string target_state;
     std::unique_ptr<Expression> channel, text, condition, permission_agent, permission_mask, animation_name,
         override_state, override_animation, sleep, timer, event_delay, scale, click_action, pass_touches,
         allow_inventory_drop, text_color,
-        text_alpha, sound_gain, adjust_sound_gain, sound_radius, preload_sound, sound_queueing, sound_min,
+        text_alpha, sound_gain, adjust_sound_gain, sound_radius, preload_sound, sound_queueing, sound_link,
+        sound_mode, sound_min,
         sound_max, pay_price, pay_buttons;
     std::optional<bool> sit_label;
     std::optional<LslParcelListAction> parcel_list_action;
@@ -679,78 +761,6 @@ double seconds_of_day(std::int64_t ticks, bool local) {
     return time.tm_hour * 3600 + time.tm_min * 60 + time.tm_sec + duration<double>(instant - whole).count();
 }
 std::int64_t ticks();
-std::string sha256_text(std::string_view text, bool sha224 = false) {
-    constexpr std::array<std::uint32_t, 64> constants{
-        0x428a2f98u, 0x71374491u, 0xb5c0fbcfu, 0xe9b5dba5u, 0x3956c25bu, 0x59f111f1u, 0x923f82a4u,
-        0xab1c5ed5u, 0xd807aa98u, 0x12835b01u, 0x243185beu, 0x550c7dc3u, 0x72be5d74u, 0x80deb1feu,
-        0x9bdc06a7u, 0xc19bf174u, 0xe49b69c1u, 0xefbe4786u, 0x0fc19dc6u, 0x240ca1ccu, 0x2de92c6fu,
-        0x4a7484aau, 0x5cb0a9dcu, 0x76f988dau, 0x983e5152u, 0xa831c66du, 0xb00327c8u, 0xbf597fc7u,
-        0xc6e00bf3u, 0xd5a79147u, 0x06ca6351u, 0x14292967u, 0x27b70a85u, 0x2e1b2138u, 0x4d2c6dfcu,
-        0x53380d13u, 0x650a7354u, 0x766a0abbu, 0x81c2c92eu, 0x92722c85u, 0xa2bfe8a1u, 0xa81a664bu,
-        0xc24b8b70u, 0xc76c51a3u, 0xd192e819u, 0xd6990624u, 0xf40e3585u, 0x106aa070u, 0x19a4c116u,
-        0x1e376c08u, 0x2748774cu, 0x34b0bcb5u, 0x391c0cb3u, 0x4ed8aa4au, 0x5b9cca4fu, 0x682e6ff3u,
-        0x748f82eeu, 0x78a5636fu, 0x84c87814u, 0x8cc70208u, 0x90befffau, 0xa4506cebu, 0xbef9a3f7u,
-        0xc67178f2u,
-    };
-    std::array<std::uint32_t, 8> state{0x6a09e667u, 0xbb67ae85u, 0x3c6ef372u, 0xa54ff53au,
-                                       0x510e527fu, 0x9b05688cu, 0x1f83d9abu, 0x5be0cd19u};
-    if (sha224)
-        state = {0xc1059ed8u, 0x367cd507u, 0x3070dd17u, 0xf70e5939u,
-                 0xffc00b31u, 0x68581511u, 0x64f98fa7u, 0xbefa4fa4u};
-    const auto compress = [&](std::string_view block) {
-        std::array<std::uint32_t, 64> words{};
-        for (std::size_t i = 0; i < 16; ++i)
-            for (std::size_t byte = 0; byte < 4; ++byte)
-                words[i] = (words[i] << 8) | static_cast<unsigned char>(block[4 * i + byte]);
-        for (std::size_t i = 16; i < words.size(); ++i) {
-            const auto x = words[i - 15], y = words[i - 2];
-            const auto low = std::rotr(x, 7) ^ std::rotr(x, 18) ^ (x >> 3);
-            const auto high = std::rotr(y, 17) ^ std::rotr(y, 19) ^ (y >> 10);
-            words[i] = words[i - 16] + low + words[i - 7] + high;
-        }
-        auto [a, b, c, d, e, f, g, h] = state;
-        for (std::size_t i = 0; i < words.size(); ++i) {
-            const auto high = std::rotr(e, 6) ^ std::rotr(e, 11) ^ std::rotr(e, 25);
-            const auto choice = (e & f) ^ (~e & g);
-            const auto t1 = h + high + choice + constants[i] + words[i];
-            const auto low = std::rotr(a, 2) ^ std::rotr(a, 13) ^ std::rotr(a, 22);
-            const auto majority = (a & b) ^ (a & c) ^ (b & c);
-            h = g;
-            g = f;
-            f = e;
-            e = d + t1;
-            d = c;
-            c = b;
-            b = a;
-            a = t1 + low + majority;
-        }
-        const std::array working{a, b, c, d, e, f, g, h};
-        for (std::size_t i = 0; i < state.size(); ++i)
-            state[i] += working[i];
-    };
-    const auto bits = static_cast<std::uint64_t>(text.size()) * 8;
-    while (text.size() >= 64) {
-        compress(text.substr(0, 64));
-        text.remove_prefix(64);
-    }
-    std::array<char, 128> tail{};
-    std::copy(text.begin(), text.end(), tail.begin());
-    tail[text.size()] = static_cast<char>(0x80);
-    const std::size_t size = text.size() < 56 ? 64 : 128;
-    for (std::size_t i = 0; i < 8; ++i)
-        tail[size - 1 - i] = static_cast<char>((bits >> (8 * i)) & 0xff);
-    for (std::size_t i = 0; i < size; i += 64)
-        compress(std::string_view(tail.data() + i, 64));
-    constexpr std::string_view digits = "0123456789abcdef";
-    std::string result;
-    result.reserve(64);
-    for (auto word : state)
-        for (int shift = 28; shift >= 0; shift -= 4)
-            result += digits[(word >> shift) & 15];
-    if (sha224)
-        result.resize(56);
-    return result;
-}
 std::string sha512_text(std::string_view text, bool sha384 = false) {
     constexpr std::array<std::uint64_t, 80> constants{
         0x428a2f98d728ae22ull, 0x7137449123ef65cdull, 0xb5c0fbcfec4d3b2full, 0xe9b5dba58189dbbcull,
@@ -1146,6 +1156,89 @@ std::string value_text(const LslValue& v) {
                value_text(rotation->z) + ", " + value_text(rotation->w) + ">";
     return std::get<std::string>(v);
 }
+std::int32_t media_rule_integer(const LslValue& value) {
+    if (std::holds_alternative<std::int32_t>(value) || std::holds_alternative<double>(value))
+        return list_integer(value);
+    if (const auto* text = std::get_if<std::string>(&value)) {
+        constexpr auto whitespace = " \t\r\n\v\f";
+        const auto begin = text->find_first_not_of(whitespace);
+        if (begin != std::string::npos) {
+            const auto end = text->find_last_not_of(whitespace) + 1;
+            const auto* first = text->data() + begin;
+            const auto* last = text->data() + end;
+            if (*first == '+' && ++first != last && *first == '-')
+                throw std::runtime_error("Expected an integer media rule");
+            std::int32_t code;
+            const auto parsed = std::from_chars(first, last, code);
+            if (parsed.ec == std::errc{} && parsed.ptr == last)
+                return code;
+        }
+    }
+    throw std::runtime_error("Expected an integer media rule");
+}
+bool apply_media_rules(framework::ShapeMediaEntry& media, const LslList& rules) {
+    for (std::size_t i = 1; i < rules.items.size(); i += 2) {
+        const auto& value = rules.items[i];
+        switch (media_rule_integer(rules.items[i - 1])) {
+        case 0:
+            media.enable_alternative_image = media_rule_integer(value) != 0;
+            break;
+        case 1:
+            media.controls = media_rule_integer(value) != 0;
+            break;
+        case 2:
+            media.current_url = framework::utf16_replacing(value_text(value));
+            break;
+        case 3:
+            media.home_url = framework::utf16_replacing(value_text(value));
+            break;
+        case 4:
+            media.auto_loop = media_rule_integer(value) != 0;
+            break;
+        case 5:
+            media.auto_play = media_rule_integer(value) != 0;
+            break;
+        case 6:
+            media.auto_scale = media_rule_integer(value) != 0;
+            break;
+        case 7:
+            media.auto_zoom = media_rule_integer(value) != 0;
+            break;
+        case 8:
+            media.interact_on_first_click = media_rule_integer(value) != 0;
+            break;
+        case 9:
+            media.width = media_rule_integer(value);
+            break;
+        case 10:
+            media.height = media_rule_integer(value);
+            break;
+        case 11:
+            media.enable_whitelist = media_rule_integer(value) != 0;
+            break;
+        case 12: {
+            const auto text = value_text(value);
+            std::vector<std::optional<std::u16string>> urls;
+            for (const auto item : std::string_view(text) | std::views::split(','))
+                urls.emplace_back(framework::utf16_replacing(framework::trim_utf8(
+                    std::string_view(item.begin(), item.end()))));
+            if (urls.empty())
+                urls.emplace_back(u"");
+            media.whitelist = std::make_shared<framework::ShapeArray<std::optional<std::u16string>>>(std::move(urls));
+            break;
+        }
+        case 13:
+            media.interact_permissions = static_cast<std::uint8_t>(media_rule_integer(value));
+            break;
+        case 14:
+            media.control_permissions = static_cast<std::uint8_t>(media_rule_integer(value));
+            break;
+        default:
+            return false;
+        }
+    }
+    return true;
+}
 std::string drawing_number(double value) {
     if (std::isnan(value))
         return "NaN";
@@ -1277,7 +1370,7 @@ std::string compute_hash(std::string_view source, std::string_view algorithm) {
     if (algorithm == "md5_sha1")
         return framework::md5(std::string(source)) + framework::sha1_hex({bytes, source.size()});
     if (algorithm == "sha224" || algorithm == "sha256")
-        return sha256_text(source, algorithm == "sha224");
+        return framework::sha256_hex(source, algorithm == "sha224");
     if (algorithm == "sha384" || algorithm == "sha512")
         return sha512_text(source, algorithm == "sha384");
     return {};
@@ -1304,6 +1397,15 @@ public:
     explicit OsslRuntimeError(const std::string& reason) : std::runtime_error("OSSL Runtime Error: " + reason) {}
 };
 
+framework::Vector3d rotate_vector(framework::Vector3d vector, LslRotation rotation) {
+    const auto [x, y, z, w] = rotation;
+    const auto rx = w * vector.x + y * vector.z - z * vector.y;
+    const auto ry = w * vector.y + z * vector.x - x * vector.z;
+    const auto rz = w * vector.z + x * vector.y - y * vector.x;
+    return {vector.x + 2.0 * (rz * y - ry * z),
+            vector.y + 2.0 * (rx * z - rz * x),
+            vector.z + 2.0 * (ry * x - rx * y)};
+}
 struct Evaluator {
     std::vector<LslValue>& locals;
     std::vector<LslValue>& globals;
@@ -1313,6 +1415,18 @@ struct Evaluator {
     const LslEvent* event;
     const LslContext& context;
     const LslHost& host;
+    LslRotation object_world_rotation() const {
+        if (context.world_rotation)
+            return *context.world_rotation;
+        const auto root = context.root_rotation.value_or(context.local_rotation);
+        if (!context.root_position)
+            return root;
+        const auto& local = context.local_rotation;
+        return {root.w * local.x + root.x * local.w + root.y * local.z - root.z * local.y,
+                root.w * local.y + root.y * local.w + root.z * local.x - root.x * local.z,
+                root.w * local.z + root.z * local.w + root.x * local.y - root.y * local.x,
+                root.w * local.w - root.x * local.x - root.y * local.y - root.z * local.z};
+    }
     double& writable_component(const Expression& target) const {
         return component_at(variable(*target.left), target.slot);
     }
@@ -1331,14 +1445,14 @@ struct Evaluator {
         if (!host.ossl_enabled)
             throw OsslRuntimeError("permission denied. All unsafe OSSL funtions disabled");
     }
-    void script_error(std::string message) const {
+    void script_error(std::string message, std::int32_t sleep_ms = 1000) const {
         LslChat chat{LslChatType::Debug, std::numeric_limits<std::int32_t>::max(),
                      framework::truncate_utf16(message, 1023), context};
         if (host.chat)
             host.chat(chat);
         if (host.listener)
             host.listener(chat);
-        delay(1000);
+        delay(sleep_ms);
     }
     std::int64_t timer_now() const {
         return host.monotonic_ticks ? host.monotonic_ticks() : ticks();
@@ -2316,6 +2430,15 @@ struct Evaluator {
         }
         case Expression::Op::FreeUrls:
             return host.free_urls ? host.free_urls() : std::int32_t{0};
+        case Expression::Op::SimulatorHostname:
+            return host.simulator_hostname;
+        case Expression::Op::EnvironmentValue: {
+            const auto name = std::get<std::string>(evaluate(*e.left));
+            const auto key = framework::utf8(framework::invariant_lower_utf16(framework::utf16_replacing(name)));
+            if (key == "simulator_hostname")
+                return host.simulator_hostname;
+            return host.region_environment_value ? host.region_environment_value(key) : std::string{};
+        }
         case Expression::Op::HttpHeader:
         case Expression::Op::HttpResponse: {
             const bool respond = e.op == Expression::Op::HttpResponse;
@@ -2533,6 +2656,140 @@ struct Evaluator {
                 script_error("llGetScriptState: Can't find script '" + name + "'");
             return std::int32_t(!item.is_zero() && host.script_running && host.script_running(item));
         }
+        case Expression::Op::SendLinkMessage: {
+            const auto id = std::get<std::string>(evaluate(*e.w));
+            const auto message = std::get<std::string>(evaluate(*e.z));
+            const auto number = std::get<std::int32_t>(evaluate(*e.right));
+            const auto link = std::get<std::int32_t>(evaluate(*e.left));
+            if (host.linked_prim_parts && host.link_message)
+                for (const auto part : host.linked_prim_parts(context.object, link))
+                    host.link_message(context.object, part, number, message, id);
+            return std::int32_t{0};
+        }
+        case Expression::Op::PhysicsMaterial: {
+            auto result = std::make_shared<LslList>();
+            if (host.physics_material)
+                for (const auto value : host.physics_material(context.object))
+                    result->items.emplace_back(double(value));
+            return std::shared_ptr<const LslList>(std::move(result));
+        }
+        case Expression::Op::SetPhysicsMaterial: {
+            std::array<float, 4> values;
+            for (auto i = values.size(); i > 0; --i)
+                values[i - 1] = static_cast<float>(list_float(evaluate(*e.elements[i])));
+            const auto mask = std::get<std::int32_t>(evaluate(*e.elements[0]));
+            if (host.set_physics_material)
+                host.set_physics_material(context.object, mask, values);
+            return std::int32_t{0};
+        }
+        case Expression::Op::SetBuoyancy: {
+            const float buoyancy = static_cast<float>(list_float(evaluate(*e.left)));
+            if (host.set_buoyancy)
+                host.set_buoyancy(context.object, buoyancy);
+            return std::int32_t{0};
+        }
+        case Expression::Op::SetForce:
+        case Expression::Op::SetTorque:
+        case Expression::Op::SetForceAndTorque: {
+            const bool local = std::get<std::int32_t>(evaluate(*e.right)) != 0;
+            const auto narrow_vector = [](framework::Vector3d vector) {
+                return framework::Vector3{static_cast<float>(vector.x), static_cast<float>(vector.y),
+                                          static_cast<float>(vector.z)};
+            };
+            framework::Vector3 torque;
+            if (e.z)
+                torque = narrow_vector(std::get<framework::Vector3d>(evaluate(*e.z)));
+            auto vector = std::get<framework::Vector3d>(evaluate(*e.left));
+            if (e.op == Expression::Op::SetTorque) {
+                torque = narrow_vector(vector);
+            } else if (host.set_force) {
+                if (local)
+                    vector = rotate_vector(vector, object_world_rotation());
+                host.set_force(context.object, narrow_vector(vector));
+            }
+            if (e.op != Expression::Op::SetForce && host.set_torque)
+                host.set_torque(context.object, torque, local);
+            return std::int32_t{0};
+        }
+        case Expression::Op::GetForce:
+        case Expression::Op::GetTorque: {
+            const auto& getter = e.op == Expression::Op::GetForce ? host.get_force : host.get_torque;
+            const auto vector = getter ? getter(context.object) : framework::Vector3{};
+            return framework::Vector3d{vector.x, vector.y, vector.z};
+        }
+        case Expression::Op::SetTextureAnimation: {
+            std::array<LslValue, 8> args;
+            for (auto i = e.elements.size(); i > 0; --i)
+                args[i - 1] = evaluate(*e.elements[i - 1]);
+            const bool linked = e.elements.size() == 8;
+            const auto* values = args.data() + (linked ? 1 : 0);
+            std::vector<std::uint8_t> bytes;
+            if (std::get<std::int32_t>(values[0]) != 0) {
+                bytes.reserve(16);
+                for (int i = 0; i < 4; ++i)
+                    bytes.push_back(static_cast<std::uint8_t>(std::get<std::int32_t>(values[i])));
+                for (int i = 4; i < 7; ++i) {
+                    auto bits = std::bit_cast<std::uint32_t>(static_cast<float>(list_float(values[i])));
+                    for (int byte = 0; byte < 4; ++byte) {
+                        bytes.push_back(static_cast<std::uint8_t>(bits));
+                        bits >>= 8;
+                    }
+                }
+            }
+            if (host.set_texture_animation) {
+                if (!linked)
+                    host.set_texture_animation(context.object, bytes);
+                else if (host.linked_prim_parts)
+                    for (const auto part : host.linked_prim_parts(context.object, std::get<std::int32_t>(args[0])))
+                        host.set_texture_animation(part, bytes);
+            }
+            return std::int32_t{0};
+        }
+        case Expression::Op::SetTextureProperty:
+        case Expression::Op::SetLinkedTextureProperty: {
+            using Property = LslTextureProperty;
+            const bool linked = e.op == Expression::Op::SetLinkedTextureProperty;
+            const auto property = static_cast<Property>(std::get<std::int32_t>(e.value));
+            const auto face = std::get<std::int32_t>(evaluate(e.z ? *e.z : *e.right));
+            LslValue value;
+            if (linked) {
+                value = evaluate(*e.right);
+            } else if (e.z) {
+                const auto v = list_float(evaluate(*e.right));
+                value = framework::Vector3d{list_float(evaluate(*e.left)), v, 0.};
+            } else {
+                value = evaluate(*e.left);
+            }
+            if (property == Property::Alpha || property == Property::Rotation)
+                value = list_float(value);
+            if (linked) {
+                const auto link = std::get<std::int32_t>(evaluate(*e.left));
+                if (host.linked_prim_parts && host.set_texture_property)
+                    for (const auto id : host.linked_prim_parts(context.object, link))
+                        host.set_texture_property(context.object, id, face, property, value);
+            } else if (host.set_texture_property) {
+                host.set_texture_property(context.object, context.object, face, property, value);
+            }
+            if (property != Property::Color && property != Property::Alpha) {
+                const auto requested = 200.f * host.script_delay_factor;
+                if (requested >= 10.f && requested < 2147483648.f)
+                    delay(static_cast<std::int32_t>(requested));
+            }
+            return std::int32_t{0};
+        }
+        case Expression::Op::TextureProperty: {
+            const auto face = std::get<std::int32_t>(evaluate(*e.left));
+            const auto property = static_cast<LslTextureProperty>(std::get<std::int32_t>(e.value));
+            if (host.texture_property) {
+                if (auto value = host.texture_property(context.object, face, property))
+                    return std::move(*value);
+            }
+            if (e.type == Type::Vector)
+                return framework::Vector3d{};
+            if (e.type == Type::String)
+                return framework::Uuid{}.str();
+            return 0.;
+        }
         case Expression::Op::ObjectName:
             return context.object_name;
         case Expression::Op::ObjectDescription:
@@ -2552,6 +2809,13 @@ struct Evaluator {
                 return std::string{};
             return host.avatar_movement_state(agent);
         }
+        case Expression::Op::ObjectAnimationNames: {
+            LslList result;
+            if (host.object_animation_names)
+                for (auto& name : host.object_animation_names(context.object))
+                    result.items.emplace_back(std::move(name));
+            return std::make_shared<const LslList>(std::move(result));
+        }
         case Expression::Op::AnimationList: {
             framework::Uuid agent;
             LslList result;
@@ -2569,6 +2833,30 @@ struct Evaluator {
             if (e.op == Expression::Op::ScriptPermissionsKey)
                 return permissions.first.str();
             return permissions.second;
+        }
+        case Expression::Op::CameraPosition:
+        case Expression::Op::CameraRotation:
+        case Expression::Op::CameraFov:
+        case Expression::Op::CameraAspect: {
+            const auto [granter, mask] = host.script_permissions
+                                            ? host.script_permissions(context.object, context.item)
+                                            : std::pair<framework::Uuid, std::int32_t>{};
+            constexpr std::int32_t track_camera = 0x400;
+            const bool permitted = !granter.is_zero() && (mask & track_camera) != 0;
+            if (!granter.is_zero() && !permitted)
+                script_error(std::get<std::string>(e.value) + ": No permissions to track the camera");
+
+            const auto camera = permitted && host.camera ? host.camera(granter) : std::nullopt;
+            if (e.op == Expression::Op::CameraRotation)
+                return camera ? camera->rotation : LslRotation{};
+            if (e.op == Expression::Op::CameraFov) {
+                const float fov = camera ? camera->fov : (permitted ? 1.4f : 0.f);
+                return static_cast<double>(fov);
+            }
+            if (e.op == Expression::Op::CameraAspect)
+                return static_cast<double>(camera ? camera->aspect : 1.f);
+            const auto position = camera ? camera->position : framework::Vector3{};
+            return framework::Vector3d{position.x, position.y, position.z};
         }
         case Expression::Op::LinksetDataList:
         case Expression::Op::LinksetDataFind:
@@ -2651,8 +2939,85 @@ struct Evaluator {
             return double(context.time_dilation);
         case Expression::Op::RegionFPS:
             return host.region_fps ? double(host.region_fps()) : 0.;
+        case Expression::Op::SimulatorStats: {
+            const auto selector = std::get<std::int32_t>(evaluate(*e.left));
+            // LSL selectors map to StatsID values. Negative entries have no backing statistic.
+            constexpr std::array stat_ids{
+                -1, 2, 3, 4, 5, 6, 7, 8, 9, 10,       // Timing and agent updates
+                13, 14, 15, 17, 18, -1, -1, 24,        // Agents, scripts and network
+                27, 28, 29, 31, 32, 33, 34, 35, 38,   // Physics, script and simulator timing
+            };
+            if (selector < 0 || static_cast<std::size_t>(selector) >= stat_ids.size())
+                return 0.;
+            const auto id = stat_ids[static_cast<std::size_t>(selector)];
+            return id >= 0 && host.simulator_stat ? double(host.simulator_stat(id)) : 0.;
+        }
         case Expression::Op::RegionName:
             return context.region_name;
+        case Expression::Op::ParcelMusicUrl:
+            return host.parcel_music_url ? host.parcel_music_url(context.object) : std::string{};
+        case Expression::Op::ParcelMediaQuery: {
+            const auto selectors = std::get<std::shared_ptr<const LslList>>(evaluate(*e.left));
+            const auto media = host.parcel_media ? host.parcel_media(context.object) : std::nullopt;
+            if (!media)
+                return std::make_shared<const LslList>();
+
+            LslList result;
+            for (const auto& selector : selectors->items) {
+                const auto command = media_rule_integer(value_text(selector));
+                switch (command) {
+                case 4:
+                    result.items.emplace_back(media->texture.str());
+                    break;
+                case 5:
+                    result.items.emplace_back(media->url);
+                    break;
+                case 10:
+                    result.items.emplace_back(media->type);
+                    break;
+                case 11:
+                    result.items.emplace_back(std::to_string(media->width));
+                    result.items.emplace_back(std::to_string(media->height));
+                    break;
+                case 12:
+                    result.items.emplace_back(media->description);
+                    break;
+                default: {
+                    constexpr std::array names{"Stop", "Pause", "Play", "Loop", "Texture", "Url", "Time",
+                                               "Agent", "Unload", "AutoAlign", "Type", "Size", "Desc"};
+                    const auto name = command >= 0 && static_cast<std::size_t>(command) < names.size()
+                                          ? std::string(names[command])
+                                          : std::to_string(command);
+                    script_error("llParcelMediaQuery: Command not implemented - Parameter not supported yet: " + name);
+                    break;
+                }
+                }
+            }
+            const auto requested_delay = 2000.f * host.script_delay_factor;
+            if (requested_delay >= 10 && requested_delay < 2147483648.f)
+                delay(static_cast<std::int32_t>(requested_delay));
+            return std::make_shared<const LslList>(std::move(result));
+        }
+        case Expression::Op::ParcelPrimOwners: {
+            const auto point = std::get<framework::Vector3d>(evaluate(*e.left));
+            const framework::Vector3 position{float(point.x), float(point.y), float(point.z)};
+            auto owners = host.parcel_prim_owners ? host.parcel_prim_owners(position) : LslList{};
+            const auto requested = 2000.f * host.script_delay_factor;
+            if (requested >= 10.f && requested < 2147483648.f)
+                delay(static_cast<std::int32_t>(requested));
+            return std::make_shared<const LslList>(std::move(owners));
+        }
+        case Expression::Op::ParcelMaxPrims:
+        case Expression::Op::ParcelPrimCount: {
+            const bool capacity = e.op == Expression::Op::ParcelMaxPrims;
+            const bool sim_wide = std::get<std::int32_t>(evaluate(capacity ? *e.right : *e.z)) != 0;
+            const auto category = capacity ? 0 : std::get<std::int32_t>(evaluate(*e.right));
+            const auto point = std::get<framework::Vector3d>(evaluate(*e.left));
+            const framework::Vector3 position{float(point.x), float(point.y), float(point.z)};
+            if (capacity)
+                return host.parcel_max_prims ? host.parcel_max_prims(position, sim_wide) : std::int32_t{0};
+            return host.parcel_prim_count ? host.parcel_prim_count(position, category, sim_wide) : std::int32_t{0};
+        }
         case Expression::Op::ParcelDetails: {
             const auto selectors = std::get<std::shared_ptr<const LslList>>(evaluate(*e.right));
             const auto position = std::get<framework::Vector3d>(evaluate(*e.left));
@@ -2818,6 +3183,51 @@ struct Evaluator {
         }
         case Expression::Op::DrawingCommand:
             return evaluate_drawing_command(e);
+        case Expression::Op::DeprecatedCommand: {
+            for (const auto& argument : e.elements)
+                evaluate(*argument);
+            const auto& command = deprecated_commands[e.slot];
+            auto message = std::string(command.name) + ": Command deprecated";
+            if (!command.replacement.empty())
+                message += " - Use " + std::string(command.replacement) + " instead";
+            // YEngine replaces the error delay when the command schedules its own sleep.
+            const auto requested_delay = command.script_delay * host.script_delay_factor;
+            const auto sleep_ms = requested_delay >= 10 &&
+                    double(requested_delay) <= std::numeric_limits<std::int32_t>::max()
+                ? static_cast<std::int32_t>(requested_delay) : 1000;
+            script_error(std::move(message), sleep_ms);
+            return std::int32_t{0};
+        }
+        case Expression::Op::Listen: {
+            const auto channel = std::get<std::int32_t>(evaluate(*e.left));
+            auto name = std::get<std::string>(evaluate(*e.right));
+            const auto key = std::get<std::string>(evaluate(*e.z));
+            auto message = std::get<std::string>(evaluate(*e.w));
+            framework::Uuid sender;
+            framework::try_parse_sdk_uuid(key, sender);
+            return std::int32_t(host.add_listener
+                ? host.add_listener(context.item, context.object, channel, std::move(name), sender, std::move(message))
+                : -1);
+        }
+        case Expression::Op::ListenControl:
+        case Expression::Op::ListenRemove: {
+            const auto handle = std::get<std::int32_t>(evaluate(*e.left));
+            const auto active = e.right
+                ? std::optional(std::get<std::int32_t>(evaluate(*e.right)) != 0) : std::nullopt;
+            if (host.change_listener)
+                host.change_listener(context.item, handle, active);
+            return std::int32_t{0};
+        }
+        case Expression::Op::RegionSayTo: {
+            const auto key = std::get<std::string>(evaluate(*e.left));
+            const auto channel = std::get<std::int32_t>(evaluate(*e.right));
+            const auto text = std::get<std::string>(evaluate(*e.z));
+            framework::Uuid target;
+            if (host.direct_chat && channel != std::numeric_limits<std::int32_t>::max() &&
+                framework::try_parse_sdk_uuid(key, target) && !target.is_zero())
+                host.direct_chat(context.object, target, channel, framework::truncate_utf16(text, 1023));
+            return std::int32_t{0};
+        }
         case Expression::Op::AgentIpAddress: {
             const auto key = std::get<std::string>(evaluate(*e.left));
             check_ossl_permission("osGetAgentIP");
@@ -2826,11 +3236,18 @@ struct Evaluator {
                 return std::string{};
             return host.avatar_ip_address(context.object, agent);
         }
-        case Expression::Op::SameGroup: {
+        case Expression::Op::SameGroup:
+        case Expression::Op::IsFriend: {
             const auto text = std::get<std::string>(evaluate(*e.left));
             framework::Uuid id;
             if (!framework::try_parse_sdk_uuid(text, id) || id.is_zero())
                 return std::int32_t{0};
+            if (e.op == Expression::Op::IsFriend) {
+                if (!host.object_friendship)
+                    return std::int32_t{0};
+                if (const auto result = host.object_friendship(context.object, id))
+                    return std::int32_t(*result);
+            }
             if (id == context.group || (id == context.object && context.attachment_point == 0))
                 return std::int32_t{1};
             if (host.object_group) {
@@ -2962,6 +3379,76 @@ struct Evaluator {
             }
             return framework::Uuid{}.str();
         }
+        case Expression::Op::VisualParams: {
+            const auto selectors = std::get<std::shared_ptr<const LslList>>(evaluate(*e.right));
+            const auto key = std::get<std::string>(evaluate(*e.left));
+            auto result = std::make_shared<LslList>();
+            framework::Uuid id;
+            if (selectors->items.empty() || !host.agent_visual_params || !framework::try_parse_sdk_uuid(key, id))
+                return std::shared_ptr<const LslList>(std::move(result));
+            const auto parameters = host.agent_visual_params(id);
+            if (!parameters)
+                return std::shared_ptr<const LslList>(std::move(result));
+
+            using Param = framework::AvatarVisualParameter;
+            struct Selector {
+                std::string_view id;
+                std::string_view name;
+                Param index;
+            };
+            constexpr Selector supported[]{
+                {"33", "height", Param::SHAPE_HEIGHT},
+                {"38", "torso_length", Param::SHAPE_TORSO_LENGTH},
+                {"80", "male", Param::SHAPE_MALE},
+                {"198", "heel_height", Param::SHOES_HEEL_HEIGHT},
+                {"503", "platform_height", Param::SHOES_PLATFORM_HEIGHT},
+                {"616", "shoe_height", Param::SHOES_SHOE_HEIGHT},
+                {"675", "hand_size", Param::SHAPE_HAND_SIZE},
+                {"682", "head_size", Param::SHAPE_HEAD_SIZE},
+                {"692", "leg_length", Param::SHAPE_LEG_LENGTH},
+                {"693", "arm_length", Param::SHAPE_ARM_LENGTH},
+                {"756", "neck_length", Param::SHAPE_NECK_LENGTH},
+                {"814", "waist_height", Param::PANTS_WAIST_HEIGHT},
+                {"842", "hip_length", Param::SHAPE_HIP_LENGTH},
+                {"11001", "hover", Param::SHAPE_HOVER},
+            };
+            result->items.reserve(selectors->items.size());
+            for (const auto& selector : selectors->items) {
+                const auto text = value_text(selector);
+                const auto match = std::find_if(std::begin(supported), std::end(supported), [&](const auto& entry) {
+                    return text == entry.id || text == entry.name;
+                });
+                if (match == std::end(supported)) {
+                    result->items.emplace_back(std::string{});
+                    continue;
+                }
+                const auto byte = parameters->at(static_cast<std::size_t>(match->index));
+                const float value = std::nearbyint(byte * .0039215686f * 1000000.f) / 1000000.f;
+                char buffer[16];
+                const auto encoded = std::to_chars(buffer, buffer + sizeof buffer, value, std::chars_format::fixed, 6);
+                std::string formatted(buffer, encoded.ptr);
+                formatted.erase(formatted.find_last_not_of('0') + 1);
+                if (formatted.back() == '.')
+                    formatted.pop_back();
+                result->items.emplace_back(std::move(formatted));
+            }
+            return std::shared_ptr<const LslList>(std::move(result));
+        }
+        case Expression::Op::BoundingBox: {
+            const auto text = std::get<std::string>(evaluate(*e.left));
+            framework::Uuid id;
+            std::array<framework::Vector3d, 2> bounds{};
+            if (host.bounding_box && framework::try_parse_sdk_uuid(text, id) && !id.is_zero())
+                bounds = host.bounding_box(id);
+            return std::make_shared<const LslList>(LslList{{bounds[0], bounds[1]}});
+        }
+        case Expression::Op::AgentInfo: {
+            const auto text = std::get<std::string>(evaluate(*e.left));
+            framework::Uuid id;
+            if (host.agent_info && framework::try_parse_sdk_uuid(text, id) && !id.is_zero())
+                return host.agent_info(id);
+            return std::int32_t{0};
+        }
         case Expression::Op::AgentSize: {
             const auto text = std::get<std::string>(evaluate(*e.left));
             framework::Uuid id;
@@ -2999,6 +3486,18 @@ struct Evaluator {
                 return host.prim_count(id, false);
             return std::int32_t{0};
         }
+        case Expression::Op::ObjectMass: {
+            const auto key = std::get<std::string>(evaluate(*e.left));
+            framework::Uuid id;
+            if (host.object_mass && framework::try_parse_sdk_uuid(key, id) && !id.is_zero())
+                return double(host.object_mass(id));
+            return 0.;
+        }
+        case Expression::Op::ScriptMass:
+        case Expression::Op::ScriptMassMks: {
+            const float mass = host.script_mass ? host.script_mass(context.object) : 0.f;
+            return double(e.op == Expression::Op::ScriptMassMks ? 100.f * mass : mass);
+        }
         case Expression::Op::PrimCount:
             return host.prim_count ? host.prim_count(context.object, true) : std::int32_t{1};
         case Expression::Op::LinkSides: {
@@ -3030,6 +3529,94 @@ struct Evaluator {
             }
             return framework::Uuid{}.str();
         }
+        case Expression::Op::SetPrimMedia:
+        case Expression::Op::ClearPrimMedia:
+        case Expression::Op::PrimMedia: {
+            const auto rules = e.right ? std::get<std::shared_ptr<const LslList>>(evaluate(*e.right)) : nullptr;
+            const auto face = std::get<std::int32_t>(evaluate(*e.left));
+            const auto link = e.z ? std::get<std::int32_t>(evaluate(*e.z)) : -4;
+            const auto requested_delay = 1000.f * host.script_delay_factor;
+            if (requested_delay >= 10 && requested_delay < 2147483648.f)
+                delay(static_cast<std::int32_t>(requested_delay));
+            if (e.op != Expression::Op::PrimMedia) {
+                if (!host.edit_prim_media)
+                    return static_cast<std::int32_t>(LslMediaStatus::NotSupported);
+                LslMediaEdit edit;
+                if (rules)
+                    edit = [&](framework::ShapeMediaEntry& entry) { return apply_media_rules(entry, *rules); };
+                return static_cast<std::int32_t>(host.edit_prim_media(context.object, link, face, edit));
+            }
+            const auto media = host.prim_media ? host.prim_media(context.object, link, face) : nullptr;
+            if (!media)
+                return std::make_shared<const LslList>();
+
+            LslList result;
+            for (const auto& rule : rules->items) {
+                auto& items = result.items;
+                switch (media_rule_integer(rule)) {
+                case 0:
+                    items.emplace_back(0);
+                    break;
+                case 1:
+                    items.emplace_back(std::int32_t(media->controls != 0));
+                    break;
+                case 2:
+                    items.emplace_back(framework::utf8(media->current_url.value_or(u"")));
+                    break;
+                case 3:
+                    items.emplace_back(framework::utf8(media->home_url.value_or(u"")));
+                    break;
+                case 4:
+                    items.emplace_back(std::int32_t(media->auto_loop));
+                    break;
+                case 5:
+                    items.emplace_back(std::int32_t(media->auto_play));
+                    break;
+                case 6:
+                    items.emplace_back(std::int32_t(media->auto_scale));
+                    break;
+                case 7:
+                    items.emplace_back(std::int32_t(media->auto_zoom));
+                    break;
+                case 8:
+                    items.emplace_back(std::int32_t(media->interact_on_first_click));
+                    break;
+                case 9:
+                    items.emplace_back(media->width);
+                    break;
+                case 10:
+                    items.emplace_back(media->height);
+                    break;
+                case 11:
+                    items.emplace_back(std::int32_t(media->enable_whitelist));
+                    break;
+                case 12: {
+                    if (!media->whitelist)
+                        throw std::runtime_error("Media whitelist is missing");
+                    std::u16string urls;
+                    for (std::size_t i = 0; i < media->whitelist->size(); ++i) {
+                        const auto& url = (*media->whitelist)[i];
+                        if (!url)
+                            throw std::runtime_error("Media whitelist entry is missing");
+                        if (i)
+                            urls += u", ";
+                        urls += framework::config_uri_escape(*url, false, framework::ConfigUriEscapeSet::Unreserved);
+                    }
+                    items.emplace_back(framework::utf8(urls));
+                    break;
+                }
+                case 13:
+                    items.emplace_back(std::int32_t(media->interact_permissions));
+                    break;
+                case 14:
+                    items.emplace_back(std::int32_t(media->control_permissions));
+                    break;
+                default:
+                    return std::make_shared<const LslList>(LslList{{std::int32_t{1000}}});
+                }
+            }
+            return std::make_shared<const LslList>(std::move(result));
+        }
         case Expression::Op::LinkKey: {
             const auto number = std::get<std::int32_t>(evaluate(*e.left));
             if (number == -4)
@@ -3059,16 +3646,8 @@ struct Evaluator {
         case Expression::Op::ObjectScale:
             return framework::Vector3d{context.object_scale.x, context.object_scale.y,
                                        context.object_scale.z};
-        case Expression::Op::ObjectWorldRotation: {
-            const auto root = context.root_rotation.value_or(context.local_rotation);
-            if (!context.root_position)
-                return root;
-            const auto& local = context.local_rotation;
-            return LslRotation{root.w * local.x + root.x * local.w + root.y * local.z - root.z * local.y,
-                               root.w * local.y + root.y * local.w + root.z * local.x - root.x * local.z,
-                               root.w * local.z + root.z * local.w + root.x * local.y - root.y * local.x,
-                               root.w * local.w - root.x * local.x - root.y * local.y - root.z * local.z};
-        }
+        case Expression::Op::ObjectWorldRotation:
+            return object_world_rotation();
         case Expression::Op::ObjectRootRotation:
             return context.root_rotation.value_or(context.local_rotation);
         case Expression::Op::ObjectLocalRotation:
@@ -3078,17 +3657,34 @@ struct Evaluator {
                 host.geometric_center ? host.geometric_center(context.object) : framework::Vector3{};
             return framework::Vector3d{center.x, center.y, center.z};
         }
+        case Expression::Op::SetRegionPosition: {
+            const auto position = std::get<framework::Vector3d>(evaluate(*e.left));
+            return std::int32_t(host.set_object_position && host.set_object_position(context.object, position, true));
+        }
+        case Expression::Op::ObjectStatus: {
+            const auto status = std::get<std::int32_t>(evaluate(*e.left));
+            return std::int32_t(host.object_status && host.object_status(context.object, status));
+        }
         case Expression::Op::ObjectLocalPosition: {
+            if (host.object_position)
+                if (const auto value = host.object_position(context.object, true, false))
+                    return framework::Vector3d{value->x, value->y, value->z};
             const auto& position = (context.attachment_point || context.root_position)
                                        ? context.attachment_offset
                                        : context.position;
             return framework::Vector3d{position.x, position.y, position.z};
         }
         case Expression::Op::ObjectRootPosition: {
+            if (host.object_position)
+                if (const auto value = host.object_position(context.object, false, true))
+                    return framework::Vector3d{value->x, value->y, value->z};
             const auto position = context.root_position.value_or(context.position);
             return framework::Vector3d{position.x, position.y, position.z};
         }
         case Expression::Op::ObjectPosition:
+            if (host.object_position)
+                if (const auto value = host.object_position(context.object, false, false))
+                    return framework::Vector3d{value->x, value->y, value->z};
             return framework::Vector3d{context.position.x, context.position.y, context.position.z};
         case Expression::Op::ObjectKey:
             return context.object.str();
@@ -3459,7 +4055,7 @@ struct Evaluator {
             return framework::md5(source + ":" + std::to_string(nonce));
         }
         case Expression::Op::Sha256:
-            return sha256_text(std::get<std::string>(evaluate(*e.left)));
+            return framework::sha256_hex(std::get<std::string>(evaluate(*e.left)));
         case Expression::Op::Sha1: {
             const auto source = std::get<std::string>(evaluate(*e.left));
             return framework::sha1_hex({reinterpret_cast<const std::uint8_t*>(source.data()), source.size()});
@@ -3710,13 +4306,10 @@ struct Evaluator {
             const auto* a = std::get_if<framework::Vector3d>(&left);
             const auto* b = std::get_if<framework::Vector3d>(&right);
             if (const auto* rotation = std::get_if<LslRotation>(&right); a && rotation) {
-                const auto [x, y, z, w] = *rotation;
-                const auto scalar = e.op == Op::Divide ? -w : w;
-                const auto rx = scalar * a->x + y * a->z - z * a->y;
-                const auto ry = scalar * a->y + z * a->x - x * a->z;
-                const auto rz = scalar * a->z + x * a->y - y * a->x;
-                return framework::Vector3d{a->x + 2.0 * (rz * y - ry * z), a->y + 2.0 * (rx * z - rz * x),
-                                           a->z + 2.0 * (ry * x - rx * y)};
+                auto transform = *rotation;
+                if (e.op == Op::Divide)
+                    transform.w = -transform.w;
+                return rotate_vector(*a, transform);
             }
             if (a && b) {
                 if (e.op == Op::Add)
@@ -3789,6 +4382,7 @@ class LslProgram {
   public:
     std::map<std::string, ScriptState> states;
     std::vector<Instruction> globals;
+    std::string source_hash;
 };
 namespace {
 class Parser {
@@ -4655,14 +5249,15 @@ class Parser {
             require(")");
             return e;
         }
-        if (is("llSameGroup")) {
-            e->op = Expression::Op::SameGroup;
+        if (is("llSameGroup") || is("llIsFriend")) {
+            e->op = is("llIsFriend") ? Expression::Op::IsFriend : Expression::Op::SameGroup;
             advance();
             require("(");
             e->left = expression();
             require(")");
             if (e->left->type != Type::String && e->left->type != Type::Key)
-                fail(token, "llSameGroup requires text");
+                fail(token, e->op == Expression::Op::IsFriend ? "llIsFriend requires text"
+                                                             : "llSameGroup requires text");
             e->height = e->left->height + 1;
             if (e->height > 128)
                 fail(token, "native LSL expression depth exceeded");
@@ -4744,6 +5339,49 @@ class Parser {
             if (e->left->type != Type::String && e->left->type != Type::Key)
                 fail(token, "name lookup requires text");
             e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetAgentInfo")) {
+            e->op = Op::AgentInfo;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Key && e->left->type != Type::String)
+                fail(token, "llGetAgentInfo requires a key");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetBoundingBox")) {
+            e->op = Op::BoundingBox;
+            e->type = Type::List;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Key && e->left->type != Type::String)
+                fail(token, "llGetBoundingBox requires a key");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetVisualParams")) {
+            e->op = Op::VisualParams;
+            e->type = Type::List;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if ((e->left->type != Type::String && e->left->type != Type::Key) || e->right->type != Type::List)
+                fail(token, "llGetVisualParams requires a key and list");
+            e->height = std::max(e->left->height, e->right->height) + 1;
             if (e->height > 128)
                 fail(token, "native LSL expression depth exceeded");
             return e;
@@ -4978,6 +5616,14 @@ class Parser {
                 fail(token, "native LSL expression depth exceeded");
             return e;
         }
+        if (is("llGetObjectAnimationNames")) {
+            e->op = Op::ObjectAnimationNames;
+            e->type = Type::List;
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
         if (is("llGetAnimationList") || is("llGetAnimation")) {
             const bool list = is("llGetAnimationList");
             e->op = list ? Op::AnimationList : Op::AnimationState;
@@ -4991,6 +5637,23 @@ class Parser {
             e->height = 1 + e->left->height;
             if (e->height > 128)
                 fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetCameraPos") || is("llGetCameraRot") || is("llGetCameraFOV") || is("llGetCameraAspect")) {
+            if (is("llGetCameraPos")) {
+                e->op = Op::CameraPosition;
+                e->type = Type::Vector;
+            } else if (is("llGetCameraRot")) {
+                e->op = Op::CameraRotation;
+                e->type = Type::Rotation;
+            } else {
+                e->op = is("llGetCameraFOV") ? Op::CameraFov : Op::CameraAspect;
+                e->type = Type::Float;
+            }
+            e->value = token.text;
+            advance();
+            require("(");
+            require(")");
             return e;
         }
         if (is("llGetPermissions") || is("llGetPermissionsKey")) {
@@ -5009,6 +5672,211 @@ class Parser {
             advance();
             require("(");
             require(")");
+            return e;
+        }
+        if (is("llRegionSayTo")) {
+            const auto command = token;
+            e->op = Op::RegionSayTo;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(",");
+            e->z = expression();
+            require(")");
+            if (!assignable(Type::Key, e->left->type) || e->right->type != Type::Integer ||
+                !assignable(Type::String, e->z->type))
+                fail(command, "llRegionSayTo requires a target key, an integer channel, and text");
+            e->height = 1 + std::max({e->left->height, e->right->height, e->z->height});
+            if (e->height > 128)
+                fail(command, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llListen") || is("llListenControl") || is("llListenRemove")) {
+            const bool add = is("llListen");
+            const bool control = is("llListenControl");
+            const auto command = token;
+            e->op = add ? Op::Listen : control ? Op::ListenControl : Op::ListenRemove;
+            advance();
+            require("(");
+            e->left = expression();
+            if (e->left->type != Type::Integer)
+                fail(command, "listen channel or handle must be an integer");
+            if (add || control) {
+                require(",");
+                e->right = expression();
+                const auto type = e->right->type;
+                if (control ? type != Type::Integer : type != Type::String && type != Type::Key)
+                    fail(command, "invalid listen argument type");
+            }
+            if (add) {
+                require(",");
+                e->z = expression();
+                require(",");
+                e->w = expression();
+                if ((e->z->type != Type::String && e->z->type != Type::Key) ||
+                    (e->w->type != Type::String && e->w->type != Type::Key))
+                    fail(command, "listen filters must be text");
+            }
+            require(")");
+            for (const auto* argument : {e->left.get(), e->right.get(), e->z.get(), e->w.get()})
+                if (argument)
+                    e->height = std::max(e->height, argument->height + 1);
+            if (e->height > 128)
+                fail(command, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llMessageLinked")) {
+            e->op = Op::SendLinkMessage;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(",");
+            e->z = expression();
+            require(",");
+            e->w = expression();
+            require(")");
+            const auto is_text = [](Type type) { return type == Type::String || type == Type::Key; };
+            if (e->left->type != Type::Integer || e->right->type != Type::Integer ||
+                !is_text(e->z->type) || !is_text(e->w->type))
+                fail(token, "llMessageLinked requires two integers and two strings");
+            e->height = 1 + std::max({e->left->height, e->right->height, e->z->height, e->w->height});
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetPhysicsMaterial") || is("llSetPhysicsMaterial")) {
+            const bool set = is("llSetPhysicsMaterial");
+            e->op = set ? Op::SetPhysicsMaterial : Op::PhysicsMaterial;
+            e->type = set ? Type::Integer : Type::List;
+            advance();
+            require("(");
+            if (set) {
+                for (int i = 0; i < 5; ++i) {
+                    if (i)
+                        require(",");
+                    auto argument = expression();
+                    if (i == 0 ? argument->type != Type::Integer : !numeric(argument->type))
+                        fail(token, "Invalid physics material arguments");
+                    e->height = std::max(e->height, argument->height + 1);
+                    e->elements.push_back(std::move(argument));
+                }
+            }
+            require(")");
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llSetTextureAnim") || is("llSetLinkTextureAnim")) {
+            const int integers = is("llSetLinkTextureAnim") ? 5 : 4;
+            e->op = Op::SetTextureAnimation;
+            advance();
+            require("(");
+            for (int i = 0; i < integers + 3; ++i) {
+                if (i)
+                    require(",");
+                auto argument = expression();
+                if (i < integers ? argument->type != Type::Integer : !numeric(argument->type))
+                    fail(token, "Invalid texture animation arguments");
+                e->height = std::max(e->height, argument->height + 1);
+                e->elements.push_back(std::move(argument));
+            }
+            require(")");
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llSetLinkTexture") || is("llSetLinkColor") || is("llSetLinkAlpha")) {
+            using Property = LslTextureProperty;
+            const auto property = is("llSetLinkTexture") ? Property::Name
+                : is("llSetLinkColor") ? Property::Color : Property::Alpha;
+            e->op = Op::SetLinkedTextureProperty;
+            e->value = static_cast<std::int32_t>(property);
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(",");
+            e->z = expression();
+            require(")");
+            const auto type = e->right->type;
+            const bool valid_value = property == Property::Name ? type == Type::String || type == Type::Key
+                : property == Property::Color ? type == Type::Vector : numeric(type);
+            if (e->left->type != Type::Integer || !valid_value || e->z->type != Type::Integer)
+                fail(token, "Invalid linked texture setter arguments");
+            e->height = 1 + std::max({e->left->height, e->right->height, e->z->height});
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llSetTexture") || is("llSetColor") || is("llSetAlpha") ||
+            is("llOffsetTexture") || is("llScaleTexture") || is("llRotateTexture")) {
+            using Property = LslTextureProperty;
+            auto property = Property::Rotation;
+            if (is("llSetTexture"))
+                property = Property::Name;
+            else if (is("llSetColor"))
+                property = Property::Color;
+            else if (is("llSetAlpha"))
+                property = Property::Alpha;
+            else if (is("llOffsetTexture"))
+                property = Property::Offset;
+            else if (is("llScaleTexture"))
+                property = Property::Repeat;
+            e->op = Op::SetTextureProperty;
+            e->value = static_cast<std::int32_t>(property);
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            if (property == Property::Offset || property == Property::Repeat) {
+                require(",");
+                e->z = expression();
+            }
+            require(")");
+            const auto first = e->left->type;
+            const bool valid_value = property == Property::Name ? first == Type::String || first == Type::Key
+                : property == Property::Color ? first == Type::Vector : numeric(first);
+            if (!valid_value || (e->z ? !numeric(e->right->type) || e->z->type != Type::Integer
+                                      : e->right->type != Type::Integer))
+                fail(token, "Invalid texture setter arguments");
+            e->height = 1 + std::max({e->left->height, e->right->height, e->z ? e->z->height : 0u});
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetTexture") || is("llGetColor") || is("llGetAlpha") ||
+            is("llGetTextureOffset") || is("llGetTextureScale") || is("llGetTextureRot")) {
+            using Property = LslTextureProperty;
+            auto property = Property::Rotation;
+            if (is("llGetTexture"))
+                property = Property::Name;
+            else if (is("llGetColor"))
+                property = Property::Color;
+            else if (is("llGetAlpha"))
+                property = Property::Alpha;
+            else if (is("llGetTextureOffset"))
+                property = Property::Offset;
+            else if (is("llGetTextureScale"))
+                property = Property::Repeat;
+            e->op = Op::TextureProperty;
+            e->value = static_cast<std::int32_t>(property);
+            e->type = property == Property::Name ? Type::String
+                : property == Property::Alpha || property == Property::Rotation ? Type::Float : Type::Vector;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Integer)
+                fail(token, "Texture query requires an integer face");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
             return e;
         }
         if (is("llGetObjectName") || is("llGetObjectDesc") || is("llGetScriptName")) {
@@ -5043,6 +5911,28 @@ class Parser {
             e->type = Type::String;
             e->value = token.text;
             advance();
+            return e;
+        }
+        if (is("llGetEnv")) {
+            e->type = Type::String;
+            e->op = Op::EnvironmentValue;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::String && e->left->type != Type::Key)
+                fail(token, "llGetEnv requires text");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetSimulatorHostname")) {
+            e->type = Type::String;
+            e->op = Op::SimulatorHostname;
+            advance();
+            require("(");
+            require(")");
             return e;
         }
         if (is("llRequestURL") || is("llRequestSecureURL") || is("llGetFreeURLs") ||
@@ -5110,6 +6000,63 @@ class Parser {
             if (e->left->type != Type::Integer)
                 fail(token, "llSetMemoryLimit requires an integer");
             e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llParcelMediaQuery")) {
+            e->op = Op::ParcelMediaQuery;
+            e->type = Type::List;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::List)
+                fail(token, "llParcelMediaQuery requires a list of commands");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetParcelMusicURL")) {
+            e->op = Op::ParcelMusicUrl;
+            e->type = Type::String;
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
+        if (is("llGetParcelPrimOwners")) {
+            e->op = Op::ParcelPrimOwners;
+            e->type = Type::List;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Vector)
+                fail(token, "llGetParcelPrimOwners requires a vector");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetParcelMaxPrims") || is("llGetParcelPrimCount")) {
+            const bool capacity = is("llGetParcelMaxPrims");
+            e->op = capacity ? Op::ParcelMaxPrims : Op::ParcelPrimCount;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            if (!capacity) {
+                require(",");
+                e->z = expression();
+            }
+            require(")");
+            if (e->left->type != Type::Vector || e->right->type != Type::Integer ||
+                (e->z && e->z->type != Type::Integer))
+                fail(token, "Parcel prim query requires a vector and integer selectors");
+            e->height = 1 + std::max({e->left->height, e->right->height, e->z ? e->z->height : 0u});
             if (e->height > 128)
                 fail(token, "native LSL expression depth exceeded");
             return e;
@@ -5321,6 +6268,33 @@ class Parser {
             require(")");
             return e;
         }
+        if (is("llGetPrimMediaParams") || is("llGetLinkMedia") || is("llSetPrimMediaParams") ||
+            is("llSetLinkMedia") || is("llClearPrimMedia") || is("llClearLinkMedia")) {
+            const bool linked = is("llGetLinkMedia") || is("llSetLinkMedia") || is("llClearLinkMedia");
+            const bool clear = is("llClearPrimMedia") || is("llClearLinkMedia");
+            const bool set = is("llSetPrimMediaParams") || is("llSetLinkMedia");
+            e->op = clear ? Op::ClearPrimMedia : set ? Op::SetPrimMedia : Op::PrimMedia;
+            e->type = clear || set ? Type::Integer : Type::List;
+            advance();
+            require("(");
+            if (linked) {
+                e->z = expression();
+                require(",");
+            }
+            e->left = expression();
+            if (!clear) {
+                require(",");
+                e->right = expression();
+            }
+            require(")");
+            if ((e->z && e->z->type != Type::Integer) || e->left->type != Type::Integer ||
+                (e->right && e->right->type != Type::List))
+                fail(token, "Invalid prim media arguments");
+            e->height = 1 + std::max({e->left->height, e->right ? e->right->height : 0, e->z ? e->z->height : 0});
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
         if (is("llGetLinkKey") || is("llGetLinkName")) {
             const bool name = is("llGetLinkName");
             e->op = name ? Op::LinkName : Op::LinkKey;
@@ -5331,6 +6305,28 @@ class Parser {
             require(")");
             if (e->left->type != Type::Integer)
                 fail(token, name ? "llGetLinkName requires an integer" : "llGetLinkKey requires an integer");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetMass") || is("llGetMassMKS")) {
+            e->op = is("llGetMassMKS") ? Op::ScriptMassMks : Op::ScriptMass;
+            e->type = Type::Float;
+            advance();
+            require("(");
+            require(")");
+            return e;
+        }
+        if (is("llGetObjectMass")) {
+            e->op = Op::ObjectMass;
+            e->type = Type::Float;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Key && e->left->type != Type::String)
+                fail(token, "llGetObjectMass requires a key");
             e->height = e->left->height + 1;
             if (e->height > 128)
                 fail(token, "native LSL expression depth exceeded");
@@ -5368,6 +6364,20 @@ class Parser {
             require(")");
             return e;
         }
+        if (is("llGetSimStats")) {
+            e->op = Op::SimulatorStats;
+            e->type = Type::Float;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Integer)
+                fail(token, "llGetSimStats requires an integer");
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
         if (is("llGetRegionTimeDilation") || is("llGetRegionFPS")) {
             e->op = is("llGetRegionFPS") ? Op::RegionFPS : Op::RegionTimeDilation;
             e->type = Type::Float;
@@ -5386,13 +6396,41 @@ class Parser {
             require(")");
             return component_access(std::move(e));
         }
-        if (is("llGetGeometricCenter")) {
-            e->op = Op::GeometricCenter;
+        if (is("llGetGeometricCenter") || is("llGetForce") || is("llGetTorque")) {
+            e->op = is("llGetForce") ? Op::GetForce : is("llGetTorque") ? Op::GetTorque : Op::GeometricCenter;
             e->type = Type::Vector;
             advance();
             require("(");
             require(")");
             return component_access(std::move(e));
+        }
+        if (is("llGetStatus")) {
+            e->op = Op::ObjectStatus;
+            e->type = Type::Integer;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Integer)
+                fail(token, "llGetStatus requires an integer");
+            e->height = 1 + e->left->height;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llSetRegionPos")) {
+            e->op = Op::SetRegionPosition;
+            e->type = Type::Integer;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Vector)
+                fail(token, "Region position must be a vector");
+            e->height = 1 + e->left->height;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
         }
         if (is("llGetPos") || is("llGetRootPosition") || is("llGetLocalPos") || is("llGetScale") ||
             is("llGetRegionName") || is("llGetRegionCorner")) {
@@ -5708,10 +6746,20 @@ class Parser {
             {"CONTENT_TYPE_LLSD", 6}, {"CONTENT_TYPE_FORM", 7}, {"CONTENT_TYPE_RSS", 8},
             {"FALSE", 0},
             {"TRUE", 1},
+            {"DEBUG_CHANNEL", std::numeric_limits<std::int32_t>::max()},
+            {"PUBLIC_CHANNEL", 0},
             {"LINK_SET", -1},
             {"LINK_ALL_OTHERS", -2},
+            {"SOUND_PLAY", 0},
+            {"SOUND_LOOP", 1},
+            {"SOUND_TRIGGER", 2},
+            {"SOUND_SYNC", 4},
             {"LINK_ALL_CHILDREN", -3},
             {"LINK_THIS", -4},
+            {"ALL_SIDES", -1},
+            {"ANIM_ON", 1}, {"LOOP", 2}, {"REVERSE", 4}, {"PING_PONG", 8},
+            {"SMOOTH", 16}, {"ROTATE", 32}, {"SCALE", 64},
+            {"DENSITY", 1}, {"FRICTION", 2}, {"RESTITUTION", 4}, {"GRAVITY_MULTIPLIER", 8},
             {"SIT_FLAG_SIT_TARGET", 0x01},
             {"SIT_FLAG_ALLOW_UNSIT", 0x02},
             {"SIT_FLAG_SCRIPTED_ONLY", 0x04},
@@ -5723,6 +6771,16 @@ class Parser {
             {"PAY_DEFAULT", -2},
             {"PERMISSION_DEBIT", 0x02},
             {"PERMISSION_TAKE_CONTROLS", 0x04},
+            {"CONTROL_FWD", 1},
+            {"CONTROL_BACK", 2},
+            {"CONTROL_LEFT", 4},
+            {"CONTROL_RIGHT", 8},
+            {"CONTROL_UP", 16},
+            {"CONTROL_DOWN", 32},
+            {"CONTROL_ROT_LEFT", 256},
+            {"CONTROL_ROT_RIGHT", 512},
+            {"CONTROL_LBUTTON", 0x10000000},
+            {"CONTROL_ML_LBUTTON", 0x40000000},
             {"PERMISSION_REMAP_CONTROLS", 0x08},
             {"PERMISSION_TRIGGER_ANIMATION", 0x010},
             {"PERMISSION_ATTACH", 0x20},
@@ -5751,6 +6809,19 @@ class Parser {
             {"TYPE_FLOAT", 2},
             {"TYPE_STRING", 3},
             {"PARCEL_DETAILS_PRIM_CAPACITY", 7},
+            {"PARCEL_MEDIA_COMMAND_STOP", 0},
+            {"PARCEL_MEDIA_COMMAND_PAUSE", 1},
+            {"PARCEL_MEDIA_COMMAND_PLAY", 2},
+            {"PARCEL_MEDIA_COMMAND_LOOP", 3},
+            {"PARCEL_MEDIA_COMMAND_TEXTURE", 4},
+            {"PARCEL_MEDIA_COMMAND_URL", 5},
+            {"PARCEL_MEDIA_COMMAND_TIME", 6},
+            {"PARCEL_MEDIA_COMMAND_AGENT", 7},
+            {"PARCEL_MEDIA_COMMAND_UNLOAD", 8},
+            {"PARCEL_MEDIA_COMMAND_AUTO_ALIGN", 9},
+            {"PARCEL_MEDIA_COMMAND_TYPE", 10},
+            {"PARCEL_MEDIA_COMMAND_SIZE", 11},
+            {"PARCEL_MEDIA_COMMAND_DESC", 12},
             {"PARCEL_DETAILS_PRIM_USED", 8},
             {"PARCEL_DETAILS_SCRIPT_DANGER", 13},
             {"PARCEL_DETAILS_GEOMETRICCENTER", 66},
@@ -5795,6 +6866,18 @@ class Parser {
             {"AGENT_LIST_PARCEL", 1},
             {"AGENT_LIST_PARCEL_OWNER", 2},
             {"AGENT_LIST_REGION", 4},
+            {"AGENT_FLYING", 0x1}, {"AGENT_ATTACHMENTS", 0x2}, {"AGENT_SCRIPTED", 0x4},
+            {"STATUS_PHYSICS", object_status::physics}, {"STATUS_PHANTOM", object_status::phantom},
+            {"STATUS_SANDBOX", object_status::sandbox},
+            {"STATUS_DIE_AT_EDGE", object_status::die_at_edge},
+            {"STATUS_RETURN_AT_EDGE", object_status::return_at_edge},
+            {"STATUS_CAST_SHADOWS", object_status::cast_shadows},
+            {"STATUS_BLOCK_GRAB", object_status::block_grab},
+            {"STATUS_BLOCK_GRAB_OBJECT", object_status::block_grab_object},
+            {"AGENT_MOUSELOOK", 0x8}, {"AGENT_SITTING", 0x10}, {"AGENT_ON_OBJECT", 0x20},
+            {"AGENT_AWAY", 0x40}, {"AGENT_WALKING", 0x80}, {"AGENT_IN_AIR", 0x100},
+            {"AGENT_TYPING", 0x200}, {"AGENT_CROUCHING", 0x400}, {"AGENT_BUSY", 0x800},
+            {"AGENT_ALWAYS_RUN", 0x1000}, {"AGENT_AUTOPILOT", 0x2000}, {"AGENT_MALE", 0x40000000},
             {"DATA_ONLINE", 1},
             {"DATA_NAME", 2},
             {"DATA_BORN", 3},
@@ -5804,6 +6887,39 @@ class Parser {
             {"DATA_SIM_RATING", 7},
             {"DATA_PAYINFO", 8},
             {"DATA_SIM_RELEASE", 128},
+            {"PARCEL_COUNT_TOTAL", 0},
+            {"PARCEL_COUNT_OWNER", 1},
+            {"PARCEL_COUNT_GROUP", 2},
+            {"PARCEL_COUNT_OTHER", 3},
+            {"PARCEL_COUNT_SELECTED", 4},
+            {"PARCEL_COUNT_TEMP", 5},
+            {"SIM_STAT_PCT_CHARS_STEPPED", 0},
+            {"SIM_STAT_PHYSICS_FPS", 1},
+            {"SIM_STAT_AGENT_UPDATES", 2},
+            {"SIM_STAT_FRAME_MS", 3},
+            {"SIM_STAT_NET_MS", 4},
+            {"SIM_STAT_OTHER_MS", 5},
+            {"SIM_STAT_PHYSICS_MS", 6},
+            {"SIM_STAT_AGENT_MS", 7},
+            {"SIM_STAT_IMAGE_MS", 8},
+            {"SIM_STAT_SCRIPT_MS", 9},
+            {"SIM_STAT_AGENT_COUNT", 10},
+            {"SIM_STAT_CHILD_AGENT_COUNT", 11},
+            {"SIM_STAT_ACTIVE_SCRIPT_COUNT", 12},
+            {"SIM_STAT_PACKETS_IN", 13},
+            {"SIM_STAT_PACKETS_OUT", 14},
+            {"SIM_STAT_ASSET_DOWNLOADS", 15},
+            {"SIM_STAT_ASSET_UPLOADS", 16},
+            {"SIM_STAT_UNACKED_BYTES", 17},
+            {"SIM_STAT_PHYSICS_STEP_MS", 18},
+            {"SIM_STAT_PHYSICS_SHAPE_MS", 19},
+            {"SIM_STAT_PHYSICS_OTHER_MS", 20},
+            {"SIM_STAT_SCRIPT_EPS", 21},
+            {"SIM_STAT_SPARE_MS", 22},
+            {"SIM_STAT_SLEEP_MS", 23},
+            {"SIM_STAT_IO_PUMP_MS", 24},
+            {"SIM_STAT_SCRIPT_RUN_PCT", 25},
+            {"SIM_STAT_AI_MS", 26},
             {"AGENT_LIST_EXCLUDENPC", 0x4000000},
             {"LIST_STAT_RANGE", 0},
             {"LIST_STAT_MIN", 1},
@@ -5870,6 +6986,35 @@ class Parser {
             {"CHANGED_REGION_RESTART", 1024},
             {"CHANGED_REGION_START", 1024},
             {"CHANGED_MEDIA", 2048},
+            {"PRIM_MEDIA_ALT_IMAGE_ENABLE", 0},
+            {"PRIM_MEDIA_CONTROLS", 1},
+            {"PRIM_MEDIA_CURRENT_URL", 2},
+            {"PRIM_MEDIA_HOME_URL", 3},
+            {"PRIM_MEDIA_AUTO_LOOP", 4},
+            {"PRIM_MEDIA_AUTO_PLAY", 5},
+            {"PRIM_MEDIA_AUTO_SCALE", 6},
+            {"PRIM_MEDIA_AUTO_ZOOM", 7},
+            {"PRIM_MEDIA_FIRST_CLICK_INTERACT", 8},
+            {"PRIM_MEDIA_WIDTH_PIXELS", 9},
+            {"PRIM_MEDIA_HEIGHT_PIXELS", 10},
+            {"PRIM_MEDIA_WHITELIST_ENABLE", 11},
+            {"PRIM_MEDIA_WHITELIST", 12},
+            {"PRIM_MEDIA_PERMS_INTERACT", 13},
+            {"PRIM_MEDIA_PERMS_CONTROL", 14},
+            {"PRIM_MEDIA_CONTROLS_STANDARD", 0},
+            {"PRIM_MEDIA_CONTROLS_MINI", 1},
+            {"PRIM_MEDIA_PERM_NONE", 0},
+            {"PRIM_MEDIA_PERM_OWNER", 1},
+            {"PRIM_MEDIA_PERM_GROUP", 2},
+            {"PRIM_MEDIA_PERM_ANYONE", 4},
+            {"LSL_STATUS_OK", 0},
+            {"LSL_STATUS_MALFORMED_PARAMS", 1000},
+            {"LSL_STATUS_TYPE_MISMATCH", 1001},
+            {"LSL_STATUS_BOUNDS_ERROR", 1002},
+            {"LSL_STATUS_NOT_FOUND", 1003},
+            {"LSL_STATUS_NOT_SUPPORTED", 1004},
+            {"LSL_STATUS_INTERNAL_ERROR", 1999},
+            {"LSL_STATUS_WHITELIST_FAILED", 2001},
             {"CHANGED_RENDER_MATERIAL", 4096},
             {"CHANGED_ANIMATION", 16384},
             {"CHANGED_POSITION", 32768}};
@@ -6036,7 +7181,41 @@ class Parser {
     }
     Instruction expression_statement() {
         Instruction ins;
-        ins.text = expression();
+        if (is("llSetBuoyancy") || is("llSetForce") || is("llSetTorque") || is("llSetForceAndTorque")) {
+            const bool buoyancy = is("llSetBuoyancy");
+            const bool combined = is("llSetForceAndTorque");
+            auto call = std::make_unique<Expression>();
+            if (buoyancy)
+                call->op = Expression::Op::SetBuoyancy;
+            else if (combined)
+                call->op = Expression::Op::SetForceAndTorque;
+            else
+                call->op = is("llSetForce") ? Expression::Op::SetForce : Expression::Op::SetTorque;
+            advance();
+            require("(");
+            call->left = expression();
+            if (!buoyancy) {
+                require(",");
+                if (combined) {
+                    call->z = expression();
+                    require(",");
+                }
+                call->right = expression();
+                if (call->left->type != Type::Vector || call->right->type != Type::Integer ||
+                    (call->z && call->z->type != Type::Vector))
+                    fail(token, "Force and torque require vector arguments followed by an integer");
+            } else if (!numeric(call->left->type)) {
+                fail(token, "llSetBuoyancy requires a numeric argument");
+            }
+            require(")");
+            call->height = 1 + std::max({call->left->height, call->right ? call->right->height : 0u,
+                                        call->z ? call->z->height : 0u});
+            if (call->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            ins.text = std::move(call);
+        } else {
+            ins.text = expression();
+        }
         ins.discard = true;
         return ins;
     }
@@ -6132,6 +7311,14 @@ class Parser {
         if (update_operator() || (token.kind == Kind::Name && local(token.text)) ||
             is("llRequestURL") || is("llRequestSecureURL") || is("llReleaseURL") || is("llHTTPResponse") ||
             is("llSetContentType") || is("osRequestURL") || is("osRequestSecureURL") ||
+            is("llSetTexture") || is("llSetColor") || is("llSetAlpha") ||
+            is("llSetLinkTexture") || is("llSetLinkColor") || is("llSetLinkAlpha") ||
+            is("llSetTextureAnim") || is("llSetLinkTextureAnim") ||
+            is("llSetPhysicsMaterial") || is("llSetBuoyancy") || is("llSetForce") ||
+            is("llSetTorque") || is("llSetForceAndTorque") ||
+            is("llMessageLinked") || is("llListen") || is("llListenControl") || is("llListenRemove") ||
+            is("llRegionSayTo") ||
+            is("llOffsetTexture") || is("llScaleTexture") || is("llRotateTexture") ||
             is("osReplaceRegionEnvironment") || is("osReplaceParcelEnvironment") || is("osReplaceAgentEnvironment") ||
             (token.kind == Kind::Name && (is_drawing_function(token.text) || is_environment_query(token.text)))) {
             auto instruction = expression_statement();
@@ -6272,6 +7459,28 @@ class Parser {
             handler->instructions.push_back(std::move(ins));
             return;
         }
+        if (is("llParcelMediaCommandList")) {
+            advance();
+            require("(");
+            ins.parcel_media_commands = expression();
+            if (ins.parcel_media_commands->type != Type::List)
+                fail(token, "llParcelMediaCommandList requires a list of commands");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSetParcelMusicURL")) {
+            advance();
+            require("(");
+            ins.parcel_music_url = expression();
+            if (ins.parcel_music_url->type != Type::String && ins.parcel_music_url->type != Type::Key)
+                fail(token, "llSetParcelMusicURL requires a string URL");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
         if (is("osSetRegionWaterHeight")) {
             advance();
             require("(");
@@ -6364,6 +7573,19 @@ class Parser {
             handler->instructions.push_back(std::move(ins));
             return;
         }
+        if (is("llSetStatus")) {
+            advance();
+            require("(");
+            ins.status_mask = expression();
+            require(",");
+            ins.status_value = expression();
+            require(")");
+            require(";");
+            if (ins.status_mask->type != Type::Integer || ins.status_value->type != Type::Integer)
+                fail(token, "llSetStatus requires two integers");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
         if (is("llPassTouches") || is("llAllowInventoryDrop")) {
             const bool allow_drop = is("llAllowInventoryDrop");
             advance();
@@ -6400,13 +7622,25 @@ class Parser {
             handler->instructions.push_back(std::move(ins));
             return;
         }
-        if (is("llAdjustSoundVolume") || is("llSetSoundRadius")) {
-            const bool radius = is("llSetSoundRadius");
+        if (is("llAdjustSoundVolume") || is("llLinkAdjustSoundVolume") ||
+            is("llSetSoundRadius") || is("llLinkSetSoundRadius") ||
+            is("llSetSoundQueueing") || is("llLinkSetSoundQueueing")) {
+            const bool radius = is("llSetSoundRadius") || is("llLinkSetSoundRadius");
+            const bool queueing = is("llSetSoundQueueing") || is("llLinkSetSoundQueueing");
+            const bool linked = token.text.starts_with("llLink");
             advance();
             require("(");
-            auto& value = radius ? ins.sound_radius : ins.adjust_sound_gain;
+            if (linked) {
+                ins.sound_link = expression();
+                if (ins.sound_link->type != Type::Integer)
+                    fail(token, "linked sound requires an integer link selector");
+                require(",");
+            }
+            auto& value = queueing ? ins.sound_queueing : radius ? ins.sound_radius : ins.adjust_sound_gain;
             value = expression();
-            if (!numeric(value->type))
+            if (queueing && value->type != Type::Integer)
+                fail(token, "llSetSoundQueueing requires an integer");
+            if (!queueing && !numeric(value->type))
                 fail(token, "sound setting requires a numeric value");
             require(")");
             require(";");
@@ -6421,17 +7655,6 @@ class Parser {
             ins.pay_buttons = expression();
             if (ins.pay_price->type != Type::Integer || ins.pay_buttons->type != Type::List)
                 fail(token, "llSetPayPrice requires an integer price and a list");
-            require(")");
-            require(";");
-            handler->instructions.push_back(std::move(ins));
-            return;
-        }
-        if (is("llSetSoundQueueing")) {
-            advance();
-            require("(");
-            ins.sound_queueing = expression();
-            if (ins.sound_queueing->type != Type::Integer)
-                fail(token, "llSetSoundQueueing requires an integer");
             require(")");
             require(";");
             handler->instructions.push_back(std::move(ins));
@@ -6462,19 +7685,29 @@ class Parser {
         }
         if (is("llLoopSound") || is("llLoopSoundMaster") || is("llLoopSoundSlave") || is("llStopSound") ||
             is("llPlaySound") || is("llPlaySoundSlave") || is("llTriggerSound") ||
-            is("llTriggerSoundLimited") || is("llCollisionSound")) {
+            is("llTriggerSoundLimited") || is("llCollisionSound") || is("llLinkPlaySound") ||
+            is("llLinkStopSound")) {
             ins.sound = true;
+            const bool linked_play = is("llLinkPlaySound");
+            const bool linked = linked_play || is("llLinkStopSound");
             const bool limited = is("llTriggerSoundLimited");
             ins.trigger_sound = is("llTriggerSound") || limited;
             ins.collision_sound = is("llCollisionSound");
             ins.play_sound = is("llPlaySound") || is("llPlaySoundSlave") || ins.trigger_sound;
-            const bool loop = !is("llStopSound");
+            const bool has_sound = !is("llStopSound") && !is("llLinkStopSound");
             ins.sound_sync_flags = is("llLoopSoundMaster")                              ? 2
                                    : (is("llLoopSoundSlave") || is("llPlaySoundSlave")) ? 4
                                                                                         : 0;
             advance();
             require("(");
-            if (loop) {
+            if (linked) {
+                ins.sound_link = expression();
+                if (ins.sound_link->type != Type::Integer)
+                    fail(token, "linked sound requires an integer link selector");
+                if (linked_play)
+                    require(",");
+            }
+            if (has_sound) {
                 ins.text = expression();
                 require(",");
                 ins.sound_gain = expression();
@@ -6488,6 +7721,12 @@ class Parser {
                     ins.sound_min = expression();
                     if (ins.sound_max->type != Type::Vector || ins.sound_min->type != Type::Vector)
                         fail(token, "llTriggerSoundLimited requires two vector corners");
+                }
+                if (linked_play && is(",")) {
+                    advance();
+                    ins.sound_mode = expression();
+                    if (ins.sound_mode->type != Type::Integer)
+                        fail(token, "llLinkPlaySound requires integer flags");
                 }
             }
             require(")");
@@ -6631,10 +7870,48 @@ class Parser {
             handler->instructions.push_back(std::move(ins));
             return;
         }
+        if (is("llSetRegionPos")) {
+            auto position = expression_statement();
+            require(";");
+            handler->instructions.push_back(std::move(position));
+            return;
+        }
+        if (is("llRezObject") || is("llRezAtRoot")) {
+            ins.rez_at_root = is("llRezAtRoot");
+            advance();
+            require("(");
+            constexpr std::array types{Type::String, Type::Vector, Type::Vector, Type::Rotation, Type::Integer};
+            for (std::size_t i = 0; i < types.size(); ++i) {
+                if (i)
+                    require(",");
+                auto& argument = ins.rez_arguments[i];
+                argument = expression();
+                if (argument->type != types[i] && !(i == 0 && argument->type == Type::Key))
+                    fail(token, "Invalid object rez argument");
+            }
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSetPos")) {
+            advance();
+            require("(");
+            ins.object_position = expression();
+            require(")");
+            require(";");
+            if (ins.object_position->type != Type::Vector)
+                fail(token, "Object position must be a vector");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
         if (is("llStartAnimation") || is("llStopAnimation") ||
+            is("llStartObjectAnimation") || is("llStopObjectAnimation") ||
             is("osAvatarPlayAnimation") || is("osAvatarStopAnimation")) {
             const bool explicit_avatar = is("osAvatarPlayAnimation") || is("osAvatarStopAnimation");
-            ins.start_animation = is("llStartAnimation") || is("osAvatarPlayAnimation");
+            ins.object_animation = is("llStartObjectAnimation") || is("llStopObjectAnimation");
+            ins.start_animation = is("llStartAnimation") || is("osAvatarPlayAnimation") ||
+                                  is("llStartObjectAnimation");
             advance();
             require("(");
             if (explicit_avatar) {
@@ -6649,6 +7926,25 @@ class Parser {
             if (ins.animation_name->type != Type::String &&
                 !(explicit_avatar && ins.animation_name->type == Type::Key))
                 fail(token, "Animation name must be a string");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llTakeControls") || is("llReleaseControls")) {
+            ins.release_controls = is("llReleaseControls");
+            advance();
+            require("(");
+            if (!ins.release_controls) {
+                for (std::size_t index = 0; index < ins.taken_controls.size(); ++index) {
+                    if (index)
+                        require(",");
+                    auto argument = expression();
+                    if (argument->type != Type::Integer)
+                        fail(token, "llTakeControls requires integer arguments");
+                    ins.taken_controls[index] = std::move(argument);
+                }
+            }
+            require(")");
+            require(";");
             handler->instructions.push_back(std::move(ins));
             return;
         }
@@ -6701,11 +7997,37 @@ class Parser {
             handler->instructions.push_back(std::move(ins));
             return;
         }
-        if (is("llSay"))
-            ins.owner = false;
+        const auto deprecated = std::ranges::find(deprecated_commands, token.text, &DeprecatedCommand::name);
+        if (deprecated != std::end(deprecated_commands)) {
+            const auto command = token;
+            advance();
+            require("(");
+            ins.text = std::make_unique<Expression>();
+            ins.text->op = Expression::Op::DeprecatedCommand;
+            ins.text->slot = static_cast<std::size_t>(deprecated - std::begin(deprecated_commands));
+            for (const auto parameter : deprecated->parameters) {
+                if (!ins.text->elements.empty())
+                    require(",");
+                auto argument = expression();
+                if (!assignable(parameter, argument->type))
+                    fail(command, "invalid argument type for " + command.text);
+                ins.text->elements.push_back(std::move(argument));
+            }
+            require(")");
+            require(";");
+            ins.discard = true;
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llWhisper"))
+            ins.chat_type = LslChatType::Whisper;
+        else if (is("llShout"))
+            ins.chat_type = LslChatType::Shout;
+        else if (is("llRegionSay"))
+            ins.chat_type = LslChatType::Region;
         else if (is("llOwnerSay"))
             ins.owner = true;
-        else
+        else if (!is("llSay"))
             fail(token, "unsupported statement/API in native LSL subset");
         advance();
         require("(");
@@ -6763,7 +8085,8 @@ class Parser {
             if (event != "state_entry" && event != "touch_start" && event != "touch" &&
                 event != "touch_end" && event != "changed" && event != "linkset_data" && event != "on_rez" &&
                 event != "run_time_permissions" && event != "timer" && event != "state_exit" &&
-                event != "dataserver" && event != "http_request")
+                event != "dataserver" && event != "http_request" && event != "link_message" &&
+                event != "control" && event != "listen" && event != "attach" && event != "object_rez")
                 fail(at, "unsupported event in native LSL subset");
             advance();
             if (state.handlers.contains(event))
@@ -6785,7 +8108,13 @@ class Parser {
                 handler->local_types.push_back(type);
                 advance();
             };
-            if (event == "dataserver" || event == "http_request") {
+            if (event == "control") {
+                parameter(Type::Key);
+                require(",");
+                parameter(Type::Integer);
+                require(",");
+                parameter(Type::Integer);
+            } else if (event == "dataserver" || event == "http_request") {
                 parameter(Type::Key);
                 require(",");
                 parameter(Type::String);
@@ -6793,6 +8122,16 @@ class Parser {
                     require(",");
                     parameter(Type::String);
                 }
+            } else if (event == "attach" || event == "object_rez") {
+                parameter(Type::Key);
+            } else if (event == "listen") {
+                parameter(Type::Integer);
+                require(",");
+                parameter(Type::String);
+                require(",");
+                parameter(Type::Key);
+                require(",");
+                parameter(Type::String);
             } else if (event != "state_entry" && event != "timer" && event != "state_exit") {
                 parameter(Type::Integer);
             }
@@ -6801,6 +8140,14 @@ class Parser {
                 parameter(Type::String);
                 require(",");
                 parameter(Type::String);
+            }
+            if (event == "link_message") {
+                require(",");
+                parameter(Type::Integer);
+                require(",");
+                parameter(Type::String);
+                require(",");
+                parameter(Type::Key);
             }
             require(")");
             block(true);
@@ -6812,10 +8159,15 @@ class Parser {
                                 : event == "touch_start"          ? 1ull << 21
                                 : event == "touch"                ? 1ull << 3
                                 : event == "dataserver"           ? 1ull << 8
+                                : event == "control"              ? 1ull << 7
+                                : event == "listen"               ? 1ull << 15
+                                : event == "attach"               ? 1ull
                                 : event == "http_request"         ? 1ull << 38
                                 : event == "changed"              ? 1ull << 33
+                                : event == "link_message"         ? 1ull << 34
                                 : event == "linkset_data"         ? 1ull << 41
                                 : event == "on_rez"               ? 1ull << 36
+                                : event == "object_rez"           ? 1ull << 22
                                 : event == "run_time_permissions" ? 1ull << 28
                                 : event == "timer"                ? 1ull << 2
                                                                   : 1ull << 29;
@@ -6885,7 +8237,9 @@ std::string lsl_date_from_unix(std::int32_t seconds) {
 
 LslCompileResult compile_lsl(std::string_view source) {
     try {
-        return {Parser(source).parse(), {}};
+        auto program = Parser(source).parse();
+        program->source_hash = framework::md5(source);
+        return {std::move(program), {}};
     } catch (const CompileFailure& e) {
         return {nullptr, {e.diagnostic}};
     }
@@ -6917,10 +8271,18 @@ struct LslInstance::Impl {
         std::uint64_t bytes = 0;
         for (std::size_t i = 0; i < globals.size(); ++i) {
             switch (program->globals[i].store_type) {
-            case Type::Integer: bytes += 4; break;
-            case Type::Float: bytes += 8; break;
-            case Type::Vector: bytes += 24; break;
-            case Type::Rotation: bytes += 32; break;
+            case Type::Integer:
+                bytes += 4;
+                break;
+            case Type::Float:
+                bytes += 8;
+                break;
+            case Type::Vector:
+                bytes += 24;
+                break;
+            case Type::Rotation:
+                bytes += 32;
+                break;
             default:
                 if (i < initialized_globals &&
                     (std::holds_alternative<std::string>(globals[i]) ||
@@ -6978,6 +8340,8 @@ struct LslInstance::Impl {
         return host.clock_ticks ? host.clock_ticks() : ticks();
     }
     void reset(bool constructing = false) {
+        if (!constructing && host.clear_listeners)
+            host.clear_listeners(context.item);
         if (!constructing && host.clear_script_permissions)
             host.clear_script_permissions(context.item);
         state = &program->states.at("default");
@@ -7055,17 +8419,39 @@ struct LslInstance::Impl {
         }
         const bool dataserver = event.name == "dataserver";
         const bool http_request = event.name == "http_request";
-        const auto expected = event.name == "linkset_data" || http_request ? 3u
+        const bool link_message = event.name == "link_message";
+        const bool listen = event.name == "listen";
+        const bool attachment = event.name == "attach";
+        const bool script_control = event.name == "control";
+        const auto expected = link_message || listen ? 4u
+                        : event.name == "linkset_data" || http_request || script_control ? 3u
                         : dataserver ? 2u
                         : event.name == "state_entry" || event.name == "state_exit" || event.name == "timer"
                             ? 0u
                             : 1u;
         if (event.arguments.size() != expected)
             return false;
-        if (dataserver || http_request) {
+        if (dataserver || http_request || attachment || event.name == "object_rez") {
             if (!std::all_of(event.arguments.begin(), event.arguments.end(), [](const auto& value) {
                     return std::holds_alternative<std::string>(value);
                 }))
+                return false;
+        } else if (script_control) {
+            if (!std::holds_alternative<std::string>(event.arguments[0]) ||
+                !std::holds_alternative<std::int32_t>(event.arguments[1]) ||
+                !std::holds_alternative<std::int32_t>(event.arguments[2]))
+                return false;
+        } else if (listen) {
+            if (!std::holds_alternative<std::int32_t>(event.arguments[0]) ||
+                !std::all_of(event.arguments.begin() + 1, event.arguments.end(), [](const auto& value) {
+                    return std::holds_alternative<std::string>(value);
+                }))
+                return false;
+        } else if (link_message) {
+            if (!std::holds_alternative<std::int32_t>(event.arguments[0]) ||
+                !std::holds_alternative<std::int32_t>(event.arguments[1]) ||
+                !std::holds_alternative<std::string>(event.arguments[2]) ||
+                !std::holds_alternative<std::string>(event.arguments[3]))
                 return false;
         } else {
             if (expected && !std::holds_alternative<std::int32_t>(event.arguments[0]))
@@ -7081,7 +8467,12 @@ struct LslInstance::Impl {
         ++counts[event.name];
         if (event.name == "state_entry")
             queue.push_front(std::move(event));
-        else
+        else if (attachment && std::get<std::string>(event.arguments.front()) == framework::Uuid{}.str()) {
+            const auto position = std::ranges::find_if(queue, [](const auto& pending) {
+                return pending.name != "state_entry" && pending.name != "attach";
+            });
+            queue.insert(position, std::move(event));
+        } else
             queue.push_back(std::move(event));
         control.pending_events = queue.size();
         if (control.state == scene::ScriptExecutionState::Idle)
@@ -7214,6 +8605,28 @@ struct LslInstance::Impl {
                 host.set_region_sun_settings(use_estate);
             return;
         }
+        if (instruction.parcel_media_commands) {
+            const auto commands = std::get<std::shared_ptr<const LslList>>(
+                evaluator.evaluate(*instruction.parcel_media_commands));
+            if (host.parcel_media_commands &&
+                host.parcel_media_commands(context.object, *commands, [&](std::string message) {
+                    evaluator.script_error("llParcelMediaCommandList: " + message);
+                })) {
+                const auto requested = 2000.f * host.script_delay_factor;
+                if (requested >= 10 && requested < 2147483648.f)
+                    schedule_sleep(static_cast<std::int32_t>(requested), now());
+            }
+            return;
+        }
+        if (instruction.parcel_music_url) {
+            auto url = std::get<std::string>(evaluator.evaluate(*instruction.parcel_music_url));
+            if (host.set_parcel_music_url && host.set_parcel_music_url(context.object, std::move(url))) {
+                const auto requested = 2000.f * host.script_delay_factor;
+                if (requested >= 10 && requested < 2147483648.f)
+                    schedule_sleep(static_cast<std::int32_t>(requested), now());
+            }
+            return;
+        }
         if (instruction.region_water_height) {
             const auto height = list_float(evaluator.evaluate(*instruction.region_water_height));
             evaluator.check_ossl_permission("osSetRegionWaterHeight");
@@ -7281,6 +8694,13 @@ struct LslInstance::Impl {
                 host.allow_inventory_drop(context.object, allowed != 0);
             return;
         }
+        if (instruction.status_mask) {
+            const auto mask = std::get<std::int32_t>(evaluator.evaluate(*instruction.status_mask));
+            const auto enabled = std::get<std::int32_t>(evaluator.evaluate(*instruction.status_value)) != 0;
+            if (host.set_object_status)
+                host.set_object_status(context.object, mask, enabled);
+            return;
+        }
         if (instruction.pass_touches) {
             const auto pass = std::get<std::int32_t>(evaluator.evaluate(*instruction.pass_touches));
             if (host.set_pass_touches)
@@ -7317,11 +8737,23 @@ struct LslInstance::Impl {
             host.set_pay_prices(context.object, prices);
             return;
         }
+        const auto sound_link = instruction.sound_link
+            ? std::optional(std::get<std::int32_t>(evaluator.evaluate(*instruction.sound_link)))
+            : std::nullopt;
+        const auto sound_parts = [&] {
+            if (!sound_link)
+                return std::vector{context.object};
+            return host.linked_prim_parts ? host.linked_prim_parts(context.object, *sound_link)
+                                          : std::vector<framework::Uuid>{};
+        };
         if (instruction.sound_queueing) {
             const auto queueing = std::get<std::int32_t>(evaluator.evaluate(*instruction.sound_queueing));
+            if (sound_link && !host.set_sound_queueing)
+                return;
             if (!host.set_sound_queueing)
                 throw std::runtime_error("LSL host sound queueing callback is required");
-            host.set_sound_queueing(context.object, queueing == 1);
+            for (const auto part : sound_parts())
+                host.set_sound_queueing(part, queueing == 1);
             return;
         }
         if (instruction.preload_sound) {
@@ -7338,7 +8770,8 @@ struct LslInstance::Impl {
                                                                         : std::get<std::int32_t>(radius);
             if (!host.set_sound_radius)
                 throw std::runtime_error("LSL host sound radius callback is required");
-            host.set_sound_radius(context.object, static_cast<float>(value));
+            for (const auto part : sound_parts())
+                host.set_sound_radius(part, static_cast<float>(value));
             return;
         }
         if (instruction.adjust_sound_gain) {
@@ -7347,11 +8780,44 @@ struct LslInstance::Impl {
                 std::holds_alternative<double>(gain) ? std::get<double>(gain) : std::get<std::int32_t>(gain);
             if (!host.adjust_sound_gain)
                 throw std::runtime_error("LSL host sound gain callback is required");
-            host.adjust_sound_gain(context.object, static_cast<float>(std::clamp(value, 0., 1.)));
+            for (const auto part : sound_parts())
+                host.adjust_sound_gain(part, static_cast<float>(std::clamp(value, 0., 1.)));
             schedule_sleep(100, now());
             return;
         }
         if (instruction.sound) {
+            if (sound_link && instruction.sound_gain) {
+                const auto name = std::get<std::string>(evaluator.evaluate(*instruction.text));
+                const auto gain = evaluator.evaluate(*instruction.sound_gain);
+                const auto volume = std::holds_alternative<double>(gain) ? std::get<double>(gain)
+                                                                         : std::get<std::int32_t>(gain);
+                const auto mode = instruction.sound_mode
+                    ? std::get<std::int32_t>(evaluator.evaluate(*instruction.sound_mode)) : 0;
+                framework::Uuid asset;
+                if (host.resolve_sound_asset)
+                    asset = host.resolve_sound_asset(context.object, name);
+                else
+                    framework::try_parse_sdk_uuid(name, asset);
+                if (asset.is_zero())
+                    return;
+                const auto asset_key = asset.str();
+                for (const auto part : sound_parts()) {
+                    switch (mode) {
+                    case 0:
+                    case 2:
+                    case 4:
+                        if (host.play_sound)
+                            host.play_sound(part, asset_key, volume, mode == 4 ? 4 : 0, mode == 2, {});
+                        break;
+                    case 1:
+                    case 5:
+                        if (host.loop_sound)
+                            host.loop_sound(part, asset_key, volume, mode == 5 ? 4 : 0);
+                        break;
+                    }
+                }
+                return;
+            }
             if (instruction.collision_sound) {
                 const auto name = std::get<std::string>(evaluator.evaluate(*instruction.text));
                 const auto gain = evaluator.evaluate(*instruction.sound_gain);
@@ -7385,6 +8851,8 @@ struct LslInstance::Impl {
                                 instruction.sound_sync_flags, instruction.trigger_sound, bounds);
                 return;
             }
+            if (sound_link && !host.loop_sound)
+                return;
             if (!host.loop_sound)
                 throw std::runtime_error("LSL host sound callback is required");
             if (instruction.sound_gain) {
@@ -7394,8 +8862,10 @@ struct LslInstance::Impl {
                                 std::holds_alternative<double>(gain) ? std::get<double>(gain)
                                                                      : std::get<std::int32_t>(gain),
                                 instruction.sound_sync_flags);
-            } else
-                host.loop_sound(context.object, std::nullopt, 0., 0);
+            } else {
+                for (const auto part : sound_parts())
+                    host.loop_sound(part, std::nullopt, 0., 0);
+            }
             return;
         }
         if (instruction.text_color) {
@@ -7518,6 +8988,29 @@ struct LslInstance::Impl {
                 host.change_animation_override(context.object, context.item, state, animation);
             return;
         }
+        if (instruction.rez_arguments.front()) {
+            const auto name = std::get<std::string>(evaluator.evaluate(*instruction.rez_arguments[0]));
+            const auto position = std::get<framework::Vector3d>(evaluator.evaluate(*instruction.rez_arguments[1]));
+            const auto velocity = std::get<framework::Vector3d>(evaluator.evaluate(*instruction.rez_arguments[2]));
+            const auto rotation = std::get<LslRotation>(evaluator.evaluate(*instruction.rez_arguments[3]));
+            const auto parameter = std::get<std::int32_t>(evaluator.evaluate(*instruction.rez_arguments[4]));
+            if (host.rez_object && host.rez_object(context.object, name, position, velocity, rotation,
+                                                   parameter, instruction.rez_at_root)) {
+                const auto delay = 100.f * host.script_delay_factor;
+                if (delay >= 1.f && delay < 2147483648.f)
+                    schedule_sleep(static_cast<std::int32_t>(delay), now());
+            }
+            return;
+        }
+        if (instruction.object_position) {
+            const auto position = std::get<framework::Vector3d>(evaluator.evaluate(*instruction.object_position));
+            if (host.set_object_position)
+                host.set_object_position(context.object, position, false);
+            const auto delay = 200.f * host.script_delay_factor;
+            if (delay >= 1.f && delay < 2147483648.f)
+                schedule_sleep(static_cast<std::int32_t>(delay), now());
+            return;
+        }
         if (instruction.animation_name) {
             if (instruction.animation_avatar) {
                 const auto key = std::get<std::string>(evaluator.evaluate(*instruction.animation_avatar));
@@ -7530,8 +9023,25 @@ struct LslInstance::Impl {
                 return;
             }
             const auto name = std::get<std::string>(evaluator.evaluate(*instruction.animation_name));
-            if (host.script_animation)
+            if (instruction.object_animation) {
+                if (host.object_animation)
+                    host.object_animation(context.object, name, instruction.start_animation);
+            } else if (host.script_animation) {
                 host.script_animation(context.object, context.item, name, instruction.start_animation);
+            }
+            return;
+        }
+        if (instruction.taken_controls[0]) {
+            std::array<std::int32_t, 3> arguments;
+            for (std::size_t index = 0; index < arguments.size(); ++index)
+                arguments[index] = std::get<std::int32_t>(evaluator.evaluate(*instruction.taken_controls[index]));
+            if (host.take_controls)
+                host.take_controls(context.item, arguments[0], arguments[1], arguments[2]);
+            return;
+        }
+        if (instruction.release_controls) {
+            if (host.release_controls)
+                host.release_controls(context.item);
             return;
         }
         if (instruction.permission_agent) {
@@ -7580,28 +9090,41 @@ struct LslInstance::Impl {
             return;
         }
         auto channel = std::get<std::int32_t>(evaluator.evaluate(*instruction.channel));
+        if (instruction.chat_type == LslChatType::Region) {
+            if (channel == 0) {
+                evaluator.script_error("llRegionSay: Cannot use on channel 0");
+                return;
+            }
+            LslChat chat{LslChatType::Region, channel, say_text(std::move(text)), context};
+            if (channel == std::numeric_limits<std::int32_t>::max() && host.chat)
+                host.chat(chat);
+            if (host.listener)
+                host.listener(chat);
+            return;
+        }
         auto time = now();
-        if (channel == 0) {
+        if (channel == 0 && instruction.chat_type != LslChatType::Whisper) {
             if (time - last_say_check > 10000000) {
                 last_say_check = time;
                 say_count = 0;
             } else
                 ++say_count;
         }
-        if (say_count >= 11) {
+        if (say_count >= 11 && instruction.chat_type != LslChatType::Whisper) {
             float requested = 2000.f * host.script_delay_factor;
             if (requested >= 10 && requested < 2147483648.f) {
                 auto delay = static_cast<std::int32_t>(requested);
                 schedule_sleep(delay, time);
             }
         }
-        if (host.console_channel && channel == *host.console_channel) {
+        if (instruction.chat_type == LslChatType::Say && host.console_channel &&
+            channel == *host.console_channel) {
             if (!host.console)
                 throw std::runtime_error("LSL host console callback is required");
             host.console(text);
             return;
         }
-        LslChat chat{LslChatType::Say, channel, say_text(std::move(text)), context};
+        LslChat chat{instruction.chat_type, channel, say_text(std::move(text)), context};
         if (!host.chat)
             throw std::runtime_error("LSL host chat callback is required");
         host.chat(chat);
@@ -7656,6 +9179,143 @@ const LslEvent* LslInstance::current_event() const {
 }
 void LslInstance::set_context(LslContext c) {
     impl_->context = std::move(c);
+}
+namespace {
+std::int64_t ticks_between(std::int64_t earlier, std::int64_t later) {
+    if (later <= earlier)
+        return 0;
+    if (earlier < 0 && later > std::numeric_limits<std::int64_t>::max() + earlier)
+        return std::numeric_limits<std::int64_t>::max();
+    return later - earlier;
+}
+std::int64_t ticks_after(std::int64_t now, std::int64_t interval) {
+    const auto maximum = std::numeric_limits<std::int64_t>::max();
+    return now > maximum - interval ? maximum : now + interval;
+}
+bool checkpoint_value_matches(Type type, const LslValue& value) {
+    if (type == Type::List) {
+        const auto* list = std::get_if<std::shared_ptr<const LslList>>(&value);
+        return list && *list;
+    }
+    return value.index() == default_value(type).index();
+}
+}
+std::optional<LslCheckpoint> LslInstance::checkpoint() const {
+    const auto& s = *impl_;
+    if (!s.fault.empty())
+        return std::nullopt;
+    LslCheckpoint result;
+    result.program_hash = s.program->source_hash;
+    for (const auto& [name, state] : s.program->states) {
+        if (&state == s.state)
+            result.state = name;
+        if (&state == s.next_state)
+            result.next_state = name;
+    }
+    result.globals = s.globals;
+    if (s.active)
+        result.locals = s.locals;
+    result.queued_events.assign(s.queue.begin(), s.queue.end());
+    result.active_event = s.active;
+    result.initialized_globals = s.initialized_globals;
+    result.instruction = s.active ? s.pc : 0;
+    result.running = s.control.running;
+    result.sleep_requested = s.sleep_requested;
+    result.start_parameter = s.context.start_parameter;
+    const auto now = s.now();
+    const auto monotonic_now = s.host.monotonic_ticks ? s.host.monotonic_ticks() : ticks();
+    result.sleep_remaining = ticks_between(now, s.sleep_until);
+    result.timer_interval = s.timer_interval;
+    result.timer_remaining = s.timer_interval ? ticks_between(now, s.next_timer) : 0;
+    result.timer_elapsed = ticks_between(s.timer_start, monotonic_now);
+    result.minimum_event_delay = s.minimum_event_delay;
+    if (s.next_event_time)
+        result.event_delay_remaining = std::max(0., *s.next_event_time - monotonic_now / 10000000.);
+    return result;
+}
+bool LslInstance::restore_checkpoint(const LslCheckpoint& saved) {
+    auto& current = *impl_;
+    const auto& program = *current.program;
+    if (saved.program_hash != program.source_hash || saved.globals.size() != program.globals.size() ||
+        saved.initialized_globals > saved.globals.size() || saved.sleep_remaining < 0 ||
+        saved.timer_interval < 0 || saved.timer_remaining < 0 || saved.timer_elapsed < 0 ||
+        !std::isfinite(saved.minimum_event_delay) ||
+        (saved.event_delay_remaining &&
+         (!std::isfinite(*saved.event_delay_remaining) || *saved.event_delay_remaining < 0.)))
+        return false;
+    const auto state = program.states.find(saved.state);
+    const auto next = program.states.find(saved.next_state);
+    if (state == program.states.end() || (!saved.next_state.empty() && next == program.states.end()))
+        return false;
+    for (std::size_t i = 0; i < saved.initialized_globals; ++i)
+        if (!checkpoint_value_matches(program.globals[i].store_type, saved.globals[i]))
+            return false;
+    const auto event_matches = [&](const LslEvent& event) {
+        const auto handler = state->second.handlers.find(event.name);
+        if (handler == state->second.handlers.end() || event.arguments.size() > handler->second.local_types.size())
+            return false;
+        for (std::size_t i = 0; i < event.arguments.size(); ++i)
+            if (!checkpoint_value_matches(handler->second.local_types[i], event.arguments[i]))
+                return false;
+        return true;
+    };
+    if (saved.active_event) {
+        if (!event_matches(*saved.active_event))
+            return false;
+        const auto& handler = state->second.handlers.at(saved.active_event->name);
+        if (saved.locals.size() != handler.local_types.size() || saved.instruction > handler.instructions.size())
+            return false;
+        for (std::size_t i = 0; i < saved.locals.size(); ++i)
+            if (!checkpoint_value_matches(handler.local_types[i], saved.locals[i]))
+                return false;
+    } else if (saved.instruction != 0 || !saved.locals.empty()) {
+        return false;
+    }
+    if (!std::ranges::all_of(saved.queued_events, event_matches))
+        return false;
+
+    auto restored = std::make_unique<Impl>();
+    restored->program = current.program;
+    restored->context = current.context;
+    restored->context.start_parameter = saved.start_parameter;
+    restored->host = current.host;
+    restored->state = &state->second;
+    restored->next_state = saved.next_state.empty() ? nullptr : &next->second;
+    restored->initialized_globals = saved.initialized_globals;
+    restored->globals = saved.globals;
+    restored->locals = saved.locals;
+    restored->active = saved.active_event;
+    restored->pc = saved.instruction;
+    restored->queue.assign(saved.queued_events.begin(), saved.queued_events.end());
+    for (const auto& event : restored->queue)
+        ++restored->counts[event.name];
+    const auto now = restored->now();
+    const auto monotonic_now = restored->host.monotonic_ticks ? restored->host.monotonic_ticks() : ticks();
+    restored->sleep_until = ticks_after(now, saved.sleep_remaining);
+    restored->sleep_requested = saved.sleep_requested;
+    restored->timer_interval = saved.timer_interval;
+    restored->next_timer = ticks_after(now, saved.timer_remaining);
+    const auto minimum = std::numeric_limits<std::int64_t>::min();
+    restored->timer_start = monotonic_now < minimum + saved.timer_elapsed ? minimum
+                                                                        : monotonic_now - saved.timer_elapsed;
+    restored->last_say_check = now;
+    restored->minimum_event_delay = saved.minimum_event_delay;
+    if (saved.event_delay_remaining)
+        restored->next_event_time = monotonic_now / 10000000. + *saved.event_delay_remaining;
+    restored->control.running = saved.running;
+    restored->control.active_event = restored->active.has_value();
+    restored->control.pending_events = restored->queue.size();
+    restored->control.state = !saved.running ? scene::ScriptExecutionState::Suspended
+                              : saved.active_event ? scene::ScriptExecutionState::OnYieldQueue
+                              : restored->queue.empty() ? scene::ScriptExecutionState::Idle
+                                                        : scene::ScriptExecutionState::OnStartQueue;
+    try {
+        restored->check_heap_limit(0, restored->global_heap_bytes() + restored->local_heap_bytes());
+    } catch (const OutOfHeap&) {
+        return false;
+    }
+    impl_ = std::move(restored);
+    return true;
 }
 LslRunResult LslInstance::run(std::size_t budget) {
     auto& s = *impl_;
@@ -7720,6 +9380,8 @@ LslRunResult LslInstance::run(std::size_t budget) {
             auto& code = s.handlers().at(s.active->name).instructions;
             if (s.pc == code.size()) {
                 if (s.next_state && s.active->name == "state_exit") {
+                    if (s.host.clear_listeners)
+                        s.host.clear_listeners(s.context.item);
                     s.state = std::exchange(s.next_state, nullptr);
                     s.queue.clear();
                     s.counts.clear();

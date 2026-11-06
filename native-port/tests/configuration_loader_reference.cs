@@ -1,33 +1,276 @@
-using System;using System.IO;using System.Text;using System.Collections.Generic;using System.Linq;using System.Reflection;using System.Globalization;using Nini.Config;
-namespace Shim {
-static class Environment {public static void Exit(int n){Program.Trace.Add("exit:"+n);throw new ExitException(n);}}
-sealed class ExitException:Exception {public ExitException(int n):base("exit:"+n){}}
-static class Path {
- public static string Combine(string a,string b){Program.Hit("combine",a,b);return System.IO.Path.Combine(a,b);}
- public static string GetFullPath(string a){Program.Hit("full",a);return System.IO.Path.GetFullPath(a);}
- public static string GetExtension(string a){Program.Hit("extension",a);return System.IO.Path.GetExtension(a);}
+using System;
+using System.IO;
+using System.Text;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Globalization;
+using Nini.Config;
+namespace Shim
+{
+    static class Environment
+    {
+        public static void Exit(int n)
+        {
+            Program.Trace.Add("exit:" + n);
+            throw new ExitException(n);
+        }
+    }
+    sealed class ExitException : Exception
+    {
+        public ExitException(int n) : base("exit:" + n)
+        {
+        }
+    }
+    static class Path
+    {
+        public static string Combine(string a, string b)
+        {
+            Program.Hit("combine", a, b);
+            return System.IO.Path.Combine(a, b);
+        }
+        public static string GetFullPath(string a)
+        {
+            Program.Hit("full", a);
+            return System.IO.Path.GetFullPath(a);
+        }
+        public static string GetExtension(string a)
+        {
+            Program.Hit("extension", a);
+            return System.IO.Path.GetExtension(a);
+        }
+    }
+    static class File
+    {
+        public static bool Exists(string p)
+        {
+            Program.Hit("fileexists", p);
+            return System.IO.File.Exists(p);
+        }
+    }
+    static class Directory
+    {
+        public static bool Exists(string p)
+        {
+            Program.Hit("direxists", p);
+            return System.IO.Directory.Exists(p);
+        }
+        public static string[] GetFiles(string p)
+        {
+            Program.Hit("files", p);
+            return System.IO.Directory.GetFiles(p);
+        }
+    }
+    abstract class XmlReader : System.Xml.XmlReader
+    {
+        public new static XmlReader Create(string uri, System.Xml.XmlReaderSettings settings)
+        {
+            Program.Hit("xml", uri, settings.DtdProcessing.ToString());
+            throw new InvalidOperationException("xml provider fault");
+        }
+    }
 }
-static class File {public static bool Exists(string p){Program.Hit("fileexists",p);return System.IO.File.Exists(p);}}
-static class Directory {public static bool Exists(string p){Program.Hit("direxists",p);return System.IO.Directory.Exists(p);}public static string[] GetFiles(string p){Program.Hit("files",p);return System.IO.Directory.GetFiles(p);}}
-abstract class XmlReader:System.Xml.XmlReader {public new static XmlReader Create(string uri,System.Xml.XmlReaderSettings settings){Program.Hit("xml",uri,settings.DtdProcessing.ToString());throw new InvalidOperationException("xml provider fault");}}
+namespace log4net
+{
+    public interface ILog
+    {
+        void Info(object x);
+        void ErrorFormat(string f, params object[] a);
+        void InfoFormat(string f, params object[] a);
+        void WarnFormat(string f, params object[] a);
+        void FatalFormat(string f, params object[] a);
+        void Fatal(object x);
+    }
+    public static class LogManager
+    {
+        public static ILog GetLogger(Type t) => new Logger();
+    }
+    sealed class Logger : ILog
+    {
+        static void L(string l, object f, object[] a, bool format)
+        {
+            Program.Hit("log", format ? "Format" : "Message", l, (string)f,
+                        string.Join(",", a.Select(x => Program.Enc((string)x))));
+        }
+        public void Info(object x) => L("Info", x, Array.Empty<object>(), false);
+        public void Fatal(object x) => L("Fatal", x, Array.Empty<object>(), false);
+        public void ErrorFormat(string f, params object[] a) => L("Error", f, a, true);
+        public void InfoFormat(string f, params object[] a) => L("Info", f, a, true);
+        public void WarnFormat(string f, params object[] a) => L("Warn", f, a, true);
+        public void FatalFormat(string f, params object[] a) => L("Fatal", f, a, true);
+    }
 }
-namespace log4net {
- public interface ILog {void Info(object x);void ErrorFormat(string f,params object[] a);void InfoFormat(string f,params object[] a);void WarnFormat(string f,params object[] a);void FatalFormat(string f,params object[] a);void Fatal(object x);}
- public static class LogManager {public static ILog GetLogger(Type t)=>new Logger();}
- sealed class Logger:ILog {static void L(string l,object f,object[] a,bool format){Program.Hit("log",format?"Format":"Message",l,(string)f,string.Join(",",a.Select(x=>Program.Enc((string)x))));}public void Info(object x)=>L("Info",x,Array.Empty<object>(),false);public void Fatal(object x)=>L("Fatal",x,Array.Empty<object>(),false);public void ErrorFormat(string f,params object[] a)=>L("Error",f,a,true);public void InfoFormat(string f,params object[] a)=>L("Info",f,a,true);public void WarnFormat(string f,params object[] a)=>L("Warn",f,a,true);public void FatalFormat(string f,params object[] a)=>L("Fatal",f,a,true);}
+namespace OpenSim.Framework
+{
+    public class ConfigSettings
+    {
+        public string PhysicsEngine { get; set; }
+        public string MeshEngineName { get; set; }
+        public string ClientstackDll { get; set; }
+        public string LibrariesXMLFile { get; set; }
+    }
+    public class NetworkServersInfo
+    {
+        public NetworkServersInfo()
+        {
+            Program.Hit("networknew");
+        }
+        public void loadFromConfiguration(IConfigSource s)
+        {
+            Program.Hit("networkload");
+        }
+    }
+    public static partial class Util
+    {
+        public static string configDir()
+        {
+            Program.Hit("configdir");
+            return Program.ConfigDir;
+        }
+        public static void MergeEnvironmentToConfig(IConfigSource s)
+        {
+            Program.Hit("environment");
+            if (Program.Env.Length > 0)
+                s.Merge(new IniConfigSource(new StringReader(Program.Env)));
+        }
+        public static string[] Glob(string p)
+        {
+            Program.Hit("glob", p);
+            return SourceUtil.Glob(p);
+        }
+    }
 }
-namespace OpenSim.Framework {
- public class ConfigSettings {public string PhysicsEngine{get;set;}public string MeshEngineName{get;set;}public string ClientstackDll{get;set;}public string LibrariesXMLFile{get;set;}}
- public class NetworkServersInfo {public NetworkServersInfo(){Program.Hit("networknew");}public void loadFromConfiguration(IConfigSource s){Program.Hit("networkload");}}
- public static partial class Util {public static string configDir(){Program.Hit("configdir");return Program.ConfigDir;}public static void MergeEnvironmentToConfig(IConfigSource s){Program.Hit("environment");if(Program.Env.Length>0)s.Merge(new IniConfigSource(new StringReader(Program.Env)));}public static string[] Glob(string p){Program.Hit("glob",p);return SourceUtil.Glob(p);}}
+namespace OpenSim
+{
+    public class OpenSimConfigSource
+    {
+        public IConfigSource Source;
+    }
+    public static class Application
+    {
+        public static string iniFilePath = "";
+    }
 }
-namespace OpenSim {public class OpenSimConfigSource {public IConfigSource Source;}public static class Application {public static string iniFilePath="";}}
-class InspectLoader:OpenSim.ConfigurationLoader {public OpenSim.OpenSimConfigSource Current=>m_config;public OpenSim.Framework.ConfigSettings Settings=>m_configSettings;public bool Read(IConfigSource s,string path){return (bool)typeof(OpenSim.ConfigurationLoader).GetMethod("ReadConfig",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(this,new object[]{new OpenSim.OpenSimConfigSource{Source=s},path});}public string Includes(IConfigSource s,List<string> sources){typeof(OpenSim.ConfigurationLoader).GetMethod("AddIncludes",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(this,new object[]{new OpenSim.OpenSimConfigSource{Source=s},sources});return string.Join(",",sources.Select(Program.Enc));}}
-class Program {
- public static List<string> Trace=new();public static string ConfigDir,Env;public static InspectLoader Active;static string fault;static int nth,hit;
- public static string Dec(string s)=>s=="null"?null:s=="-"?"":new string(Enumerable.Range(0,s.Length/4).Select(i=>(char)Convert.ToUInt16(s.Substring(i*4,4),16)).ToArray());public static string Enc(string s)=>s==null?"null":s.Length==0?"-":string.Concat(s.Select(c=>((int)c).ToString("x4",CultureInfo.InvariantCulture)));
- public static void Hit(string p,params string[] args){Trace.Add(p+":"+string.Join(":",args.Select(Enc)));if(fault=="mutate_source"&&p=="log"&&args.Length>2&&args[2].StartsWith("[CONFIG]: Reading configuration file")&&Active.Current!=null)Active.Current.Source=null;if(p==fault&&++hit==nth)throw new InvalidOperationException("provider fault");}
- static string Error(Exception e){if(e is TargetInvocationException t)e=t.InnerException;return e.GetType().FullName+":"+Enc(e.Message)+":"+unchecked((uint)e.HResult)+":"+(e is ArgumentException a?Enc(a.ParamName):"null");}
- static string Snapshot(InspectLoader l){var o=new StringBuilder();o.Append(Enc(OpenSim.Application.iniFilePath)).Append('/');var settings=l.Settings;if(settings!=null)o.Append(Enc(settings.PhysicsEngine)).Append(',').Append(Enc(settings.MeshEngineName)).Append(',').Append(Enc(settings.ClientstackDll));o.Append('/');if(l.Current!=null&&l.Current.Source==null)o.Append("nullsource");else if(l.Current!=null)foreach(IConfig c in l.Current.Source.Configs){o.Append(Enc(c.Name)).Append('[');foreach(var k in c.GetKeys())o.Append(Enc(k)).Append('=').Append(Enc(c.Get(k))).Append(',');o.Append(']');}return o.ToString();}
- static void Main(){CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;CultureInfo.CurrentUICulture=CultureInfo.InvariantCulture;string row;while((row=Console.ReadLine())!=null){var a=row.Split(' ');Trace=new();ConfigDir=Dec(a[2]);Env=Dec(a[4]);fault=a[5];nth=int.Parse(a[6]);hit=0;OpenSim.Application.iniFilePath=null;var l=new InspectLoader();Active=l;string result="ok";try{var argv=new IniConfigSource(new StringReader(Dec(a[1])));if(a[0]=="R")result=l.Read(argv,Dec(a[3]))?"1":"0";else if(a[0]=="I"){var list=Dec(a[3]).Split('\n',StringSplitOptions.RemoveEmptyEntries).ToList();result=l.Includes(argv,list);}else {l.LoadConfigSettings(argv,new EnvConfigSource(),out var settings,out var network);if(a[0]=="T"){l=new InspectLoader();Active=l;l.LoadConfigSettings(new IniConfigSource(new StringReader(Dec(a[3]))),new EnvConfigSource(),out settings,out network);}}}catch(Exception e){result=Error(e);}Console.WriteLine(result+"/"+Snapshot(l)+"/"+string.Join(";",Trace));}}
+class InspectLoader : OpenSim.ConfigurationLoader
+{
+    public OpenSim.OpenSimConfigSource Current => m_config;
+    public OpenSim.Framework.ConfigSettings Settings => m_configSettings;
+    public bool Read(IConfigSource s, string path)
+    {
+        return (bool)typeof(OpenSim.ConfigurationLoader)
+            .GetMethod("ReadConfig", BindingFlags.Instance | BindingFlags.NonPublic)
+            .Invoke(this, new object[] { new OpenSim.OpenSimConfigSource { Source = s }, path });
+    }
+    public string Includes(IConfigSource s, List<string> sources)
+    {
+        typeof(OpenSim.ConfigurationLoader)
+            .GetMethod("AddIncludes", BindingFlags.Instance | BindingFlags.NonPublic)
+            .Invoke(this, new object[] { new OpenSim.OpenSimConfigSource { Source = s }, sources });
+        return string.Join(",", sources.Select(Program.Enc));
+    }
+}
+class Program
+{
+    public static List<string> Trace = new();
+    public static string ConfigDir, Env;
+    public static InspectLoader Active;
+    static string fault;
+    static int nth, hit;
+    public static string Dec(string s) =>
+        s == "null" ? null
+        : s == "-"  ? ""
+                    : new string(Enumerable.Range(0, s.Length / 4)
+                                     .Select(i => (char)Convert.ToUInt16(s.Substring(i * 4, 4), 16))
+                                     .ToArray());
+    public static string Enc(string s) =>
+        s == null       ? "null"
+        : s.Length == 0 ? "-"
+                        : string.Concat(s.Select(c => ((int)c).ToString("x4", CultureInfo.InvariantCulture)));
+    public static void Hit(string p, params string[] args)
+    {
+        Trace.Add(p + ":" + string.Join(":", args.Select(Enc)));
+        if (fault == "mutate_source" && p == "log" && args.Length > 2 &&
+            args[2].StartsWith("[CONFIG]: Reading configuration file") && Active.Current != null)
+            Active.Current.Source = null;
+        if (p == fault && ++hit == nth)
+            throw new InvalidOperationException("provider fault");
+    }
+    static string Error(Exception e)
+    {
+        if (e is TargetInvocationException t)
+            e = t.InnerException;
+        return e.GetType().FullName + ":" + Enc(e.Message) + ":" + unchecked((uint)e.HResult) + ":" +
+               (e is ArgumentException a ? Enc(a.ParamName) : "null");
+    }
+    static string Snapshot(InspectLoader l)
+    {
+        var o = new StringBuilder();
+        o.Append(Enc(OpenSim.Application.iniFilePath)).Append('/');
+        var settings = l.Settings;
+        if (settings != null)
+            o.Append(Enc(settings.PhysicsEngine))
+                .Append(',')
+                .Append(Enc(settings.MeshEngineName))
+                .Append(',')
+                .Append(Enc(settings.ClientstackDll));
+        o.Append('/');
+        if (l.Current != null && l.Current.Source == null)
+            o.Append("nullsource");
+        else if (l.Current != null)
+            foreach (IConfig c in l.Current.Source.Configs)
+            {
+                o.Append(Enc(c.Name)).Append('[');
+                foreach (var k in c.GetKeys())
+                    o.Append(Enc(k)).Append('=').Append(Enc(c.Get(k))).Append(',');
+                o.Append(']');
+            }
+        return o.ToString();
+    }
+    static void Main()
+    {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
+        string row;
+        while ((row = Console.ReadLine()) != null)
+        {
+            var a = row.Split(' ');
+            Trace = new();
+            ConfigDir = Dec(a[2]);
+            Env = Dec(a[4]);
+            fault = a[5];
+            nth = int.Parse(a[6]);
+            hit = 0;
+            OpenSim.Application.iniFilePath = null;
+            var l = new InspectLoader();
+            Active = l;
+            string result = "ok";
+            try
+            {
+                var argv = new IniConfigSource(new StringReader(Dec(a[1])));
+                if (a[0] == "R")
+                    result = l.Read(argv, Dec(a[3])) ? "1" : "0";
+                else if (a[0] == "I")
+                {
+                    var list = Dec(a[3]).Split('\n', StringSplitOptions.RemoveEmptyEntries).ToList();
+                    result = l.Includes(argv, list);
+                }
+                else
+                {
+                    l.LoadConfigSettings(argv, new EnvConfigSource(), out var settings, out var network);
+                    if (a[0] == "T")
+                    {
+                        l = new InspectLoader();
+                        Active = l;
+                        l.LoadConfigSettings(new IniConfigSource(new StringReader(Dec(a[3]))),
+                                             new EnvConfigSource(), out settings, out network);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                result = Error(e);
+            }
+            Console.WriteLine(result + "/" + Snapshot(l) + "/" + string.Join(";", Trace));
+        }
+    }
 }

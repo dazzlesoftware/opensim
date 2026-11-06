@@ -1,2 +1,30 @@
-using System;using System.IO;using System.Xml;
-class Program{static void Main(){string row;while((row=Console.ReadLine())!=null){try{using var stream=XmlDownloadManager.GetStream(new Uri(row),null,null);using var memory=new MemoryStream();stream.CopyTo(memory);Console.WriteLine("ok:"+Convert.ToHexString(memory.ToArray()).ToLowerInvariant());}catch(Exception e){Console.WriteLine(e.GetType().FullName+":"+unchecked((uint)e.HResult).ToString("x8")+":"+Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(e.Message)).ToLowerInvariant()+":"+(e is System.Net.Http.HttpRequestException h&&h.StatusCode.HasValue?((int)h.StatusCode.Value).ToString():"~"));}}}}
+using System;
+using System.IO;
+using System.Xml;
+class Program
+{
+    static void Main()
+    {
+        string row;
+        while ((row = Console.ReadLine()) != null)
+        {
+            try
+            {
+                using var stream = XmlDownloadManager.GetStream(new Uri(row), null, null);
+                using var memory = new MemoryStream();
+                stream.CopyTo(memory);
+                Console.WriteLine("ok:" + Convert.ToHexString(memory.ToArray()).ToLowerInvariant());
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(
+                    e.GetType().FullName + ":" + unchecked((uint)e.HResult).ToString("x8") + ":" +
+                    Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(e.Message)).ToLowerInvariant() +
+                    ":" +
+                    (e is System.Net.Http.HttpRequestException h && h.StatusCode.HasValue
+                         ? ((int)h.StatusCode.Value).ToString()
+                         : "~"));
+            }
+        }
+    }
+}

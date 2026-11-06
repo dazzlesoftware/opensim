@@ -31,13 +31,26 @@ class AssetConnectorBackend {
         post(std::move(callback), name);
         return true;
     }
+    virtual bool queue_asset_read(std::function<void()> callback, bool) {
+        return try_post(std::move(callback), "RegionAssetConnector.AssetRead");
+    }
 };
 class LocalAssetConnector : public AssetService, public std::enable_shared_from_this<LocalAssetConnector> {
   public:
-    explicit LocalAssetConnector(std::shared_ptr<AssetConnectorBackend> backend);
+    explicit LocalAssetConnector(std::shared_ptr<AssetConnectorBackend> backend,
+                                 bool service_handles_mutations = false);
     using ForeignFetch = std::function<Asset(const std::string&, const std::optional<std::string>&, bool)>;
     void foreign_fetch(ForeignFetch fetch) {
         foreign_fetch_ = std::move(fetch);
+    }
+    void foreign_url_fetch(std::function<Asset(const std::string&)> fetch) {
+        foreign_url_fetch_ = std::move(fetch);
+    }
+    void foreign_store(std::function<std::optional<std::string>(Asset)> store) {
+        foreign_store_ = std::move(store);
+    }
+    void foreign_exists(std::function<std::vector<bool>(const std::vector<std::string>&)> exists) {
+        foreign_exists_ = std::move(exists);
     }
     static constexpr std::string_view name = "LocalAssetServicesConnector";
     std::nullptr_t replaceable_interface() const {
@@ -46,7 +59,7 @@ class LocalAssetConnector : public AssetService, public std::enable_shared_from_
     void initialise(const server::IniConfig* config);
     void initialise_service(const server::IniConfig* config, const std::string& module);
     void post_initialise() {}
-    void close() {}
+    void close();
     void remove_region(std::shared_ptr<AssetConnectorScene>) {}
     void add_region(std::shared_ptr<AssetConnectorScene> scene);
     void region_loaded(std::shared_ptr<AssetConnectorScene> scene);
@@ -66,10 +79,17 @@ class LocalAssetConnector : public AssetService, public std::enable_shared_from_
   private:
     friend struct LocalAssetConnectorProbe;
     std::shared_ptr<AssetConnectorBackend> backend_;
+    bool service_handles_mutations_;
     ForeignFetch foreign_fetch_;
-    std::mutex foreign_mutex_;
-    std::unordered_map<std::string, std::vector<Complete>> foreign_waiters_;
-    void complete_foreign(const std::string&, const Asset&);
+    std::function<Asset(const std::string&)> foreign_url_fetch_;
+    std::function<std::optional<std::string>(Asset)> foreign_store_;
+    std::function<std::vector<bool>(const std::vector<std::string>&)> foreign_exists_;
+    std::mutex pending_reads_mutex_;
+    std::unordered_map<std::string, std::vector<Complete>> pending_reads_;
+    bool reads_closed_ = false;
+    void deliver_reads(const std::vector<Complete>&, const Asset&);
+    void complete_read(const std::string&, const Asset&);
+    void queue_read(const std::string&, const std::optional<std::string>&, bool, bool, Complete);
     std::atomic<std::shared_ptr<AssetService>> service_;
     std::atomic<std::shared_ptr<framework::IAssetCache>> cache_;
     bool enabled_ = false;

@@ -1,2 +1,36 @@
-using System;using OpenMetaverse;
-class Program{static string Text(string s){if(s=="-")return null;if(s==".")return "";var b=Convert.FromHexString(s);var c=new char[b.Length/2];for(int i=0;i<c.Length;i++)c[i]=(char)(b[i*2]|b[i*2+1]<<8);return new string(c);}static void Main(){string line;while((line=Console.ReadLine())!=null){try{bool ok=Vector3.TryParse(Text(line),out var value);Console.WriteLine((ok?1:0)+":"+BitConverter.SingleToInt32Bits(value.X).ToString("x8")+":"+BitConverter.SingleToInt32Bits(value.Y).ToString("x8")+":"+BitConverter.SingleToInt32Bits(value.Z).ToString("x8"));}catch(Exception e){Console.WriteLine("EX:"+e.Message);}}}}
+using System;
+using OpenMetaverse;
+class Program
+{
+    static string Text(string s)
+    {
+        if (s == "-")
+            return null;
+        if (s == ".")
+            return "";
+        var b = Convert.FromHexString(s);
+        var c = new char[b.Length / 2];
+        for (int i = 0; i < c.Length; i++)
+            c[i] = (char)(b[i * 2] | b[i * 2 + 1] << 8);
+        return new string(c);
+    }
+    static void Main()
+    {
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            try
+            {
+                bool ok = Vector3.TryParse(Text(line), out var value);
+                Console.WriteLine((ok ? 1 : 0) + ":" +
+                                  BitConverter.SingleToInt32Bits(value.X).ToString("x8") + ":" +
+                                  BitConverter.SingleToInt32Bits(value.Y).ToString("x8") + ":" +
+                                  BitConverter.SingleToInt32Bits(value.Z).ToString("x8"));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("EX:" + e.Message);
+            }
+        }
+    }
+}

@@ -8,5 +8,5 @@ namespace opensim::services {
 // threads. Other cultures keep their explicit console parser backend.
 // Both callbacks retain the same source-runtime context owner; bind once.
 void bind_native_invariant_flotsam_datetime(FlotsamConsoleBackend&,
- std::shared_ptr<framework::NativeInvariantDateTimeContext> owner={});
+                                            std::shared_ptr<framework::NativeInvariantDateTimeContext> owner = {});
 }

@@ -27,19 +27,65 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 using System;
 using OpenMetaverse;
-namespace log4net {
-    public interface ILog {void Debug(string value);void InfoFormat(string value,params object[] args);void WarnFormat(string value,params object[] args);void ErrorFormat(string value,params object[] args);}
-    class Log:ILog {public void Debug(string value){}public void InfoFormat(string value,params object[] args){}public void WarnFormat(string value,params object[] args){}public void ErrorFormat(string value,params object[] args){}}
-    public static class LogManager {public static ILog GetLogger(Type type)=>new Log();}
+namespace log4net
+{
+    public interface ILog
+    {
+        void Debug(string value);
+        void InfoFormat(string value, params object[] args);
+        void WarnFormat(string value, params object[] args);
+        void ErrorFormat(string value, params object[] args);
+    }
+    class Log : ILog
+    {
+        public void Debug(string value)
+        {
+        }
+        public void InfoFormat(string value, params object[] args)
+        {
+        }
+        public void WarnFormat(string value, params object[] args)
+        {
+        }
+        public void ErrorFormat(string value, params object[] args)
+        {
+        }
+    }
+    public static class LogManager
+    {
+        public static ILog GetLogger(Type type) => new Log();
+    }
 }
-namespace OpenSim.Services.Base {public class ServiceBase {public ServiceBase(Nini.Config.IConfigSource config){}}}
-namespace OpenSim.Framework {
-    public static class Constants {public static readonly UUID m_MrOpenSimID=new UUID("11111111-1111-0000-0000-000100bba000");}
-    public class osUTF8 {readonly string value;public osUTF8(string value){this.value=value;}public override string ToString()=>value;}
-    public class InventoryItemBase {
-        public UUID Owner,ID,AssetID,Folder;
-        public string CreatorId,Description,Name;
-        public int AssetType,InvType;
-        public uint BasePermissions,EveryOnePermissions,CurrentPermissions,NextPermissions,GroupPermissions,Flags;
+namespace OpenSim.Services.Base
+{
+    public class ServiceBase
+    {
+        public ServiceBase(Nini.Config.IConfigSource config)
+        {
+        }
+    }
+}
+namespace OpenSim.Framework
+{
+    public static class Constants
+    {
+        public static readonly UUID m_MrOpenSimID = new UUID("11111111-1111-0000-0000-000100bba000");
+    }
+    public class osUTF8
+    {
+        readonly string value;
+        public osUTF8(string value)
+        {
+            this.value = value;
+        }
+        public override string ToString() => value;
+    }
+    public class InventoryItemBase
+    {
+        public UUID Owner, ID, AssetID, Folder;
+        public string CreatorId, Description, Name;
+        public int AssetType, InvType;
+        public uint BasePermissions, EveryOnePermissions, CurrentPermissions, NextPermissions,
+            GroupPermissions, Flags;
     }
 }

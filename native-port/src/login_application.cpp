@@ -1,4 +1,3 @@
-#include "opensim/network/sdk_llsd_xml.hpp"
 /*
 Copyright (c) Contributors, http://opensimulator.org/
 See CONTRIBUTORS.TXT for a full list of copyright holders.
@@ -27,8 +26,10 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "opensim/server/login_application.hpp"
-#include <stdexcept>
 #include "opensim/framework/ip_address.hpp"
+#include "opensim/network/sdk_llsd_xml.hpp"
+#include <stdexcept>
+
 namespace opensim::server {
 using namespace network;
 LoginApplication::LoginApplication(services::ILoginService& login, const IniConfig& config)
@@ -39,11 +40,12 @@ LoginApplication::LoginApplication(services::ILoginService& login, const IniConf
         "Startup", "HomeURI", config.get("Hypergrid", "HomeURI", config.get("LoginService", "SRV_HomeURI")));
     if (!home.empty())
         grid_info_["home"] = home;
-    for (const auto& pair : {std::pair{"HomeURIAlias", "homealias"}, std::pair{"GatekeeperURI", "gatekeeper"},
-                             std::pair{"GatekeeperURIAlias", "gatekeeperalias"}}) {
-        const auto value = config.get("Startup", pair.first, config.get("Hypergrid", pair.first));
+    for (const auto& [config_key, response_key] : {std::pair{"HomeURIAlias", "homealias"},
+                                                   std::pair{"GatekeeperURI", "gatekeeper"},
+                                                   std::pair{"GatekeeperURIAlias", "gatekeeperalias"}}) {
+        const auto value = config.get("Startup", config_key, config.get("Hypergrid", config_key));
         if (!value.empty())
-            grid_info_[pair.second] = value;
+            grid_info_[response_key] = value;
     }
     grid_info_xml(grid_info_); // Reject invalid XML keys at startup, before accepting traffic.
 }
@@ -104,8 +106,9 @@ HttpResponse LoginApplication::handle(const HttpRequest& request, bool allow_gat
         }
         response.content_type = "application/json";
         response.status = request.path == "/ready" ? 503 : 200;
-        response.body =
-            "{\"service\":\"OpenSimNative\",\"running\":true,\"authentication_ready\":true,\"simulation_ready\":false,\"login_success_available\":false}";
+        response.body = "{\"service\":\"OpenSimNative\",\"running\":true,"
+                        "\"authentication_ready\":true,\"simulation_ready\":false,"
+                        "\"login_success_available\":false}";
         return response;
     }
     if (request.path == "/get_grid_info" || request.path == "/json_grid_info") {
@@ -189,6 +192,8 @@ HttpResponse LoginApplication::handle(const HttpRequest& request, bool allow_gat
                                                        : "False"}}));
         else if (call.method == "get_home_region" && home_region_lookup_)
             response.body = xml_rpc_response(home_region_lookup_(data));
+        else if (call.method == "land_data" && land_data_lookup_)
+            response.body = xml_rpc_response(land_data_lookup_(data));
         else if (call.method == "get_online_friends" && home_user_lookup_)
             // The legacy XML-RPC method returns an empty map. Live presence uses HGFriends.
             response.body = xml_rpc_response(Value::object({}));

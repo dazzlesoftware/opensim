@@ -10,6 +10,7 @@
 #endif
 
 #include <charconv>
+#include <limits>
 #include <stdexcept>
 
 namespace opensim::services::sql {
@@ -54,6 +55,26 @@ void record_migration(const Execute& execute, const std::string& store, int prev
 }
 
 #ifdef OPENSIM_HAVE_MYSQL
+void stream_mysql(const std::string& connection, const std::string& statement, const RowVisitor& visit) {
+    const auto db = connect_mysql(connection);
+    if (statement.size() > std::numeric_limits<unsigned long>::max())
+        throw std::length_error("MySQL streaming query exceeds the client limit");
+    if (mysql_real_query(db.get(), statement.data(), static_cast<unsigned long>(statement.size())) != 0)
+        throw std::runtime_error("MySQL streaming query failed");
+    std::unique_ptr<MYSQL_RES, decltype(&mysql_free_result)> rows(mysql_use_result(db.get()), mysql_free_result);
+    if (!rows)
+        throw std::runtime_error("MySQL streaming query returned no result set");
+    std::vector<std::string_view> columns(mysql_num_fields(rows.get()));
+    while (const auto row = mysql_fetch_row(rows.get())) {
+        const auto lengths = mysql_fetch_lengths(rows.get());
+        for (std::size_t index = 0; index < columns.size(); ++index)
+            columns[index] = row[index] ? std::string_view(row[index], lengths[index]) : std::string_view{};
+        visit(columns);
+    }
+    if (mysql_errno(db.get()) != 0)
+        throw std::runtime_error("MySQL streaming result failed");
+}
+
 Execute mysql(const std::string& connection) {
     const auto db = std::make_shared<MysqlConnection>(connect_mysql(connection, CLIENT_FOUND_ROWS));
     return [db](const std::string& sql, const Parameters& parameters) {
@@ -96,6 +117,33 @@ Execute mysql(const std::string& connection) {
 #endif
 
 #ifdef OPENSIM_HAVE_POSTGRESQL
+void stream_postgres(const std::string& connection, const std::string& statement, const RowVisitor& visit) {
+    const auto db = connect_postgres(connection);
+    if (PQsendQueryParams(db.get(), statement.c_str(), 0, nullptr, nullptr, nullptr, nullptr, 0) != 1 ||
+        PQsetSingleRowMode(db.get()) != 1)
+        throw std::runtime_error("PostgreSQL streaming query failed");
+    std::vector<std::string_view> columns;
+    bool complete = false;
+    while (auto* result = PQgetResult(db.get())) {
+        const std::unique_ptr<PGresult, decltype(&PQclear)> row(result, PQclear);
+        const auto status = PQresultStatus(row.get());
+        if (status == PGRES_TUPLES_OK) {
+            complete = true;
+            continue;
+        }
+        if (status != PGRES_SINGLE_TUPLE)
+            throw std::runtime_error("PostgreSQL streaming result failed");
+        const int count = PQnfields(row.get());
+        columns.resize(static_cast<std::size_t>(count));
+        for (int index = 0; index < count; ++index)
+            columns[static_cast<std::size_t>(index)] = {
+                PQgetvalue(row.get(), 0, index), static_cast<std::size_t>(PQgetlength(row.get(), 0, index))};
+        visit(columns);
+    }
+    if (!complete)
+        throw std::runtime_error("PostgreSQL streaming result ended early");
+}
+
 Execute postgres(const std::string& connection) {
     const auto db = std::make_shared<PostgresConnection>(connect_postgres(connection));
     return [db](const std::string& sql, const Parameters& parameters) {

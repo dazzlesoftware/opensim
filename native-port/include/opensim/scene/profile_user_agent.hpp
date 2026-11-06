@@ -6,11 +6,12 @@
 namespace opensim::scene {
 // Retains boxed XML-RPC values rather than parsing strings or widening numbers.
 // The account helper performs its original strict Int32 unboxing afterwards.
-class ConnectorProfileUserAgent final:public ProfileUserAgent {
- std::shared_ptr<services::UserAgentServiceConnector> connector_;
-public:
- explicit ConnectorProfileUserAgent(std::shared_ptr<services::UserAgentServiceConnector>);
- ConnectorProfileUserAgent(ProfileText home,services::UserAgentConnectorServices);
- std::shared_ptr<ProfileUserInfo> get_info(framework::Uuid)override;
+class ConnectorProfileUserAgent final : public ProfileUserAgent {
+    std::shared_ptr<services::UserAgentServiceConnector> connector_;
+
+  public:
+    explicit ConnectorProfileUserAgent(std::shared_ptr<services::UserAgentServiceConnector>);
+    ConnectorProfileUserAgent(ProfileText home, services::UserAgentConnectorServices);
+    std::shared_ptr<ProfileUserInfo> get_info(framework::Uuid) override;
 };
 }

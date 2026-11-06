@@ -26,6 +26,8 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "opensim/services/grid_service.hpp"
+#include "dotnet_regex_sort.hpp"
+#include "opensim/framework/culture_prefix.hpp"
 #include "opensim/services/user_account.hpp"
 #include "opensim/server/grid_identity.hpp"
 #include "opensim/framework/text.hpp"
@@ -270,8 +272,8 @@ std::vector<GridRegion> GridService::hypergrid_defaults(const framework::Uuid& s
 std::vector<GridRegion> GridService::fallback(const framework::Uuid& scope, std::int32_t x, std::int32_t y) {
     std::lock_guard lock(mutex_);
     auto rows = store_.with_flags(FallbackRegion, scope);
-    std::stable_sort(rows.begin(), rows.end(),
-                     [&](const auto& a, const auto& b) { return compare_region_distance(*a, *b, x, y) < 0; });
+    framework::regex_detail::sort(rows,
+                                 [&](const auto& a, const auto& b) { return compare_region_distance(*a, *b, x, y); });
     std::erase_if(rows, [](const auto& row) {
         const auto value = services::flags(*row);
         return (value & Hyperlink) != 0 || (value & RegionOnline) == 0;
@@ -282,8 +284,8 @@ std::vector<GridRegion> GridService::online(const framework::Uuid& scope, std::i
                                             int maximum) {
     std::lock_guard lock(mutex_);
     auto rows = store_.with_flags(RegionOnline, scope);
-    std::stable_sort(rows.begin(), rows.end(),
-                     [&](const auto& a, const auto& b) { return compare_region_distance(*a, *b, x, y) < 0; });
+    framework::regex_detail::sort(rows,
+                                 [&](const auto& a, const auto& b) { return compare_region_distance(*a, *b, x, y); });
     std::vector<GridRegion> result;
     for (const auto& row : rows)
         if ((services::flags(*row) & Hyperlink) == 0) {
@@ -336,17 +338,11 @@ std::optional<GridRegion> GridService::by_uri(const framework::Uuid& scope, fram
         return std::nullopt;
     const auto map_name = uri.host_port_space_name();
     const auto found = store_.find("%" + escape_like(map_name), scope);
-    const auto equal = [](std::string a, std::string b) {
-        for (auto* value : {&a, &b})
-            for (auto& c : *value)
-                if (c >= 'A' && c <= 'Z')
-                    c = static_cast<char>(c + 32);
-        return a == b;
-    };
     if (found)
         for (const auto& row : *found) {
             const auto at = row->name.value().find("://");
-            if (at != std::string::npos && equal(map_name, row->name->substr(at + 3)))
+            if (at != std::string::npos &&
+                framework::invariant_equals_ignore_case(map_name, std::string_view(*row->name).substr(at + 3)))
                 return grid_region(*row);
         }
     return linker_ ? linker_(scope, uri) : std::nullopt;
@@ -399,13 +395,6 @@ std::vector<GridRegion> GridService::names_uri(const framework::Uuid& scope, fra
     const auto map_name = uri.host_port_space_name();
     const auto found = store_.find("%" + escape_like(map_name) + "%", scope);
     std::vector<GridRegion> result;
-    const auto equal = [](std::string a, std::string b) {
-        for (auto* value : {&a, &b})
-            for (auto& c : *value)
-                if (c >= 'A' && c <= 'Z')
-                    c = static_cast<char>(c + 32);
-        return a == b;
-    };
     const auto remove = [&] {
         if (count == maximum) {
             if (count <= 0 || static_cast<std::size_t>(count - 1) >= result.size())
@@ -420,7 +409,7 @@ std::vector<GridRegion> GridService::names_uri(const framework::Uuid& scope, fra
                 result.push_back(regions[0]);
         } else if (found)
             for (const auto& row : *found) {
-                if (equal(uri.region_name, row->name.value())) {
+                if (framework::invariant_equals_ignore_case(uri.region_name, row->name.value())) {
                     result.insert(result.begin(), grid_region(*row));
                     remove();
                 } else {
@@ -440,7 +429,7 @@ std::vector<GridRegion> GridService::names_uri(const framework::Uuid& scope, fra
             const auto at = row->name.value().find("://");
             if (at == std::string::npos)
                 continue;
-            if (equal(map_name, row->name->substr(at + 3))) {
+            if (framework::invariant_equals_ignore_case(map_name, std::string_view(*row->name).substr(at + 3))) {
                 matched = true;
                 result.insert(result.begin(), grid_region(*row));
                 remove();

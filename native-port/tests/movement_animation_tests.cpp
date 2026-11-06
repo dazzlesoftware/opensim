@@ -129,6 +129,18 @@ int main(int argc, char**) {
         test(r.animation == "JUMP" && jumps == 1, "source450ms jump");
         animator.update(c, e);
         test(jumps == 1, "jump not replayed on same animation");
+        clock = 2000;
+        MovementAnimator arrival([&] { return clock; });
+        arrival.restore_state(MotionControlState::jumping, "JUMP");
+        MovementAnimationContext airborne;
+        airborne.velocity.z = -3.f;
+        r = arrival.force_update(airborne, e);
+        test(r.animation == "JUMP" && arrival.state() == MotionControlState::jumping && jumps == 1,
+             "restored jump continues without a second jump impulse");
+        airborne.colliding = true;
+        r = arrival.update(airborne, e);
+        test(r.animation == "LAND" && arrival.state() == MotionControlState::landing && jumps == 1,
+             "restored jump transitions to landing on contact");
         MovementAnimator landing([&] { return clock; });
         c = context(27, 0);
         bool physics_flying = true;

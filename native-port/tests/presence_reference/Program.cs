@@ -33,20 +33,103 @@ using OpenSim.Data;
 using OpenSim.Data.Null;
 using OpenSim.Services.PresenceService;
 using OpenSim.Services.Interfaces;
-static class Program {
+static class Program
+{
     public static double Now;
     public static NullPresenceData Database;
-    static void Main(string[] args){
-        int seed=int.Parse(args[0]);Now=0;Database=new NullPresenceData("","");var second=new NullPresenceData("","");var config=new Nini.Config.IniConfigSource();var section=config.AddConfig("PresenceService");section.Set("StorageProvider","fixture");section.Set("AllowDuplicatePresences",seed%2!=0);var service=new PresenceService(config);
-        UUID Id(int value)=>new UUID("00000000-0000-0000-0000-"+((seed+1)*100+value).ToString("x12"));
-        void Purge(){foreach(var name in new[]{"BySessionCache","ByUserCache"}){var cache=typeof(PresenceService).GetField(name,BindingFlags.NonPublic|BindingFlags.Static).GetValue(null);cache.GetType().GetMethod("Purge",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(cache,new object[]{null});}}
-        var user="user-"+seed;var s1=Id(1);var s2=Id(2);var s3=Id(3);var s4=Id(4);var s5=Id(5);var r1=Id(11);var r2=Id(12);var rows=new List<string>();void Flag(bool value)=>rows.Add(value?"1":"0");void Info(PresenceInfo value)=>rows.Add(value==null?"-":value.UserID+"@"+value.RegionID);
-        Flag(service.LoginAgent(user,s1,Id(21)));Flag(service.ReportAgent(s1,r1));Info(service.GetAgent(s1));Flag(service.LoginAgent(user,s2,Id(22)));Info(service.GetAgent(s1));var agents=service.GetAgents(new[]{user,"missing",user});rows.Add(agents.Length.ToString());foreach(var agent in agents)Info(agent);
-        Flag(Database.Delete("SessionID",s2.ToString()));Info(service.GetAgent(s2));Flag(service.ReportAgent(s2,r2));Info(service.GetAgent(s2));foreach(var agent in service.GetAgents(new[]{user}))Info(agent);
-        Flag(service.LoginAgent(user+"-two",s3,Id(23)));Flag(service.ReportAgent(s3,UUID.Zero));Flag(service.ReportAgent(s3,r1));rows.Add(Database.Get("SecureSessionID",Id(23).ToString()).Length.ToString());Flag(Database.VerifyAgent(Id(31),Id(23)));Flag(service.LogoutRegionAgents(r1));Info(service.GetAgent(s1));Info(service.GetAgent(s3));
-        Flag(service.LoginAgent(user+"-three",s4,Id(24)));Database.Delete("SessionID",s4.ToString());Now=300000+seed%4;Purge();Info(service.GetAgent(s4));Now=600001+seed%4;Purge();Info(service.GetAgent(s4));
-        Now=seed>=8?2147483648.0:2147483000.0;Flag(service.LoginAgent(user+"-wrap",s5,Id(25)));var alias=Database.Get(s5);Flag(ReferenceEquals(second.Get(s5),alias));alias.Data["custom"]="tag";alias.SessionID=Id(6);Flag(ReferenceEquals(Database.Get(s5),alias));rows.Add(Database.Get("SessionID",s5.ToString()).Length.ToString());rows.Add(Database.Get("SessionID",Id(6).ToString()).Length.ToString());rows.Add(Database.Get("custom","tag").Length.ToString());Database.Delete("SessionID",s5.ToString());Now++;Purge();Info(service.GetAgent(s5));Flag(service.LogoutAgent(s5));Info(service.GetAgent(s5));
-        var first=new PresenceData{UserID="order",SessionID=Id(40),Data=new()};Database.Store(first);var next=new PresenceData{UserID="order",SessionID=Id(41),Data=new()};Database.Store(next);Database.Delete("SessionID",first.SessionID.ToString());var last=new PresenceData{UserID="order",SessionID=Id(42),Data=new()};Database.Store(last);Flag(ReferenceEquals(Database.Get("UserID","order")[0],last));rows.Add(Database.Get("RegionID","invalid").Length.ToString());Flag(!Database.Delete("SessionID","invalid"));
-        Console.WriteLine(string.Join("|",rows));
+    static void Main(string[] args)
+    {
+        int seed = int.Parse(args[0]);
+        Now = 0;
+        Database = new NullPresenceData("", "");
+        var second = new NullPresenceData("", "");
+        var config = new Nini.Config.IniConfigSource();
+        var section = config.AddConfig("PresenceService");
+        section.Set("StorageProvider", "fixture");
+        section.Set("AllowDuplicatePresences", seed % 2 != 0);
+        var service = new PresenceService(config);
+        UUID Id(int value) =>
+            new UUID("00000000-0000-0000-0000-" + ((seed + 1) * 100 + value).ToString("x12"));
+        void Purge()
+        {
+            foreach (var name in new[] { "BySessionCache", "ByUserCache" })
+            {
+                var cache = typeof(PresenceService)
+                                .GetField(name, BindingFlags.NonPublic | BindingFlags.Static)
+                                .GetValue(null);
+                cache.GetType()
+                    .GetMethod("Purge", BindingFlags.NonPublic | BindingFlags.Instance)
+                    .Invoke(cache, new object[] { null });
+            }
+        }
+        var user = "user-" + seed;
+        var s1 = Id(1);
+        var s2 = Id(2);
+        var s3 = Id(3);
+        var s4 = Id(4);
+        var s5 = Id(5);
+        var r1 = Id(11);
+        var r2 = Id(12);
+        var rows = new List<string>();
+        void Flag(bool value) => rows.Add(value ? "1" : "0");
+        void Info(PresenceInfo value) => rows.Add(value == null ? "-" : value.UserID + "@" + value.RegionID);
+        Flag(service.LoginAgent(user, s1, Id(21)));
+        Flag(service.ReportAgent(s1, r1));
+        Info(service.GetAgent(s1));
+        Flag(service.LoginAgent(user, s2, Id(22)));
+        Info(service.GetAgent(s1));
+        var agents = service.GetAgents(new[] { user, "missing", user });
+        rows.Add(agents.Length.ToString());
+        foreach (var agent in agents)
+            Info(agent);
+        Flag(Database.Delete("SessionID", s2.ToString()));
+        Info(service.GetAgent(s2));
+        Flag(service.ReportAgent(s2, r2));
+        Info(service.GetAgent(s2));
+        foreach (var agent in service.GetAgents(new[] { user }))
+            Info(agent);
+        Flag(service.LoginAgent(user + "-two", s3, Id(23)));
+        Flag(service.ReportAgent(s3, UUID.Zero));
+        Flag(service.ReportAgent(s3, r1));
+        rows.Add(Database.Get("SecureSessionID", Id(23).ToString()).Length.ToString());
+        Flag(Database.VerifyAgent(Id(31), Id(23)));
+        Flag(service.LogoutRegionAgents(r1));
+        Info(service.GetAgent(s1));
+        Info(service.GetAgent(s3));
+        Flag(service.LoginAgent(user + "-three", s4, Id(24)));
+        Database.Delete("SessionID", s4.ToString());
+        Now = 300000 + seed % 4;
+        Purge();
+        Info(service.GetAgent(s4));
+        Now = 600001 + seed % 4;
+        Purge();
+        Info(service.GetAgent(s4));
+        Now = seed >= 8 ? 2147483648.0 : 2147483000.0;
+        Flag(service.LoginAgent(user + "-wrap", s5, Id(25)));
+        var alias = Database.Get(s5);
+        Flag(ReferenceEquals(second.Get(s5), alias));
+        alias.Data["custom"] = "tag";
+        alias.SessionID = Id(6);
+        Flag(ReferenceEquals(Database.Get(s5), alias));
+        rows.Add(Database.Get("SessionID", s5.ToString()).Length.ToString());
+        rows.Add(Database.Get("SessionID", Id(6).ToString()).Length.ToString());
+        rows.Add(Database.Get("custom", "tag").Length.ToString());
+        Database.Delete("SessionID", s5.ToString());
+        Now++;
+        Purge();
+        Info(service.GetAgent(s5));
+        Flag(service.LogoutAgent(s5));
+        Info(service.GetAgent(s5));
+        var first = new PresenceData { UserID = "order", SessionID = Id(40), Data = new() };
+        Database.Store(first);
+        var next = new PresenceData { UserID = "order", SessionID = Id(41), Data = new() };
+        Database.Store(next);
+        Database.Delete("SessionID", first.SessionID.ToString());
+        var last = new PresenceData { UserID = "order", SessionID = Id(42), Data = new() };
+        Database.Store(last);
+        Flag(ReferenceEquals(Database.Get("UserID", "order")[0], last));
+        rows.Add(Database.Get("RegionID", "invalid").Length.ToString());
+        Flag(!Database.Delete("SessionID", "invalid"));
+        Console.WriteLine(string.Join("|", rows));
     }
 }

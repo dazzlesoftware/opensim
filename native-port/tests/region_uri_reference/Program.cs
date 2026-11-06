@@ -24,14 +24,59 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-using System;using System.Net;using System.Text;using OpenSim.Framework;
-namespace OpenSim.Framework {
- public class GridInfo {public int IsLocalGrid(string uri)=>uri.Contains("local.example")?1:0;}
- public static class Util {public static IPAddress GetHostFromDNS(string host)=>host=="bad.invalid"?null:IPAddress.Parse("203.0.113.7");}
+using System;
+using System.Net;
+using System.Text;
+using OpenSim.Framework;
+namespace OpenSim.Framework
+{
+    public class GridInfo
+    {
+        public int IsLocalGrid(string uri) => uri.Contains("local.example") ? 1 : 0;
+    }
+    public static class Util
+    {
+        public static IPAddress GetHostFromDNS(string host) => host == "bad.invalid"
+                                                                   ? null
+                                                                   : IPAddress.Parse("203.0.113.7");
+    }
 }
-static class Program {
- static string Hex(string value)=>Convert.ToHexString(Encoding.UTF8.GetBytes(value)).ToLowerInvariant();
- static string Text(string value)=>value=="N"?null:Encoding.UTF8.GetString(Convert.FromHexString(value));
- static string Info(RegionURI uri)=>string.Join("|",(int)uri.Flags,uri.Schema,uri.Host,uri.Port,uri.RegionName,uri.Username,uri.UserPass,uri.X,uri.Y,uri.Z,uri.originalURI??"NULL",uri.IP?.ToString()??"NULL",uri.IsValid?1:0,uri.HostUrl,uri.HostUrlEndSlash,uri.RegionUrlAndName,uri.RegionHostPortSpaceName,uri.IsLocalGrid?1:0);
- static void Main(){string line;while((line=Console.ReadLine())!=null){try{var fields=line.Split('|');int mode=int.Parse(fields[0]);var original=Text(fields[1]);var uri=mode==1?new RegionURI(original,new GridInfo()):new RegionURI(original);if(mode==2)uri.Parse(Text(fields[2]));if(mode==3)uri.IsLocalGrid=false;if(mode==4)uri.IsLocalGrid=true;if(mode==5)uri.ResolveDNS();Console.WriteLine(Hex(Info(uri)));}catch{Console.WriteLine(Hex("EX"));}}}
+static class Program
+{
+    static string Hex(string value) => Convert.ToHexString(Encoding.UTF8.GetBytes(value)).ToLowerInvariant();
+    static string Text(string value) => value == "N" ? null
+                                                     : Encoding.UTF8.GetString(Convert.FromHexString(value));
+    static string Info(RegionURI uri) => string.Join("|", (int)uri.Flags, uri.Schema, uri.Host, uri.Port,
+                                                     uri.RegionName, uri.Username, uri.UserPass, uri.X, uri.Y,
+                                                     uri.Z, uri.originalURI ?? "NULL",
+                                                     uri.IP?.ToString() ?? "NULL", uri.IsValid? 1: 0,
+                                                     uri.HostUrl, uri.HostUrlEndSlash, uri.RegionUrlAndName,
+                                                     uri.RegionHostPortSpaceName, uri.IsLocalGrid? 1: 0);
+    static void Main()
+    {
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            try
+            {
+                var fields = line.Split('|');
+                int mode = int.Parse(fields[0]);
+                var original = Text(fields[1]);
+                var uri = mode == 1 ? new RegionURI(original, new GridInfo()) : new RegionURI(original);
+                if (mode == 2)
+                    uri.Parse(Text(fields[2]));
+                if (mode == 3)
+                    uri.IsLocalGrid = false;
+                if (mode == 4)
+                    uri.IsLocalGrid = true;
+                if (mode == 5)
+                    uri.ResolveDNS();
+                Console.WriteLine(Hex(Info(uri)));
+            }
+            catch
+            {
+                Console.WriteLine(Hex("EX"));
+            }
+        }
+    }
 }

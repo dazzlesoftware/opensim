@@ -3,6 +3,7 @@
 #include "opensim/services/open_profile_client.hpp"
 #include "opensim/server/grid_identity.hpp"
 #include "opensim/server/agent_access.hpp"
+#include "opensim/server/object_handler.hpp"
 #include "opensim/framework/viewer_name.hpp"
 #include "opensim/framework/http_host.hpp"
 #include "opensim/framework/host_resolver.hpp"
@@ -15,6 +16,7 @@
 #include "opensim/network/sdk_osd_stream.hpp"
 #include "opensim/framework/config_native_uri_object.hpp"
 #include "opensim/network/rest_forms.hpp"
+#include "opensim/network/simulation_body.hpp"
 #include <condition_variable>
 #include <deque>
 /*
@@ -55,6 +57,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/services/pgsql_offline_im_store.hpp"
 #endif
 #include "opensim/services/sqlite_avatar_plugin.hpp"
+#include "opensim/server/asset_endpoint.hpp"
+#include "fs_asset_service.hpp"
+#include "opensim/services/hg_asset_service.hpp"
+#include "opensim/services/native_asset_storage.hpp"
 #include "opensim/services/sqlite_grid_user_plugin.hpp"
 #include "opensim/server/config.hpp"
 #include "opensim/framework/nini_config_invariant.hpp"
@@ -74,11 +80,13 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/services/appearance_provisioner.hpp"
 #include "opensim/services/avatar_service.hpp"
 #include "opensim/framework/identity.hpp"
+#include "opensim/framework/expiring_cache.hpp"
 #include "opensim/server/mute_list_endpoint.hpp"
 #include "opensim/services/presence_connector.hpp"
 #include "opensim/services/grid_user_connector.hpp"
 #include "opensim/services/sqlite_connection.hpp"
 #include "opensim/framework/filesystem.hpp"
+#include "opensim/framework/stream_reader_text.hpp"
 #include "opensim/scene/region_runtime.hpp"
 #include "opensim/services/region_asset_runtime.hpp"
 #include "opensim/services/simulator_features.hpp"
@@ -124,6 +132,53 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 #endif
 namespace {
+opensim::network::HttpResponse sample_economy_rpc(const opensim::network::HttpRequest& request) {
+    using namespace opensim::network;
+    HttpResponse response;
+    RpcCall call;
+    try {
+        // The HTTP listener already decodes Content-Encoding. The legacy header
+        // is handled here for viewers that still send it.
+        const auto legacy_encoding = request.headers.find("x-content-encoding");
+        const auto encoding = request.headers.find("content-encoding");
+        const bool legacy_gzip = legacy_encoding != request.headers.end() && legacy_encoding->second == "gzip";
+        const bool standard_gzip = encoding != request.headers.end() && encoding->second == "gzip";
+        const bool needs_inflate = standard_gzip ? request.body.starts_with("\x1f\x8b") : legacy_gzip;
+        const auto body = needs_inflate
+                              ? inflate_gzip(request.body) : request.body;
+        call = parse_xml_rpc(body);
+        if (opensim::framework::trim_utf8(call.method).empty())
+            throw std::invalid_argument("Missing XML-RPC method");
+    } catch (const std::exception&) {
+        response.status = 404;
+        return response;
+    }
+    response.content_type = "text/xml";
+    Value result = Value::object({{"success", Value(true)}});
+    if (call.method == "getCurrencyQuote") {
+        std::int32_t amount = 0;
+        if (!call.parameters.empty()) {
+            const auto& currency_buy = call.parameters.front().get("currencyBuy");
+            if (currency_buy.kind == Value::Kind::Integer)
+                amount = currency_buy.integer;
+        }
+        result.set("currency", Value::object({{"estimatedCost", Value(0)}, {"currencyBuy", Value(amount)}}));
+        result.set("confirm", Value("asdfad9fj39ma9fj"));
+    } else if (call.method == "preflightBuyLandPrep") {
+        result.set("currency", Value::object({{"estimatedCost", Value(0)}}));
+        result.set("membership", Value::object({}));
+        result.set("landuse", Value::object(
+            {{"upgrade", Value(false)}, {"action", Value("http://invaliddomaininvalid.com/")}}));
+        result.set("confirm", Value("asdfajsdkfjasdkfjalsdfjasdf"));
+    } else if (call.method != "buyCurrency" && call.method != "buyLandPrep") {
+        response.body = xml_rpc_fault(-32601, "Requested method [" + call.method + "] not found");
+        return response;
+    }
+    response.headers["Access-Control-Allow-Origin"] = "*";
+    response.body = xml_rpc_response(result);
+    return response;
+}
+
 std::optional<opensim::scene::EnvironmentDay> saved_environment_day(std::string_view text,
                                                                    bool* migrated = nullptr) {
     using namespace opensim;
@@ -362,7 +417,114 @@ std::function<void(const opensim::scene::EstateRegionSettings&)> estate_region_s
     };
 }
 
-int run(const std::vector<std::string>& args) {
+void load_estate_access(opensim::services::SqliteTableOperations& estate,
+                        opensim::scene::EstateSettings& settings) {
+    namespace framework = opensim::framework;
+    const auto load_list = [&](const char* table, const char* column, auto& result) {
+        bool exists = false;
+        estate.query("SELECT name FROM sqlite_master WHERE type='table' AND name=:name",
+                     {{":name", table}}, {"name"},
+                     [&](const auto&, const auto&) { exists = true; });
+        if (!exists || settings.estate_id == 0)
+            return;
+        estate.query(std::string("SELECT ") + column + " FROM " + table +
+                         " WHERE EstateID=:estate",
+                     {{":estate", std::to_string(settings.estate_id)}}, {column},
+                     [&](const auto& row, const auto&) {
+                         framework::Uuid agent;
+                         if (framework::try_parse_sdk_uuid(row.value_text(0), agent) &&
+                             !agent.is_zero())
+                             result.push_back(agent);
+                     });
+    };
+    load_list("estate_managers", "uuid", settings.estate_managers);
+    load_list("estate_users", "uuid", settings.estate_users);
+    load_list("estate_groups", "uuid", settings.estate_groups);
+    load_list("estateban", "bannedUUID", settings.estate_bans);
+}
+
+bool load_estate_settings(opensim::services::SqliteTableOperations& estate,
+                          const std::string& region_id,
+                          opensim::scene::EstateSettings& settings) {
+    namespace framework = opensim::framework;
+    bool found = false;
+    estate.query(
+        "SELECT s.EstateOwner,s.BillableFactor,s.EstateID,s.ParentEstateID,s.PricePerMeter,"
+        "s.RedirectGridX,s.RedirectGridY,s.* FROM estate_map m JOIN estate_settings s ON "
+        "s.EstateID=m.EstateID WHERE m.RegionID=:region",
+        {{":region", region_id}},
+        {"EstateOwner", "BillableFactor", "EstateID", "ParentEstateID", "PricePerMeter",
+         "RedirectGridX", "RedirectGridY"},
+        [&](const auto& row, const auto&) {
+            found = true;
+            framework::Uuid owner;
+            if (framework::try_parse_sdk_uuid(row.value_text(0), owner))
+                settings.owner = owner;
+            float factor;
+            if (framework::parse_invariant_float(row.value_text(1), factor) &&
+                std::isfinite(factor))
+                settings.estate_billable_factor = factor;
+            settings.estate_id = static_cast<std::uint32_t>(row.int32_value(2));
+            settings.parent_estate_id = static_cast<std::uint32_t>(row.int32_value(3));
+            settings.estate_price_per_meter = row.int32_value(4);
+            settings.estate_redirect_x = row.int32_value(5);
+            settings.estate_redirect_y = row.int32_value(6);
+            try {
+                settings.estate_name = row.value_text(row.column("EstateName"));
+            } catch (const std::out_of_range&) {
+            }
+            try {
+                settings.estate_abuse_email = row.value_text(row.column("AbuseEmail"));
+            } catch (const std::out_of_range&) {
+            }
+            const auto read_flag = [&](std::uint32_t& flags, const char* column,
+                                       std::uint32_t bit, bool invert = false) {
+                try {
+                    const bool enabled = row.int32_value(row.column(column)) != 0;
+                    if (enabled != invert)
+                        flags |= bit;
+                    else
+                        flags &= ~bit;
+                } catch (const std::out_of_range&) {
+                }
+            };
+            auto& menu = settings.estate_menu_flags;
+            read_flag(menu, "AllowLandmark", 0x2);
+            read_flag(menu, "AllowSetHome", 0x4);
+            read_flag(menu, "ResetHomeOnTeleport", 0x8);
+            read_flag(menu, "AllowEnviromentOverride", 0x200);
+            read_flag(menu, "BlockDwell", 0x40000);
+            read_flag(menu, "AllowVoice", 0x10000000);
+            auto& handshake = settings.estate_handshake_only_flags;
+            read_flag(handshake, "TaxFree", 0x20, true);
+            read_flag(handshake, "PublicAccess", 0x8000);
+            read_flag(handshake, "AllowDirectTeleport", 0x100000);
+            read_flag(handshake, "EstateSkipScripts", 0x200000);
+            read_flag(handshake, "DenyAnonymous", 0x800000);
+            read_flag(handshake, "DenyMinors", 0x40000000);
+            auto& detail = settings.estate_detail_only_flags;
+            read_flag(detail, "PublicAccess", 0x20000);
+            read_flag(detail, "DenyIdentified", 0x1000000);
+            read_flag(detail, "DenyTransacted", 0x2000000);
+            read_flag(detail, "AllowParcelChanges", 0x4000000);
+            read_flag(detail, "AbuseEmailToEstateOwner", 0x8000000);
+        });
+    if (!found)
+        return false;
+    load_estate_access(estate, settings);
+    return true;
+}
+
+constexpr int restart_region_result = 75;
+
+struct RegionListenerPorts {
+    int main_http = 0;
+    int script_http = 0;
+    int script_https = 0;
+    std::uint16_t udp = 0;
+};
+
+int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     using namespace opensim;
     std::string config_path = "native-server.ini", host, first, last;
     server::ConfigurationStartupOptions startup_options;
@@ -448,6 +610,10 @@ int run(const std::vector<std::string>& args) {
             ? server::database_path(config, "AuthenticationService", "AuthenticationDatabase")
             : std::string{};
     const bool local_region = config.boolean("NativeServer", "EnableLocalRegion", false);
+    const auto money_module = config.get("Startup", "economymodule");
+    const auto selected_money_module = money_module.empty() ? config.get("Economy", "economymodule") : money_module;
+    const bool sample_economy_enabled =
+        local_region && (selected_money_module.empty() || selected_money_module == "BetaGridLikeMoneyModule");
     std::shared_ptr<network::WebHttpClients> shared_http;
     auto outgoing_clients = [&] {
         if (!shared_http) {
@@ -481,11 +647,20 @@ int run(const std::vector<std::string>& args) {
     const bool local_friends = need_friends && friends_provider == "SQLite";
     const bool need_avatar = config.boolean("NativeServer", "EnableAvatarService", false) ||
                              config.boolean("NativeServer", "EnableAvatarEndpoint", false);
-    const auto find_connector = [&](const char* name, std::string_view suffix) {
+    const auto find_connector = [&](const char* name, std::string_view suffix,
+                                    std::string_view section = {}) {
         auto entry = config.get("ServiceList", name);
         if (!entry.empty())
             return entry;
         const auto matches = [&](std::string_view candidate) {
+            if (!section.empty()) {
+                const auto qualifier = candidate.substr(0, candidate.find('/'));
+                const auto separator = qualifier.find('@');
+                const auto candidate_section =
+                    separator == std::string_view::npos ? "AssetService" : qualifier.substr(0, separator);
+                if (candidate_section != section)
+                    return false;
+            }
             return candidate == suffix.substr(1) || candidate.ends_with(suffix);
         };
         for (const auto& [key, candidate] : config.ordered_section("ServiceList"))
@@ -505,11 +680,19 @@ int run(const std::vector<std::string>& args) {
     };
     const auto grid_connector = find_connector(
         "GridServiceConnector", "/OpenSim.Server.Handlers.dll:GridServiceConnector");
+    const auto asset_connector = find_connector(
+        "AssetServiceConnector", "/OpenSim.Server.Handlers.dll:AssetServiceConnector", "AssetService");
+    const auto hg_asset_connector = find_connector(
+        "HGAssetServiceConnector", "/OpenSim.Server.Handlers.dll:AssetServiceConnector", "HGAssetService");
     const auto grid_user_connector = find_connector(
         "GridUserServiceConnector", "/OpenSim.Server.Handlers.dll:GridUserServiceConnector");
     const auto presence_connector = find_connector(
         "PresenceServiceConnector", "/OpenSim.Server.Handlers.dll:PresenceServiceConnector");
     const bool expose_grid = config.boolean("NativeServer", "EnableGridEndpoint", !grid_connector.empty());
+    const bool expose_assets =
+        config.boolean("NativeServer", "EnableAssetEndpoint", !asset_connector.empty());
+    const bool expose_hg_assets =
+        config.boolean("NativeServer", "EnableHGAssetEndpoint", !hg_asset_connector.empty());
     const bool expose_grid_user =
         config.boolean("NativeServer", "EnableGridUserEndpoint", !grid_user_connector.empty());
     const bool expose_presence =
@@ -524,6 +707,16 @@ int run(const std::vector<std::string>& args) {
     };
     if (expose_grid)
         validate_service_module("GridService", "OpenSim.Services.GridService.dll:GridService", grid_connector);
+    const bool expose_fs_assets = expose_assets &&
+        config.get("AssetService", "LocalServiceModule") == services::fs_asset_module;
+    if (expose_assets && !expose_fs_assets)
+        validate_service_module("AssetService", "OpenSim.Services.AssetService.dll:AssetService", asset_connector);
+    const bool expose_hg_fs_assets = expose_hg_assets &&
+        config.get("HGAssetService", "LocalServiceModule") ==
+            "OpenSim.Services.HypergridService.dll:HGFSAssetService";
+    if (expose_hg_assets && !expose_hg_fs_assets)
+        validate_service_module("HGAssetService", "OpenSim.Services.HypergridService.dll:HGAssetService",
+                                hg_asset_connector);
     if (expose_grid_user)
         validate_service_module("GridUserService", "OpenSim.Services.UserAccountService.dll:GridUserService",
                                 grid_user_connector);
@@ -689,6 +882,7 @@ int run(const std::vector<std::string>& args) {
     auto shared_console_commands = std::make_shared<framework::ConsoleCommandResolver>();
     auto& console_commands = *shared_console_commands;
     std::atomic<bool> console_shutdown = false;
+    bool restart_region = false;
     std::shared_ptr<server::RemoteConsole> remote_console;
     std::unique_ptr<server::RemoteConsoleHttpRoutes> remote_console_routes;
     std::shared_ptr<server::RegistryCapabilityListener> console_listener;
@@ -1260,12 +1454,15 @@ int run(const std::vector<std::string>& args) {
     }
     std::unique_ptr<services::AvatarStore> avatar_store;
     std::unique_ptr<services::AvatarService> avatars;
+    std::shared_ptr<services::SqliteAttachmentScriptStore> attachment_script_store;
     if (need_avatar) {
         avatar_store = std::make_unique<services::SqliteAvatarPlugin>(
             services::sqlite_data_source_connection(
                 server::database_path(config, "AvatarService", "AvatarDatabase")),
             config.get("AvatarService", "Realm", "Avatars"));
         avatars = std::make_unique<services::AvatarService>(*avatar_store);
+        attachment_script_store = std::make_shared<services::SqliteAttachmentScriptStore>(
+            services::SqliteAvatarPlugin::shared_state()->connection.load());
     }
     std::unique_ptr<services::FriendsStore> friends_store;
     std::unique_ptr<services::IFriendsService> friends;
@@ -1356,10 +1553,17 @@ int run(const std::vector<std::string>& args) {
     std::vector<std::shared_ptr<const scene::ScriptParcel>> persisted_parcel_records;
     std::shared_ptr<const scene::ScriptParcel> default_parcel;
     std::mutex parcels_mutex;
-    std::function<void(const scene::ScriptParcel&, bool)> save_parcel_access;
+    enum class ParcelSave { Access, Ownership, Reclaim, CleanTime, Music, Media, Properties, Purchase, MarkContent };
+    std::function<void(const scene::ScriptParcel&, bool, ParcelSave)> save_parcel;
+    std::function<void(const ParcelCells&, const std::vector<framework::Uuid>&)> save_parcel_topology;
+    std::function<void(framework::Uuid, float)> save_parcel_dwell;
     std::atomic<double> parcel_object_bonus{1.0};
+    std::unique_ptr<services::RegionAssetRuntime> region_assets;
+    std::function<network::ServiceXmlValue(const services::OrderedRegionFields&)> remote_grid_request;
     std::unique_ptr<scene::RegionRuntime> region_runtime;
     std::function<void()> save_terrain;
+    std::function<void(framework::Uuid, framework::Uuid)> save_map_images;
+    std::function<void()> publish_map_images;
     std::function<void()> save_prim_metadata;
     auto next_terrain_save = std::chrono::steady_clock::now();
     std::unique_ptr<server::GridIdentity> profile_grid_identity;
@@ -1369,8 +1573,8 @@ int run(const std::vector<std::string>& args) {
     server::PollHttpService capability_polls(2, [&](const auto& message, const std::exception& error) {
         log_message(framework::console_log_warn, message + error.what());
     });
-    std::unique_ptr<services::RegionAssetRuntime> region_assets;
     std::unique_ptr<ProfileWorkers> asset_transfer_workers;
+    std::unique_ptr<ProfileWorkers> region_lookup_workers;
     std::unique_ptr<ProfileWorkers> profile_workers;
     const bool estate_communications =
         config.get("Estates", "EstateCommunicationsHandler", "EstateModule") == "EstateModule";
@@ -1381,7 +1585,6 @@ int run(const std::vector<std::string>& args) {
     std::unique_ptr<services::RegionInventoryAssetRuntime> region_inventory_uploads;
     std::unique_ptr<services::RegionBakedTextureRuntime> region_bakes;
     std::shared_ptr<services::SimulatorFeaturesModule> simulator_features;
-    std::function<network::ServiceXmlValue(const services::OrderedRegionFields&)> remote_grid_request;
     const auto lookup_remote_region =
         [&](framework::Uuid scope,
             services::OrderedRegionFields fields) -> std::optional<services::GridRegion> {
@@ -1474,13 +1677,78 @@ int run(const std::vector<std::string>& args) {
                 region.size_x = size;
                 region.size_y = size;
                 region.access = 13;
+                const bool generate_map_tiles = config.boolean(
+                    "Map", "GenerateMaptiles", config.boolean("Startup", "GenerateMaptiles", true));
+                if (!generate_map_tiles) {
+                    const auto static_map = config.get(
+                        "Map", "MaptileStaticUUID", config.get("Startup", "MaptileStaticUUID"));
+                    if (!framework::try_parse_sdk_uuid(static_map, region.terrain_image) ||
+                        region.terrain_image.is_zero())
+                        framework::try_parse_sdk_uuid(config.get("NativeRegion", "MaptileStaticUUID"),
+                                                       region.terrain_image);
+                }
                 auto udp_port = config.integer("NativeRegion", "UDPPort", 9000);
                 if (udp_port < 0 || udp_port > 65535)
                     throw std::invalid_argument("NativeRegion UDPPort must be between 0 and 65535");
+                if (udp_port == 0)
+                    udp_port = ports.udp;
                 region.internal_endpoint =
                     services::RegionEndpoint{config.get("NativeRegion", "BindAddress", "0.0.0.0"),
                                              static_cast<std::uint16_t>(udp_port)};
                 scene::RegionPolicies policies;
+                policies.attachments_enabled = config.boolean("Attachments", "Enabled", true);
+                policies.wear_replaces_all = config.boolean("Attachments", "WearReplacesAll", true);
+                const auto permission_modules = config.get(
+                    "Permissions", "permissionmodules",
+                    config.get("Startup", "permissionmodules", "DefaultPermissionsModule"));
+                std::istringstream permission_names(permission_modules);
+                for (std::string name; std::getline(permission_names, name, ',');)
+                    policies.prim_limits_enabled |= framework::trim_utf8(name) == "PrimLimitsModule";
+                policies.max_prims_per_user = config.integer("NativeRegion", "MaxPrimsPerUser", -1);
+                policies.allow_viewer_restart =
+                    config.boolean("EstateManagement", "AllowRegionRestartFromClient", true);
+                policies.skip_restart_delay_when_empty =
+                    config.boolean("Startup", "SkipDelayOnEmptyRegion", false);
+                const bool restart_shuts_down = config.boolean("Startup", "InworldRestartShutsDown", false);
+                std::filesystem::path restart_marker;
+                if (const auto marker = config.get("RestartModule", "MarkerPath"); !marker.empty()) {
+                    restart_marker = framework::utf8_path(marker) / region.id.str();
+                    std::error_code ignored;
+                    std::filesystem::remove(restart_marker, ignored);
+                }
+                policies.restart_region = [&, restart_shuts_down, restart_marker](bool write_marker) {
+                    if (write_marker && !restart_marker.empty()) {
+#ifdef _WIN32
+                        const auto pid = GetCurrentProcessId();
+#else
+                        const auto pid = getpid();
+#endif
+                        std::ofstream(restart_marker, std::ios::binary) << pid;
+                    }
+                    restart_region = !restart_shuts_down;
+                    console_shutdown = true;
+                };
+                policies.parcel_dwell_enabled = config.native_section("Dwell") &&
+                    config.get("Dwell", "DwellModule", "DefaultDwellModule") == "DefaultDwellModule";
+                if (policies.parcel_dwell_enabled) {
+                    policies.persist_parcel_dwell = [&](framework::Uuid parcel, float dwell) {
+                        if (save_parcel_dwell)
+                            save_parcel_dwell(parcel, dwell);
+                    };
+                }
+                policies.force_parcel_bans = !config.boolean("LandManagement", "DisableParcelBans", false);
+                policies.show_parcel_ban_lines = config.boolean("LandManagement", "ShowParcelBansLines", true);
+                policies.administrator_parcel_owner = framework::Uuid(config.get(
+                    "LandManagement", "DefaultAdministratorOwnerUUID", framework::Uuid{}.str()));
+                policies.administrator_parcel_group = framework::Uuid(config.get(
+                    "LandManagement", "DefaultAdministratorGroupUUID", framework::Uuid{}.str()));
+                policies.administrator_parcel_name =
+                    config.get("LandManagement", "DefaultAdministratorParcelName", "Admin Parcel");
+                float ban_line_height = 0;
+                if (framework::parse_invariant_float(config.get("LandManagement", "BanLineSafeHeight"),
+                                                     ban_line_height) &&
+                    ban_line_height > 20.f && ban_line_height <= 5000.f)
+                    policies.ban_line_safe_height = ban_line_height;
                 policies.estate_communications = estate_communications;
                 policies.telehub_allow_landmarks =
                     config.boolean("Startup", "TelehubAllowLandmark", false);
@@ -1609,6 +1877,15 @@ int run(const std::vector<std::string>& args) {
                 policies.region_object_capacity =
                     std::max(0, config.integer("NativeRegion", "MaxPrims", 15000));
                 policies.region_type = config.get("NativeRegion", "RegionType");
+                policies.script_whisper_range = config.integer("SMTP", "whisper_distance", 10);
+                policies.script_chat_range = config.integer("SMTP", "say_distance", 20);
+                policies.script_shout_range = config.integer("SMTP", "shout_distance", 100);
+                policies.object_chat_enabled = config.boolean("Chat", "enabled", true);
+                policies.object_whisper_range = config.integer("Chat", "whisper_distance", 10);
+                policies.object_say_range = config.integer("Chat", "say_distance", 20);
+                policies.object_shout_range = config.integer("Chat", "shout_distance", 100);
+                policies.max_listens_per_region = config.integer("LL-Functions", "max_listens_per_region", 1000);
+                policies.max_listens_per_script = config.integer("LL-Functions", "max_listens_per_script", 65);
                 const auto god_option = [&](const char* key, bool fallback) {
                     return config.boolean("Permissions", key, config.boolean("Startup", key, fallback));
                 };
@@ -1629,97 +1906,57 @@ int run(const std::vector<std::string>& args) {
                         std::string(reinterpret_cast<const char*>(bytes.data()), bytes.size()), false);
                     services::SqliteTableOperations estate([database] { return database; },
                                                            "estate_settings");
+                    policies.owner = estate_owner;
                     const auto region_id = region.id.str();
-                    estate.query(
-                        "SELECT s.EstateOwner,s.BillableFactor,s.EstateID,s.ParentEstateID,s.PricePerMeter,s.RedirectGridX,s.RedirectGridY,s.* FROM estate_map m JOIN estate_settings s ON s.EstateID=m.EstateID WHERE m.RegionID=:region",
-                        {{":region", region_id}},
-                        {"EstateOwner", "BillableFactor", "EstateID", "ParentEstateID", "PricePerMeter",
-                         "RedirectGridX", "RedirectGridY"},
-                        [&](const auto& row, const auto&) {
-                            framework::Uuid owner;
-                            if (framework::try_parse_sdk_uuid(row.value_text(0), owner))
-                                estate_owner = owner;
-                            float factor;
-                            if (framework::parse_invariant_float(row.value_text(1), factor) &&
-                                std::isfinite(factor))
-                                policies.estate_billable_factor = factor;
-                            policies.estate_id = static_cast<std::uint32_t>(row.int32_value(2));
-                            policies.parent_estate_id = static_cast<std::uint32_t>(row.int32_value(3));
-                            policies.estate_price_per_meter = row.int32_value(4);
-                            policies.estate_redirect_x = row.int32_value(5);
-                            policies.estate_redirect_y = row.int32_value(6);
-                            try {
-                                policies.estate_name = row.value_text(row.column("EstateName"));
-                            } catch (const std::out_of_range&) {
-                            }
-                            try {
-                                policies.estate_abuse_email = row.value_text(row.column("AbuseEmail"));
-                            } catch (const std::out_of_range&) {
-                            }
-                            const auto read_flag = [&](std::uint32_t& flags, const char* column,
-                                                       std::uint32_t bit, bool invert = false) {
-                                try {
-                                    const bool enabled = row.int32_value(row.column(column)) != 0;
-                                    if (enabled != invert)
-                                        flags |= bit;
-                                    else
-                                        flags &= ~bit;
-                                } catch (const std::out_of_range&) {
-                                }
-                            };
-                            auto& menu = policies.estate_menu_flags;
-                            read_flag(menu, "AllowLandmark", 0x2);
-                            read_flag(menu, "AllowSetHome", 0x4);
-                            read_flag(menu, "ResetHomeOnTeleport", 0x8);
-                            read_flag(menu, "AllowEnviromentOverride", 0x200);
-                            read_flag(menu, "BlockDwell", 0x40000);
-                            read_flag(menu, "AllowVoice", 0x10000000);
-                            auto& handshake = policies.estate_handshake_only_flags;
-                            read_flag(handshake, "TaxFree", 0x20, true);
-                            read_flag(handshake, "PublicAccess", 0x8000);
-                            read_flag(handshake, "AllowDirectTeleport", 0x100000);
-                            read_flag(handshake, "EstateSkipScripts", 0x200000);
-                            read_flag(handshake, "DenyAnonymous", 0x800000);
-                            read_flag(handshake, "DenyMinors", 0x40000000);
-                            auto& detail = policies.estate_detail_only_flags;
-                            read_flag(detail, "PublicAccess", 0x20000);
-                            read_flag(detail, "DenyIdentified", 0x1000000);
-                            read_flag(detail, "DenyTransacted", 0x2000000);
-                            read_flag(detail, "AllowParcelChanges", 0x4000000);
-                            read_flag(detail, "AbuseEmailToEstateOwner", 0x8000000);
-                        });
-                    const auto load_list = [&](const char* table, const char* column, auto& result) {
-                        bool exists = false;
-                        estate.query("SELECT name FROM sqlite_master WHERE type='table' AND name=:name",
-                                     {{":name", table}}, {"name"},
-                                     [&](const auto&, const auto&) { exists = true; });
-                        if (!exists || policies.estate_id == 0)
-                            return;
-                        estate.query(std::string("SELECT ") + column + " FROM " + table +
-                                         " WHERE EstateID=:estate",
-                                     {{":estate", std::to_string(policies.estate_id)}}, {column},
-                                     [&](const auto& row, const auto&) {
-                                         framework::Uuid agent;
-                                         if (framework::try_parse_sdk_uuid(row.value_text(0), agent) &&
-                                             !agent.is_zero())
-                                             result.push_back(agent);
-                                     });
+                    load_estate_settings(estate, region_id, policies);
+                    policies.reload_estate_settings = [database, region_id, estate_owner] {
+                        scene::EstateSettings settings;
+                        settings.owner = estate_owner;
+                        services::SqliteTableOperations tables([database] { return database; }, "estate_settings");
+                        std::lock_guard lock(database->mutex());
+                        tables.execute("BEGIN", {});
+                        try {
+                            if (!load_estate_settings(tables, region_id, settings))
+                                throw std::runtime_error("Region estate settings are missing");
+                            tables.execute("COMMIT", {});
+                        } catch (...) {
+                            tables.execute("ROLLBACK", {});
+                            throw;
+                        }
+                        return settings;
                     };
-                    load_list("estate_managers", "uuid", policies.estate_managers);
-                    load_list("estate_users", "uuid", policies.estate_users);
-                    load_list("estate_groups", "uuid", policies.estate_groups);
-                    load_list("estateban", "bannedUUID", policies.estate_bans);
-                    if (policies.estate_id != 0)
-                        policies.persist_estate_access = [database,
-                                                          estate_id = std::to_string(policies.estate_id)](
-                                                             framework::Uuid id, framework::Uuid actor,
-                                                             std::optional<bool> user,
-                                                             std::optional<bool> group,
-                                                             std::optional<bool> manager,
-                                                             std::optional<bool> banned) {
-                            services::SqliteTableOperations tables([database] { return database; },
-                                                                   "estate_settings");
-                            const services::SqliteTableParameters parameters{{":estate", estate_id},
+                    estate_owner = policies.owner;
+                    policies.persist_estate_settings = [database](const scene::EstateSettings& settings) {
+                        services::SqliteTableOperations tables([database] { return database; }, "estate_settings");
+                        const auto flag = [](std::uint32_t flags, std::uint32_t mask) {
+                            return (flags & mask) ? "1" : "0";
+                        };
+                        const auto handshake = settings.estate_handshake_only_flags;
+                        const auto menu = settings.estate_menu_flags;
+                        const auto detail = settings.estate_detail_only_flags;
+                        if (tables.execute(
+                                "UPDATE estate_settings SET PublicAccess=:public,TaxFree=:tax_free,"
+                                "AllowEnviromentOverride=:environment,AllowDirectTeleport=:direct,"
+                                "DenyAnonymous=:anonymous,DenyIdentified=:identified,DenyTransacted=:transacted,"
+                                "AllowVoice=:voice,DenyMinors=:minors WHERE EstateID=:estate",
+                                {{":public", flag(handshake, 0x8000u)},
+                                 {":tax_free", flag(~handshake, 0x20u)},
+                                 {":environment", flag(menu, 0x200u)},
+                                 {":direct", flag(handshake, 0x100000u)},
+                                 {":anonymous", flag(handshake, 0x800000u)},
+                                 {":identified", flag(detail, 0x1000000u)},
+                                 {":transacted", flag(detail, 0x2000000u)},
+                                 {":voice", flag(menu, 0x10000000u)},
+                                 {":minors", flag(handshake, 0x40000000u)},
+                                 {":estate", std::to_string(settings.estate_id)}}) != 1)
+                            throw std::runtime_error("Estate settings row is missing");
+                    };
+                    policies.persist_estate_access = [database](
+                        const scene::EstateSettings& current, framework::Uuid id, framework::Uuid actor,
+                        const scene::EstateAccessChanges& changes, const scene::RelatedEstateAccessEdit& related) {
+                        services::SqliteTableOperations tables([database] { return database; }, "estate_settings");
+                        const auto persist = [&](std::uint32_t estate_id, const scene::EstateAccessChanges& edit) {
+                            const services::SqliteTableParameters parameters{{":estate", std::to_string(estate_id)},
                                                                              {":id", id.str()}};
                             const auto update = [&](const char* table, const std::optional<bool>& present) {
                                 if (!present)
@@ -1733,110 +1970,138 @@ int run(const std::vector<std::string>& args) {
                                                        " WHERE EstateID=:estate AND uuid=:id",
                                                    parameters);
                             };
-                            std::lock_guard lock(database->mutex());
-                            tables.execute("BEGIN IMMEDIATE", {});
-                            try {
-                                update("estate_users", user);
-                                update("estate_groups", group);
-                                update("estate_managers", manager);
-                                if (banned) {
-                                    if (*banned) {
-                                        auto ban_parameters = parameters;
-                                        ban_parameters.emplace_back(":actor", actor.str());
-                                        const auto now =
-                                            std::chrono::duration_cast<std::chrono::seconds>(
-                                                std::chrono::system_clock::now().time_since_epoch())
-                                                .count();
-                                        ban_parameters.emplace_back(":time", std::to_string(now));
-                                        tables.execute(
-                                            "INSERT INTO estateban (EstateID,bannedUUID,bannedIp,bannedIpHostMask,bannedNameMask,banningUUID,banTime)"
-                                            " VALUES (:estate,:id,'0.0.0.0','0.0.0.0','',:actor,:time)",
-                                            ban_parameters);
-                                    } else
-                                        tables.execute(
-                                            "DELETE FROM estateban WHERE EstateID=:estate AND bannedUUID=:id",
-                                            parameters);
-                                }
-                                tables.execute("COMMIT", {});
-                            } catch (...) {
-                                tables.execute("ROLLBACK", {});
-                                throw;
+                            update("estate_users", edit.user);
+                            update("estate_groups", edit.group);
+                            update("estate_managers", edit.manager);
+                            if (edit.ban) {
+                                if (*edit.ban) {
+                                    auto ban_parameters = parameters;
+                                    ban_parameters.emplace_back(":actor", actor.str());
+                                    const auto now =
+                                        std::chrono::duration_cast<std::chrono::seconds>(
+                                            std::chrono::system_clock::now().time_since_epoch())
+                                            .count();
+                                    ban_parameters.emplace_back(":time", std::to_string(now));
+                                    tables.execute(
+                                        "INSERT INTO estateban (EstateID,bannedUUID,bannedIp,bannedIpHostMask,bannedNameMask,banningUUID,banTime)"
+                                        " VALUES (:estate,:id,'0.0.0.0','0.0.0.0','',:actor,:time)",
+                                        ban_parameters);
+                                } else
+                                    tables.execute(
+                                        "DELETE FROM estateban WHERE EstateID=:estate AND bannedUUID=:id",
+                                        parameters);
                             }
                         };
-                    if (estate_communications && policies.estate_id != 0) {
-                        std::vector<framework::Uuid> peers;
-                        estate.query("SELECT RegionID FROM estate_map WHERE EstateID=:estate",
-                                     {{":estate", std::to_string(policies.estate_id)}}, {"RegionID"},
-                                     [&](const auto& row, const auto&) {
-                                         framework::Uuid peer;
-                                         if (framework::try_parse_sdk_uuid(row.value_text(0), peer) &&
-                                             !peer.is_zero() && peer != region.id)
-                                             peers.push_back(peer);
-                                     });
-                        if (!peers.empty()) {
-                            estate_workers = std::make_unique<ProfileWorkers>(
-                                [&](const std::exception& error) {
-                                    error_log(std::string("Estate covenant propagation failed: ") +
-                                              error.what());
-                                },
-                                true);
-                            const auto forward = [&, peers = std::move(peers),
-                                                                scope = region.scope, own_id = region.id,
-                                                                estate_id = policies.estate_id,
-                                                                request = network::rest_forms_transport(
-                                                                    outgoing_clients())](
-                                                                   services::OrderedRegionFields fields) {
-                                estate_workers->enqueue([&, peers, scope, own_id, estate_id, request,
-                                                         fields = std::move(fields)]() mutable {
-                                    fields.emplace_back("TOKEN", estate_token);
-                                    fields.emplace_back("EstateID", std::to_string(estate_id));
-                                    const auto body = network::build_service_form(fields);
-                                    std::set<std::string> sent;
-                                    if (const auto local = grid->by_id(scope, own_id))
-                                        sent.insert(local->server_uri());
-                                    for (const auto& peer : peers) {
-                                        auto target = grid->by_id(scope, peer);
-                                        if (!target)
-                                            target = lookup_remote_region(
-                                                scope,
-                                                {{"REGIONID", peer.str()}, {"METHOD", "get_region_by_uuid"}});
-                                        if (!target)
-                                            continue;
-                                        const auto uri = target->server_uri();
-                                        if (uri.empty() || !sent.insert(uri).second)
-                                            continue;
-                                        try {
-                                            request(uri + "estate", body);
-                                        } catch (const std::exception& error) {
-                                            error_log(std::string("Estate covenant propagation failed: ") +
-                                                      error.what());
-                                        }
+                        std::lock_guard lock(database->mutex());
+                        tables.execute("BEGIN IMMEDIATE", {});
+                        bool changed = static_cast<bool>(changes);
+                        try {
+                            if (changes)
+                                persist(current.estate_id, changes);
+                            if (related) {
+                                std::vector<std::uint32_t> ids;
+                                tables.query(
+                                    "SELECT EstateID FROM estate_settings WHERE EstateOwner=:owner AND EstateID<>:estate",
+                                    {{":owner", current.owner.str()}, {":estate", std::to_string(current.estate_id)}},
+                                    {"EstateID"}, [&](const auto& row, const auto&) {
+                                        ids.push_back(static_cast<std::uint32_t>(row.int32_value(0)));
+                                    });
+                                for (const auto estate_id : ids) {
+                                    scene::EstateSettings settings;
+                                    settings.estate_id = estate_id;
+                                    settings.owner = current.owner;
+                                    load_estate_access(tables, settings);
+                                    if (const auto edit = related(settings)) {
+                                        persist(estate_id, edit);
+                                        changed = true;
                                     }
-                                });
-                            };
-                            policies.forward_estate_covenant = [forward](framework::Uuid covenant) {
-                                forward({{"METHOD", "update_covenant"}, {"CovenantID", covenant.str()}});
-                            };
-                            policies.forward_estate_message = [forward](framework::Uuid sender, std::string name,
-                                                                        std::string message) {
-                                forward({{"METHOD", "estate_message"}, {"FromID", sender.str()},
-                                         {"FromName", std::move(name)}, {"Message", std::move(message)}});
-                            };
-                            policies.forward_estate_teleport_home = [forward](std::optional<framework::Uuid> target) {
-                                if (target)
-                                    forward({{"METHOD", "teleport_home_one_user"}, {"PreyID", target->str()}});
-                                else
-                                    forward({{"METHOD", "teleport_home_all_users"}});
-                            };
+                                }
+                            }
+                            tables.execute("COMMIT", {});
+                        } catch (...) {
+                            tables.execute("ROLLBACK", {});
+                            throw;
                         }
+                        return changed;
+                    };
+                    if (estate_communications) {
+                        estate_workers = std::make_unique<ProfileWorkers>(
+                            [&](const std::exception& error) {
+                                error_log(std::string("Estate peer notification failed: ") + error.what());
+                            },
+                            true);
+                        const auto forward = [&, database, scope = region.scope, own_id = region.id,
+                                              request = network::rest_forms_transport(outgoing_clients())](
+                                                 std::uint32_t estate_id, services::OrderedRegionFields fields) {
+                            if (estate_id == 0)
+                                return;
+                            estate_workers->enqueue([&, database, scope, own_id, estate_id, request,
+                                                     fields = std::move(fields)]() mutable {
+                                services::SqliteTableOperations tables([database] { return database; },
+                                                                       "estate_map");
+                                std::vector<framework::Uuid> peers;
+                                tables.query("SELECT RegionID FROM estate_map WHERE EstateID=:estate",
+                                             {{":estate", std::to_string(estate_id)}}, {"RegionID"},
+                                             [&](const auto& row, const auto&) {
+                                                 framework::Uuid peer;
+                                                 if (framework::try_parse_sdk_uuid(row.value_text(0), peer) &&
+                                                     !peer.is_zero() && peer != own_id)
+                                                     peers.push_back(peer);
+                                             });
+                                if (peers.empty())
+                                    return;
+                                fields.emplace_back("TOKEN", estate_token);
+                                fields.emplace_back("EstateID", std::to_string(estate_id));
+                                const auto body = network::build_service_form(fields);
+                                std::set<std::string> sent;
+                                if (const auto local = grid->by_id(scope, own_id))
+                                    sent.insert(local->server_uri());
+                                for (const auto& peer : peers) {
+                                    auto target = grid->by_id(scope, peer);
+                                    if (!target)
+                                        target = lookup_remote_region(
+                                            scope,
+                                            {{"REGIONID", peer.str()}, {"METHOD", "get_region_by_uuid"}});
+                                    if (!target)
+                                        continue;
+                                    const auto uri = target->server_uri();
+                                    if (uri.empty() || !sent.insert(uri).second)
+                                        continue;
+                                    try {
+                                        request(uri + "estate", body);
+                                    } catch (const std::exception& error) {
+                                        error_log(std::string("Estate peer notification failed: ") + error.what());
+                                    }
+                                }
+                            });
+                        };
+                        policies.forward_estate_update = [forward](std::uint32_t estate_id) {
+                            forward(estate_id, {{"METHOD", "update_estate"}});
+                        };
+                        policies.forward_estate_covenant = [forward](std::uint32_t estate_id,
+                                                                     framework::Uuid covenant) {
+                            forward(estate_id, {{"METHOD", "update_covenant"}, {"CovenantID", covenant.str()}});
+                        };
+                        policies.forward_estate_message = [forward](std::uint32_t estate_id, framework::Uuid sender,
+                                                                    std::string name, std::string message) {
+                            forward(estate_id, {{"METHOD", "estate_message"}, {"FromID", sender.str()},
+                                                {"FromName", std::move(name)}, {"Message", std::move(message)}});
+                        };
+                        policies.forward_estate_teleport_home = [forward](std::uint32_t estate_id,
+                                                                          std::optional<framework::Uuid> target) {
+                            if (target)
+                                forward(estate_id, {{"METHOD", "teleport_home_one_user"}, {"PreyID", target->str()}});
+                            else
+                                forward(estate_id, {{"METHOD", "teleport_home_all_users"}});
+                        };
                     }
                 }
                 region.estate_owner = estate_owner;
                 policies.implicit_gods = god_option("implicit_gods", false);
                 policies.automatic_viewer_gods =
                     god_option("automatic_gods", false) && !policies.implicit_gods;
-                policies.god_rights_level = [&, scope = region.scope, estate_owner, grid_gods,
-                                             owner_god](framework::Uuid agent) {
+                policies.estate_owner_is_god = owner_god;
+                policies.god_rights_level = [&, scope = region.scope, grid_gods](framework::Uuid agent) {
                     if (agent.is_zero())
                         return 0;
                     int level = 0;
@@ -1844,8 +2109,6 @@ int run(const std::vector<std::string>& args) {
                         if (const auto account = accounts.find_by_id(scope.str(), agent.str());
                             account && account->user_level >= 200)
                             level = account->user_level;
-                    if (owner_god && agent == estate_owner)
-                        level = std::max(level, 220);
                     return level;
                 };
                 policies.appearance_save_delay_seconds =
@@ -1868,6 +2131,17 @@ int run(const std::vector<std::string>& args) {
                             std::string(reinterpret_cast<const char*>(bytes.data()), bytes.size()), false);
                         auto tables = std::make_shared<services::SqliteTableOperations>(
                             [database] { return database; }, "os_groups_membership");
+                        policies.group_record_name = [tables, &error_log](framework::Uuid group) {
+                            std::optional<std::string> name;
+                            try {
+                                tables->query("SELECT Name FROM os_groups_groups WHERE GroupID=:group",
+                                              {{":group", group.str()}}, {"Name"},
+                                              [&](const auto& row, const auto&) { name = row.value_text(0); });
+                            } catch (const std::exception& error) {
+                                error_log(std::string("Local group record lookup failed: ") + error.what());
+                            }
+                            return name;
+                        };
                         policies.set_viewer_group_preferences = [tables](framework::Uuid agent,
                                                                          framework::Uuid group, bool notices,
                                                                          bool profile) {
@@ -2023,6 +2297,23 @@ int run(const std::vector<std::string>& args) {
                                      config.get("Groups", "HttpAuthPassword",
                                                 config.get("Network", "HttpAuthPassword")));
                     const auto request = network::rest_forms_transport(outgoing_clients(), auth);
+                    policies.group_record_name = [request, endpoint, &error_log](framework::Uuid group)
+                        -> std::optional<std::string> {
+                        try {
+                            const auto reply = network::parse_service_xml(request(
+                                endpoint, network::build_service_form({{"METHOD", "GETGROUP"},
+                                                                       {"GroupID", group.str()},
+                                                                       {"RequestingAgentID", framework::Uuid{}.str()}})));
+                            for (const auto& [name, result] : reply.fields)
+                                if (name == "RESULT" && result.list)
+                                    for (const auto& [key, value] : result.fields)
+                                        if (key == "GroupName" && !value.list)
+                                            return value.text;
+                        } catch (const std::exception& error) {
+                            error_log(std::string("Remote group record lookup failed: ") + error.what());
+                        }
+                        return std::nullopt;
+                    };
                     policies.set_viewer_group_preferences = [request, endpoint](framework::Uuid agent,
                                                                                 framework::Uuid group,
                                                                                 bool notices, bool profile) {
@@ -2392,9 +2683,10 @@ int run(const std::vector<std::string>& args) {
                         return std::vector{default_parcel};
                     return persisted_parcel_records;
                 };
-                policies.update_parcel_access = [&](auto parcel, bool persist) {
-                    if (persist && save_parcel_access)
-                        save_parcel_access(*parcel, !persisted_parcels);
+                const auto update_parcel = [&](std::shared_ptr<const scene::ScriptParcel> parcel, bool persist,
+                                               ParcelSave change) {
+                    if (persist && save_parcel)
+                        save_parcel(*parcel, !persisted_parcels, change);
                     std::lock_guard lock(parcels_mutex);
                     if (!persisted_parcels) {
                         default_parcel = std::move(parcel);
@@ -2407,11 +2699,55 @@ int run(const std::vector<std::string>& args) {
                         if (cell && cell->id == parcel->id)
                             cell = parcel;
                 };
+                policies.update_parcel_access = [update_parcel](auto parcel, bool persist) {
+                    update_parcel(std::move(parcel), persist, ParcelSave::Access);
+                };
+                policies.update_parcel_clean_time = [update_parcel](auto parcel) {
+                    update_parcel(std::move(parcel), true, ParcelSave::CleanTime);
+                };
+                policies.update_parcel_music = [update_parcel](auto parcel) {
+                    update_parcel(std::move(parcel), true, ParcelSave::Music);
+                };
+                policies.update_parcel_media = [update_parcel](auto parcel) {
+                    update_parcel(std::move(parcel), true, ParcelSave::Media);
+                };
+                policies.update_parcel_properties = [update_parcel](auto parcel) {
+                    update_parcel(std::move(parcel), true, ParcelSave::Properties);
+                };
+                policies.update_parcel_topology = [&, size](const ParcelCells& changed,
+                                                            const std::vector<framework::Uuid>& removed) {
+                    std::lock_guard lock(parcels_mutex);
+                    auto records = persisted_parcels ? persisted_parcel_records : ParcelCells{default_parcel};
+                    std::erase_if(records, [&](const auto& parcel) {
+                        return std::ranges::find(removed, parcel->id) != removed.end() ||
+                               std::ranges::any_of(changed, [&](const auto& edit) { return edit->id == parcel->id; });
+                    });
+                    records.insert(records.end(), changed.begin(), changed.end());
+                    std::ranges::sort(records, {}, [](const auto& parcel) { return parcel->local_id; });
+                    ParcelCells cells(static_cast<std::size_t>(size / 4) * (size / 4));
+                    for (const auto& parcel : records)
+                        for (std::size_t i = 0; i < cells.size(); ++i)
+                            if (i / 8 < parcel->land_bitmap.size() && (parcel->land_bitmap[i / 8] & (1u << (i % 8))))
+                                cells[i] = parcel;
+                    if (save_parcel_topology)
+                        save_parcel_topology(changed, removed);
+                    persisted_parcel_records = std::move(records);
+                    persisted_parcels = std::move(cells);
+                };
+                policies.update_parcel_ownership = [update_parcel](auto parcel, bool reset_claim) {
+                    update_parcel(std::move(parcel), true, reset_claim ? ParcelSave::Reclaim : ParcelSave::Ownership);
+                };
+                policies.update_parcel_purchase = [update_parcel](auto parcel) {
+                    update_parcel(std::move(parcel), true, ParcelSave::Purchase);
+                };
+                policies.mark_parcel_as_content = [update_parcel](auto parcel) {
+                    update_parcel(std::move(parcel), true, ParcelSave::MarkContent);
+                };
                 policies.script_parcel_capacity =
-                    [&, capacity = std::max(0, config.integer("NativeRegion", "MaxPrims", 15000))](
+                    [&, size, capacity = std::max(0, config.integer("NativeRegion", "MaxPrims", 15000))](
                         std::int32_t area) {
                         const auto rounded =
-                            area * static_cast<double>(capacity) * parcel_object_bonus / (256 * 256) + 0.5;
+                            area * static_cast<double>(capacity) * parcel_object_bonus / (size * size) + 0.5;
                         return static_cast<std::int32_t>(std::min(rounded, static_cast<double>(capacity)));
                     };
                 policies.is_local_grid_user = [&, scope = region.scope](framework::Uuid agent) {
@@ -2422,6 +2758,40 @@ int run(const std::vector<std::string>& args) {
                 };
                 policies.script_account_key = services::make_script_user_key_lookup(accounts, outgoing_clients());
                 policies.script_grid_region = services::make_script_grid_lookup(*grid, region.scope, remote_grid_request);
+                const auto world_map = config.get("Map", "WorldMapModule",
+                                                  config.get("Startup", "WorldMapModule", "WorldMap"));
+                policies.map_layer_enabled = world_map == "WorldMap" || world_map == "HGWorldMap";
+                const auto remote_map_regions = [&, scope = region.scope](services::OrderedRegionFields query) {
+                    query.emplace_back("SCOPEID", scope.str());
+                    const auto reply = remote_grid_request(query);
+                    std::vector<services::GridRegion> results;
+                    for (const auto& [key, value] : reply.fields) {
+                        if (!key.starts_with("region") || !value.list)
+                            continue;
+                        services::RegionFields fields;
+                        for (const auto& [field, item] : value.fields)
+                            fields[field] = item.text;
+                        results.push_back(services::GridRegion::from_fields(fields));
+                    }
+                    return results;
+                };
+                policies.map_region_search = [&, scope = region.scope, remote_map_regions](const std::string& name) {
+                    constexpr int maximum = 20;
+                    if (!remote_grid_request)
+                        return grid->names(scope, name, maximum);
+                    return remote_map_regions({{"METHOD", "get_regions_by_name"}, {"NAME", name},
+                                               {"MAX", std::to_string(maximum)}});
+                };
+                if (policies.map_layer_enabled) {
+                    policies.map_region_range = [&, scope = region.scope, remote_map_regions](
+                                                    int min_x, int max_x, int min_y, int max_y) {
+                        if (!remote_grid_request)
+                            return grid->range(scope, min_x, max_x, min_y, max_y);
+                        return remote_map_regions({{"METHOD", "get_region_range"},
+                                                   {"XMIN", std::to_string(min_x)}, {"XMAX", std::to_string(max_x)},
+                                                   {"YMIN", std::to_string(min_y)}, {"YMAX", std::to_string(max_y)}});
+                    };
+                }
                 policies.set_home = [&](framework::Uuid agent, framework::Uuid region_id,
                                         framework::Vector3 position, framework::Vector3 look) {
                     return remote_grid_user ? remote_grid_user->set_home(agent.str(), region_id, position, look)
@@ -2523,7 +2893,7 @@ int run(const std::vector<std::string>& args) {
                     info["LookAt"] = std::vector<double>{look_at.x, look_at.y, look_at.z};
                     return {};
                 };
-                policies.teleport_destination = [&, scope = region.scope](std::uint64_t handle) {
+                policies.teleport_destination = [&, lookup_remote_region, scope = region.scope](std::uint64_t handle) {
                     auto destination = grid->by_handle(scope, handle);
                     if (destination)
                         return destination;
@@ -2533,6 +2903,88 @@ int run(const std::vector<std::string>& args) {
                                                         {"Y", std::to_string(y)},
                                                         {"METHOD", "get_region_by_position"}});
                 };
+                if (policies.map_layer_enabled) {
+                    policies.map_item_failure_seconds = config.integer(
+                        "Map", "BlacklistTimeout", config.integer("Startup", "BlacklistTimeout", 600));
+                    using MapFailureCache = framework::ExpiringCacheOS<std::string, bool>;
+                    auto failed_map_servers = std::make_shared<MapFailureCache>(1000);
+                    auto failed_map_urls = std::make_shared<MapFailureCache>(1000);
+                    policies.request_remote_map_items = [&, locate = policies.teleport_destination,
+                        failed_map_servers, failed_map_urls, failure_seconds = policies.map_item_failure_seconds](
+                            std::uint64_t handle) {
+                        const auto region = locate(handle);
+                        if (!region || region->server_uri().empty())
+                            throw std::runtime_error("Map item destination is unavailable");
+                        const auto server = region->server_uri();
+                        const auto url = server + "MAP/MapItems/" + std::to_string(handle);
+                        if (failed_map_servers->contains_key(server) || failed_map_urls->contains_key(url))
+                            throw std::runtime_error("Map item destination is cooling down after a failure");
+                        framework::ConfigUriObjectPtr uri;
+                        try {
+                            uri = framework::native_config_uri_object_backend()->create(
+                                framework::nini_writer_text(framework::utf16_replacing(url)),
+                                framework::ConfigUriObjectKind::Absolute);
+                        } catch (const std::exception&) {
+                            failed_map_servers->add(server, true, 120000);
+                            throw;
+                        }
+                        framework::ConfigXmlHttpOperation operation;
+                        operation.headers.emplace_back("Content-Type", framework::nini_writer_text(u"application/xml+llsd"));
+                        std::vector<std::uint8_t> body;
+                        try {
+                            auto stream = outgoing_clients()->get_new_global_client(5000)->send_headers(
+                                std::move(uri), std::move(operation), true);
+                            body = stream->copy_to_memory();
+                            stream->close();
+                        } catch (const framework::ConfigXmlHttpError&) {
+                            failed_map_servers->add(server, true, 60000);
+                            if (failure_seconds > 0)
+                                failed_map_urls->add_or_update(url, true, static_cast<double>(failure_seconds));
+                            throw;
+                        }
+                        return network::deserialize_sdk_llsd_xml(
+                            {reinterpret_cast<const char*>(body.data()), body.size()});
+                    };
+                }
+                if (config.boolean("NativeServer", "EnableSimulationEndpoint", false)) {
+                    policies.send_crossing_object = [&](auto& destination, auto position, auto object) {
+                        return simulation_connector->create_object(destination, position, std::move(object), true);
+                    };
+                }
+                policies.allow_script_crossing = config.boolean("Startup", "AllowScriptCrossing", true);
+                policies.allow_avatar_crossing = config.boolean("EntityTransfer", "AllowAvatarCrossing", true);
+                policies.parcel_region_by_id = [&, scope = region.scope](framework::Uuid id) {
+                    auto destination = grid->by_id(scope, id);
+                    return destination ? destination : lookup_remote_region(
+                        scope, {{"REGIONID", id.str()}, {"METHOD", "get_region_by_uuid"}});
+                };
+                region_lookup_workers = std::make_unique<ProfileWorkers>(
+                    [&](const std::exception& failure) { error_log("Region lookup: " + std::string(failure.what())); });
+                policies.schedule_region_lookup = [&](auto task) {
+                    region_lookup_workers->enqueue(std::move(task));
+                };
+                policies.lookup_region_handle = [&](framework::Uuid id) {
+                    auto destination = grid->by_id({}, id);
+                    if (!destination)
+                        destination = lookup_remote_region({}, {{"REGIONID", id.str()}, {"METHOD", "get_region_by_uuid"}});
+                    return destination ? destination->handle() : std::uint64_t{0};
+                };
+                if (config.get("Modules", "LandServices") == "RemoteLandServicesConnector") {
+                    policies.remote_parcel_data = [&](const services::GridRegion& destination, std::uint64_t handle,
+                                                      std::uint32_t x, std::uint32_t y) {
+                        const auto target_handle = static_cast<std::uint32_t>(handle) == 0
+                            ? destination.region_secret.value_or("") : std::to_string(destination.handle());
+                        auto parameters = std::make_shared<network::NwcXmlRpcRequest::Parameters>();
+                        parameters->push_back(std::make_shared<network::Value>(network::Value::object({
+                            {"region_handle", target_handle}, {"x", std::to_string(x)}, {"y", std::to_string(y)},
+                        })));
+                        auto request = std::make_shared<network::NwcXmlRpcRequest>(u"land_data", parameters);
+                        network::NwcXmlRpcHttpTransport transport(outgoing_clients());
+                        const auto reply = transport.send(
+                            request, framework::utf16_replacing(destination.server_uri()), 10000);
+                        return reply && !reply->is_fault && reply->value ? *reply->value : network::Value{};
+                    };
+                }
                 policies.teleport_arrived = [&](const framework::Uuid& session,
                                                 const framework::Uuid& destination) {
                     if (remote_region_presence) {
@@ -2553,6 +3005,7 @@ int run(const std::vector<std::string>& args) {
                 };
                 policies.teleport_access = [&](services::GridRegion& destination,
                                                const scene::ViewerAgent& agent, framework::Vector3 position,
+                                               bool via_teleport,
                                                services::LoginTransferContext& context) -> std::string {
                     if (!simulation_connector)
                         return {};
@@ -2614,7 +3067,7 @@ int run(const std::vector<std::string>& args) {
                         !framework::host_resolver().endpoint(destination.external_host,
                                                              destination.internal_endpoint->port))
                         return "Could not resolve destination Address";
-                    if (simulation_connector->query_access(destination, agent.circuit->agent_id, home, true,
+                    if (simulation_connector->query_access(destination, agent.circuit->agent_id, home, via_teleport,
                                                            position, features, context, reason))
                         return {};
                     return reason.empty() ? "Destination region denied access" : reason;
@@ -2625,8 +3078,9 @@ int run(const std::vector<std::string>& args) {
                         services::GridRegion& destination, const scene::ViewerAgent& agent,
                         framework::Vector3 position, framework::Vector3 look_at,
                         services::LoginTransferContext& context, const framework::Uuid& token,
-                        std::uint32_t requested_flags,
+                        std::uint32_t requested_flags, const framework::AgentData* script_snapshot,
                         std::string& reason) -> std::optional<network::lludp::Packet> {
+                    const bool crossing = token.is_zero();
                     const bool foreign = (gatekeeper.flags.value_or(0) & services::Hyperlink) != 0;
                     if (!foreign && (!simulation_connector ||
                                      (!remote_region_presence &&
@@ -2681,12 +3135,26 @@ int run(const std::vector<std::string>& args) {
                         return std::nullopt;
                     }
                     auto circuit = std::make_shared<framework::AgentCircuitData>(*agent.circuit);
+                    circuit->appearance = agent.appearance();
                     circuit->active_group_id = agent.active_group_id();
                     circuit->start_position = position;
                     circuit->caps_path = framework::Uuid::random().str();
+                    if (crossing) {
+                        using Seeds = framework::AgentCircuitData::ChildrenSeeds;
+                        circuit->children_cap_seeds = agent.circuit->children_cap_seeds
+                            ? std::make_shared<Seeds>(*agent.circuit->children_cap_seeds)
+                            : std::make_shared<Seeds>();
+                        auto& seeds = *circuit->children_cap_seeds;
+                        const auto known = seeds.find(destination.handle());
+                        if (known != seeds.end() && known->second && !known->second->empty())
+                            circuit->caps_path = known->second;
+                        seeds[source.handle()] = agent.circuit->caps_path;
+                        seeds[destination.handle()] = circuit->caps_path;
+                    }
                     circuit->child = false;
-                    const std::uint32_t flags = requested_flags | (agent.flying ? 8192u : 0u) |
-                                                (disable_teleport_cancellation ? 2048u : 0u);
+                    const std::uint32_t flags = crossing ? 0u :
+                        requested_flags | (agent.flying ? 8192u : 0u) |
+                        (disable_teleport_cancellation ? 2048u : 0u);
                     auto advertised_source = grid->by_id(source.scope, source.id).value_or(source);
                     std::unique_lock travel_lock(travel_launch_mutex, std::defer_lock);
                     std::optional<services::TravelRecord> previous_travel;
@@ -2757,14 +3225,47 @@ int run(const std::vector<std::string>& args) {
                     update->circuit_code = circuit->circuit_code;
                     update->region_id = source.id;
                     update->position = position;
+                    update->center = agent.camera_position;
+                    update->up_axis = agent.camera_up_axis;
+                    update->velocity = agent.velocity;
+                    update->body_rotation = agent.rotation;
+                    update->always_run = agent.always_run;
+                    if (script_snapshot) {
+                        update->control_flags = script_snapshot->control_flags;
+                        update->attachment_objects = script_snapshot->attachment_objects;
+                        update->attachment_object_states = script_snapshot->attachment_object_states;
+                        update->controllers = script_snapshot->controllers;
+                        update->animations = script_snapshot->animations;
+                        update->default_animation = script_snapshot->default_animation;
+                        update->animation_state = script_snapshot->animation_state;
+                        update->motion_state = script_snapshot->motion_state;
+                        update->movement_animation_overrides = script_snapshot->movement_animation_overrides;
+                        update->cross_extra_flags = script_snapshot->cross_extra_flags;
+                    } else {
+                        region_runtime->snapshot_attachments(agent, *update);
+                    }
+                    if (crossing)
+                        update->crossing_flags = 1;
+                    if (crossing && agent.seat) {
+                        update->parent_part = agent.seat->part;
+                        update->sit_offset = agent.seat->offset;
+                        update->body_rotation = agent.seat->rotation;
+                        update->crossing_flags = agent.seat->explicit_target ? 7 : 3;
+                    }
                     update->active_group_id = circuit->active_group_id;
                     update->god_data = std::make_shared<network::Value>(network::Value::object(
                         {{"ViewerUiIsGod", network::Value(region_runtime->viewer_god_mode(
                                                circuit->agent_id, circuit->session_id))}}));
-                    update->set_look_at(look_at);
-                    update->new_callback_uri = advertised_source.server_uri() + "agent/" +
-                                               circuit->agent_id.str() + "/" + source.id.str() +
-                                               "/release/?auth=" + token.str();
+                    if (crossing) {
+                        update->at_axis = agent.camera_at_axis;
+                        update->left_axis = agent.camera_left_axis;
+                    } else {
+                        update->set_look_at(look_at);
+                    }
+                    if (!crossing)
+                        update->new_callback_uri = advertised_source.server_uri() + "agent/" +
+                                                   circuit->agent_id.str() + "/" + source.id.str() +
+                                                   "/release/?auth=" + token.str();
                     if (!simulation_connector->update_agent(destination, update, context)) {
                         simulation_connector->close_agent(destination, circuit->agent_id,
                                                           circuit->session_id.str());
@@ -2773,6 +3274,22 @@ int run(const std::vector<std::string>& args) {
                         return std::nullopt;
                     }
                     const auto seed = destination.server_uri() + "CAPS/" + *circuit->caps_path + "0000/";
+                    if (crossing) {
+                        auto packet = network::lludp::make_packet("CrossedRegion");
+                        auto& identity = packet.block("AgentData");
+                        identity["AgentID"] = circuit->agent_id;
+                        identity["SessionID"] = circuit->session_id;
+                        auto& region = packet.block("RegionData");
+                        region["SimIP"] = std::uint64_t(endpoint->address->ipv4_address());
+                        region["SimPort"] = std::uint64_t(endpoint->port);
+                        region["RegionHandle"] = destination.handle();
+                        region["SeedCapability"] =
+                            std::vector<std::uint8_t>(seed.c_str(), seed.c_str() + seed.size() + 1);
+                        auto& info = packet.block("Info");
+                        info["Position"] = std::vector<double>{position.x, position.y, position.z};
+                        info["LookAt"] = std::vector<double>{agent.velocity.x, agent.velocity.y, agent.velocity.z};
+                        return packet;
+                    }
                     auto finish = network::lludp::make_packet("TeleportFinish");
                     auto& info = finish.block("Info");
                     info["AgentID"] = circuit->agent_id;
@@ -3072,6 +3589,92 @@ int run(const std::vector<std::string>& args) {
                         const auto library =
                             runtime_file("TextureDecoderLibrary", std::filesystem::path("bin/lib64") / jpeg_library,
                                          std::filesystem::path("lib/opensim-native") / jpeg_library);
+                        if (policies.map_layer_enabled)
+                            policies.encode_map_jpeg = scene::open_map_jpeg_encoder(library);
+                        const auto map_flag = [&](const char* name, bool fallback) {
+                            return config.boolean("Map", name, config.boolean("Startup", name, fallback));
+                        };
+                        if (policies.map_layer_enabled) {
+                            policies.generate_map_on_startup = generate_map_tiles;
+                            policies.load_map_asset =
+                                [&, decode = scene::open_map_bitmap_decoder(library)](framework::Uuid id) {
+                                    const auto asset = region_assets ? region_assets->get(id) : nullptr;
+                                    return asset && asset->data ? decode(*asset->data) : scene::MapBitmap{};
+                                };
+                            policies.map_export_scale = map_flag("ExportMapAddScale", false);
+                            policies.map_export_region_name = map_flag("ExportMapAddRegionName", false);
+                            policies.map_tiles_directory = framework::utf8_path(
+                                config.get("Map", "MapTilesDirectory", config.get("Startup", "MapTilesDirectory")));
+                            float view_distance = 255.f;
+                            float draw_distance = 512.f;
+                            framework::parse_invariant_float(
+                                config.get("Startup", "MaxRegionsViewDistance", "255"), view_distance);
+                            framework::parse_invariant_float(
+                                config.get("Startup", "MaxDrawDistance", "512"), draw_distance);
+                            const auto export_distance = std::min(view_distance, draw_distance);
+                            if (std::isfinite(export_distance))
+                                policies.map_export_view_distance = static_cast<int>(
+                                    std::clamp(export_distance, 0.f, 32767.f));
+                            policies.static_map_file = framework::utf8_path(
+                                config.get("NativeRegion", "MaptileStaticFile"));
+                            policies.warp_map_tiles = config.get(
+                                "Map", "MapImageModule", config.get("Startup", "MapImageModule", "MapImageModule"))
+                                == "Warp3DImageModule";
+                            policies.draw_map_object_volumes = map_flag("DrawPrimOnMapTile", true);
+                            policies.average_warp_map_textures = policies.warp_map_tiles &&
+                                map_flag("AverageTextureColorOnMapTile", false);
+                            if (policies.warp_map_tiles) {
+                                policies.texture_warp_prims = map_flag("TexturePrims", true);
+                                float minimum = -100.f, maximum = 4096.f;
+                                framework::parse_invariant_float(
+                                    config.get("Map", "RenderMinHeight", config.get("Startup", "RenderMinHeight", "-100")),
+                                    minimum);
+                                framework::parse_invariant_float(
+                                    config.get("Map", "RenderMaxHeight", config.get("Startup", "RenderMaxHeight", "4096")),
+                                    maximum);
+                                if (std::isfinite(maximum))
+                                    policies.warp_prim_max_height = std::clamp(maximum, 100.f, 4086.f);
+                                if (std::isfinite(minimum))
+                                    policies.warp_prim_min_height =
+                                        std::clamp(minimum, -100.f, policies.warp_prim_max_height - 10.f);
+                            }
+                            policies.textured_map_tiles = map_flag("TextureOnMapTile", policies.warp_map_tiles) ||
+                                policies.average_warp_map_textures;
+                            policies.encode_map_jpeg2000 = scene::open_map_jpeg2000_encoder(library);
+                            const auto map_color = [&](const char* key, scene::MapColor fallback) {
+                                const auto text = config.get("Map", key, config.get("Startup", key));
+                                return scene::parse_map_color(text).value_or(fallback);
+                            };
+                            auto& palette = policies.map_palette;
+                            palette.water = map_color("MapColorWater", palette.water);
+                            if (policies.textured_map_tiles && !policies.warp_map_tiles) {
+                                constexpr std::array color_keys{"MapColor1", "MapColor2", "MapColor3", "MapColor4"};
+                                for (std::size_t index = 0; index < color_keys.size(); ++index)
+                                    palette.land[index] = map_color(color_keys[index], palette.land[index]);
+                                policies.map_texture_average =
+                                    [&, average = scene::open_map_texture_average(library)](framework::Uuid id)
+                                        -> std::optional<scene::MapColor> {
+                                        const auto asset = region_assets ? region_assets->get(id) : nullptr;
+                                        return asset && asset->data ? average(*asset->data) : std::nullopt;
+                                    };
+                            }
+                            if (generate_map_tiles)
+                                policies.map_tile_refresh = std::chrono::seconds(config.integer(
+                                    "Map", "MaptileRefresh", config.integer("Startup", "MaptileRefresh", 0)));
+                            policies.local_map_assets = map_flag("LocalV1MapAssets", false);
+                            policies.store_map_tile = [&](auto asset) {
+                                if (!region_assets || !region_assets->store(std::move(asset)))
+                                    throw std::runtime_error("Could not store terrain map tile");
+                            };
+                            policies.save_map_tiles = [&](framework::Uuid terrain, framework::Uuid parcel) {
+                                if (save_map_images)
+                                    save_map_images(terrain, parcel);
+                            };
+                            policies.publish_map_tiles = [&] {
+                                if (publish_map_images)
+                                    publish_map_images();
+                            };
+                        }
                         policies.decode_texture_layers = scene::cache_texture_layer_decoder(
                             scene::open_texture_layer_decoder(library, config.boolean("Startup", "UseCSJ2K", true)),
                             [&] { return region_assets ? region_assets->asset_cache() : nullptr; }, region.id);
@@ -3125,12 +3728,28 @@ int run(const std::vector<std::string>& args) {
                 };
                 policies.inventory = std::move(legacy_inventory);
                 policies.inventory_service = inventory.get();
+                policies.coalesce_returned_objects =
+                    config.boolean("Inventory", "CoalesceMultipleObjectsToInventory", true);
+                policies.use_trash_on_delete = config.boolean("Startup", "UseTrashOnDelete", true);
                 if (avatars)
                     policies.save_appearance = [&](framework::Uuid agent,
                                                    const framework::AvatarAppearance& appearance) {
                         return avatars->set_appearance(agent, &appearance);
                     };
+                if (attachment_script_store) {
+                    policies.load_attachment_scripts = [attachment_script_store](auto owner, auto item, auto asset) {
+                        return attachment_script_store->load(owner, item, asset);
+                    };
+                    policies.save_attachment_scripts = [attachment_script_store](auto owner, auto item, auto asset,
+                                                                                const auto& states) {
+                        attachment_script_store->save(owner, item, asset, states);
+                    };
+                }
                 if (friends) {
+                    policies.is_friend = [&, hypergrid = config.get("Modules", "FriendsModule") == "HGFriendsModule"](
+                                             framework::Uuid principal, framework::Uuid other) {
+                        return services::friend_is_confirmed(*friends, principal, other, hypergrid);
+                    };
                     policies.friend_status_changed = [&](framework::Uuid principal, framework::Uuid session,
                                                          bool online) {
                         publish_friend_status(principal, session, online);
@@ -3452,7 +4071,13 @@ int run(const std::vector<std::string>& args) {
                     return root ? std::optional(root->owner) : std::nullopt;
                 };
                 policies.can_rez = policies.access;
+                policies.enforce_parcel_rez_permissions = true;
                 policies.script_ossl_grid_gods = grid_gods;
+                policies.media_on_a_prim_enabled =
+                    !config.has_section("MediaOnAPrim") || config.boolean("MediaOnAPrim", "Enabled", false);
+                policies.materials_enabled = config.boolean("Materials", "enable_materials", true);
+                policies.estate_change_info_cap_enabled =
+                    config.get("ClientStack.LindenCaps", "Cap_EstateChangeInfo") == "localhost";
                 policies.environment_enabled =
                     config.get("ClientStack.LindenCaps", "Cap_EnvironmentSettings") == "localhost";
                 policies.persist_environment = [&](auto parcel, auto settings) {
@@ -3501,6 +4126,11 @@ int run(const std::vector<std::string>& args) {
                         std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(heap_kib) << 10);
                     policies.script_delay_factor = yengine->get_float(
                         framework::nini_writer_text(u"ScriptDelayFactor"), policies.script_delay_factor);
+                    policies.script_distance_factor = yengine->get_float(
+                        framework::nini_writer_text(u"ScriptDistanceLimitFactor"), policies.script_distance_factor);
+                    policies.disable_underground_movement = yengine->get_boolean(
+                        framework::nini_writer_text(u"DisableUndergroundMovement"),
+                        policies.disable_underground_movement);
                     policies.notecard_line_chars = std::min(65535, yengine->get_int(
                         framework::nini_writer_text(u"NotecardLineReadCharsMax"), policies.notecard_line_chars));
                     policies.automatic_link_permission =
@@ -3510,6 +4140,8 @@ int run(const std::vector<std::string>& args) {
                         framework::nini_writer_text(u"LinksetDataLimit"), policies.linkset_data_limit);
                 }
                 if (auto startup = config.native_section("Startup")) {
+                    policies.physical_linkset_capacity =
+                        startup->get_int(framework::nini_writer_text(u"LinksetPhysPrims"), 0);
                     policies.nonphysical_prim_min =
                         std::max(startup->get_float(framework::nini_writer_text(u"NonPhysicalPrimMin"),
                                                     policies.nonphysical_prim_min),
@@ -3546,6 +4178,7 @@ int run(const std::vector<std::string>& args) {
                 const auto has_god_permissions = [&](framework::Uuid id) {
                     return region_runtime && region_runtime->agent_has_god_permissions(id);
                 };
+                policies.object_owner_rights = has_owner_rights;
                 policies.inventory_is_god = has_god_permissions;
                 policies.can_edit = [check_permissions, has_owner_rights,
                                      has_god_permissions](auto id, const auto& object) {
@@ -3580,6 +4213,11 @@ int run(const std::vector<std::string>& args) {
                         if (!region_assets)
                             throw std::runtime_error("Region asset service unavailable");
                         return region_assets->get(id);
+                    };
+                    policies.expire_material_asset_cache = [&](auto id) {
+                        if (region_assets)
+                            if (const auto cache = region_assets->asset_cache())
+                                cache->expire(id.str());
                     };
                     const auto separate_assets =
                         config.boolean("HGInventoryAccessModule", "CheckSeparateAssets", false);
@@ -3829,6 +4467,15 @@ int run(const std::vector<std::string>& args) {
                 simulator_features->add_feature(
                     "AvatarHoverHeightEnabled",
                     services::SimulatorFeatureValue::from_value(network::Value(true)));
+                if (policies.materials_enabled) {
+                    const auto max_materials = config.integer("Materials", "MaxMaterialsPerTransaction", 50);
+                    simulator_features->add_feature(
+                        "MaxMaterialsPerTransaction",
+                        services::SimulatorFeatureValue::from_value(network::Value(max_materials)));
+                    simulator_features->add_feature(
+                        "RenderMaterialsCapability",
+                        services::SimulatorFeatureValue::from_value(network::Value(std::int32_t{4})));
+                }
                 const auto add_scale_feature = [&](const char* name, float scale) {
                     network::Value value;
                     value.kind = network::Value::Kind::Real;
@@ -3884,10 +4531,7 @@ int run(const std::vector<std::string>& args) {
                     simulator_features->add_extra(name, services::SimulatorFeatureValue::from_value(value));
                 }
                 constexpr auto sound_module = "OpenSim.Region.CoreModules.dll:SoundModule";
-                auto money_module = config.get("Startup", "economymodule");
-                if (money_module.empty())
-                    money_module = config.get("Economy", "economymodule");
-                if (money_module.empty() || money_module == "BetaGridLikeMoneyModule") {
+                if (sample_economy_enabled) {
                     policies.sample_economy_sell_enabled = config.boolean("Economy", "SellEnabled", true);
                     auto packet = network::lludp::make_packet("EconomyData");
                     packet.reliable = true;
@@ -3934,6 +4578,18 @@ int run(const std::vector<std::string>& args) {
                     std::max(0, config.integer("NativeRegion", "MaxPrims", 15000)));
                 region_runtime =
                     std::make_unique<scene::RegionRuntime>(std::move(region), *region_presence, std::move(policies));
+                if (config.boolean("Modules", "LandServiceInConnector", false)) {
+                    app.set_land_data_lookup([&](const network::Value& request) {
+                        std::uint64_t handle;
+                        std::uint32_t x, y;
+                        if (!framework::try_parse_unsigned_integer(network::osd_string(request.get("region_handle")),
+                                                                   handle) ||
+                            !framework::try_parse_unsigned_integer(network::osd_string(request.get("x")), x) ||
+                            !framework::try_parse_unsigned_integer(network::osd_string(request.get("y")), y))
+                            throw std::invalid_argument("Invalid land_data coordinates");
+                        return region_runtime->land_data(handle, x, y);
+                    });
+                }
                 const auto initialize_terrain = [&] {
                     if (config.get("Terrain", "InitialTerrain", "pinhead-island") != "flat")
                         region_runtime->world().terrain().initialize_island();
@@ -4022,6 +4678,11 @@ int run(const std::vector<std::string>& args) {
                             has_shapes |= name == "primshapes";
                             has_items |= name == "primitems";
                         });
+                    if (has_prims && has_items)
+                        tables->execute("CREATE TABLE IF NOT EXISTS native_script_states ("
+                                        "region_id TEXT NOT NULL, part_id TEXT NOT NULL, item_id TEXT NOT NULL, "
+                                        "asset_id TEXT NOT NULL, checkpoint BLOB NOT NULL, "
+                                        "PRIMARY KEY (region_id, part_id, item_id))", {});
                     using InventoryRows = std::vector<services::SqliteTableParameters>;
                     const auto inventory_rows = [](const std::vector<framework::TaskInventoryItem>& items) {
                         InventoryRows rows;
@@ -4064,6 +4725,17 @@ int run(const std::vector<std::string>& args) {
                                         return text(key);
                                     } catch (const std::out_of_range&) {
                                         return std::string{};
+                                    }
+                                };
+                                const auto read_optional_blob = [&](const char* key, auto& destination) {
+                                    try {
+                                        const auto bytes = row.blob_value(row.column(key));
+                                        if (!bytes.empty())
+                                            destination.assign(bytes.begin(), bytes.end());
+                                    } catch (const std::out_of_range&) {
+                                        // Older region databases may omit this column.
+                                    } catch (const std::invalid_argument&) {
+                                        // Optional blobs can be NULL.
                                     }
                                 };
                                 const auto integer = [&](const char* key) {
@@ -4122,6 +4794,10 @@ int run(const std::vector<std::string>& args) {
                                                               object.creator);
                                 object.creation_date = integer("CreationDate");
                                 object.flags = static_cast<std::uint32_t>(integer("ObjectFlags"));
+                                const auto die_at_edge = optional_text("DieAtEdge");
+                                int edge_flag = 0;
+                                std::from_chars(die_at_edge.data(), die_at_edge.data() + die_at_edge.size(), edge_flag);
+                                object.die_at_edge = edge_flag != 0;
                                 if (const auto allowed_drop = optional_text("AllowedDrop"); !allowed_drop.empty()) {
                                     if (allowed_drop == "1" ||
                                         framework::ordinal_compare_ignore_case(allowed_drop, "true") == 0)
@@ -4163,6 +4839,9 @@ int run(const std::vector<std::string>& args) {
                                                ? value
                                                : fallback;
                                 };
+                                object.saved_attachment_position = {optional_real("AttachedPosX"),
+                                                                    optional_real("AttachedPosY"),
+                                                                    optional_real("AttachedPosZ")};
                                 object.velocity = {optional_real("VelocityX"), optional_real("VelocityY"),
                                                    optional_real("VelocityZ")};
                                 object.sit_target_position = {optional_real("SitTargetOffsetX"),
@@ -4203,8 +4882,12 @@ int run(const std::vector<std::string>& args) {
                                 object.physics.gravity =
                                     optional_real("GravityModifier", object.physics.gravity);
                                 if (has_shapes && !text("PCode").empty()) {
+                                    object.face_media_xml = optional_text("Media");
                                     object.shape.pcode = static_cast<std::uint8_t>(integer("PCode"));
                                     object.shape.state = static_cast<std::uint8_t>(integer("State"));
+                                    const auto last_point = optional_text("LastAttachPoint");
+                                    std::from_chars(last_point.data(), last_point.data() + last_point.size(),
+                                                    object.last_attachment_point);
                                     object.shape.path_begin =
                                         static_cast<std::uint16_t>(integer("PathBegin"));
                                     object.shape.path_end = static_cast<std::uint16_t>(integer("PathEnd"));
@@ -4241,13 +4924,17 @@ int run(const std::vector<std::string>& args) {
                                                     real("ScaleZ", .5f)};
                                     const auto texture = row.blob_value(row.column("Texture"));
                                     object.texture_entry.assign(texture.begin(), texture.end());
-                                    try {
-                                        const auto extra = row.blob_value(row.column("ExtraParams"));
-                                        if (!extra.empty())
-                                            object.extra_params.assign(extra.begin(), extra.end());
-                                    } catch (const std::out_of_range&) {
-                                    }
+                                    read_optional_blob("ExtraParams", object.extra_params);
+                                    read_optional_blob("MatOvrd", object.material_overrides);
                                 }
+                                read_optional_blob("sopanims", object.object_animations);
+                                if (auto animation = optional_text("TextureAnimation"); !animation.empty()) {
+                                    network::Value encoded;
+                                    encoded.kind = network::Value::Kind::Binary;
+                                    encoded.text = std::move(animation);
+                                    object.texture_animation = *network::osd_binary(encoded);
+                                }
+                                object.dynamic_attributes_xml = optional_text("DynAttrs");
                                 if (object.shape.pcode == 9)
                                     stored_parts.emplace_back(group, std::move(object));
                             } catch (const std::exception& error) {
@@ -4302,6 +4989,10 @@ int run(const std::vector<std::string>& args) {
                                     fields.emplace(column, std::move(value));
                             };
                             add("PhysicsShapeType", std::to_string(part.physics.shape));
+                            add("sopanims", {part.object_animations.begin(), part.object_animations.end()});
+                            add("TextureAnimation", network::binary_base64(network::osd_from_binary(
+                                std::make_shared<std::vector<std::uint8_t>>(part.texture_animation))));
+                            add("DynAttrs", part.dynamic_attributes_xml);
                             add("PassTouches", part.pass_touches ? "1" : "0");
                             add("SitTargetOffsetX", services::avatar_float_string(part.sit_target_position.x));
                             add("sitactrange", services::avatar_float_string(part.sit_active_range));
@@ -4347,6 +5038,7 @@ int run(const std::vector<std::string>& args) {
                             add("ColorG", std::to_string((part.text_argb >> 8) & 255u));
                             add("ColorB", std::to_string(part.text_argb & 255u));
                             add("ObjectFlags", std::to_string(part.flags));
+                            add("DieAtEdge", part.die_at_edge ? "1" : "0");
                             const auto motion = [&](const std::string& prefix,
                                                     const framework::Vector3& value) {
                                 add(prefix + "X", services::avatar_float_string(value.x));
@@ -4356,11 +5048,13 @@ int run(const std::vector<std::string>& args) {
                             motion("Velocity", part.velocity);
                             motion("AngularVelocity", part.angular_velocity);
                             motion("Acceleration", part.acceleration);
+                            motion("AttachedPos", part.saved_attachment_position);
                             if (!shape_columns.empty()) {
                                 const auto& shape = part.shape;
                                 const std::pair<const char*, int> geometry[]{
                                     {"PCode", shape.pcode},
                                     {"State", shape.state},
+                                    {"LastAttachPoint", part.last_attachment_point},
                                     {"PathBegin", shape.path_begin},
                                     {"PathEnd", shape.path_end},
                                     {"PathScaleX", shape.path_scale_x},
@@ -4388,7 +5082,11 @@ int run(const std::vector<std::string>& args) {
                                                            part.texture_entry.end()};
                                 fields["shape.ExtraParams"] = {part.extra_params.begin(),
                                                                part.extra_params.end()};
+                                fields["shape.MatOvrd"] = {part.material_overrides.begin(),
+                                                            part.material_overrides.end()};
                                 fields["shape.Shape"] = "0";
+                                if (!part.face_media_xml.empty())
+                                    fields["shape.Media"] = part.face_media_xml;
                                 std::erase_if(fields, [&](const auto& field) {
                                     return field.first.starts_with("shape.") &&
                                            !shape_columns.contains(field.first.substr(6));
@@ -4417,20 +5115,26 @@ int run(const std::vector<std::string>& args) {
                                 fields["SceneGroupID"] = group.str();
                                 saved.emplace(part.id, std::move(fields));
                             }
+                        using ScriptStates = std::map<framework::Uuid, scene::RegionRuntime::TaskScriptStates>;
                         save_prim_metadata = [database, tables, id, &world, runtime = region_runtime.get(),
                                               metadata, transform, has_shapes, has_items, prim_columns,
                                               inventory_rows, saved_inventory, saved = std::move(saved),
-                                              stored_shapes = std::move(stored_shapes)]() mutable {
+                                              stored_shapes = std::move(stored_shapes),
+                                              saved_script_states = std::optional<ScriptStates>{}]() mutable {
                             std::vector<std::pair<framework::Uuid, PrimFields>> changed;
                             std::set<framework::Uuid> inserted;
                             std::set<framework::Uuid> inserted_shapes;
                             std::map<framework::Uuid, InventoryRows> inventory_changes;
+                            ScriptStates script_states;
                             const auto parts = world.objects();
                             std::set<framework::Uuid> present;
                             std::set<std::uint32_t> temporary_roots;
+                            std::set<std::uint32_t> attachment_roots;
                             std::map<std::uint32_t, framework::Uuid> stored_roots;
                             for (const auto& part : parts) {
                                 present.insert(part.id);
+                                if (part.is_attachment)
+                                    attachment_roots.insert(part.local_id);
                                 if (!part.is_attachment && !part.parent_id && (part.flags & 0x20000000u))
                                     temporary_roots.insert(part.local_id);
                                 if (!part.is_attachment && !part.parent_id && !(part.flags & 0x20000000u) &&
@@ -4443,9 +5147,12 @@ int run(const std::vector<std::string>& args) {
                                     removed.push_back(key);
                             for (const auto& part : parts) {
                                 const auto previous = saved.find(part.id);
-                                if (part.is_attachment)
-                                    continue;
                                 const auto root_local = part.parent_id ? part.parent_id : part.local_id;
+                                if (part.is_attachment || attachment_roots.contains(root_local)) {
+                                    if (previous != saved.end())
+                                        removed.push_back(part.id);
+                                    continue;
+                                }
                                 if (previous != saved.end() && temporary_roots.contains(root_local)) {
                                     removed.push_back(part.id);
                                     continue;
@@ -4462,6 +5169,9 @@ int run(const std::vector<std::string>& args) {
                                         if (old == saved_inventory->end() ? !rows.empty()
                                                                           : old->second != rows)
                                             inventory_changes.emplace(part.id, std::move(rows));
+                                        auto states = runtime->snapshot_task_script_states(part.id);
+                                        if (!states.empty())
+                                            script_states.emplace(part.id, std::move(states));
                                     }
                                 current["SceneGroupID"] = root->second.str();
                                 transform(part, current);
@@ -4510,7 +5220,9 @@ int run(const std::vector<std::string>& args) {
                                 if (!current.empty())
                                     changed.emplace_back(part.id, std::move(current));
                             }
-                            if (changed.empty() && removed.empty() && inventory_changes.empty())
+                            const bool script_states_changed = has_items && saved_script_states != script_states;
+                            if (changed.empty() && removed.empty() && inventory_changes.empty() &&
+                                !script_states_changed)
                                 return;
                             std::lock_guard lock(database->mutex());
                             tables->execute("BEGIN IMMEDIATE", {});
@@ -4533,6 +5245,12 @@ int run(const std::vector<std::string>& args) {
                                         parameters);
                                 }
                                 for (const auto& [key, current] : changed) {
+                                    const auto is_blob_column = [](std::string_view column, bool shape) {
+                                        if (shape)
+                                            return column == "Texture" || column == "ExtraParams" ||
+                                                   column == "MatOvrd";
+                                        return column == "lnkstBinData" || column == "sopanims";
+                                    };
                                     for (const bool shape : {false, true}) {
                                         if (inserted.contains(key) ||
                                             (shape && inserted_shapes.contains(key))) {
@@ -4543,9 +5261,7 @@ int run(const std::vector<std::string>& args) {
                                                     continue;
                                                 const auto column = shape ? field.substr(6) : field;
                                                 columns += "," + column;
-                                                if (column == "lnkstBinData" ||
-                                                    (shape &&
-                                                     (column == "Texture" || column == "ExtraParams")))
+                                                if (is_blob_column(column, shape))
                                                     values += ",CAST(:" + column + " AS BLOB)";
                                                 else
                                                     values += ",:" + column;
@@ -4568,8 +5284,7 @@ int run(const std::vector<std::string>& args) {
                                             if (parameters.size() > 2)
                                                 sql += ",";
                                             sql += column + "=";
-                                            if (column == "lnkstBinData" ||
-                                                (shape && (column == "Texture" || column == "ExtraParams")))
+                                            if (is_blob_column(column, shape))
                                                 sql += "CAST(:" + column + " AS BLOB)";
                                             else
                                                 sql += ":" + column;
@@ -4600,6 +5315,19 @@ int run(const std::vector<std::string>& args) {
                                             ":next,:current,:base,:everyone,:groupmask,CAST(:flags AS INTEGER))",
                                             row);
                                 }
+                                if (script_states_changed || (has_items && !inventory_changes.empty())) {
+                                    tables->execute("DELETE FROM native_script_states WHERE region_id=:region",
+                                                    {{":region", id}});
+                                    for (const auto& [part, states] : script_states)
+                                        for (const auto& [item, checkpoint] : states)
+                                            tables->execute(
+                                                "INSERT INTO native_script_states "
+                                                "SELECT :region,i.primID,i.itemID,i.assetID,CAST(:state AS BLOB) "
+                                                "FROM primitems i JOIN prims p ON p.UUID=i.primID "
+                                                "WHERE p.RegionUUID=:region AND i.primID=:part AND i.itemID=:item",
+                                                {{":region", id}, {":part", part.str()}, {":item", item.str()},
+                                                 {":state", std::string(checkpoint.begin(), checkpoint.end())}});
+                                }
                                 tables->execute("COMMIT", {});
                             } catch (...) {
                                 tables->execute("ROLLBACK", {});
@@ -4618,13 +5346,19 @@ int run(const std::vector<std::string>& args) {
                                 saved_inventory->erase(key);
                             for (auto& [key, rows] : inventory_changes)
                                 (*saved_inventory)[key] = std::move(rows);
+                            if (has_items)
+                                saved_script_states = std::move(script_states);
                         };
                     }
                     if (has_prims && has_items) {
                         std::map<framework::Uuid, std::vector<std::shared_ptr<framework::TaskInventoryItem>>>
                             inventories;
+                        std::map<framework::Uuid, scene::RegionRuntime::TaskScriptStates> script_states;
                         tables->query(
-                            "SELECT i.* FROM primitems i JOIN prims p ON p.UUID=i.primID "
+                            "SELECT i.*,COALESCE(s.checkpoint,X'') AS NativeCheckpoint FROM primitems i "
+                            "JOIN prims p ON p.UUID=i.primID "
+                            "LEFT JOIN native_script_states s ON s.region_id=p.RegionUUID AND s.part_id=i.primID "
+                            "AND s.item_id=i.itemID AND s.asset_id=i.assetID "
                             "WHERE p.RegionUUID=:id ORDER BY i.primID,i.itemID",
                             {{":id", id}}, {}, [&](const auto& row, const auto&) {
                                 try {
@@ -4666,6 +5400,13 @@ int run(const std::vector<std::string>& args) {
                                         static_cast<std::uint32_t>(number("everyonePermissions"));
                                     item->group_permissions =
                                         static_cast<std::uint32_t>(number("groupPermissions"));
+                                    if (item->inventory_type == 10) {
+                                        const auto checkpoint = row.blob_value(row.column("NativeCheckpoint"));
+                                        if (!checkpoint.empty())
+                                            script_states[item->parent_part_id].emplace(
+                                                item->item_id,
+                                                std::vector<std::uint8_t>(checkpoint.begin(), checkpoint.end()));
+                                    }
                                     inventories[item->parent_part_id].push_back(std::move(item));
                                 } catch (const std::exception& error) {
                                     error_log(std::string("Failed to load stored task inventory: ") +
@@ -4673,7 +5414,9 @@ int run(const std::vector<std::string>& args) {
                                 }
                             });
                         for (const auto& [part, items] : inventories) {
-                            region_runtime->restore_task_inventory(part, items);
+                            region_runtime->restore_task_inventory(
+                                part, items, script_states[part],
+                                scene::RegionRuntime::TaskInventoryRestoreSource::RegionStart);
                             if (const auto snapshot = region_runtime->snapshot_task_inventory(part))
                                 saved_inventory->emplace(part, inventory_rows(*snapshot));
                         }
@@ -4707,7 +5450,9 @@ int run(const std::vector<std::string>& args) {
                                 });
                         }
                         tables->query(
-                            "SELECT UUID,OwnerUUID,Bitmap,CAST(LandFlags AS INTEGER) AS LandFlags,Name,Desc,GroupUUID,ClaimDate,LandingType,UserLocationX,UserLocationY,UserLocationZ,UserLookAtX,UserLookAtY,UserLookAtZ,SeeAVs,Dwell,land.* FROM land WHERE RegionUUID=:id ORDER BY LocalLandID",
+                            "SELECT UUID,OwnerUUID,Bitmap,CAST(LandFlags AS INTEGER) AS LandFlags,Name,Desc,GroupUUID,"
+                            "ClaimDate,LandingType,UserLocationX,UserLocationY,UserLocationZ,UserLookAtX,UserLookAtY,"
+                            "UserLookAtZ,SeeAVs,Dwell,land.* FROM land WHERE RegionUUID=:id ORDER BY LocalLandID",
                             {{":id", id}},
                             {"UUID", "OwnerUUID", "Bitmap", "LandFlags", "Name", "Desc", "GroupUUID",
                              "ClaimDate", "LandingType", "UserLocationX", "UserLocationY", "UserLocationZ",
@@ -4798,6 +5543,10 @@ int run(const std::vector<std::string>& args) {
                                     }
                                 };
                                 const auto integer = [](std::string_view text) {
+                                    const auto trimmed = framework::trim_utf8(text);
+                                    text = trimmed;
+                                    if (text.starts_with('+'))
+                                        text.remove_prefix(1);
                                     std::int32_t value = 0;
                                     const auto end = text.data() + text.size();
                                     const auto result = std::from_chars(text.data(), end, value);
@@ -4850,68 +5599,255 @@ int run(const std::vector<std::string>& args) {
                                       [&](const auto& row, const auto&) {
                                           land_columns.insert(row.value_text(row.column("name")));
                                       });
-                        save_parcel_access = [tables, database, id, land_columns = std::move(land_columns)](
-                                                 const scene::ScriptParcel& parcel, bool generated) {
+                        const auto insert_generated_parcel =
+                            [tables, id, land_columns](const scene::ScriptParcel& parcel, std::int32_t dwell) {
+                                const auto parcel_id = parcel.id.str();
+                                const std::vector<std::pair<std::string, std::string>> values{
+                                    {"UUID", parcel_id}, {"RegionUUID", id},
+                                    {"LocalLandID", std::to_string(parcel.local_id)},
+                                    {"Bitmap", parcel.land_bitmap.empty()
+                                                   ? std::string(static_cast<std::size_t>(parcel.area) / 128,
+                                                                 static_cast<char>(0xff))
+                                                   : std::string(parcel.land_bitmap.begin(), parcel.land_bitmap.end())},
+                                    {"Name", parcel.name}, {"Desc", parcel.description},
+                                    {"OwnerUUID", parcel.owner.str()},
+                                    {"IsGroupOwned", parcel.group_owned ? "True" : "False"},
+                                    {"Area", std::to_string(parcel.area)}, {"AuctionID", std::to_string(parcel.auction_id)},
+                                    {"AuthbuyerID", parcel.authorized_buyer.str()},
+                                    {"Category", std::to_string(parcel.category)}, {"ClaimDate", std::to_string(parcel.claim_date)},
+                                    {"ClaimPrice", std::to_string(parcel.claim_price)}, {"GroupUUID", parcel.group.str()},
+                                    {"SalePrice", std::to_string(parcel.sale_price)}, {"LandStatus", std::to_string(parcel.status)},
+                                    {"LandFlags", std::to_string(parcel.flags)},
+                                    {"LandingType", std::to_string(parcel.landing_type)},
+                                    {"MediaAutoScale", parcel.media_auto_scale ? "1" : "0"},
+                                    {"MediaTextureUUID", parcel.media_id.str()}, {"MediaURL", parcel.media_url},
+                                    {"MediaType", parcel.media_type}, {"MediaDescription", parcel.media_description},
+                                    {"MediaSize", std::to_string(parcel.media_width) + "," + std::to_string(parcel.media_height)},
+                                    {"MusicURL", parcel.music_url}, {"PassHours", std::to_string(parcel.pass_hours)},
+                                    {"MediaLoop", parcel.media_loop ? "1" : "0"},
+                                    {"ObscureMedia", parcel.obscure_media ? "1" : "0"},
+                                    {"OtherCleanTime", std::to_string(parcel.other_clean_time)},
+                                    {"PassPrice", std::to_string(parcel.pass_price)}, {"SnapshotUUID", parcel.snapshot_id.str()},
+                                    {"UserLocationX", std::to_string(parcel.landing_point.x)},
+                                    {"UserLocationY", std::to_string(parcel.landing_point.y)},
+                                    {"UserLocationZ", std::to_string(parcel.landing_point.z)},
+                                    {"UserLookAtX", std::to_string(parcel.landing_look_at.x)},
+                                    {"UserLookAtY", std::to_string(parcel.landing_look_at.y)},
+                                    {"UserLookAtZ", std::to_string(parcel.landing_look_at.z)},
+                                    {"Dwell", std::to_string(dwell)}, {"SeeAVs", parcel.see_avatars ? "1" : "0"},
+                                    {"AnyAVSounds", parcel.any_avatar_sounds ? "1" : "0"},
+                                    {"GroupAVSounds", parcel.group_avatar_sounds ? "1" : "0"}
+                                };
+                                std::string columns, placeholders;
+                                services::SqliteTableParameters parameters;
+                                for (const auto& [column, value] : values) {
+                                    if (!land_columns.contains(column))
+                                        continue;
+                                    if (!columns.empty()) {
+                                        columns += ',';
+                                        placeholders += ',';
+                                    }
+                                    const auto parameter = ":" + column;
+                                    columns += column;
+                                    placeholders += column == "Bitmap" ? "CAST(:Bitmap AS BLOB)" : parameter;
+                                    parameters.emplace_back(parameter, value);
+                                }
+                                tables->execute("INSERT INTO land (" + columns + ") VALUES (" +
+                                                placeholders + ")", parameters);
+                            };
+                        save_parcel_topology = [tables, database, id, insert_generated_parcel, land_columns](
+                                                   const ParcelCells& changed, const std::vector<framework::Uuid>& removed) {
+                            std::lock_guard lock(database->mutex());
+                            tables->execute("BEGIN IMMEDIATE", {});
+                            try {
+                                tables->execute("CREATE TABLE IF NOT EXISTS landaccesslist "
+                                                "(LandUUID TEXT, AccessUUID TEXT, Flags INTEGER)", {});
+                                for (const auto& parcel : removed) {
+                                    const auto uuid = parcel.str();
+                                    tables->execute("DELETE FROM landaccesslist WHERE LandUUID=:parcel COLLATE NOCASE",
+                                                    {{":parcel", uuid}});
+                                    tables->execute("DELETE FROM land WHERE UUID=:parcel COLLATE NOCASE AND RegionUUID=:region",
+                                                    {{":parcel", uuid}, {":region", id}});
+                                }
+                                for (const auto& parcel : changed) {
+                                    const auto uuid = parcel->id.str();
+                                    const auto bitmap = std::string(parcel->land_bitmap.begin(), parcel->land_bitmap.end());
+                                    services::SqliteTableParameters parameters{
+                                        {":bitmap", bitmap}, {":dwell", std::to_string(parcel->dwell)},
+                                        {":landing", std::to_string(parcel->landing_type)},
+                                        {":x", std::to_string(parcel->landing_point.x)},
+                                        {":y", std::to_string(parcel->landing_point.y)},
+                                        {":z", std::to_string(parcel->landing_point.z)},
+                                        {":lx", std::to_string(parcel->landing_look_at.x)},
+                                        {":ly", std::to_string(parcel->landing_look_at.y)},
+                                        {":lz", std::to_string(parcel->landing_look_at.z)},
+                                        {":parcel", uuid}, {":region", id},
+                                    };
+                                    std::string geometry = "Bitmap=CAST(:bitmap AS BLOB), Dwell=:dwell";
+                                    if (land_columns.contains("Area")) {
+                                        geometry += ", Area=:area";
+                                        parameters.emplace_back(":area", std::to_string(parcel->area));
+                                    }
+                                    const auto updated = tables->execute(
+                                        "UPDATE land SET " + geometry +
+                                        ", LandingType=:landing, UserLocationX=:x, UserLocationY=:y, UserLocationZ=:z, "
+                                        "UserLookAtX=:lx, UserLookAtY=:ly, UserLookAtZ=:lz "
+                                        "WHERE UUID=:parcel COLLATE NOCASE AND RegionUUID=:region",
+                                        parameters);
+                                    if (updated != 0)
+                                        continue;
+                                    insert_generated_parcel(*parcel, parcel->dwell);
+                                    for (const auto& entry : parcel->access_entries)
+                                        tables->execute("INSERT INTO landaccesslist (LandUUID,AccessUUID,Flags) VALUES (:p,:a,:f)",
+                                                        {{":p", uuid}, {":a", entry.agent.str()}, {":f", std::to_string(entry.flags)}});
+                                    if (parcel->environment_day && parcel->environment_day->settings &&
+                                        land_columns.contains("environment"))
+                                        tables->execute("UPDATE land SET environment=:settings WHERE UUID=:parcel AND RegionUUID=:region",
+                                                        {{":settings", network::llsd_xml(*parcel->environment_day->settings)},
+                                                         {":parcel", uuid}, {":region", id}});
+                                }
+                                tables->execute("COMMIT", {});
+                            } catch (...) {
+                                tables->execute("ROLLBACK", {});
+                                throw;
+                            }
+                        };
+                        if (land_columns.contains("Dwell")) {
+                            save_parcel_dwell =
+                                [&, tables, database, id, insert_generated_parcel](framework::Uuid parcel, float dwell) {
+                                const auto rounded = std::nearbyint(static_cast<double>(dwell));
+                                if (!std::isfinite(rounded) || rounded < std::numeric_limits<std::int32_t>::min() ||
+                                    rounded > std::numeric_limits<std::int32_t>::max())
+                                    throw std::out_of_range("Parcel dwell exceeds SQLite Int32 range");
+                                const auto saved_dwell = static_cast<std::int32_t>(rounded);
+                                std::shared_ptr<const scene::ScriptParcel> generated;
+                                {
+                                    std::lock_guard lock(parcels_mutex);
+                                    if (!persisted_parcels && default_parcel && default_parcel->id == parcel)
+                                        generated = default_parcel;
+                                }
+                                std::lock_guard lock(database->mutex());
+                                tables->execute("BEGIN IMMEDIATE", {});
+                                try {
+                                    const auto changed = tables->execute(
+                                        "UPDATE land SET Dwell=:dwell WHERE UUID=:parcel COLLATE NOCASE "
+                                        "AND RegionUUID=:region",
+                                        {{":dwell", std::to_string(saved_dwell)}, {":parcel", parcel.str()},
+                                         {":region", id}});
+                                    if (changed == 0 && generated)
+                                        insert_generated_parcel(*generated, saved_dwell);
+                                    else if (changed != 1)
+                                        throw std::runtime_error("Could not identify the saved parcel");
+                                    tables->execute("COMMIT", {});
+                                } catch (...) {
+                                    tables->execute("ROLLBACK", {});
+                                    throw;
+                                }
+                            };
+                        }
+                        save_parcel = [tables, database, id, insert_generated_parcel, land_columns](
+                                          const scene::ScriptParcel& parcel, bool generated, ParcelSave change) {
                             const auto parcel_id = parcel.id.str();
                             std::lock_guard lock(database->mutex());
                             tables->execute("BEGIN IMMEDIATE", {});
                             try {
-                                const auto changed = tables->execute(
-                                        "UPDATE land SET LandFlags=:flags WHERE UUID=:parcel COLLATE NOCASE "
-                                        "AND RegionUUID=:region",
-                                        {{":flags", std::to_string(parcel.flags)}, {":parcel", parcel_id},
-                                         {":region", id}});
+                                std::string update = "UPDATE land SET LandFlags=:flags";
+                                services::SqliteTableParameters parameters{
+                                    {":flags", std::to_string(parcel.flags)}, {":parcel", parcel_id}, {":region", id},
+                                };
+                                const auto add_optional = [&](std::string_view column, std::string value) {
+                                    if (!std::ranges::any_of(land_columns, [column](const auto& stored) {
+                                            return framework::ordinal_equals_ignore_case(stored, column);
+                                        }))
+                                        return;
+                                    const auto name = std::string(column);
+                                    update += ", " + name + "=:" + name;
+                                    parameters.emplace_back(":" + name, std::move(value));
+                                };
+                                const bool mark_content = change == ParcelSave::MarkContent;
+                                if (change == ParcelSave::Ownership || change == ParcelSave::Reclaim ||
+                                    change == ParcelSave::Purchase || mark_content) {
+                                    update += ", OwnerUUID=:owner, GroupUUID=:group";
+                                    parameters.emplace_back(":owner", parcel.owner.str());
+                                    parameters.emplace_back(":group", parcel.group.str());
+                                    add_optional("IsGroupOwned", parcel.group_owned ? "True" : "False");
+                                }
+                                if (change == ParcelSave::Purchase) {
+                                    add_optional("ClaimDate", std::to_string(parcel.claim_date));
+                                    add_optional("ClaimPrice", std::to_string(parcel.claim_price));
+                                    add_optional("SalePrice", std::to_string(parcel.sale_price));
+                                    add_optional("AuthbuyerID", parcel.authorized_buyer.str());
+                                }
+                                if (change == ParcelSave::CleanTime || mark_content)
+                                    add_optional("OtherCleanTime", std::to_string(parcel.other_clean_time));
+                                if (change == ParcelSave::Music)
+                                    add_optional("MusicURL", parcel.music_url);
+                                if (change == ParcelSave::Media || change == ParcelSave::Properties || mark_content) {
+                                    add_optional("MediaURL", parcel.media_url);
+                                    add_optional("MediaTextureUUID", parcel.media_id.str());
+                                    add_optional("MediaAutoScale", parcel.media_auto_scale ? "1" : "0");
+                                    add_optional("MediaType", parcel.media_type);
+                                    add_optional("MediaSize", std::to_string(parcel.media_width) + "," +
+                                                                  std::to_string(parcel.media_height));
+                                }
+                                if (change == ParcelSave::Properties || mark_content) {
+                                    add_optional("AuthbuyerID", parcel.authorized_buyer.str());
+                                    if (!mark_content)
+                                        add_optional("GroupUUID", parcel.group.str());
+                                    add_optional("SalePrice", std::to_string(parcel.sale_price));
+                                    add_optional("Category", std::to_string(parcel.category));
+                                    add_optional("Name", parcel.name);
+                                    add_optional("Desc", parcel.description);
+                                    add_optional("SnapshotUUID", parcel.snapshot_id.str());
+                                    add_optional("LandingType", std::to_string(parcel.landing_type));
+                                    add_optional("UserLocationX", std::to_string(parcel.landing_point.x));
+                                    add_optional("UserLocationY", std::to_string(parcel.landing_point.y));
+                                    add_optional("UserLocationZ", std::to_string(parcel.landing_point.z));
+                                    add_optional("UserLookAtX", std::to_string(parcel.landing_look_at.x));
+                                    add_optional("UserLookAtY", std::to_string(parcel.landing_look_at.y));
+                                    add_optional("UserLookAtZ", std::to_string(parcel.landing_look_at.z));
+                                    add_optional("MusicURL", parcel.music_url);
+                                    add_optional("MediaDescription", parcel.media_description);
+                                    add_optional("MediaLoop", parcel.media_loop ? "1" : "0");
+                                    add_optional("ObscureMedia", parcel.obscure_media ? "1" : "0");
+                                    add_optional("ObscureMusic", "0");
+                                    add_optional("PassHours", std::to_string(parcel.pass_hours));
+                                    add_optional("PassPrice", std::to_string(parcel.pass_price));
+                                    add_optional("SeeAVs", parcel.see_avatars ? "1" : "0");
+                                    add_optional("AnyAVSounds", parcel.any_avatar_sounds ? "1" : "0");
+                                    add_optional("GroupAVSounds", parcel.group_avatar_sounds ? "1" : "0");
+                                }
+                                if (mark_content) {
+                                    add_optional("ClaimDate", std::to_string(parcel.claim_date));
+                                    add_optional("Dwell", "0");
+                                    add_optional("LandStatus", std::to_string(parcel.status));
+                                }
+                                if (change == ParcelSave::Reclaim) {
+                                    add_optional("ClaimDate", std::to_string(parcel.claim_date));
+                                    add_optional("SalePrice", std::to_string(parcel.sale_price));
+                                    add_optional("AuthbuyerID", parcel.authorized_buyer.str());
+                                    add_optional("SeeAVs", "1");
+                                    add_optional("AnyAVSounds", "1");
+                                    add_optional("GroupAVSounds", "1");
+                                }
+                                update += " WHERE UUID=:parcel COLLATE NOCASE AND RegionUUID=:region";
+                                const auto changed = tables->execute(update, parameters);
                                 if (changed == 0 && generated) {
-                                    const auto zero_uuid = framework::Uuid{}.str();
-                                    const std::vector<std::pair<std::string, std::string>> values{
-                                        {"UUID", parcel_id}, {"RegionUUID", id},
-                                        {"LocalLandID", std::to_string(parcel.local_id)},
-                                        {"Bitmap", std::string(static_cast<std::size_t>(parcel.area) / 128,
-                                                               static_cast<char>(0xff))},
-                                        {"Name", parcel.name}, {"Desc", parcel.description},
-                                        {"OwnerUUID", parcel.owner.str()}, {"IsGroupOwned", "False"},
-                                        {"Area", std::to_string(parcel.area)}, {"AuctionID", "0"},
-                                        {"Category", "0"}, {"ClaimDate", std::to_string(parcel.claim_date)},
-                                        {"ClaimPrice", "0"}, {"GroupUUID", parcel.group.str()},
-                                        {"SalePrice", "0"}, {"LandStatus", "0"},
-                                        {"LandFlags", std::to_string(parcel.flags)},
-                                        {"LandingType", std::to_string(parcel.landing_type)},
-                                        {"MediaAutoScale", "0"}, {"MediaTextureUUID", zero_uuid},
-                                        {"MediaURL", ""}, {"MusicURL", ""}, {"PassHours", "0"},
-                                        {"PassPrice", "0"}, {"SnapshotUUID", zero_uuid},
-                                        {"UserLocationX", "0"}, {"UserLocationY", "0"}, {"UserLocationZ", "0"},
-                                        {"UserLookAtX", "0"}, {"UserLookAtY", "0"}, {"UserLookAtZ", "0"},
-                                        {"Dwell", "0"}, {"SeeAVs", "1"}, {"AnyAVSounds", "1"},
-                                        {"GroupAVSounds", "1"}
-                                    };
-                                    std::string columns, placeholders;
-                                    services::SqliteTableParameters parameters;
-                                    for (const auto& [column, value] : values) {
-                                        if (!land_columns.contains(column))
-                                            continue;
-                                        if (!columns.empty()) {
-                                            columns += ',';
-                                            placeholders += ',';
-                                        }
-                                        const auto parameter = ":" + column;
-                                        columns += column;
-                                        placeholders += column == "Bitmap" ? "CAST(:Bitmap AS BLOB)" : parameter;
-                                        parameters.emplace_back(parameter, value);
-                                    }
-                                    tables->execute("INSERT INTO land (" + columns + ") VALUES (" +
-                                                    placeholders + ")", parameters);
+                                    insert_generated_parcel(parcel, parcel.dwell);
                                 } else if (changed != 1) {
                                     throw std::runtime_error("Could not identify the saved parcel");
                                 }
-                                tables->execute("CREATE TABLE IF NOT EXISTS landaccesslist "
-                                                "(LandUUID TEXT, AccessUUID TEXT, Flags INTEGER)", {});
-                                tables->execute("DELETE FROM landaccesslist WHERE LandUUID=:parcel COLLATE NOCASE",
-                                                {{":parcel", parcel_id}});
-                                for (const auto& entry : parcel.access_entries) {
-                                    tables->execute("INSERT INTO landaccesslist (LandUUID,AccessUUID,Flags) "
-                                                    "VALUES (:parcel,:agent,:flags)",
-                                                    {{":parcel", parcel_id}, {":agent", entry.agent.str()},
-                                                     {":flags", std::to_string(entry.flags)}});
+                                if (change == ParcelSave::Access || mark_content) {
+                                    tables->execute("CREATE TABLE IF NOT EXISTS landaccesslist "
+                                                    "(LandUUID TEXT, AccessUUID TEXT, Flags INTEGER)", {});
+                                    tables->execute("DELETE FROM landaccesslist WHERE LandUUID=:parcel COLLATE NOCASE",
+                                                    {{":parcel", parcel_id}});
+                                    for (const auto& entry : parcel.access_entries) {
+                                        tables->execute("INSERT INTO landaccesslist (LandUUID,AccessUUID,Flags) "
+                                                        "VALUES (:parcel,:agent,:flags)",
+                                                        {{":parcel", parcel_id}, {":agent", entry.agent.str()},
+                                                         {":flags", std::to_string(entry.flags)}});
+                                    }
                                 }
                                 tables->execute("COMMIT", {});
                             } catch (...) {
@@ -4926,6 +5862,37 @@ int run(const std::vector<std::string>& args) {
                         {"name"}, [&](const auto&, const auto&) { has_region_settings = true; });
                     if (has_region_settings) {
                         save_estate_region_settings = estate_region_settings_writer(tables, id);
+                        bool has_terrain_image_column = false;
+                        bool has_parcel_image_column = false;
+                        tables->query("PRAGMA table_info(regionsettings)", {}, {"name"},
+                                      [&](const auto& row, const auto&) {
+                                          const auto name = row.value_text(row.column("name"));
+                                          if (framework::ordinal_equals_ignore_case(name, "map_tile_ID"))
+                                              has_terrain_image_column = true;
+                                          if (framework::ordinal_equals_ignore_case(name, "parcel_tile_ID"))
+                                              has_parcel_image_column = true;
+                                      });
+                        if (has_terrain_image_column || has_parcel_image_column) {
+                            std::string update = "UPDATE regionsettings SET ";
+                            if (has_terrain_image_column)
+                                update += "map_tile_ID=:terrain";
+                            if (has_terrain_image_column && has_parcel_image_column)
+                                update += ", ";
+                            if (has_parcel_image_column)
+                                update += "parcel_tile_ID=:parcel";
+                            update += " WHERE regionUUID=:id";
+                            save_map_images = [tables, id, update = std::move(update),
+                                               has_terrain_image_column, has_parcel_image_column](
+                                                  framework::Uuid terrain, framework::Uuid parcel) {
+                                services::SqliteTableParameters values{{":id", id}};
+                                if (has_terrain_image_column)
+                                    values.emplace_back(":terrain", terrain.str());
+                                if (has_parcel_image_column)
+                                    values.emplace_back(":parcel", parcel.str());
+                                if (tables->execute(update, values) != 1)
+                                    throw std::runtime_error("Region settings row is missing");
+                            };
+                        }
                         int agent_limit = 40;
                         struct FlagColumn {
                             const char* column;
@@ -4985,8 +5952,7 @@ int run(const std::vector<std::string>& args) {
                                           {{":id", id}}, {"agent_limit"}, [&](const auto& row, const auto&) {
                                               agent_limit = row.int32_value(0);
                                           });
-                        region_runtime->set_region_menu_limits(agent_limit,
-                                                               static_cast<float>(parcel_object_bonus));
+                        region_runtime->set_region_menu_limits(agent_limit, parcel_object_bonus.load());
                         std::optional<framework::Uuid> loaded_telehub;
                         constexpr std::array texture_corners{"sw", "nw", "se", "ne"};
                         std::array<bool, 4> saved_texture_heights{};
@@ -4997,6 +5963,18 @@ int run(const std::vector<std::string>& args) {
                         tables->query(
                             "SELECT * FROM regionsettings WHERE regionUUID=:id", {{":id", id}}, {},
                             [&](const auto& row, const auto&) {
+                                const auto map_image = [&](const char* column) -> std::optional<framework::Uuid> {
+                                    try {
+                                        framework::Uuid image;
+                                        if (framework::try_parse_sdk_uuid(row.value_text(row.column(column)), image))
+                                            return image;
+                                    } catch (const std::out_of_range&) {
+                                    }
+                                    return {};
+                                };
+                                region_runtime->load_region_map_images(
+                                    generate_map_tiles ? map_image("map_tile_ID") : std::nullopt,
+                                    map_image("parcel_tile_ID"));
                                 try {
                                     region_runtime->set_region_maturity(row.int32_value(row.column("maturity")));
                                 } catch (const std::out_of_range&) {
@@ -5082,7 +6060,8 @@ int run(const std::vector<std::string>& args) {
                                     return;
                                 const auto text = [](float value) {
                                     std::array<char, 64> bytes;
-                                    const auto result = std::to_chars(bytes.data(), bytes.data() + bytes.size(), value);
+                                    const auto result = std::to_chars(bytes.data(), bytes.data() + bytes.size(),
+                                                                      static_cast<double>(value));
                                     if (result.ec != std::errc{})
                                         throw std::runtime_error("Cannot serialize terrain texture height");
                                     return std::string(bytes.data(), result.ptr);
@@ -5107,7 +6086,7 @@ int run(const std::vector<std::string>& args) {
                             };
                         if (saved_terrain_settings) {
                             save_region_terrain_settings = [tables, id](float water, float raise, float lower) {
-                                const auto text = [](float value) {
+                                const auto text = [](double value) {
                                     std::array<char, 64> bytes;
                                     const auto result = std::to_chars(bytes.data(), bytes.data() + bytes.size(), value);
                                     if (result.ec != std::errc{})
@@ -5409,6 +6388,30 @@ int run(const std::vector<std::string>& args) {
                 return config.get("LoginService", key, fallback);
             };
             settings.welcome = read("WelcomeMessage", "Welcome to OpenSim!");
+            const auto message_url = read("MessageUrl");
+            if (!message_url.empty()) {
+                try {
+                    const auto uris = framework::native_config_uri_object_backend();
+                    auto uri = uris->try_create(framework::nini_writer_text(framework::utf16(message_url)),
+                                                framework::ConfigUriObjectKind::Absolute);
+                    std::u16string downloaded;
+                    if (!uri || *uri->scheme() == u"file") {
+                        const auto path = uri ? framework::utf8(*uri->local_path()) : message_url;
+                        downloaded = framework::read_stream_reader_text(framework::utf8_path(path)).text;
+                    } else {
+                        framework::ConfigXmlHttpOperation operation;
+                        auto stream = outgoing_clients()->get_new_global_client(0)->send_headers(
+                            std::move(uri), std::move(operation), true);
+                        const auto bytes = stream->copy_to_memory();
+                        stream->close();
+                        downloaded = framework::decode_stream_reader_text(bytes).text;
+                    }
+                    if (!downloaded.empty())
+                        settings.welcome = framework::utf8(downloaded);
+                } catch (const std::exception&) {
+                    // The original uses WelcomeMessage when the download fails.
+                }
+            }
             for (std::size_t at = 0; (at = settings.welcome.find("\\n", at)) != std::string::npos; ++at)
                 settings.welcome.replace(at, 2, "\n");
             settings.map_url = read("MapTileURL");
@@ -5429,6 +6432,42 @@ int run(const std::vector<std::string>& args) {
             login_completion =
                 std::make_unique<services::LoginCompletion>(std::move(completion), std::move(settings));
             login.set_completion(login_completion.get());
+        }
+    }
+    std::unique_ptr<server::AssetEndpoint> asset_endpoint, hg_asset_endpoint;
+    std::shared_ptr<services::AssetService> filesystem_assets;
+    if (expose_assets || expose_hg_assets) {
+        auto storage = std::make_shared<services::NativeAssetStorageBackend>(asset_log);
+        services::AssetStorageFactory factory(storage);
+        std::shared_ptr<services::AssetService> backing;
+        if ((expose_hg_assets && !expose_hg_fs_assets) || (expose_assets && !expose_fs_assets))
+            backing = factory.create(&config);
+        if (expose_fs_assets || expose_hg_fs_assets)
+            filesystem_assets = services::make_fs_asset_service(config, storage);
+        if (expose_assets) {
+            auto service = expose_fs_assets ? filesystem_assets : backing;
+            asset_endpoint = std::make_unique<server::AssetEndpoint>(std::move(service), config);
+        }
+        if (expose_hg_assets) {
+            constexpr auto section = "HGAssetService";
+            constexpr auto native_accounts = "OpenSim.Services.UserAccountService.dll:UserAccountService";
+            if (config.get(section, "UserAccountsService") != native_accounts)
+                throw std::invalid_argument("HGAssetService.UserAccountsService requires the native account service");
+            constexpr auto native_backing = "OpenSim.Services.AssetService.dll:AssetService";
+            if (!expose_hg_fs_assets && config.get(section, "BackingService", native_backing) != native_backing)
+                throw std::invalid_argument("Unsupported HGAssetService.BackingService");
+            auto home = config.get(section, "HomeURI",
+                                   config.get("Hypergrid", "HomeURI", config.get("Startup", "HomeURI")));
+            if (home.empty())
+                throw std::invalid_argument("HGAssetService requires a HomeURI");
+            auto hg_service = std::make_shared<services::HgAssetService>(
+                expose_hg_fs_assets ? filesystem_assets : backing, std::move(home),
+                [&accounts](framework::Uuid id) -> std::optional<std::string> {
+                    const auto creator = accounts.find_by_id(framework::Uuid{}.str(), id.str());
+                    return creator ? std::optional<std::string>(creator->name()) : std::nullopt;
+                },
+                services::AssetExchangePermissions(config, section, asset_log));
+            hg_asset_endpoint = std::make_unique<server::AssetEndpoint>(std::move(hg_service), config, section);
         }
     }
     std::unique_ptr<server::AvatarEndpoint> avatar_endpoint;
@@ -6517,6 +7556,12 @@ int run(const std::vector<std::string>& args) {
     }
     const auto foreign_request =
         [&](const network::HttpRequest& request) -> std::optional<network::HttpResponse> {
+        if (region_runtime) {
+            if (auto response = region_runtime->remote_map_items(request))
+                return response;
+            if (auto response = region_runtime->region_map_image(request))
+                return response;
+        }
         if (estate_communications && region_runtime && request.path == "/estate") {
             network::HttpResponse response;
             response.keep_alive = false;
@@ -6527,12 +7572,15 @@ int run(const std::vector<std::string>& args) {
             response.content_type = "application/xml";
             bool accepted = false;
             try {
-                const auto fields = network::parse_service_form(request.body);
+                const auto body = network::read_service_body(request.body);
+                const auto fields = network::parse_service_form(framework::trim_utf8(body));
                 const auto field = [&](const char* name) {
                     const auto found = fields.find(name);
-                    const auto* value =
-                        found == fields.end() ? nullptr : std::get_if<std::string>(&found->second);
-                    return value ? *value : std::string{};
+                    if (found == fields.end())
+                        return std::string{};
+                    if (const auto* value = std::get_if<std::string>(&found->second))
+                        return *value;
+                    return std::string("System.Collections.Generic.List`1[System.String]");
                 };
                 std::int32_t estate;
                 framework::Uuid id;
@@ -6542,16 +7590,23 @@ int run(const std::vector<std::string>& args) {
                     if (method == "update_covenant" && framework::try_parse_sdk_uuid(field("CovenantID"), id)) {
                         region_runtime->receive_estate_covenant(static_cast<std::uint32_t>(estate), id);
                         accepted = true;
+                    } else if (method == "update_estate") {
+                        region_runtime->receive_estate_update(static_cast<std::uint32_t>(estate));
+                        accepted = true;
                     } else if (method == "estate_message" && fields.contains("FromName") &&
                                fields.contains("Message") && framework::try_parse_sdk_uuid(field("FromID"), id)) {
-                        region_runtime->receive_estate_message(static_cast<std::uint32_t>(estate), field("Message"));
+                        if (estate >= 0)
+                            region_runtime->receive_estate_message(static_cast<std::uint32_t>(estate),
+                                                                   field("Message"));
                         accepted = true;
                     } else if (method == "teleport_home_all_users") {
-                        region_runtime->receive_estate_teleport_home(static_cast<std::uint32_t>(estate), {});
+                        if (estate >= 0)
+                            region_runtime->receive_estate_teleport_home(static_cast<std::uint32_t>(estate), {});
                         accepted = true;
                     } else if (method == "teleport_home_one_user" &&
                                framework::try_parse_sdk_uuid(field("PreyID"), id)) {
-                        region_runtime->receive_estate_teleport_home(static_cast<std::uint32_t>(estate), id);
+                        if (estate >= 0)
+                            region_runtime->receive_estate_teleport_home(static_cast<std::uint32_t>(estate), id);
                         accepted = true;
                     }
                 }
@@ -6570,7 +7625,8 @@ int run(const std::vector<std::string>& args) {
                                                       {success ? "Value" : "Message", std::move(message)}}));
                 return response;
             };
-            const auto fields = network::parse_service_form(request.body);
+            const auto body = network::read_service_body(request.body);
+            const auto fields = network::parse_service_form(framework::trim_utf8(body));
             const auto field = [&](const char* name) {
                 const auto found = fields.find(name);
                 const auto* value =
@@ -6931,6 +7987,8 @@ int run(const std::vector<std::string>& args) {
     const int presence_port = expose_presence ? connector_port(presence_connector) : options.port;
     const int grid_port = expose_grid ? connector_port(grid_connector) : options.port;
     const int grid_user_port = expose_grid_user ? connector_port(grid_user_connector) : options.port;
+    const int asset_port = expose_assets ? connector_port(asset_connector) : options.port;
+    const int hg_asset_port = expose_hg_assets ? connector_port(hg_asset_connector) : options.port;
     if (presence_endpoint && presence_port == options.port)
         app.set_presence_endpoint(presence_endpoint.get());
     if (grid_endpoint && grid_port == options.port)
@@ -6939,6 +7997,10 @@ int run(const std::vector<std::string>& args) {
         app.set_grid_user_endpoint(grid_user_endpoint.get());
     const auto service_on_port = [&](int port, const network::HttpRequest& request)
         -> std::optional<network::HttpResponse> {
+        if (asset_endpoint && asset_port == port && server::AssetEndpoint::matches(request))
+            return asset_endpoint->handle(request);
+        if (hg_asset_endpoint && hg_asset_port == port && server::AssetEndpoint::matches(request))
+            return hg_asset_endpoint->handle(request);
         if (mute_list_service && expose_mute_list && mute_list_port == port && request.path == "/mutelist")
             return mute_list_service->handle(request);
         if (presence_endpoint && presence_port != options.port && presence_port == port &&
@@ -6951,13 +8013,164 @@ int run(const std::vector<std::string>& args) {
             return grid_user_endpoint->handle(request);
         return std::nullopt;
     };
+    const bool snapshot_enabled = region_runtime && config.boolean("DataSnapshot", "index_sims", false);
+    const auto snapshot_period = config.integer("DataSnapshot", "default_snapshot_period", 20);
+    const auto snapshot_max_changes = config.integer("DataSnapshot", "max_changes_before_update", 500);
+    auto snapshot_directory = framework::utf8_path(config.get("DataSnapshot", "snapshot_cache_directory",
+                                                              "DataSnapshot"));
+    if (snapshot_directory.is_relative())
+        snapshot_directory = config.directory / snapshot_directory;
+    const auto snapshot_grid = config.get("DataSnapshot", "gridname", "the lost continent of hippo");
+    const bool snapshot_all_parcels = framework::ordinal_equals_ignore_case(
+        config.get("DataSnapshot", "data_exposure", "minimum"), "all");
+    const auto snapshot_gatekeeper = config.get("GridService", "Gatekeeper");
+    const auto snapshot_secret = snapshot_enabled ? framework::Uuid::random().str() : std::string{};
+    const auto snapshot_services = [&] {
+        std::vector<std::string> configured;
+        if (!snapshot_enabled)
+            return configured;
+        const auto list = config.get("DataSnapshot", "data_services", "noservices");
+        if (list != "noservices") {
+            std::string_view remaining = list;
+            while (!remaining.empty()) {
+                const auto separator = remaining.find(';');
+                auto url = framework::trim_utf8(remaining.substr(0, separator));
+                if (!url.empty())
+                    configured.push_back(std::move(url));
+                if (separator == std::string_view::npos)
+                    break;
+                remaining.remove_prefix(separator + 1);
+            }
+        }
+        std::vector<std::string> extra;
+        for (const auto& [key, value] : config.ordered_section("DataSnapshot")) {
+            if (!key.starts_with("DATA_SRV_"))
+                continue;
+            auto url = framework::trim_utf8(value);
+            if (!url.empty() && std::ranges::find(configured, url) == configured.end())
+                extra.push_back(std::move(url));
+        }
+        extra.insert(extra.end(), configured.begin(), configured.end());
+        return extra;
+    }();
+    const auto notify_snapshot_services = [&](std::string_view status, int port) {
+        if (snapshot_services.empty())
+            return;
+        const auto host = region_runtime->descriptor().external_host.value_or("127.0.0.1");
+        const auto query = network::build_service_form({{"service", std::string(status)}, {"host", host},
+                                                        {"port", std::to_string(port)}, {"secret", snapshot_secret}});
+        const auto uris = framework::native_config_uri_object_backend();
+        auto client = outgoing_clients()->get_new_global_client(5000);
+        for (auto url : snapshot_services) {
+            if (const auto fragment = url.find('#'); fragment != std::string::npos)
+                url.resize(fragment);
+            if (!url.ends_with('?') && !url.ends_with('&'))
+                url += url.find('?') == std::string::npos ? '?' : '&';
+            try {
+                auto uri = uris->create(framework::nini_writer_text(framework::utf16_replacing(url + query)),
+                                        framework::ConfigUriObjectKind::Absolute);
+                auto response = client->send_headers(std::move(uri), {}, true);
+                response->close();
+            } catch (const std::exception&) {
+                error_log("DataSnapshot could not notify a configured collector");
+            }
+        }
+    };
+    std::mutex snapshot_requests_mutex;
+    std::map<std::pair<std::string, std::string>, std::chrono::steady_clock::time_point> snapshot_requests;
+    std::timed_mutex snapshot_cache_mutex;
+    std::string cached_region_snapshot;
+    std::chrono::steady_clock::time_point snapshot_updated;
+    std::uint64_t snapshot_revision = 0;
+    const auto collect_snapshot = [&](const network::HttpRequest& request) -> std::optional<network::HttpResponse> {
+        const auto query = request.raw_target.find('?');
+        if (!snapshot_enabled || request.method != "GET" || query == std::string::npos)
+            return std::nullopt;
+        const auto fields = network::parse_service_form(std::string_view(request.raw_target).substr(query + 1));
+        const auto field = [&](const char* name) {
+            const auto found = fields.find(name);
+            const auto* value = found == fields.end() ? nullptr : std::get_if<std::string>(&found->second);
+            return value ? *value : std::string{};
+        };
+        const auto method = field("method");
+        if (method == "validate") {
+            network::HttpResponse response;
+            response.content_type = "text/xml";
+            response.status = field("secret") == snapshot_secret ? 200 : 403;
+            return response;
+        }
+        if (method != "collector")
+            return std::nullopt;
+        const auto region = field("region");
+        const auto throttle_region = framework::trim_utf8(region).empty() ? std::string{} : region;
+        network::HttpResponse response;
+        {
+            std::lock_guard lock(snapshot_requests_mutex);
+            const auto now = std::chrono::steady_clock::now();
+            std::erase_if(snapshot_requests, [&](const auto& entry) { return entry.second <= now; });
+            if (!snapshot_requests.try_emplace({throttle_region, request.remote_ip},
+                                               now + std::chrono::seconds(60)).second) {
+                response.status = 503;
+                response.content_type = "text/plain";
+                return response;
+            }
+        }
+        std::unique_lock cache_lock(snapshot_cache_mutex, std::defer_lock);
+        if (!cache_lock.try_lock_for(std::chrono::seconds(30))) {
+            response.status = 503;
+            response.content_type = "text/plain";
+            return response;
+        }
+        response.content_type = "text/xml";
+        const auto local_name = region_runtime->descriptor().name.value_or("");
+        if (!region.empty() && region != local_name) {
+            response.body = region_runtime->data_snapshot(region, snapshot_period, snapshot_grid,
+                                                           snapshot_gatekeeper, snapshot_all_parcels);
+            return response;
+        }
+        const auto now = std::chrono::steady_clock::now();
+        const auto revision = region_runtime->data_snapshot_revision();
+        const auto elapsed = now - snapshot_updated;
+        const bool many_changes = snapshot_max_changes <= 0 ||
+                                  revision - snapshot_revision >= static_cast<std::uint64_t>(snapshot_max_changes);
+        const bool refresh = many_changes ? elapsed >= std::chrono::seconds(20)
+                                          : elapsed > std::chrono::seconds(snapshot_period);
+        if (cached_region_snapshot.empty() || refresh) {
+            cached_region_snapshot = region_runtime->data_snapshot(local_name, snapshot_period, snapshot_grid,
+                                                                    snapshot_gatekeeper, snapshot_all_parcels,
+                                                                    snapshot_directory);
+            snapshot_updated = now;
+            snapshot_revision = revision;
+        } else {
+            response.body = region_runtime->read_data_snapshot_cache(snapshot_directory);
+        }
+        if (response.body.empty())
+            response.body = cached_region_snapshot;
+        if (region.empty() && !local_name.empty()) {
+            constexpr std::string_view opening = "<regiondata>";
+            const auto start = response.body.find(opening);
+            if (start != std::string::npos)
+                response.body.insert(start + opening.size(), "<expire>" + std::to_string(snapshot_period) + "</expire>");
+        }
+        return response;
+    };
     auto application_handler = [&](const network::HttpRequest& request) {
+        if (sample_economy_enabled && (request.path == "/currency.php" || request.path == "/landtool.php"))
+            return sample_economy_rpc(request);
+        if (auto response = collect_snapshot(request))
+            return *response;
         if (auto response = service_on_port(options.port, request))
             return *response;
         if (preferences_on_main && request.path == "/agentprefs")
             return preferences_handler(request);
         if (bakes_on_main && is_bakes_request(request))
             return bakes_handler(request);
+        if (region_runtime && config.boolean("NativeServer", "EnableSimulationEndpoint", false) &&
+            request.path.starts_with("/object/")) {
+            network::HttpResponse response;
+            server::ObjectHandler(region_runtime.get()).process_request(request, response);
+            return response;
+        }
         if (region_runtime && request.method == "DELETE" && request.path.starts_with("/agent/")) {
             server::AgentPathParameters path;
             if (server::agent_path_parameters(request.path, path) && path.action == "release") {
@@ -7175,7 +8388,8 @@ int run(const std::vector<std::string>& args) {
         preferences_http->start();
     }
     std::vector<std::unique_ptr<network::HttpServer>> private_service_listeners;
-    const std::set<int> service_ports{mute_list_port, presence_port, grid_port, grid_user_port};
+    const std::set<int> service_ports{mute_list_port, presence_port, grid_port, grid_user_port, asset_port,
+                                      hg_asset_port};
     for (const auto port : service_ports) {
         if (port == options.port ||
             (offline_http && port == *offline_connector_port) ||
@@ -7251,8 +8465,11 @@ int run(const std::vector<std::string>& args) {
                 "Network http_listener_ssl requires http_listener_cert_path or NativeServer TLS settings");
     }
     ScriptQuiesceGuard script_quiesce{region_runtime.get()};
+    auto bind_options = options;
+    if (local_region && bind_options.port == 0)
+        bind_options.port = ports.main_http;
     if (local_region || remote_console_mode)
-        region_http = std::make_unique<network::AsyncHttpServer>(options, [&](const auto& request,
+        region_http = std::make_unique<network::AsyncHttpServer>(bind_options, [&](const auto& request,
                                                                               auto channel) {
             capability_polls.dispatch(*capability_listener, request, std::move(channel), application_handler);
         });
@@ -7271,7 +8488,55 @@ int run(const std::vector<std::string>& args) {
 #ifdef SIGBREAK
     std::signal(SIGBREAK, shutdown_signal);
 #endif
+    const auto register_local_region = [&](const services::GridRegion& region, bool initial) {
+        auto error = grid->register_region(region.scope, region);
+        if (!error.empty())
+            throw std::runtime_error("Local region registration failed: " + error);
+        if (remote_grid_request) {
+            try {
+                services::OrderedRegionFields fields{{"SCOPEID", region.scope.str()},
+                                                     {"VERSIONMIN", "1"},
+                                                     {"VERSIONMAX", "1"},
+                                                     {"METHOD", "register"}};
+                const auto descriptor = region.fields();
+                fields.insert(fields.end(), descriptor.begin(), descriptor.end());
+                const auto reply = remote_grid_request(fields);
+                std::string message = "Invalid response";
+                bool registered = false;
+                for (const auto& [name, value] : reply.fields) {
+                    if (name == "Message")
+                        message = value.text;
+                    if (name == "Result") {
+                        auto result = value.text;
+                        for (auto& c : result)
+                            if (c >= 'A' && c <= 'Z')
+                                c += 'a' - 'A';
+                        registered = !value.list && result == "success";
+                    }
+                }
+                if (!registered)
+                    throw std::runtime_error(message);
+            } catch (const std::exception& failure) {
+                if (initial)
+                    grid->deregister_region(region.id);
+                throw std::runtime_error(std::string("Remote region registration failed: ") +
+                                         failure.what());
+            }
+        }
+    };
+    const auto retire_map_tile = [&](framework::Uuid previous, framework::Uuid replacement) {
+        if (previous.is_zero() || previous == replacement || !region_assets)
+            return;
+        try {
+            const auto asset = region_assets->get(previous);
+            if (asset && (asset->flags() & framework::Maptile) != 0)
+                region_assets->asset_service()->erase(previous.str());
+        } catch (const std::exception& failure) {
+            error_log("Could not delete replaced terrain map tile: " + std::string(failure.what()));
+        }
+    };
     auto on_bound = [&](int actual_port) {
+        ports.main_http = actual_port;
         app.set_default_login_uri(
             scheme + "://" +
             (options.host.find(':') != std::string::npos ? "[" + options.host + "]" : options.host) + ":" +
@@ -7284,11 +8549,22 @@ int run(const std::vector<std::string>& args) {
                 scheme + "://" +
                 (advertised.find(':') != std::string::npos ? "[" + advertised + "]" : advertised) + ":" +
                 std::to_string(actual_port) + "/");
+            if (!simulator_features->extra_contains("currency-base-uri")) {
+                auto economy_uri = framework::trim_utf8(config.get("Economy", "economy", config.get("GridInfo", "economy")));
+                if (economy_uri.empty() && sample_economy_enabled)
+                    economy_uri = region.server_uri();
+                if (!economy_uri.empty())
+                    simulator_features->add_extra("currency-base-uri",
+                        services::SimulatorFeatureValue::from_value(network::Value(std::move(economy_uri))));
+            }
             capability_listener = std::make_shared<server::RegistryCapabilityListener>(
                 server::CapabilityListenerInfo{scheme == "https", static_cast<std::uint32_t>(actual_port),
                     static_cast<std::uint32_t>(actual_port),
                     primary_tls ? primary_tls_name : advertised});
-            const auto start_script_listener = [&](const auto& listener_options, auto& listener, bool secure) {
+            const auto start_script_listener = [&](auto listener_options, auto& listener, bool secure,
+                                                   int& previous_port) {
+                if (listener_options.port == 0)
+                    listener_options.port = previous_port;
                 auto server = std::make_unique<network::AsyncHttpServer>(
                     listener_options, [&capability_polls, &listener](const auto& request, auto channel) {
                         capability_polls.dispatch(*listener, request, std::move(channel),
@@ -7299,6 +8575,7 @@ int run(const std::vector<std::string>& args) {
                             });
                     });
                 server->start([&](int port) {
+                    previous_port = port;
                     const auto bound_port = static_cast<std::uint32_t>(port);
                     listener = std::make_shared<server::RegistryCapabilityListener>(
                         server::CapabilityListenerInfo{secure, bound_port, bound_port, advertised});
@@ -7306,14 +8583,17 @@ int run(const std::vector<std::string>& args) {
                 return server;
             };
             if (script_https_options)
-                script_https = start_script_listener(*script_https_options, script_https_listener, true);
+                script_https = start_script_listener(*script_https_options, script_https_listener, true,
+                                                     ports.script_https);
             if (script_http_options)
-                script_http = start_script_listener(*script_http_options, script_http_listener, false);
+                script_http = start_script_listener(*script_http_options, script_http_listener, false,
+                                                    ports.script_http);
             if (local_profiles_connector)
                 local_profiles_connector->region_loaded(local_profiles_scene);
             if (remote_region_presence)
                 remote_region_presence->logout_region(region_runtime->descriptor().id);
             auto udp = region_runtime->start(capability_listener, script_https_listener, script_http_listener);
+            ports.udp = udp.port;
             region.internal_endpoint = services::RegionEndpoint{udp.address, udp.port};
             region_runtime->capabilities()->shared_events()->on_register_caps.add(
                 {{simulator_features.get(), "SimulatorFeatures.RegisterCaps"},
@@ -7448,39 +8728,24 @@ int run(const std::vector<std::string>& args) {
                 region_library_folders = std::make_unique<services::RegionLibraryDescendentsRuntime>(
                     config, region_runtime->capabilities()->shared_events(), std::move(backend));
             }
-            auto error = grid->register_region(region.scope, region);
-            if (!error.empty())
-                throw std::runtime_error("Local region registration failed: " + error);
-            if (remote_grid_request) {
-                try {
-                    services::OrderedRegionFields fields{{"SCOPEID", region.scope.str()},
-                                                         {"VERSIONMIN", "1"},
-                                                         {"VERSIONMAX", "1"},
-                                                         {"METHOD", "register"}};
-                    const auto descriptor = region.fields();
-                    fields.insert(fields.end(), descriptor.begin(), descriptor.end());
-                    const auto reply = remote_grid_request(fields);
-                    std::string message = "Invalid response";
-                    bool registered = false;
-                    for (const auto& [name, value] : reply.fields) {
-                        if (name == "Message")
-                            message = value.text;
-                        if (name == "Result") {
-                            auto result = value.text;
-                            for (auto& c : result)
-                                if (c >= 'A' && c <= 'Z')
-                                    c += 'a' - 'A';
-                            registered = !value.list && result == "success";
-                        }
-                    }
-                    if (!registered)
-                        throw std::runtime_error(message);
-                } catch (const std::exception& failure) {
-                    grid->deregister_region(region.id);
-                    throw std::runtime_error(std::string("Remote region registration failed: ") +
-                                             failure.what());
-                }
-            }
+            const auto previous_terrain = region.terrain_image;
+            const auto previous_parcel = region.parcel_image;
+            region_runtime->generate_startup_map_tiles();
+            const auto map_images = region_runtime->descriptor();
+            region.terrain_image = map_images.terrain_image;
+            region.parcel_image = map_images.parcel_image;
+            register_local_region(region, true);
+            retire_map_tile(previous_terrain, region.terrain_image);
+            retire_map_tile(previous_parcel, region.parcel_image);
+            publish_map_images = [&, published = region]() mutable {
+                auto current = region_runtime->descriptor();
+                current.http_port = published.http_port;
+                current.set_server_uri(published.server_uri());
+                register_local_region(current, false);
+                retire_map_tile(published.terrain_image, current.terrain_image);
+                retire_map_tile(published.parcel_image, current.parcel_image);
+                published = std::move(current);
+            };
             capability_polls.start();
             std::cout << "REGION_UDP " << udp.address << ':' << udp.port << '\n' << std::flush;
         }
@@ -7521,6 +8786,13 @@ int run(const std::vector<std::string>& args) {
         console_commands.add(
             {"Users", "login text", "login text <text>", "Set the text users will see on login", "", false},
             login_command);
+        services::register_fs_asset_console(filesystem_assets, console_commands, console_output);
+        if (!filesystem_assets && region_assets)
+            region_assets->register_filesystem_console(console_commands, console_output);
+        if (asset_endpoint)
+            asset_endpoint->register_console_commands(console_commands, console_output);
+        if (hg_asset_endpoint)
+            hg_asset_endpoint->register_console_commands(console_commands, console_output);
         if (bakes_enabled) {
             auto delete_bakes = std::make_shared<ConsoleCallback>([&](const auto&, auto& args) {
                 framework::Uuid id;
@@ -7554,6 +8826,63 @@ int run(const std::vector<std::string>& args) {
             for (auto command : region_assets->cache_command_descriptions())
                 console_commands.add(std::move(command), cache_command);
         if (region_runtime) {
+            if (region_runtime->world_map_enabled()) {
+                auto generate_map = std::make_shared<ConsoleCallback>([&](const auto&, auto&) {
+                    try {
+                        region_runtime->generate_map_from_console();
+                    } catch (const std::exception& failure) {
+                        log_message(framework::console_log_error, failure.what());
+                    }
+                });
+                console_commands.add({"Regions", "generate map", "generate map",
+                                      "Generates and stores a new maptile.", "", false}, generate_map);
+                auto export_map = std::make_shared<ConsoleCallback>([&](const auto&, auto& args) {
+                    const auto path = args.size() > 1 ? args[1] : "exportmap.jpg";
+                    try {
+                        region_runtime->export_world_map(framework::utf8_path(path));
+                        console_output("Successfully exported world map to " + path);
+                    } catch (const std::exception& failure) {
+                        log_message(framework::console_log_error,
+                                    std::string("Failed to export world map: ") + failure.what());
+                    }
+                });
+                console_commands.add({"Regions", "export-map", "export-map [<path>]",
+                                      "Save an image of the world map", "", false}, export_map);
+            }
+            auto restart_command = std::make_shared<ConsoleCallback>([&](const auto&, auto& args) {
+                if (args.size() >= 3 && args[2] == "abort" && args.size() < 5) {
+                    region_runtime->abort_restart(args.size() == 4 ? args[3] : std::string{});
+                    console_output("Region restart aborted");
+                    return;
+                }
+                constexpr auto usage = "Error: restart region <mode> <name> <delta seconds>+";
+                if (args.size() < 5 || (args[2] != "notice" && args[2] != "bluebox")) {
+                    console_output(usage);
+                    return;
+                }
+                std::vector<int> alerts;
+                std::int64_t total = 0;
+                for (std::size_t index = 4; index < args.size(); ++index) {
+                    std::int32_t seconds;
+                    if (!services::parse_account_integer(args[index], seconds) || seconds < 0) {
+                        console_output(usage);
+                        return;
+                    }
+                    alerts.push_back(seconds);
+                    total += seconds;
+                }
+                console_output("Region " + region_runtime->descriptor().name.value_or("") +
+                               " scheduled for restart in " + std::to_string(total) + " seconds");
+                region_runtime->schedule_restart(std::move(alerts), args[3], args[2] == "notice");
+            });
+            console_commands.add({"Regions", "region restart bluebox",
+                                  "region restart bluebox <message> <delta seconds>+",
+                                  "Schedule a restart with dismissable notices", "", false}, restart_command);
+            console_commands.add({"Regions", "region restart notice",
+                                  "region restart notice <message> <delta seconds>+",
+                                  "Schedule a restart with transient notices", "", false}, restart_command);
+            console_commands.add({"Regions", "region restart abort", "region restart abort [<message>]",
+                                  "Abort a region restart", "", false}, restart_command);
             auto terrain_command = std::make_shared<ConsoleCallback>([&](const auto&, auto& args) {
                 if (args.at(1) == "bake")
                     region_runtime->bake_terrain();
@@ -7810,6 +9139,7 @@ int run(const std::vector<std::string>& args) {
               << (options.host.find(':') != std::string::npos ? "[" + options.host + "]" : options.host)
               << ':' << bound << "/\n"
               << std::flush;
+    notify_snapshot_services("online", bound);
     std::cout << (local_region
                       ? "Experimental local region enabled; full scene features remain incomplete.\n"
                       : "Authentication endpoints are running; simulator sessions are not available yet.\n")
@@ -7879,6 +9209,7 @@ int run(const std::vector<std::string>& args) {
     }
     console_shutdown = true;
     remote_reader.stop();
+    notify_snapshot_services("offline", bound);
     if (local_profiles_connector) {
         local_profiles_connector->remove_region(local_profiles_scene);
         local_profiles_connector->close();
@@ -7889,6 +9220,8 @@ int run(const std::vector<std::string>& args) {
         bakes_workers->stop();
     if (asset_transfer_workers)
         asset_transfer_workers->stop();
+    if (region_lookup_workers)
+        region_lookup_workers->stop();
     if (bakes_upload_worker)
         bakes_upload_worker->stop();
     if (console_http)
@@ -7930,8 +9263,6 @@ int run(const std::vector<std::string>& args) {
         profile_workers->stop();
     if (estate_workers)
         estate_workers->stop();
-    if (region_assets)
-        region_assets->stop();
     if (region_runtime) {
         region_runtime->stop(save_prim_metadata);
         if (save_terrain)
@@ -7956,7 +9287,19 @@ int run(const std::vector<std::string>& args) {
             }
         }
     }
+    if (region_assets)
+        region_assets->stop();
     std::cout << "STOPPED\n" << std::flush;
+    return restart_region ? restart_region_result : 0;
+}
+
+int run_with_region_restart(const std::vector<std::string>& args) {
+    RegionListenerPorts ports;
+    while (!shutdown_requested) {
+        const int result = run(args, ports);
+        if (result != restart_region_result)
+            return result;
+    }
     return 0;
 }
 }
@@ -7971,7 +9314,7 @@ int wmain(int argc, wchar_t** argv) {
         args.push_back(std::move(text));
     }
     try {
-        return run(args);
+        return run_with_region_restart(args);
     } catch (const opensim::server::ConfigurationStartupExit& error) {
         return error.code;
     } catch (const std::exception& error) {
@@ -7982,7 +9325,7 @@ int wmain(int argc, wchar_t** argv) {
 #else
 int main(int argc, char** argv) {
     try {
-        return run({argv, argv + argc});
+        return run_with_region_restart({argv, argv + argc});
     } catch (const opensim::server::ConfigurationStartupExit& error) {
         return error.code;
     } catch (const std::exception& error) {

@@ -1,24 +1,114 @@
 """Execute original baked upload methods, binary wrapper and actual AssetBase/LLSD classes."""
-import argparse,hashlib,itertools,json,subprocess,xml.etree.ElementTree as ET
+
+import argparse, hashlib, itertools, json, subprocess, xml.etree.ElementTree as ET
 from pathlib import Path
 from compare_inventory_asset_caps import extract
-ROOT=Path(__file__).resolve().parents[2]
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
 def main():
- p=argparse.ArgumentParser();p.add_argument('--native',required=True);p.add_argument('--dotnet',required=True);p.add_argument('--work',required=True,type=Path);a=p.parse_args();w=a.work.resolve();w.mkdir(parents=True,exist_ok=True)
- upload=ROOT/'OpenSim/Region/ClientStack/Linden/Caps/UploadBakedTextureModule.cs';binary=ROOT/'OpenSim/Framework/Servers/HttpServer/SimpleBinaryHandler.cs';helpers=ROOT/'OpenSim/Capabilities/LLSDHelpers.cs';llsd=ROOT/'OpenSim/Capabilities/LLSD.cs';slutil=ROOT/'OpenSim/Framework/SLUtil.cs'
- generated=w/'ExtractedBakedTexture.cs';generated.write_text('using System;using System.IO;using System.Net;using System.Xml;using System.Reflection;using System.Collections;using System.Collections.Generic;using System.Timers;using OpenMetaverse;using OpenSim.Framework;using OpenSim.Framework.Capabilities;using Timer=ControlledTimer;\npartial class UploadBakedTextureModule{'+extract(upload.read_text(encoding='utf-8'),'public void UploadBakedTexture(')+'}'+extract(upload.read_text(encoding='utf-8'),'class BakedTextureUploader')+'partial class SimpleBinaryHandler{'+extract(binary.read_text(encoding='utf-8'),'public virtual void Handle(')+'}partial class LLSD{'+extract(llsd.read_text(encoding='utf-8'),'public static void LLSDWriteOne(')+'}namespace OpenSim.Framework.Capabilities{public class LLSDHelpers{'+extract(helpers.read_text(encoding='utf-8'),'public static string SerialiseLLSDReply(')+extract(helpers.read_text(encoding='utf-8'),'private static void SerializeOSDType(')+'}}',encoding='utf-8')
- conversion=w/'SLUtil.cs';source=slutil.read_text(encoding='utf-8-sig');conversion.write_text(source[:source.index('static readonly char[] seps')]+'\n}}\n',encoding='utf-8')
- originals=[ROOT/'OpenSim/Capabilities'/n for n in ['LLSDType.cs','LLSDArray.cs','LLSDAssetUploadResponse.cs','LLSDAssetUploadComplete.cs']]+[ROOT/'OpenSim/Framework/AssetBase.cs',ROOT/'OpenSim/Framework/NrbfReader.cs']
- project=ET.Element('Project',Sdk='Microsoft.NET.Sdk');props=ET.SubElement(project,'PropertyGroup')
- for k,v in dict(TargetFramework='net8.0',OutputType='Exe',EnableDefaultCompileItems='false',AllowUnsafeBlocks='true',NoWarn='0649;0169;0414;0067').items():ET.SubElement(props,k).text=v
- group=ET.SubElement(project,'ItemGroup')
- for f in [generated,conversion,ROOT/'native-port/tests/baked_texture_caps_reference.cs']+originals:ET.SubElement(group,'Compile',Include=str(f))
- for name in ['OpenMetaverse','OpenMetaverseTypes','OpenMetaverse.StructuredData']:
-  ref=ET.SubElement(group,'Reference',Include=name);ET.SubElement(ref,'HintPath').text=str(ROOT/'bin'/f'{name}.dll')
- cs=w/'BakedTextureReference.csproj';ET.ElementTree(project).write(cs,encoding='utf-8',xml_declaration=True);r=subprocess.run([a.dotnet,'build',str(cs),'-o',str(w/'app'),'--nologo','-v','quiet'],capture_output=True,text=True);assert r.returncode==0,r.stdout+r.stderr
- commands=[f'{k} {m} {phase}' for k,m,phase in itertools.product(range(2),range(128),[0,1,2,3,6,7,8,9,10])]+[f'{k} {m} {phase}' for k,m,phase in itertools.product(range(2),range(4),[4,5])];rows=[]
- for cmd in [[a.dotnet,str(w/'app/BakedTextureReference.dll')],[a.native,'--probe']]:
-  r=subprocess.run(cmd,input='\n'.join(commands)+'\n',capture_output=True,text=True,timeout=100);assert r.returncode==0,r.stderr;rows.append(r.stdout.splitlines())
- assert len(rows[0])==len(rows[1])==len(commands)
- diffs=[dict(command=c,source=s,native=n) for c,s,n in zip(commands,*rows) if s!=n];sources=[upload,binary,helpers,llsd,slutil]+originals+[ROOT/'bin/OpenMetaverseTypes.dll'];report=dict(passed=not diffs,cases=len(commands),sourceHashes={str(f.relative_to(ROOT)):hashlib.sha256(f.read_bytes()).hexdigest() for f in sources},scope='Complete unchanged UploadBakedTexture and BakedTextureUploader, actual source SimpleBinaryHandler.Handle, LLSD serialization, AssetBase and SDK. Controlled cache/route/timer scheduling; real Timer Stop/Dispose behavior. Random IDs normalized, with separate native identity/reference assertions. Empty/malformed metadata accepted; binary6MB inclusive, timer-stop/remove/dispose order,401 consumption, cache400 versus outer500 failures, real asset type/name/creator/local/temporary/flags/raw bytes. Module lifecycle, actual cache implementation, production binding, GC/timer concurrency and platform behavior remain separate.',differences=diffs[:3]);(w/'baked-texture-caps-results.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8');assert not diffs,json.dumps(diffs[:2]);print(f'PASS: {len(commands)} original baked texture upload observations')
-if __name__=='__main__':main()
+    p = argparse.ArgumentParser()
+    p.add_argument('--native', required=True)
+    p.add_argument('--dotnet', required=True)
+    p.add_argument('--work', required=True, type=Path)
+    a = p.parse_args()
+    w = a.work.resolve()
+    w.mkdir(parents=True, exist_ok=True)
+    upload = ROOT / 'OpenSim/Region/ClientStack/Linden/Caps/UploadBakedTextureModule.cs'
+    binary = ROOT / 'OpenSim/Framework/Servers/HttpServer/SimpleBinaryHandler.cs'
+    helpers = ROOT / 'OpenSim/Capabilities/LLSDHelpers.cs'
+    llsd = ROOT / 'OpenSim/Capabilities/LLSD.cs'
+    slutil = ROOT / 'OpenSim/Framework/SLUtil.cs'
+    generated = w / 'ExtractedBakedTexture.cs'
+    generated.write_text(
+        'using System;using System.IO;using System.Net;using System.Xml;using System.Reflection;using System.Collections;using System.Collections.Generic;using System.Timers;using OpenMetaverse;using OpenSim.Framework;using OpenSim.Framework.Capabilities;using Timer=ControlledTimer;\npartial class UploadBakedTextureModule{'
+        + extract(upload.read_text(encoding='utf-8'), 'public void UploadBakedTexture(')
+        + '}'
+        + extract(upload.read_text(encoding='utf-8'), 'class BakedTextureUploader')
+        + 'partial class SimpleBinaryHandler{'
+        + extract(binary.read_text(encoding='utf-8'), 'public virtual void Handle(')
+        + '}partial class LLSD{'
+        + extract(llsd.read_text(encoding='utf-8'), 'public static void LLSDWriteOne(')
+        + '}namespace OpenSim.Framework.Capabilities{public class LLSDHelpers{'
+        + extract(helpers.read_text(encoding='utf-8'), 'public static string SerialiseLLSDReply(')
+        + extract(helpers.read_text(encoding='utf-8'), 'private static void SerializeOSDType(')
+        + '}}',
+        encoding='utf-8',
+    )
+    conversion = w / 'SLUtil.cs'
+    source = slutil.read_text(encoding='utf-8-sig')
+    conversion.write_text(
+        source[: source.index('static readonly char[] seps')] + '\n}}\n', encoding='utf-8'
+    )
+    originals = [
+        ROOT / 'OpenSim/Capabilities' / n
+        for n in [
+            'LLSDType.cs',
+            'LLSDArray.cs',
+            'LLSDAssetUploadResponse.cs',
+            'LLSDAssetUploadComplete.cs',
+        ]
+    ] + [ROOT / 'OpenSim/Framework/AssetBase.cs', ROOT / 'OpenSim/Framework/NrbfReader.cs']
+    project = ET.Element('Project', Sdk='Microsoft.NET.Sdk')
+    props = ET.SubElement(project, 'PropertyGroup')
+    for k, v in dict(
+        TargetFramework='net8.0',
+        OutputType='Exe',
+        EnableDefaultCompileItems='false',
+        AllowUnsafeBlocks='true',
+        NoWarn='0649;0169;0414;0067',
+    ).items():
+        ET.SubElement(props, k).text = v
+    group = ET.SubElement(project, 'ItemGroup')
+    for f in [
+        generated,
+        conversion,
+        ROOT / 'native-port/tests/baked_texture_caps_reference.cs',
+    ] + originals:
+        ET.SubElement(group, 'Compile', Include=str(f))
+    for name in ['OpenMetaverse', 'OpenMetaverseTypes', 'OpenMetaverse.StructuredData']:
+        ref = ET.SubElement(group, 'Reference', Include=name)
+        ET.SubElement(ref, 'HintPath').text = str(ROOT / 'bin' / f'{name}.dll')
+    cs = w / 'BakedTextureReference.csproj'
+    ET.ElementTree(project).write(cs, encoding='utf-8', xml_declaration=True)
+    r = subprocess.run(
+        [a.dotnet, 'build', str(cs), '-o', str(w / 'app'), '--nologo', '-v', 'quiet'],
+        capture_output=True,
+        text=True,
+    )
+    assert r.returncode == 0, r.stdout + r.stderr
+    commands = [
+        f'{k} {m} {phase}'
+        for k, m, phase in itertools.product(range(2), range(128), [0, 1, 2, 3, 6, 7, 8, 9, 10])
+    ] + [f'{k} {m} {phase}' for k, m, phase in itertools.product(range(2), range(4), [4, 5])]
+    rows = []
+    for cmd in [[a.dotnet, str(w / 'app/BakedTextureReference.dll')], [a.native, '--probe']]:
+        r = subprocess.run(
+            cmd, input='\n'.join(commands) + '\n', capture_output=True, text=True, timeout=100
+        )
+        assert r.returncode == 0, r.stderr
+        rows.append(r.stdout.splitlines())
+    assert len(rows[0]) == len(rows[1]) == len(commands)
+    diffs = [dict(command=c, source=s, native=n) for c, s, n in zip(commands, *rows) if s != n]
+    sources = (
+        [upload, binary, helpers, llsd, slutil] + originals + [ROOT / 'bin/OpenMetaverseTypes.dll']
+    )
+    report = dict(
+        passed=not diffs,
+        cases=len(commands),
+        sourceHashes={
+            str(f.relative_to(ROOT)): hashlib.sha256(f.read_bytes()).hexdigest() for f in sources
+        },
+        scope='Complete unchanged UploadBakedTexture and BakedTextureUploader, actual source SimpleBinaryHandler.Handle, LLSD serialization, AssetBase and SDK. Controlled cache/route/timer scheduling; real Timer Stop/Dispose behavior. Random IDs normalized, with separate native identity/reference assertions. Empty/malformed metadata accepted; binary6MB inclusive, timer-stop/remove/dispose order,401 consumption, cache400 versus outer500 failures, real asset type/name/creator/local/temporary/flags/raw bytes. Module lifecycle, actual cache implementation, production binding, GC/timer concurrency and platform behavior remain separate.',
+        differences=diffs[:3],
+    )
+    (w / 'baked-texture-caps-results.json').write_text(
+        json.dumps(report, indent=2) + '\n', encoding='utf-8'
+    )
+    assert not diffs, json.dumps(diffs[:2])
+    print(f'PASS: {len(commands)} original baked texture upload observations')
+
+
+if __name__ == '__main__':
+    main()

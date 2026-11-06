@@ -1,3 +1,223 @@
-using System;using System.IO;using System.Text;using System.Collections.Generic;
-class Sink:Stream{public bool Writable=true,Seekable=true,Closed;public long Offset;public int Fail;public Action? Hook;public readonly List<string> Calls=new();public void Emit(string s){Calls.Add(s);Hook?.Invoke();if(Calls.Count==Fail)throw new IOException("injected failure");}public override bool CanRead=>false;public override bool CanWrite{get{Emit("CW");return Writable;}}public override bool CanSeek{get{Emit("CS");return Seekable;}}public override long Position{get{Emit("P");return Offset;}set=>Offset=value;}public override long Length=>throw new NotSupportedException();public override void Write(ReadOnlySpan<byte>b){Emit("W:"+Convert.ToHexString(b).ToLowerInvariant());if(Closed)throw new IOException("closed stream");Offset+=b.Length;}public override void Write(byte[]b,int i,int n)=>Write(b.AsSpan(i,n));public override void Flush(){Emit("F");if(Closed)throw new IOException("closed stream");}public override void Close(){Emit("X");Closed=true;}public override int Read(byte[]b,int i,int n)=>throw new NotSupportedException();public override long Seek(long p,SeekOrigin o)=>throw new NotSupportedException();public override void SetLength(long n)=>throw new NotSupportedException();}
-class Program{static string Hex(string? s){if(s==null)return "~";if(s.Length==0)return "-";var b=new StringBuilder();foreach(char c in s)b.Append(((int)c).ToString("x4"));return b.ToString();}static string? Decode(string s){if(s=="~")return null;var b=new StringBuilder();if(s!="-")for(int i=0;i<s.Length;i+=4)b.Append((char)Convert.ToInt32(s.Substring(i,4),16));return b.ToString();}static string Error(Exception e)=>e.GetType().FullName+":"+e.HResult.ToString("x8")+":"+Hex(e.Message)+":"+Hex((e as ArgumentException)?.ParamName)+":"+((e as ArgumentOutOfRangeException)?.ActualValue is int actual?actual.ToString():"~");static void Main(){string? line;while((line=Console.ReadLine())!=null){var parts=line.Split(';');var h=parts[0].Split(',');var sink=new Sink{Writable=int.Parse(h[0])!=0,Seekable=int.Parse(h[1])!=0,Offset=long.Parse(h[2]),Fail=int.Parse(h[3])};StreamWriter? w=null;var results=new List<string>();if(h.Length>7){int trigger=int.Parse(h[6]);string action=h[7];sink.Hook=()=>{if(sink.Calls.Count!=trigger)return;if(w==null)throw new NullReferenceException();switch(action){case "X":w.Close();break;case "F":w.Flush();break;case "AF0":w.AutoFlush=false;break;case "AF1":w.AutoFlush=true;break;case "S1":w.Write("z");break;case "S128":w.Write(new string('z',128));break;case "S1024":w.Write(new string('z',1024));break;case "NL":w.NewLine="changed";break;}};}try{if(h.Length>9&&h[9]=="1")w=new StreamWriter(int.Parse(h[0])<0?null!:sink);else{var encoding=h.Length>8&&h[8]!="#"?Encoding.GetEncoding(Decode(h[8])!):null;w=new StreamWriter(int.Parse(h[0])<0?null!:sink,encoding,int.Parse(h[4]),int.Parse(h[5])!=0);}}catch(Exception e){results.Add("NEW@"+Error(e));}if(w!=null)for(int i=1;i<parts.Length;i++){var c=parts[i].Split(',');string error="-",value="~";try{switch(c[0]){case "S":w.Write(Decode(c[1]));break;case "C":w.Write(Decode(c[1])![0]);break;case "A":w.Write(Decode(c[1])?.ToCharArray()!,int.Parse(c[2]),int.Parse(c[3]));break;case "H":w.Write(Decode(c[1])?.ToCharArray());break;case "P":w.Write(Decode(c[1]).AsSpan());break;case "L":w.WriteLine();break;case "N":w.NewLine=Decode(c[1])!;break;case "AF":w.AutoFlush=int.Parse(c[1])!=0;break;case "F":w.Flush();break;case "X":w.Close();break;case "M":value=w.Encoding.GetMaxByteCount(int.Parse(c[1])).ToString();break;case "W":value=Hex(w.Encoding.WebName);break;case "B":var b=w.Encoding.GetPreamble();value=b.Length==0?"-":Convert.ToHexString(b).ToLowerInvariant();break;case "R":value=ReferenceEquals(w.Encoding,Encoding.GetEncoding(Decode(c[1])!))?"1":"0";break;}}catch(Exception e){error=Error(e);}results.Add(error+"@"+(w.AutoFlush?1:0)+"@"+Hex(w.NewLine)+"@"+value);}Console.WriteLine(string.Join("|",sink.Calls)+";"+string.Join(";",results)+";"+(sink.Closed?1:0));}}}
+using System;
+using System.IO;
+using System.Text;
+using System.Collections.Generic;
+class Sink : Stream
+{
+    public bool Writable = true, Seekable = true, Closed;
+    public long Offset;
+    public int Fail;
+    public Action? Hook;
+    public readonly List<string> Calls = new();
+    public void Emit(string s)
+    {
+        Calls.Add(s);
+        Hook?.Invoke();
+        if (Calls.Count == Fail)
+            throw new IOException("injected failure");
+    }
+    public override bool CanRead => false;
+    public override bool CanWrite
+    {
+        get {
+            Emit("CW");
+            return Writable;
+        }
+    }
+    public override bool CanSeek
+    {
+        get {
+            Emit("CS");
+            return Seekable;
+        }
+    }
+    public override long Position
+    {
+        get {
+            Emit("P");
+            return Offset;
+        }
+        set => Offset = value;
+    }
+    public override long Length => throw new NotSupportedException();
+    public override void Write(ReadOnlySpan<byte> b)
+    {
+        Emit("W:" + Convert.ToHexString(b).ToLowerInvariant());
+        if (Closed)
+            throw new IOException("closed stream");
+        Offset += b.Length;
+    }
+    public override void Write(byte[] b, int i, int n) => Write(b.AsSpan(i, n));
+    public override void Flush()
+    {
+        Emit("F");
+        if (Closed)
+            throw new IOException("closed stream");
+    }
+    public override void Close()
+    {
+        Emit("X");
+        Closed = true;
+    }
+    public override int Read(byte[] b, int i, int n) => throw new NotSupportedException();
+    public override long Seek(long p, SeekOrigin o) => throw new NotSupportedException();
+    public override void SetLength(long n) => throw new NotSupportedException();
+}
+class Program
+{
+    static string Hex(string? s)
+    {
+        if (s == null)
+            return "~";
+        if (s.Length == 0)
+            return "-";
+        var b = new StringBuilder();
+        foreach (char c in s)
+            b.Append(((int)c).ToString("x4"));
+        return b.ToString();
+    }
+    static string? Decode(string s)
+    {
+        if (s == "~")
+            return null;
+        var b = new StringBuilder();
+        if (s != "-")
+            for (int i = 0; i < s.Length; i += 4)
+                b.Append((char)Convert.ToInt32(s.Substring(i, 4), 16));
+        return b.ToString();
+    }
+    static string Error(Exception e) =>
+        e.GetType().FullName + ":" + e.HResult.ToString("x8") + ":" + Hex(e.Message) + ":" +
+        Hex((e as ArgumentException)?.ParamName) + ":" +
+        ((e as ArgumentOutOfRangeException)?.ActualValue is int actual? actual.ToString(): "~");
+    static void Main()
+    {
+        string? line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var parts = line.Split(';');
+            var h = parts[0].Split(',');
+            var sink = new Sink { Writable = int.Parse(h[0]) != 0, Seekable = int.Parse(h[1]) != 0,
+                                  Offset = long.Parse(h[2]), Fail = int.Parse(h[3]) };
+            StreamWriter? w = null;
+            var results = new List<string>();
+            if (h.Length > 7)
+            {
+                int trigger = int.Parse(h[6]);
+                string action = h[7];
+                sink.Hook = () =>
+                {
+                    if (sink.Calls.Count != trigger)
+                        return;
+                    if (w == null)
+                        throw new NullReferenceException();
+                    switch (action)
+                    {
+                    case "X":
+                        w.Close();
+                        break;
+                    case "F":
+                        w.Flush();
+                        break;
+                    case "AF0":
+                        w.AutoFlush = false;
+                        break;
+                    case "AF1":
+                        w.AutoFlush = true;
+                        break;
+                    case "S1":
+                        w.Write("z");
+                        break;
+                    case "S128":
+                        w.Write(new string('z', 128));
+                        break;
+                    case "S1024":
+                        w.Write(new string('z', 1024));
+                        break;
+                    case "NL":
+                        w.NewLine = "changed";
+                        break;
+                    }
+                };
+            }
+            try
+            {
+                if (h.Length > 9 && h[9] == "1")
+                    w = new StreamWriter(int.Parse(h[0]) < 0 ? null! : sink);
+                else
+                {
+                    var encoding = h.Length > 8 && h[8] != "#" ? Encoding.GetEncoding(Decode(h[8])!) : null;
+                    w = new StreamWriter(int.Parse(h[0]) < 0 ? null! : sink, encoding, int.Parse(h[4]),
+                                         int.Parse(h[5]) != 0);
+                }
+            }
+            catch (Exception e)
+            {
+                results.Add("NEW@" + Error(e));
+            }
+            if (w != null)
+                for (int i = 1; i < parts.Length; i++)
+                {
+                    var c = parts[i].Split(',');
+                    string error = "-", value = "~";
+                    try
+                    {
+                        switch (c[0])
+                        {
+                        case "S":
+                            w.Write(Decode(c[1]));
+                            break;
+                        case "C":
+                            w.Write(Decode(c[1])![0]);
+                            break;
+                        case "A":
+                            w.Write(Decode(c[1])?.ToCharArray()!, int.Parse(c[2]), int.Parse(c[3]));
+                            break;
+                        case "H":
+                            w.Write(Decode(c[1])?.ToCharArray());
+                            break;
+                        case "P":
+                            w.Write(Decode(c[1]).AsSpan());
+                            break;
+                        case "L":
+                            w.WriteLine();
+                            break;
+                        case "N":
+                            w.NewLine = Decode(c[1])!;
+                            break;
+                        case "AF":
+                            w.AutoFlush = int.Parse(c[1]) != 0;
+                            break;
+                        case "F":
+                            w.Flush();
+                            break;
+                        case "X":
+                            w.Close();
+                            break;
+                        case "M":
+                            value = w.Encoding.GetMaxByteCount(int.Parse(c[1])).ToString();
+                            break;
+                        case "W":
+                            value = Hex(w.Encoding.WebName);
+                            break;
+                        case "B":
+                            var b = w.Encoding.GetPreamble();
+                            value = b.Length == 0 ? "-" : Convert.ToHexString(b).ToLowerInvariant();
+                            break;
+                        case "R":
+                            value =
+                                ReferenceEquals(w.Encoding, Encoding.GetEncoding(Decode(c[1])!)) ? "1" : "0";
+                            break;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        error = Error(e);
+                    }
+                    results.Add(error + "@" + (w.AutoFlush ? 1 : 0) + "@" + Hex(w.NewLine) + "@" + value);
+                }
+            Console.WriteLine(string.Join("|", sink.Calls) + ";" + string.Join(";", results) + ";" +
+                              (sink.Closed ? 1 : 0));
+        }
+    }
+}

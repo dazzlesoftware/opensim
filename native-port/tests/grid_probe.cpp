@@ -272,6 +272,17 @@ int main(int argc, char** argv) {
             grid.by_uri({}, uri);
             return std::to_string(uri.flags) + "|" + uri.host + "|" + (uri.valid() ? "True" : "False");
         });
+        for (int index = 0; index < 20; ++index) {
+            auto row = std::make_shared<RegionData>(region_data(region(30 + index, "Tied", 256000, 256000)));
+            row->data["flags"] = std::to_string(FallbackRegion | RegionOnline);
+            store.store(row);
+        }
+        emit([&] { return rows(grid.fallback({}, 256000, 256000)); });
+        emit([&] { return rows(grid.online({}, 256000, 256000, 10)); });
+        store.store(std::make_shared<RegionData>(region_data(region(50, "\xc3\x89tage Annex", 90000, 90000))));
+        store.store(std::make_shared<RegionData>(region_data(region(51, "\xc3\x89tage", 91000, 90000))));
+        emit([&] { return info(grid.by_name({}, "\xc3\xa9tage")); });
+        emit([&] { return rows(grid.names({}, "\xc3\xa9tage", 2)); });
         return 0;
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';

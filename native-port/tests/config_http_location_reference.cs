@@ -1,7 +1,131 @@
-using System;using System.Net;using System.Net.Http;using System.Text;using System.Reflection;
-class Program{
-static string D(string s){if(s=="~")return null;var b=new StringBuilder();if(s!="-")for(int i=0;i<s.Length;i+=4)b.Append((char)Convert.ToInt32(s.Substring(i,4),16));return b.ToString();}static string H(string s){if(s==null)return "~";var b=new StringBuilder();foreach(char c in s)b.Append(((int)c).ToString("x4"));return b.Length==0?"-":b.ToString();}
-static string Error(Exception e){while(e is TargetInvocationException t)e=t.InnerException;return e.GetType().FullName+":"+unchecked((uint)e.HResult).ToString("x8")+":"+H(e.Message)+":"+(e is ArgumentException a?H(a.ParamName):"~");}
-static string Snapshot(Uri u){if(u==null)return "null";var b=new StringBuilder((u.IsAbsoluteUri?"A/":"R/")+H(u.OriginalString));foreach(Func<string> getter in u.IsAbsoluteUri?new Func<string>[]{()=>u.Scheme,()=>u.Fragment,()=>u.AbsoluteUri,()=>u.ToString(),()=>u.LocalPath}:new Func<string>[]{()=>u.ToString()}){try{b.Append('/'+H(getter()));}catch(Exception e){b.Append('/'+Error(e));}}return b.ToString();}
-static void Main(){var flags=BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic;var type=typeof(HttpClient).Assembly.GetType("System.Net.Http.RedirectHandler");var ctor=type.GetConstructors(flags)[0];var instance=ctor.Invoke(new object[]{50,null,null});GC.SuppressFinalize(instance);var redirect=type.GetMethod("GetUriForRedirect",flags);var decode=typeof(HttpClient).Assembly.GetType("System.Net.Http.Headers.UriHeaderParser").GetMethod("DecodeUtf8FromString",BindingFlags.Static|BindingFlags.NonPublic);string line;while((line=Console.ReadLine())!=null){var a=line.Split(' ');try{if(a[0]=="D"){var input=D(a[1]);var result=(string)decode.Invoke(null,new object[]{input});Console.WriteLine(H(result)+":"+(ReferenceEquals(input,result)?"1":"0"));continue;}if(a[0]=="P"){using var response=new HttpResponseMessage();for(int i=1;i<a.Length;i++)response.Headers.TryAddWithoutValidation("Location",D(a[i]));Console.WriteLine(Snapshot(response.Headers.Location));continue;}if(a[0]=="T"){Uri.TryCreate(D(a[1]),(UriKind)int.Parse(a[2]),out var parsed);Console.WriteLine(Snapshot(parsed));continue;}if(a[0]=="C"){var uri=new Uri(D(a[1]),(UriKind)int.Parse(a[2]));Console.WriteLine(Snapshot(uri));continue;}if(a[0]=="B"){var uri=new Uri(D(a[1]),UriKind.Absolute);Console.WriteLine(Snapshot(new UriBuilder(uri){Fragment=D(a[2])}.Uri));continue;}if(a[0]=="O"){var uri=new Uri(D(a[1]),UriKind.Absolute);var relative=new Uri(D(a[2]),UriKind.RelativeOrAbsolute);Console.WriteLine(Snapshot(new Uri(uri,relative)));continue;}if(a[0]=="R"){Uri request=a[1]=="~"?null:new Uri(D(a[1]),UriKind.RelativeOrAbsolute);using var response=new HttpResponseMessage((HttpStatusCode)int.Parse(a[2]));response.RequestMessage=new HttpRequestMessage();for(int i=3;i<a.Length;i++)response.Headers.TryAddWithoutValidation("Location",D(a[i]));Console.WriteLine(Snapshot((Uri)redirect.Invoke(instance,new object[]{request,response})));continue;}throw new Exception("Unknown mode");}catch(Exception e){Console.WriteLine(Error(e));}}}
+using System;
+using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Reflection;
+class Program
+{
+    static string D(string s)
+    {
+        if (s == "~")
+            return null;
+        var b = new StringBuilder();
+        if (s != "-")
+            for (int i = 0; i < s.Length; i += 4)
+                b.Append((char)Convert.ToInt32(s.Substring(i, 4), 16));
+        return b.ToString();
+    }
+    static string H(string s)
+    {
+        if (s == null)
+            return "~";
+        var b = new StringBuilder();
+        foreach (char c in s)
+            b.Append(((int)c).ToString("x4"));
+        return b.Length == 0 ? "-" : b.ToString();
+    }
+    static string Error(Exception e)
+    {
+        while (e is TargetInvocationException t)
+            e = t.InnerException;
+        return e.GetType().FullName + ":" + unchecked((uint)e.HResult).ToString("x8") + ":" + H(e.Message) +
+               ":" + (e is ArgumentException a ? H(a.ParamName) : "~");
+    }
+    static string Snapshot(Uri u)
+    {
+        if (u == null)
+            return "null";
+        var b = new StringBuilder((u.IsAbsoluteUri ? "A/" : "R/") + H(u.OriginalString));
+        foreach (Func<string> getter in u.IsAbsoluteUri
+                     ? new Func<string>[] { () => u.Scheme, () => u.Fragment, () => u.AbsoluteUri,
+                                            () => u.ToString(), () => u.LocalPath }
+                     : new Func<string>[] { () => u.ToString() })
+        {
+            try
+            {
+                b.Append('/' + H(getter()));
+            }
+            catch (Exception e)
+            {
+                b.Append('/' + Error(e));
+            }
+        }
+        return b.ToString();
+    }
+    static void Main()
+    {
+        var flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        var type = typeof(HttpClient).Assembly.GetType("System.Net.Http.RedirectHandler");
+        var ctor = type.GetConstructors(flags)[0];
+        var instance = ctor.Invoke(new object[] { 50, null, null });
+        GC.SuppressFinalize(instance);
+        var redirect = type.GetMethod("GetUriForRedirect", flags);
+        var decode = typeof(HttpClient)
+                         .Assembly.GetType("System.Net.Http.Headers.UriHeaderParser")
+                         .GetMethod("DecodeUtf8FromString", BindingFlags.Static | BindingFlags.NonPublic);
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var a = line.Split(' ');
+            try
+            {
+                if (a[0] == "D")
+                {
+                    var input = D(a[1]);
+                    var result = (string)decode.Invoke(null, new object[] { input });
+                    Console.WriteLine(H(result) + ":" + (ReferenceEquals(input, result) ? "1" : "0"));
+                    continue;
+                }
+                if (a[0] == "P")
+                {
+                    using var response = new HttpResponseMessage();
+                    for (int i = 1; i < a.Length; i++)
+                        response.Headers.TryAddWithoutValidation("Location", D(a[i]));
+                    Console.WriteLine(Snapshot(response.Headers.Location));
+                    continue;
+                }
+                if (a[0] == "T")
+                {
+                    Uri.TryCreate(D(a[1]), (UriKind) int.Parse(a[2]), out var parsed);
+                    Console.WriteLine(Snapshot(parsed));
+                    continue;
+                }
+                if (a[0] == "C")
+                {
+                    var uri = new Uri(D(a[1]), (UriKind) int.Parse(a[2]));
+                    Console.WriteLine(Snapshot(uri));
+                    continue;
+                }
+                if (a[0] == "B")
+                {
+                    var uri = new Uri(D(a[1]), UriKind.Absolute);
+                    Console.WriteLine(Snapshot(new UriBuilder(uri) { Fragment = D(a[2]) }.Uri));
+                    continue;
+                }
+                if (a[0] == "O")
+                {
+                    var uri = new Uri(D(a[1]), UriKind.Absolute);
+                    var relative = new Uri(D(a[2]), UriKind.RelativeOrAbsolute);
+                    Console.WriteLine(Snapshot(new Uri(uri, relative)));
+                    continue;
+                }
+                if (a[0] == "R")
+                {
+                    Uri request = a[1] == "~" ? null : new Uri(D(a[1]), UriKind.RelativeOrAbsolute);
+                    using var response = new HttpResponseMessage((HttpStatusCode) int.Parse(a[2]));
+                    response.RequestMessage = new HttpRequestMessage();
+                    for (int i = 3; i < a.Length; i++)
+                        response.Headers.TryAddWithoutValidation("Location", D(a[i]));
+                    Console.WriteLine(
+                        Snapshot((Uri)redirect.Invoke(instance, new object[] { request, response })));
+                    continue;
+                }
+                throw new Exception("Unknown mode");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(Error(e));
+            }
+        }
+    }
 }

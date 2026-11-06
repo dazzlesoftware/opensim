@@ -1,24 +1,201 @@
 """Original scene QueryAccess/AuthorizeUser/land admission bodies with controlled scene dependencies."""
-import argparse,hashlib,itertools,json,subprocess
+
+import argparse, hashlib, itertools, json, subprocess
 from pathlib import Path
-from compare_agent_data import ROOT,build_reference
+from compare_agent_data import ROOT, build_reference
 from compare_presence_endpoint import extract
+
+
 def main():
- p=argparse.ArgumentParser();p.add_argument('--native',required=True);p.add_argument('--dotnet',required=True);p.add_argument('--work',required=True,type=Path);a=p.parse_args();w=a.work.resolve();w.mkdir(parents=True,exist_ok=True);source=ROOT/'OpenSim/Region/Framework/Scenes/Scene.cs';text=source.read_text(encoding='utf-8-sig');methods=''.join(extract(text,pattern) for pattern in [r'public bool QueryAccess\(',r'protected virtual bool AuthorizeUser\(',r'public bool CheckLandPositionAccess\(',r'public bool TestLandRestrictions\(']);wrapper=w/'Methods.cs';wrapper.write_text('using System;using System.Collections.Generic;using OpenMetaverse;using OpenSim.Framework;public partial class ScenePolicy{'+methods+'}',encoding='utf-8');assembly=build_reference(a.dotnet,w,[wrapper,ROOT/'native-port/tests/scene_access_reference.cs',ROOT/'OpenSim/Framework/AgentCircuitData.cs'],'ScenePolicy')
- profiles=[{}, {'god':True},{'manager':True},{'strict':False},{'cross':False},{'auth':True},{'auth':True,'auth_deny':True},{'null_estate':True},{'estate_banned':True},{'public':False},{'public':False,'access':True},{'public':False,'groups':True,'estate_groups':[1],'memberships':[1]},{'public':False,'groups':True,'estate_groups':[1],'memberships':[2]},{'public':False,'groups':True,'estate_groups':[]},{'public':False,'groups':True,'estate_groups':[1],'memberships':[None]},{'service_agent':True},{'circuit':True,'auth':True},{'circuit':True,'circuit_agent':8,'auth':True},{'circuit':True,'null_names':True,'auth':True},{'roots':100},{'roots':101,'npcs':2},{'roots':-2147483648,'npcs':1},{'null_name':True,'estate_banned':True},{'god_after':2},{'god_after':3},{'god_after':4}]
- cases=[{**profile,'op':op,'teleport':teleport,'bypass':bypass,'check_count':False} for profile,op,teleport,bypass in itertools.product(profiles,['query','authorize','land','restrictions'],[False,True],[False,True])]
- for op,lands,nearest,point in itertools.product(['query','land','restrictions'],[[0],[1],[2],[3],[4]],[False,True],[None,[40,50]]):cases.append({'op':op,'lands':lands,'nearest':nearest,'point':point})
- for op,teleport,pos,x,y in itertools.product(['query','land','restrictions'],[False,True],[[-1,-2,30],[256,512,30],[0,0,0],['NaN','Infinity',0],[-.0,255.999,0]],[0,256,512,-1],[0,256]):cases.append({'op':op,'teleport':teleport,'position':pos,'size_x':x,'size_y':y})
- for op,points,lands,check,missing in itertools.product(['query','land'],[[],[[1,2,3]],[[1,2,3],[4,5,6]]],[[0],[1],[2],[3],[2,1],[0,2],[0,0]],[False,True],[False,True]):cases.append({'op':op,'direct':False,'hub':True,'spawns':points,'lands':lands,'check_hub':check,'missing_hub':missing})
- for op,failure in itertools.product(['query','authorize','land','restrictions'],['god','manager','circuit','authorize','flags','estate-ban','public','estate-access','estate-groups','memberships','recalculate','roots','npcs','direct','telehub','spawns','hub-position','hub-rotation','spawn','land','banned','restricted','either','nearest','point']):cases.append({'op':op,'failure':failure,'auth':True,'public':False,'groups':True,'estate_groups':[1],'memberships':[1],'direct':False,'hub':True,'spawns':[[1,2,3]],'lands':[2],'nearest':True,'point':[40,50]})
- cases += [{'op':'authorize','null_agent':True},{'op':'query','public':False,'groups':True,'estate_groups':[1],'memberships':[None,1]}]
- commands=[json.dumps(c,ensure_ascii=False,separators=(',',':')).encode().hex() for c in cases];rows=[]
- for command in [[a.dotnet,str(assembly)],[a.native]]:
-  r=subprocess.run(command,input='\n'.join(commands)+'\n',capture_output=True,text=True,timeout=120)
-  if r.returncode:raise RuntimeError(r.stdout[-1000:]+r.stderr)
-  rows.append(r.stdout.splitlines())
- assert len(rows[0])==len(rows[1])==len(cases)
- diffs=[{'input':c,'source':x,'native':y} for c,x,y in zip(cases,*rows) if x!=y];(w/'scene-access-results.json').write_text(json.dumps({'passed':not diffs,'observations':len(cases),'sourceHash':hashlib.sha256(source.read_bytes()).hexdigest(),'scope':'Complete original QueryAccess, AuthorizeUser, CheckLandPositionAccess and TestLandRestrictions with actual AgentCircuitData/SDK and controlled permissions, estate, account flags, groups, land, telehub/spawn transforms and authorization. Full actual parcel/estate/services/scene runtime remains pending.','differences':diffs[:5]},indent=2),encoding='utf-8')
- if diffs:raise AssertionError(json.dumps(diffs[:2],indent=2)+' count='+str(len(diffs)))
- print(f'PASS: {len(cases)} scene access source observations')
-if __name__=='__main__':main()
+    p = argparse.ArgumentParser()
+    p.add_argument('--native', required=True)
+    p.add_argument('--dotnet', required=True)
+    p.add_argument('--work', required=True, type=Path)
+    a = p.parse_args()
+    w = a.work.resolve()
+    w.mkdir(parents=True, exist_ok=True)
+    source = ROOT / 'OpenSim/Region/Framework/Scenes/Scene.cs'
+    text = source.read_text(encoding='utf-8-sig')
+    methods = ''.join(
+        extract(text, pattern)
+        for pattern in [
+            r'public bool QueryAccess\(',
+            r'protected virtual bool AuthorizeUser\(',
+            r'public bool CheckLandPositionAccess\(',
+            r'public bool TestLandRestrictions\(',
+        ]
+    )
+    wrapper = w / 'Methods.cs'
+    wrapper.write_text(
+        'using System;using System.Collections.Generic;using OpenMetaverse;using OpenSim.Framework;public partial class ScenePolicy{'
+        + methods
+        + '}',
+        encoding='utf-8',
+    )
+    assembly = build_reference(
+        a.dotnet,
+        w,
+        [
+            wrapper,
+            ROOT / 'native-port/tests/scene_access_reference.cs',
+            ROOT / 'OpenSim/Framework/AgentCircuitData.cs',
+        ],
+        'ScenePolicy',
+    )
+    profiles = [
+        {},
+        {'god': True},
+        {'manager': True},
+        {'strict': False},
+        {'cross': False},
+        {'auth': True},
+        {'auth': True, 'auth_deny': True},
+        {'null_estate': True},
+        {'estate_banned': True},
+        {'public': False},
+        {'public': False, 'access': True},
+        {'public': False, 'groups': True, 'estate_groups': [1], 'memberships': [1]},
+        {'public': False, 'groups': True, 'estate_groups': [1], 'memberships': [2]},
+        {'public': False, 'groups': True, 'estate_groups': []},
+        {'public': False, 'groups': True, 'estate_groups': [1], 'memberships': [None]},
+        {'service_agent': True},
+        {'circuit': True, 'auth': True},
+        {'circuit': True, 'circuit_agent': 8, 'auth': True},
+        {'circuit': True, 'null_names': True, 'auth': True},
+        {'roots': 100},
+        {'roots': 101, 'npcs': 2},
+        {'roots': -2147483648, 'npcs': 1},
+        {'null_name': True, 'estate_banned': True},
+        {'god_after': 2},
+        {'god_after': 3},
+        {'god_after': 4},
+    ]
+    cases = [
+        {**profile, 'op': op, 'teleport': teleport, 'bypass': bypass, 'check_count': False}
+        for profile, op, teleport, bypass in itertools.product(
+            profiles, ['query', 'authorize', 'land', 'restrictions'], [False, True], [False, True]
+        )
+    ]
+    for op, lands, nearest, point in itertools.product(
+        ['query', 'land', 'restrictions'],
+        [[0], [1], [2], [3], [4]],
+        [False, True],
+        [None, [40, 50]],
+    ):
+        cases.append({'op': op, 'lands': lands, 'nearest': nearest, 'point': point})
+    for op, teleport, pos, x, y in itertools.product(
+        ['query', 'land', 'restrictions'],
+        [False, True],
+        [[-1, -2, 30], [256, 512, 30], [0, 0, 0], ['NaN', 'Infinity', 0], [-0.0, 255.999, 0]],
+        [0, 256, 512, -1],
+        [0, 256],
+    ):
+        cases.append({'op': op, 'teleport': teleport, 'position': pos, 'size_x': x, 'size_y': y})
+    for op, points, lands, check, missing in itertools.product(
+        ['query', 'land'],
+        [[], [[1, 2, 3]], [[1, 2, 3], [4, 5, 6]]],
+        [[0], [1], [2], [3], [2, 1], [0, 2], [0, 0]],
+        [False, True],
+        [False, True],
+    ):
+        cases.append(
+            {
+                'op': op,
+                'direct': False,
+                'hub': True,
+                'spawns': points,
+                'lands': lands,
+                'check_hub': check,
+                'missing_hub': missing,
+            }
+        )
+    for op, failure in itertools.product(
+        ['query', 'authorize', 'land', 'restrictions'],
+        [
+            'god',
+            'manager',
+            'circuit',
+            'authorize',
+            'flags',
+            'estate-ban',
+            'public',
+            'estate-access',
+            'estate-groups',
+            'memberships',
+            'recalculate',
+            'roots',
+            'npcs',
+            'direct',
+            'telehub',
+            'spawns',
+            'hub-position',
+            'hub-rotation',
+            'spawn',
+            'land',
+            'banned',
+            'restricted',
+            'either',
+            'nearest',
+            'point',
+        ],
+    ):
+        cases.append(
+            {
+                'op': op,
+                'failure': failure,
+                'auth': True,
+                'public': False,
+                'groups': True,
+                'estate_groups': [1],
+                'memberships': [1],
+                'direct': False,
+                'hub': True,
+                'spawns': [[1, 2, 3]],
+                'lands': [2],
+                'nearest': True,
+                'point': [40, 50],
+            }
+        )
+    cases += [
+        {'op': 'authorize', 'null_agent': True},
+        {
+            'op': 'query',
+            'public': False,
+            'groups': True,
+            'estate_groups': [1],
+            'memberships': [None, 1],
+        },
+    ]
+    commands = [
+        json.dumps(c, ensure_ascii=False, separators=(',', ':')).encode().hex() for c in cases
+    ]
+    rows = []
+    for command in [[a.dotnet, str(assembly)], [a.native]]:
+        r = subprocess.run(
+            command, input='\n'.join(commands) + '\n', capture_output=True, text=True, timeout=120
+        )
+        if r.returncode:
+            raise RuntimeError(r.stdout[-1000:] + r.stderr)
+        rows.append(r.stdout.splitlines())
+    assert len(rows[0]) == len(rows[1]) == len(cases)
+    diffs = [{'input': c, 'source': x, 'native': y} for c, x, y in zip(cases, *rows) if x != y]
+    (w / 'scene-access-results.json').write_text(
+        json.dumps(
+            {
+                'passed': not diffs,
+                'observations': len(cases),
+                'sourceHash': hashlib.sha256(source.read_bytes()).hexdigest(),
+                'scope': 'Complete original QueryAccess, AuthorizeUser, CheckLandPositionAccess and TestLandRestrictions with actual AgentCircuitData/SDK and controlled permissions, estate, account flags, groups, land, telehub/spawn transforms and authorization. Full actual parcel/estate/services/scene runtime remains pending.',
+                'differences': diffs[:5],
+            },
+            indent=2,
+        ),
+        encoding='utf-8',
+    )
+    if diffs:
+        raise AssertionError(json.dumps(diffs[:2], indent=2) + ' count=' + str(len(diffs)))
+    print(f'PASS: {len(cases)} scene access source observations')
+
+
+if __name__ == '__main__':
+    main()

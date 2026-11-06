@@ -84,6 +84,9 @@ class LoginApplication {
     void set_home_region_lookup(std::function<network::Value(const network::Value&)> lookup) {
         home_region_lookup_ = std::move(lookup);
     }
+    void set_land_data_lookup(std::function<network::Value(const network::Value&)> lookup) {
+        land_data_lookup_ = std::move(lookup);
+    }
     void set_home_user_lookup(
         std::function<network::Value(std::string_view, const network::Value&, std::string_view)> lookup) {
         home_user_lookup_ = std::move(lookup);
@@ -95,6 +98,7 @@ class LoginApplication {
     std::function<network::Value(std::string_view, const network::Value&)> gatekeeper_;
     std::function<bool(std::string_view, const network::Value&)> home_agent_verifier_;
     std::function<network::Value(const network::Value&)> home_region_lookup_;
+    std::function<network::Value(const network::Value&)> land_data_lookup_;
     std::function<network::Value(std::string_view, const network::Value&, std::string_view)>
         home_user_lookup_;
     services::LoginHandlers handlers_;

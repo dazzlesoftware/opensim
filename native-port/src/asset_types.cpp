@@ -1,12 +1,30 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/framework/asset_types.hpp"
+#include "opensim/framework/culture_prefix.hpp"
 #include <bit>
 #include <stdexcept>
 #include <string_view>
 #include <utility>
 namespace opensim::framework {
 namespace {
+constexpr std::pair<std::string_view, AssetType> types[] = {
+    {"OSMaterial", AssetType::OSMaterial}, {"Unknown", AssetType::Unknown},
+    {"Texture", AssetType::Texture}, {"Sound", AssetType::Sound},
+    {"CallingCard", AssetType::CallingCard}, {"Landmark", AssetType::Landmark},
+    {"Clothing", AssetType::Clothing}, {"Object", AssetType::Object},
+    {"Notecard", AssetType::Notecard}, {"Folder", AssetType::Folder},
+    {"LSLText", AssetType::LSLText}, {"LSLBytecode", AssetType::LSLBytecode},
+    {"TextureTGA", AssetType::TextureTGA}, {"Bodypart", AssetType::Bodypart},
+    {"SoundWAV", AssetType::SoundWAV}, {"ImageTGA", AssetType::ImageTGA},
+    {"ImageJPEG", AssetType::ImageJPEG}, {"Animation", AssetType::Animation},
+    {"Gesture", AssetType::Gesture}, {"Simstate", AssetType::Simstate},
+    {"Link", AssetType::Link}, {"LinkFolder", AssetType::LinkFolder},
+    {"MarketplaceFolder", AssetType::MarketplaceFolder}, {"Mesh", AssetType::Mesh},
+    {"Settings", AssetType::Settings}, {"Material", AssetType::Material},
+    {"GLTF", AssetType::GLTF}, {"GLTF_bin", AssetType::GLTF_bin},
+};
+
 struct Mapping {
     std::int8_t asset, inventory;
     std::string_view content, alias, extension;
@@ -72,39 +90,19 @@ const std::string &nonnull(const std::optional<std::string> &value) {
 }
 }
 AssetType asset_type_from_code(std::int8_t code) {
-    switch (code) {
-    case -2:
-    case -1:
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-    case 5:
-    case 6:
-    case 7:
-    case 8:
-    case 10:
-    case 11:
-    case 12:
-    case 13:
-    case 17:
-    case 18:
-    case 19:
-    case 20:
-    case 21:
-    case 22:
-    case 24:
-    case 25:
-    case 26:
-    case 49:
-    case 56:
-    case 57:
-    case 58:
-    case 59:
-        return static_cast<AssetType>(code);
-    default:
-        return AssetType::Unknown;
-    }
+    return asset_type_enum_name(code).empty() ? AssetType::Unknown : static_cast<AssetType>(code);
+}
+std::string_view asset_type_enum_name(std::int8_t code) {
+    for (const auto &[name, type] : types)
+        if (static_cast<std::int8_t>(type) == code)
+            return name;
+    return {};
+}
+std::optional<AssetType> asset_type_from_enum_name(std::string_view name) {
+    for (const auto &[candidate, type] : types)
+        if (ordinal_equals_ignore_case(name, candidate))
+            return type;
+    return std::nullopt;
 }
 std::int8_t asset_name_type(const std::optional<std::string> &name) {
     const auto &key = nonnull(name);

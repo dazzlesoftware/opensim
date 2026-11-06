@@ -336,4 +336,9 @@ MovementAnimationSnapshot MovementAnimator::snapshot() const {
 MotionControlState MovementAnimator::state() const {
     return impl_->currentControlState;
 }
+void MovementAnimator::restore_state(MotionControlState state, std::string movement_animation) {
+    impl_->currentControlState = state;
+    if (!movement_animation.empty())
+        impl_->CurrentMovementAnimation = std::move(movement_animation);
+}
 }

@@ -170,6 +170,11 @@ struct Scene : AssetConnectorScene {
 };
 namespace opensim::services {
 struct LocalAssetConnectorProbe {
+    static void bind(LocalAssetConnector& connector, std::shared_ptr<AssetService> service,
+                     std::shared_ptr<framework::IAssetCache> cache = {}) {
+        connector.service_.store(std::move(service));
+        connector.cache_.store(std::move(cache));
+    }
     static std::string state(const LocalAssetConnector &c) {
         return std::string(c.enabled_ ? "1" : "0") + (c.service_.load() ? "1" : "0") +
                (c.cache_.load() ? "1" : "0");
@@ -177,6 +182,143 @@ struct LocalAssetConnectorProbe {
 };
 }
 int main(int argc, char **argv) {
+    if (argc == 2 && std::string_view(argv[1]) == "--region-read-close") {
+        Context context;
+        auto service = std::make_shared<Service>(context);
+        auto backend = std::make_shared<Backend>(context, service);
+        auto connector = std::make_shared<LocalAssetConnector>(backend, true);
+        LocalAssetConnectorProbe::bind(*connector, service);
+        const auto id = context.a->id();
+        int cancelled = 0;
+        connector->get(id, {}, false, [&](Asset asset) {
+            if (!asset)
+                ++cancelled;
+            throw std::runtime_error("Fixture callback failed");
+        });
+        connector->get(id, {}, false, [&](Asset asset) {
+            if (!asset)
+                ++cancelled;
+        });
+        if (context.jobs.size() != 1)
+            return 1;
+        context.jobs.clear();
+        connector->close();
+        connector->close();
+        if (cancelled != 2)
+            return 1;
+        connector->get(id, {}, false, [&](Asset asset) {
+            if (!asset)
+                ++cancelled;
+        });
+        return cancelled == 3 && context.jobs.empty() ? 0 : 1;
+    }
+    if (argc == 2 && std::string_view(argv[1]) == "--region-async-miss") {
+        struct ReadBackend : Backend {
+            using Backend::Backend;
+            std::vector<bool> destinations;
+            bool queue_asset_read(std::function<void()> callback, bool remote) override {
+                destinations.push_back(remote);
+                return Backend::queue_asset_read(std::move(callback), remote);
+            }
+        };
+        Context context;
+        auto service = std::make_shared<Service>(context);
+        auto backend = std::make_shared<ReadBackend>(context, service);
+        auto connector = std::make_shared<LocalAssetConnector>(backend, true);
+        LocalAssetConnectorProbe::bind(*connector, service);
+        const auto id = context.a->id();
+        int delivered = 0;
+        if (!connector->get_async(id, 42, [&](const auto& requested, std::any sender, Asset asset) {
+                if (requested == id && std::any_cast<int>(sender) == 42 && asset == context.a)
+                    ++delivered;
+            }))
+            return 1;
+        connector->get(id, {}, false, [&](Asset asset) {
+            if (asset == context.a)
+                ++delivered;
+        });
+        if (context.jobs.size() != 1 || delivered != 0 ||
+            context.trace.find("service.") != std::string::npos)
+            return 1;
+        auto task = std::move(context.jobs.front());
+        context.jobs.clear();
+        context.trace.clear();
+        task();
+        if (delivered != 2 || context.trace != "service.get:" + id + ";")
+            return 1;
+        connector->foreign_fetch([&](const auto&, const auto&, bool) { return context.b; });
+        connector->get(id, "http://foreign.invalid", false, [&](Asset asset) {
+            if (asset == context.b)
+                ++delivered;
+        });
+        if (context.jobs.size() != 1 || backend->destinations != std::vector<bool>{false, true})
+            return 1;
+        task = std::move(context.jobs.front());
+        context.jobs.clear();
+        task();
+        return delivered == 3 ? 0 : 1;
+    }
+    if (argc == 2 && std::string_view(argv[1]) == "--region-async-cache") {
+        Context context;
+        auto service = std::make_shared<Service>(context);
+        auto backend = std::make_shared<Backend>(context, service);
+        auto cache = std::make_shared<Cache>(context);
+        auto connector = std::make_shared<LocalAssetConnector>(backend, true);
+        LocalAssetConnectorProbe::bind(*connector, service, cache);
+        const std::string id = context.b->id();
+        int callbacks = 0;
+        Asset received;
+        const auto callback = [&](const auto& requested, std::any sender, Asset asset) {
+            if (requested == id && std::any_cast<int>(sender) == 42)
+                ++callbacks;
+            received = std::move(asset);
+        };
+        context.cache_mode = 1;
+        if (!connector->get_async(id, 42, callback) || callbacks != 1 || received != context.b)
+            return 1;
+        context.b->data->clear();
+        if (!connector->get_async(id, 42, callback) || callbacks != 2 || received)
+            return 1;
+        context.cache_mode = 4;
+        if (connector->get_async(id, 42, callback) || callbacks != 3 || received)
+            return 1;
+        return context.trace == "memory:" + id + ";memory:" + id + ";memory:" + id + ";" &&
+                       context.jobs.empty() ? 0 : 1;
+    }
+    if (argc == 2 && std::string_view(argv[1]) == "--region-store") {
+        struct StoreService : Service {
+            using Service::Service;
+            std::optional<std::string> result;
+            std::optional<std::string> store(Asset asset) override {
+                Service::store(std::move(asset));
+                return result;
+            }
+        };
+        Context context;
+        auto service = std::make_shared<StoreService>(context);
+        auto backend = std::make_shared<Backend>(context, service);
+        LocalAssetConnector connector(backend, true);
+        LocalAssetConnectorProbe::bind(connector, service);
+        context.a->local(true);
+        service->result = "stored";
+        if (connector.store(context.a) != "stored" || context.trace != "service.store:A;")
+            return 1;
+        LocalAssetConnectorProbe::bind(connector, service, std::make_shared<Cache>(context));
+        context.a->local(false);
+        context.a->temporary(true);
+        context.trace.clear();
+        if (connector.store(context.a) != context.a->id() || context.trace != "cache:A:0;")
+            return 1;
+        context.a->temporary(false);
+        for (const auto& failure : {std::optional<std::string>{},
+                                    std::optional{framework::Uuid{}.str()}}) {
+            service->result = failure;
+            context.trace.clear();
+            if (connector.store(context.a) != "" || context.trace != "cache:A:0;service.store:A;")
+                return 1;
+        }
+        return 0;
+    }
     if (argc == 2 && std::string_view(argv[1]) == "--coalesce-foreign") {
         Context context;
         auto backend = std::make_shared<Backend>(context, std::make_shared<Service>(context));

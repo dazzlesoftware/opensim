@@ -100,6 +100,11 @@ void inner(std::string& out, const network::Value& input, unsigned depth) {
         out += "<binary>" + network::binary_base64(network::osd_from_binary(network::osd_binary(value))) +
                "</binary>";
         return;
+    case K::Date: {
+        const auto date = network::osd_string(value);
+        out += date == "1970-01-01T00:00:00Z" ? "<date />" : "<date>" + date + "</date>";
+        return;
+    }
     default:
         break;
     }
@@ -107,7 +112,6 @@ void inner(std::string& out, const network::Value& input, unsigned depth) {
                       : value.kind == K::Integer ? "integer"
                       : value.kind == K::Real    ? "real"
                       : value.kind == K::Uuid    ? "uuid"
-                      : value.kind == K::Date    ? "date"
                                                  : "uri";
     out += '<';
     out += tag;

@@ -1,20 +1,118 @@
 """Original inventory copy/create, full item classes and animation permissions."""
-import argparse,hashlib,itertools,json,random,subprocess,xml.etree.ElementTree as ET
+
+import argparse, hashlib, itertools, json, random, subprocess, xml.etree.ElementTree as ET
 from pathlib import Path
 from compare_task_inventory_update import extract
-ROOT=Path(__file__).resolve().parents[2]
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
 def main():
- p=argparse.ArgumentParser();p.add_argument('--native',required=True);p.add_argument('--dotnet',required=True);p.add_argument('--work',required=True,type=Path);a=p.parse_args();w=a.work.resolve();w.mkdir(parents=True,exist_ok=True)
- source=ROOT/'OpenSim/Region/Framework/Scenes/Scene.Inventory.cs';util=ROOT/'OpenSim/Framework/Util.cs';animation=ROOT/'OpenSim/Framework/AnimationSet.cs';s=source.read_text(encoding='utf-8');sig='public void CreateNewInventoryItem(';first=s.index(sig);second=s.index(sig,first+len(sig));methods=extract(s,'private void HandleLinkInventoryItem(')+extract(s,'public void CopyInventoryItem(')+extract(s[first:],sig)+extract(s[second:],sig);anim=animation.read_text(encoding='utf-8');start=anim.index('public const uint createBasePermitions');end=anim.index('public static void setCreateItemPermitions',start);generated=w/'ExtractedInventoryCopy.cs';generated.write_text('using System;using OpenMetaverse;using OpenSim.Framework;using PermissionMask=OpenSim.Framework.PermissionMask;partial class Scene{'+methods+'}namespace OpenSim.Framework{'+extract(util.read_text(encoding='utf-8'),'public enum PermissionMask')+'class AnimationSet{'+anim[start:end]+extract(anim,'public static void setCreateItemPermitions(')+extract(anim,'public static void enforceItemPermitions(')+'}}',encoding='utf-8')
- project=ET.Element('Project',Sdk='Microsoft.NET.Sdk');props=ET.SubElement(project,'PropertyGroup')
- for k,v in dict(TargetFramework='net8.0',OutputType='Exe',EnableDefaultCompileItems='false').items():ET.SubElement(props,k).text=v
- ig=ET.SubElement(project,'ItemGroup');files=[generated,ROOT/'OpenSim/Framework/InventoryNodeBase.cs',ROOT/'OpenSim/Framework/InventoryItemBase.cs',ROOT/'OpenSim/Framework/CustomTypes.cs',ROOT/'native-port/tests/inventory_copy_reference.cs']
- for f in files:ET.SubElement(ig,'Compile',Include=str(f))
- for name in ['OpenMetaverse','OpenMetaverseTypes','OpenMetaverse.StructuredData']:
-  ref=ET.SubElement(ig,'Reference',Include=name);ET.SubElement(ref,'HintPath').text=str(ROOT/'bin'/f'{name}.dll')
- cs=w/'InventoryCopyReference.csproj';ET.ElementTree(project).write(cs,encoding='utf-8',xml_declaration=True);r=subprocess.run([a.dotnet,'build',str(cs),'-o',str(w/'app'),'--nologo','-v','quiet'],capture_output=True,text=True);assert r.returncode==0,r.stdout+r.stderr
- modes=set(range(4096));modes.update([4096,8192,16384,32768,65536,131072,262144,524288,1048576,4194304]);rng=random.Random(902);modes.update(rng.randrange(1<<23) for _ in range(128));commands=[f'0 {m} 10 {f}' for m in sorted(modes) for f in [0,2,3,4,5,6,7,8,9,10,11]];commands +=[f'{k} {m} {v} 0' for k in range(7) for m in [0,16,32,64,128,256,2048,4096,4096|2048,32768,65536,262144] for v in [-2147483648,-129,-128,-1,0,127,128,255,256,0x8e000,0x7fffffff]];commands += [f'7 {m} {v} {f}' for m in [0,1,2,3,2048,4096,8192,16384,32768,65536,262144,1048576,4096|2048] for v in [-128,-1,0,7,10,24,25,127,0x9e000] for f in [0,4,5,6,7,8,11,12,13]];outputs=[]
- for cmd in [[a.dotnet,str(w/'app/InventoryCopyReference.dll')],[a.native,'--probe']]:
-  r=subprocess.run(cmd,input='\n'.join(commands)+'\n',capture_output=True,text=True,timeout=90);assert r.returncode==0,r.stderr;outputs.append(r.stdout.splitlines())
- assert len(outputs[0])==len(outputs[1])==len(commands);diffs=[dict(command=c,source=s,native=n) for c,s,n in zip(commands,*outputs) if s!=n];sources=[source,util,animation,files[1],files[2],files[3]];report=dict(passed=not diffs,cases=len(commands),sourceHashes={str(f.relative_to(ROOT)):hashlib.sha256(f.read_bytes()).hexdigest() for f in sources},scope='Complete unchanged HandleLinkInventoryItem, CopyInventoryItem and both CreateNewInventoryItem overloads; complete AnimationSet setCreateItemPermitions/enforceItemPermitions; full original InventoryItemBase/InventoryNodeBase and SDK. Library-first/Copy bypass, user Copy gate, claimed old-agent/library-owner branches, Transfer-before-policy, exact permission propagation and callback order, source mutation during bypass/clock/add, nullable creator data/name, byte wrapping, animation masks, persistence false/throws and actual SDK text/flags. Link permission/presence/clock/create ordering, absent presence error, no target lookup/duplicate validation, full masks, null/name/description handling, ignored assetUpload bool, type96 special case and injected failures. New random identity normalized to nonzero; RNG exception behavior not covered.',differences=diffs[:2]);(w/'inventory-copy-results.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8');assert not diffs,json.dumps(diffs[:1]);print(f'PASS: {len(commands)} original inventory copy/create observations')
-if __name__=='__main__':main()
+    p = argparse.ArgumentParser()
+    p.add_argument('--native', required=True)
+    p.add_argument('--dotnet', required=True)
+    p.add_argument('--work', required=True, type=Path)
+    a = p.parse_args()
+    w = a.work.resolve()
+    w.mkdir(parents=True, exist_ok=True)
+    source = ROOT / 'OpenSim/Region/Framework/Scenes/Scene.Inventory.cs'
+    util = ROOT / 'OpenSim/Framework/Util.cs'
+    animation = ROOT / 'OpenSim/Framework/AnimationSet.cs'
+    s = source.read_text(encoding='utf-8')
+    sig = 'public void CreateNewInventoryItem('
+    first = s.index(sig)
+    second = s.index(sig, first + len(sig))
+    methods = (
+        extract(s, 'private void HandleLinkInventoryItem(')
+        + extract(s, 'public void CopyInventoryItem(')
+        + extract(s[first:], sig)
+        + extract(s[second:], sig)
+    )
+    anim = animation.read_text(encoding='utf-8')
+    start = anim.index('public const uint createBasePermitions')
+    end = anim.index('public static void setCreateItemPermitions', start)
+    generated = w / 'ExtractedInventoryCopy.cs'
+    generated.write_text(
+        'using System;using OpenMetaverse;using OpenSim.Framework;using PermissionMask=OpenSim.Framework.PermissionMask;partial class Scene{'
+        + methods
+        + '}namespace OpenSim.Framework{'
+        + extract(util.read_text(encoding='utf-8'), 'public enum PermissionMask')
+        + 'class AnimationSet{'
+        + anim[start:end]
+        + extract(anim, 'public static void setCreateItemPermitions(')
+        + extract(anim, 'public static void enforceItemPermitions(')
+        + '}}',
+        encoding='utf-8',
+    )
+    project = ET.Element('Project', Sdk='Microsoft.NET.Sdk')
+    props = ET.SubElement(project, 'PropertyGroup')
+    for k, v in dict(
+        TargetFramework='net8.0', OutputType='Exe', EnableDefaultCompileItems='false'
+    ).items():
+        ET.SubElement(props, k).text = v
+    ig = ET.SubElement(project, 'ItemGroup')
+    files = [
+        generated,
+        ROOT / 'OpenSim/Framework/InventoryNodeBase.cs',
+        ROOT / 'OpenSim/Framework/InventoryItemBase.cs',
+        ROOT / 'OpenSim/Framework/CustomTypes.cs',
+        ROOT / 'native-port/tests/inventory_copy_reference.cs',
+    ]
+    for f in files:
+        ET.SubElement(ig, 'Compile', Include=str(f))
+    for name in ['OpenMetaverse', 'OpenMetaverseTypes', 'OpenMetaverse.StructuredData']:
+        ref = ET.SubElement(ig, 'Reference', Include=name)
+        ET.SubElement(ref, 'HintPath').text = str(ROOT / 'bin' / f'{name}.dll')
+    cs = w / 'InventoryCopyReference.csproj'
+    ET.ElementTree(project).write(cs, encoding='utf-8', xml_declaration=True)
+    r = subprocess.run(
+        [a.dotnet, 'build', str(cs), '-o', str(w / 'app'), '--nologo', '-v', 'quiet'],
+        capture_output=True,
+        text=True,
+    )
+    assert r.returncode == 0, r.stdout + r.stderr
+    modes = set(range(4096))
+    modes.update([4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 4194304])
+    rng = random.Random(902)
+    modes.update(rng.randrange(1 << 23) for _ in range(128))
+    commands = [f'0 {m} 10 {f}' for m in sorted(modes) for f in [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]
+    commands += [
+        f'{k} {m} {v} 0'
+        for k in range(7)
+        for m in [0, 16, 32, 64, 128, 256, 2048, 4096, 4096 | 2048, 32768, 65536, 262144]
+        for v in [-2147483648, -129, -128, -1, 0, 127, 128, 255, 256, 0x8E000, 0x7FFFFFFF]
+    ]
+    commands += [
+        f'7 {m} {v} {f}'
+        for m in [0, 1, 2, 3, 2048, 4096, 8192, 16384, 32768, 65536, 262144, 1048576, 4096 | 2048]
+        for v in [-128, -1, 0, 7, 10, 24, 25, 127, 0x9E000]
+        for f in [0, 4, 5, 6, 7, 8, 11, 12, 13]
+    ]
+    outputs = []
+    for cmd in [[a.dotnet, str(w / 'app/InventoryCopyReference.dll')], [a.native, '--probe']]:
+        r = subprocess.run(
+            cmd, input='\n'.join(commands) + '\n', capture_output=True, text=True, timeout=90
+        )
+        assert r.returncode == 0, r.stderr
+        outputs.append(r.stdout.splitlines())
+    assert len(outputs[0]) == len(outputs[1]) == len(commands)
+    diffs = [dict(command=c, source=s, native=n) for c, s, n in zip(commands, *outputs) if s != n]
+    sources = [source, util, animation, files[1], files[2], files[3]]
+    report = dict(
+        passed=not diffs,
+        cases=len(commands),
+        sourceHashes={
+            str(f.relative_to(ROOT)): hashlib.sha256(f.read_bytes()).hexdigest() for f in sources
+        },
+        scope='Complete unchanged HandleLinkInventoryItem, CopyInventoryItem and both CreateNewInventoryItem overloads; complete AnimationSet setCreateItemPermitions/enforceItemPermitions; full original InventoryItemBase/InventoryNodeBase and SDK. Library-first/Copy bypass, user Copy gate, claimed old-agent/library-owner branches, Transfer-before-policy, exact permission propagation and callback order, source mutation during bypass/clock/add, nullable creator data/name, byte wrapping, animation masks, persistence false/throws and actual SDK text/flags. Link permission/presence/clock/create ordering, absent presence error, no target lookup/duplicate validation, full masks, null/name/description handling, ignored assetUpload bool, type96 special case and injected failures. New random identity normalized to nonzero; RNG exception behavior not covered.',
+        differences=diffs[:2],
+    )
+    (w / 'inventory-copy-results.json').write_text(
+        json.dumps(report, indent=2) + '\n', encoding='utf-8'
+    )
+    assert not diffs, json.dumps(diffs[:1])
+    print(f'PASS: {len(commands)} original inventory copy/create observations')
+
+
+if __name__ == '__main__':
+    main()

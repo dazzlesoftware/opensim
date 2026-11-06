@@ -153,6 +153,7 @@ network::lludp::Packet object_update(const SceneObject& o, std::uint64_t region,
     b["ProfileEnd"] = std::uint64_t(s.profile_end);
     b["ProfileHollow"] = std::uint64_t(s.profile_hollow);
     b["TextureEntry"] = o.texture_entry;
+    b["TextureAnim"] = o.texture_animation;
     if (o.extra_params.size() > 1) {
         constexpr std::uint8_t left_hand = 5;
         constexpr std::uint8_t right_hand = 6;

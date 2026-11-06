@@ -1,11 +1,15 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/services/region_asset_runtime.hpp"
+#include "fs_asset_service.hpp"
 #include <pugixml.hpp>
 #include "opensim/framework/texture_entry.hpp"
 #include <charconv>
 #include <sstream>
+#include <unordered_map>
+#include <unordered_set>
 #include "opensim/services/get_assets_module.hpp"
+#include "opensim/services/hg_asset_service.hpp"
 #include "opensim/services/local_asset_connector.hpp"
 #include "opensim/services/native_asset_storage.hpp"
 #include "opensim/services/flotsam_memory_cache.hpp"
@@ -21,11 +25,15 @@
 #include "opensim/framework/config_native_uri_object.hpp"
 #include "opensim/framework/culture_prefix.hpp"
 #include "opensim/framework/http_host.hpp"
+#include "opensim/framework/http_uri.hpp"
+#include "opensim/framework/sdk_uuid.hpp"
+#include "opensim/framework/invariant_datetime_context.hpp"
 #include "opensim/services/user_account.hpp"
 #include <bit>
 #include <algorithm>
 #include <exception>
 #include <chrono>
+#include <cstdio>
 #include <thread>
 namespace opensim::services {
 std::string serialize_baked_appearance(const framework::WearableCacheItems &cache) {
@@ -74,32 +82,167 @@ std::string serialize_baked_appearance(const framework::WearableCacheItems &cach
     document.save(output, "", pugi::format_raw | pugi::format_no_declaration);
     return output.str();
 }
-std::shared_ptr<framework::AssetBase> deserialize_remote_asset(std::string_view xml) {
+namespace {
+std::string date_xml(framework::AssetDateTime date) {
+    using namespace std::chrono;
+    using Ticks = duration<std::int64_t, std::ratio<1, 10000000>>;
+    const auto instant = sys_days{year{1} / January / 1} + Ticks{date.ticks()};
+    const auto day = floor<days>(instant);
+    const year_month_day calendar{day};
+    const hh_mm_ss clock{instant - day};
+    char text[48];
+    std::snprintf(text, sizeof(text), "%04d-%02u-%02uT%02d:%02d:%02d",
+                  int(calendar.year()), unsigned(calendar.month()), unsigned(calendar.day()),
+                  int(clock.hours().count()), int(clock.minutes().count()), int(clock.seconds().count()));
+    std::string value(text);
+    if (const auto fraction = clock.subseconds().count()) {
+        std::snprintf(text, sizeof(text), ".%07lld", static_cast<long long>(fraction));
+        value += text;
+        while (value.back() == '0')
+            value.pop_back();
+    }
+    if (date.kind() == 1)
+        value += 'Z';
+    else if (date.kind() == 2) {
+        const auto runtime = framework::shared_native_invariant_datetime_context();
+        const auto minutes = runtime->local_rule_snapshot()->local_offset_no_throw(date) / 600000000;
+        const auto magnitude = minutes < 0 ? -minutes : minutes;
+        std::snprintf(text, sizeof(text), "%c%02d:%02d", minutes < 0 ? '-' : '+',
+                      static_cast<int>(magnitude / 60), static_cast<int>(magnitude % 60));
+        value += text;
+    }
+    return value;
+}
+
+std::string asset_flags_xml(std::int32_t flags) {
+    std::string value;
+    for (const auto &[flag, name] :
+         {std::pair{framework::Maptile, "Maptile"}, std::pair{framework::Rewritable, "Rewritable"},
+          std::pair{framework::Collectable, "Collectable"}}) {
+        if (!(flags & flag))
+            continue;
+        if (!value.empty())
+            value += ' ';
+        value += name;
+    }
+    return value.empty() ? "Normal" : value;
+}
+
+std::string asset_xml(const framework::AssetMetadata &metadata, const framework::AssetBase *asset) {
+    pugi::xml_document document;
+    auto row = document.append_child(asset ? "AssetBase" : "AssetMetadata");
+    const auto add = [&](const char *name, const std::string &value) {
+        row.append_child(name).text().set(value.c_str());
+    };
+    if (asset && asset->data)
+        add("Data", network::binary_base64(network::osd_from_binary(asset->data)));
+    row.append_child("FullID").append_child("Guid").text().set(metadata.full_id().str().c_str());
+    add("ID", metadata.id());
+    if (metadata.name)
+        add("Name", *metadata.name);
+    if (metadata.description)
+        add("Description", *metadata.description);
+    if (!asset)
+        add("CreationDate", date_xml(metadata.creation_date));
+    add("Type", std::to_string(metadata.type));
+    if (asset) {
+        add("UploadAttempts", std::to_string(asset->upload_attempts));
+    } else {
+        add("ContentType", metadata.content_type());
+        if (metadata.sha1)
+            add("SHA1", network::binary_base64(network::osd_from_binary(metadata.sha1)));
+    }
+    add("Local", metadata.local ? "true" : "false");
+    add("Temporary", metadata.temporary ? "true" : "false");
+    if (metadata.creator_id)
+        add("CreatorID", *metadata.creator_id);
+    add("Flags", asset_flags_xml(metadata.flags));
+    std::ostringstream output;
+    row.print(output, "", pugi::format_raw);
+    return output.str();
+}
+}
+
+std::string serialize_remote_asset(const framework::AssetBase &asset) {
+    const auto metadata = asset.metadata();
+    if (!metadata)
+        throw std::invalid_argument("Cannot serialize an asset without metadata");
+    return asset_xml(*metadata, &asset);
+}
+
+std::string serialize_remote_asset_metadata(const framework::AssetMetadata &metadata) {
+    return asset_xml(metadata, nullptr);
+}
+
+namespace {
+framework::AssetDateTime parse_metadata_date(std::string value) {
+    value = framework::trim_utf8(value);
+    if (value.size() < 19 || value[4] != '-' || value[7] != '-' || value[10] != 'T' ||
+        value[13] != ':' || value[16] != ':')
+        throw std::invalid_argument("Invalid asset metadata creation date");
+    const bool utc = value.ends_with('Z');
+    if (utc)
+        value.pop_back();
+    framework::AssetDateTime date;
+    const auto context = framework::shared_native_invariant_datetime_context();
+    if (!framework::try_parse_invariant_datetime_utf8(value, date, context->callbacks()))
+        throw std::invalid_argument("Invalid asset metadata creation date");
+    return utc ? framework::AssetDateTime(date.ticks(), 1) : date;
+}
+
+bool is_nil(pugi::xml_node node) {
+    for (const auto attribute : node.attributes()) {
+        const std::string_view name = attribute.name();
+        if (!name.ends_with(":nil"))
+            continue;
+        const auto ns = "xmlns:" + std::string(name.substr(0, name.size() - 4));
+        for (auto scope = node; scope; scope = scope.parent()) {
+            if (auto declaration = scope.attribute(ns.c_str())) {
+                if (std::string_view(declaration.value()) == "http://www.w3.org/2001/XMLSchema-instance")
+                    return attribute.as_bool();
+                break;
+            }
+        }
+    }
+    return false;
+}
+
+std::optional<bool> xml_boolean(std::string_view text) {
+    const auto value = framework::trim_utf8(text);
+    if (value == "true" || value == "1")
+        return true;
+    if (value == "false" || value == "0")
+        return false;
+    return std::nullopt;
+}
+
+std::string asset_element_text(pugi::xml_node node) {
+    std::string text;
+    for (const auto part : node.children()) {
+        if (part.type() == pugi::node_pcdata || part.type() == pugi::node_cdata)
+            text += part.value();
+        else if (part.type() == pugi::node_element)
+            throw std::invalid_argument("Unexpected element in asset XML value");
+    }
+    return text;
+}
+
+std::shared_ptr<framework::AssetBase> deserialize_asset_wire(std::string_view xml, bool metadata) {
     pugi::xml_document document;
     if (!document.load_buffer(xml.data(), xml.size()))
         return {};
     const auto root = document.document_element();
-    const auto is_nil = [](pugi::xml_node node) {
-        for (const auto attribute : node.attributes()) {
-            const std::string_view name = attribute.name();
-            if (!name.ends_with(":nil"))
-                continue;
-            const auto ns = "xmlns:" + std::string(name.substr(0, name.size() - 4));
-            for (auto scope = node; scope; scope = scope.parent()) {
-                if (auto declaration = scope.attribute(ns.c_str())) {
-                    if (std::string_view(declaration.value()) == "http://www.w3.org/2001/XMLSchema-instance")
-                        return attribute.as_bool();
-                    break;
-                }
-            }
-        }
-        return false;
-    };
-    if (std::string_view(root.name()) != "AssetBase" || is_nil(root))
+    if (std::string_view(root.name()) != (metadata ? "AssetMetadata" : "AssetBase") ||
+        *root.attribute("xmlns").value() || is_nil(root))
         return {};
     auto asset = std::make_shared<framework::AssetBase>();
+    if (metadata)
+        asset->metadata(std::make_shared<framework::AssetMetadata>());
     const auto integer = [](pugi::xml_node node) {
-        const auto text = framework::trim_utf8(node.child_value());
+        const auto trimmed = framework::trim_utf8(asset_element_text(node));
+        auto text = std::string_view(trimmed);
+        if (text.starts_with('+') && text.size() > 1 && text[1] >= '0' && text[1] <= '9')
+            text.remove_prefix(1);
         int result{};
         const auto parsed = std::from_chars(text.data(), text.data() + text.size(), result);
         if (parsed.ec != std::errc{} || parsed.ptr != text.data() + text.size())
@@ -107,25 +250,41 @@ std::shared_ptr<framework::AssetBase> deserialize_remote_asset(std::string_view 
         return result;
     };
     try {
+        // XmlSerializer reads each scalar member once.
+        std::unordered_set<std::string_view> seen_fields;
         for (const auto node : root.children()) {
+            if (*node.attribute("xmlns").value())
+                continue;
             const std::string_view field = node.name();
+            if (!seen_fields.insert(field).second)
+                continue;
             const bool nil = is_nil(node);
             const auto text = [&]() -> std::optional<std::string> {
-                return nil ? std::nullopt : std::optional<std::string>(node.child_value());
+                return nil ? std::nullopt : std::optional{asset_element_text(node)};
             };
-            if (field == "Data") {
+            if ((!metadata && field == "Data") || (metadata && field == "SHA1")) {
+                auto &destination = metadata ? asset->metadata()->sha1 : asset->data;
                 if (nil) {
-                    asset->data.reset();
+                    destination.reset();
                     continue;
                 }
                 network::Value bytes;
                 bytes.kind = network::Value::Kind::Binary;
-                bytes.text = node.child_value();
-                asset->data = network::osd_binary(bytes);
+                bytes.text = asset_element_text(node);
+                destination = network::osd_binary(bytes);
             } else if (field == "FullID") {
                 framework::Uuid id;
-                if (!framework::try_parse_sdk_uuid(node.child_value("Guid"), id))
-                    return {};
+                for (const auto guid : node.children("Guid")) {
+                    if (*guid.attribute("xmlns").value())
+                        continue;
+                    const auto guid_text = framework::trim_utf8(asset_element_text(guid));
+                    auto value = std::string_view(guid_text);
+                    // This XML field is a System.Guid. The string ID uses the SDK parser.
+                    if (value.size() == 38 && value.front() == '(' && value.back() == ')')
+                        value = value.substr(1, 36);
+                    id = framework::Uuid(value);
+                    break;
+                }
                 asset->full_id(id);
             } else if (field == "ID")
                 asset->id(text());
@@ -140,14 +299,23 @@ std::shared_ptr<framework::AssetBase> deserialize_remote_asset(std::string_view 
                 if (type < -128 || type > 127)
                     return {};
                 asset->type(static_cast<std::int8_t>(type));
-            } else if (field == "UploadAttempts")
+            } else if (metadata && field == "CreationDate")
+                asset->metadata()->creation_date = parse_metadata_date(asset_element_text(node));
+            else if (metadata && field == "ContentType") {
+                if (const auto type = text())
+                    asset->metadata()->content_type(*type);
+            } else if (!metadata && field == "UploadAttempts")
                 asset->upload_attempts = integer(node);
-            else if (field == "Local")
-                asset->local(node.text().as_bool());
-            else if (field == "Temporary")
-                asset->temporary(node.text().as_bool());
-            else if (field == "Flags") {
-                std::istringstream values(node.child_value());
+            else if (field == "Local" || field == "Temporary") {
+                const auto value = xml_boolean(asset_element_text(node));
+                if (!value)
+                    return {};
+                if (field == "Local")
+                    asset->local(*value);
+                else
+                    asset->temporary(*value);
+            } else if (field == "Flags") {
+                std::istringstream values(asset_element_text(node));
                 std::string flag;
                 std::int32_t flags = framework::Normal;
                 while (values >> flag) {
@@ -168,6 +336,12 @@ std::shared_ptr<framework::AssetBase> deserialize_remote_asset(std::string_view 
     }
     return asset;
 }
+}
+
+std::shared_ptr<framework::AssetBase> deserialize_remote_asset(std::string_view xml) {
+    return deserialize_asset_wire(xml, false);
+}
+
 framework::WearableCacheItems deserialize_baked_appearance(std::string_view xml) {
     pugi::xml_document document;
     if (!document.load_buffer(xml.data(), xml.size()))
@@ -217,7 +391,9 @@ std::shared_ptr<framework::AssetBase> request_remote_asset(const network::WebHtt
             length = framework::config_http_content_length(values);
         };
         auto deadline = std::make_shared<Clock::time_point>(Clock::time_point::max());
-        operation.body_interrupted = [deadline] { return Clock::now() >= *deadline; };
+        operation.body_interrupted = [deadline] {
+            return Clock::now() >= *deadline;
+        };
         auto client = clients.get_new_global_client(0);
         auto stream = client->send_headers(std::move(uri), std::move(operation), true);
         struct Close {
@@ -245,6 +421,235 @@ std::shared_ptr<framework::AssetBase> request_remote_asset(const network::WebHtt
     }
 }
 namespace {
+struct ForeignAssetTarget {
+    std::string url;
+    framework::Uuid id;
+};
+
+std::optional<ForeignAssetTarget> foreign_asset_target(const std::string& value) {
+    if (!value.starts_with('h') && !value.starts_with('H'))
+        return std::nullopt;
+    const framework::HttpUri target(value, true);
+    if (!target.resolved() || target.path.size() < 36)
+        return std::nullopt;
+    auto id = std::string_view(target.path);
+    if (id.starts_with('/'))
+        id.remove_prefix(1);
+    framework::Uuid uuid;
+    if (!framework::try_parse_sdk_uuid(framework::utf16(id), uuid))
+        return std::nullopt;
+    return ForeignAssetTarget{target.url, uuid};
+}
+
+class GridAssetService final : public AssetService, public std::enable_shared_from_this<GridAssetService> {
+    std::shared_ptr<network::WebHttpClients> clients_;
+    std::string uri_, authorization_;
+    std::function<bool(std::function<void()>)> schedule_;
+    std::mutex pending_mutex_;
+    std::unordered_map<std::string, std::vector<std::function<void(Asset)>>> pending_;
+
+    void finish_async(const std::string& id, const Asset& asset, bool scheduled) {
+        std::vector<std::function<void(Asset)>> callbacks;
+        {
+            std::lock_guard lock(pending_mutex_);
+            auto entry = pending_.extract(id);
+            callbacks = std::move(entry.mapped());
+        }
+        // The caller that submitted a rejected task receives false directly.
+        for (std::size_t index = scheduled ? 0 : 1; index < callbacks.size(); ++index) {
+            try {
+                callbacks[index](asset);
+            } catch (...) {
+                // A callback must not prevent other waiters from receiving the result.
+            }
+        }
+    }
+
+    std::optional<std::string> request(std::string method, const std::string &path, std::string body = {}) {
+        try {
+            auto backend = framework::native_config_uri_object_backend();
+            auto url = backend->create(framework::nini_writer_text(framework::utf16_replacing(uri_ + path)),
+                                       framework::ConfigUriObjectKind::Absolute);
+            framework::ConfigXmlHttpOperation operation;
+            operation.method = std::move(method);
+            operation.body = std::move(body);
+            operation.timeout_milliseconds = 30000;
+            if (!operation.body.empty())
+                operation.headers.emplace_back("Content-Type", framework::nini_writer_text(u"text/xml"));
+            if (!authorization_.empty())
+                operation.headers.emplace_back(
+                    "Authorization", framework::nini_writer_text(framework::utf16_replacing(authorization_)));
+            auto stream = clients_->get_new_global_client(30000)->send_headers(std::move(url),
+                                                                               std::move(operation), true);
+            const auto bytes = stream->copy_to_memory();
+            stream->close();
+            return std::string(bytes.begin(), bytes.end());
+        } catch (const std::exception &) {
+            return std::nullopt;
+        }
+    }
+    static std::string xml(pugi::xml_node node) {
+        std::ostringstream output;
+        node.print(output, "", pugi::format_raw);
+        return output.str();
+    }
+    static bool boolean_reply(const std::optional<std::string> &reply) {
+        pugi::xml_document document;
+        if (!reply || !document.load_buffer(reply->data(), reply->size()))
+            return false;
+        const auto root = document.document_element();
+        if (std::string_view(root.name()) != "boolean" || *root.attribute("xmlns").value())
+            return false;
+        try {
+            return xml_boolean(asset_element_text(root)).value_or(false);
+        } catch (const std::invalid_argument&) {
+            return false;
+        }
+    }
+
+  public:
+    GridAssetService(std::string uri, std::shared_ptr<network::WebHttpClients> clients)
+        : clients_(std::move(clients)), uri_(std::move(uri)) {}
+
+    GridAssetService(const server::IniConfig &config, std::shared_ptr<network::WebHttpClients> clients,
+                     std::function<bool(std::function<void()>)> schedule)
+        : clients_(std::move(clients)), schedule_(std::move(schedule)) {
+        if (!config.has_section("AssetService"))
+            throw std::invalid_argument("AssetServicesConnector requires an AssetService section");
+        auto server = config.get("AssetService", "AssetServerURI");
+        if (server.empty())
+            server = config.get("Network", "asset_server_url");
+        framework::HttpHost host(server, true);
+        if (!clients_ || !host.resolved())
+            throw std::invalid_argument("AssetServicesConnector requires a resolved AssetServerURI");
+        uri_ = std::move(host.uri);
+        if (config.get("AssetService", "AuthType", config.get("Network", "AuthType")) ==
+            "BasicHttpAuthentication") {
+            const auto username =
+                config.get("AssetService", "HttpAuthUsername", config.get("Network", "HttpAuthUsername"));
+            const auto password =
+                config.get("AssetService", "HttpAuthPassword", config.get("Network", "HttpAuthPassword"));
+            const auto credentials = username + ":" + password;
+            authorization_ =
+                "Basic " +
+                network::binary_base64(network::osd_from_binary(
+                    std::make_shared<std::vector<std::uint8_t>>(credentials.begin(), credentials.end())));
+        }
+    }
+    Asset get_asset(const std::string &id) override {
+        const auto reply = request("GET", "/assets/" + id);
+        return reply ? deserialize_remote_asset(*reply) : nullptr;
+    }
+    Asset get_foreign(const std::string &, const std::optional<std::string> &, bool) override {
+        return {};
+    }
+    Asset get_cached(const std::string &) override {
+        return {};
+    }
+    std::shared_ptr<framework::AssetMetadata> get_metadata(const std::string &id) override {
+        const auto reply = request("GET", "/assets/" + id + "/metadata");
+        const auto asset = reply ? deserialize_asset_wire(*reply, true) : nullptr;
+        return asset ? asset->metadata() : nullptr;
+    }
+    framework::AssetBytes get_data(const std::string &id) override {
+        const auto reply = request("GET", "/assets/" + id + "/data");
+        return reply && !reply->empty()
+                   ? std::make_shared<std::vector<std::uint8_t>>(reply->begin(), reply->end())
+                   : nullptr;
+    }
+    bool get_async(const std::string &id, std::any sender, Retrieved callback) override {
+        {
+            std::lock_guard lock(pending_mutex_);
+            auto& callbacks = pending_[id];
+            callbacks.emplace_back([id, sender = std::move(sender), callback = std::move(callback)](Asset asset) {
+                callback(id, sender, std::move(asset));
+            });
+            if (callbacks.size() > 1)
+                return true;
+        }
+        if (schedule_([self = shared_from_this(), id] {
+                self->finish_async(id, self->get_asset(id), true);
+            }))
+            return true;
+        finish_async(id, {}, false);
+        return false;
+    }
+    void get(const std::string &, const std::optional<std::string> &, bool, Complete callback) override {
+        if (callback)
+            callback(nullptr);
+    }
+    std::vector<bool> assets_exist(const std::vector<std::string> &ids) override {
+        pugi::xml_document document;
+        auto array = document.append_child("ArrayOfString");
+        for (const auto &id : ids)
+            array.append_child("string").text().set(id.c_str());
+        const auto reply = request("POST", "/get_assets_exist", xml(array));
+        pugi::xml_document response;
+        if (!reply || !response.load_buffer(reply->data(), reply->size()))
+            return std::vector<bool>(ids.size());
+        const auto flags = response.document_element();
+        if (std::string_view(flags.name()) != "ArrayOfBoolean" ||
+            *flags.attribute("xmlns").value() || is_nil(flags))
+            return std::vector<bool>(ids.size());
+        std::vector<bool> result;
+        try {
+            for (const auto flag : flags.children("boolean")) {
+                if (*flag.attribute("xmlns").value())
+                    continue;
+                const auto value = xml_boolean(asset_element_text(flag));
+                if (!value)
+                    return std::vector<bool>(ids.size());
+                result.push_back(*value);
+            }
+        } catch (const std::invalid_argument&) {
+            return std::vector<bool>(ids.size());
+        }
+        return result;
+    }
+    std::optional<std::string> store(Asset asset) override {
+        if (!asset)
+            return std::nullopt;
+        const auto id = asset->id();
+        if (id.empty() || id == framework::Uuid{}.str() || asset->full_id().is_zero()) {
+            auto uuid = asset->full_id();
+            if (uuid.is_zero())
+                framework::try_parse_sdk_uuid(id, uuid);
+            asset->full_id(uuid.is_zero() ? framework::Uuid::random() : uuid);
+        }
+        if (asset->temporary() || asset->local())
+            return asset->id();
+        const auto reply = request("POST", "/assets/", serialize_remote_asset(*asset));
+        pugi::xml_document document;
+        if (!reply || !document.load_buffer(reply->data(), reply->size()))
+            return std::string{};
+        const auto root = document.document_element();
+        if (std::string_view(root.name()) != "string" || *root.attribute("xmlns").value() || is_nil(root))
+            return std::string{};
+        std::string stored;
+        try {
+            stored = asset_element_text(root);
+        } catch (const std::invalid_argument&) {
+            return std::string{};
+        }
+        if (stored.empty() || stored == framework::Uuid{}.str())
+            return std::string{};
+        asset->id(stored);
+        return stored;
+    }
+    bool update_content(const std::string &id, framework::AssetBytes data) override {
+        const auto metadata = get_metadata(id);
+        if (!metadata)
+            return false;
+        auto asset = std::make_shared<framework::AssetBase>();
+        asset->metadata(metadata);
+        asset->data = std::move(data);
+        return boolean_reply(request("POST", "/assets/" + id, serialize_remote_asset(*asset)));
+    }
+    bool erase(const std::string &id) override {
+        return boolean_reply(request("DELETE", "/assets/" + id));
+    }
+};
+
 std::shared_ptr<FlotsamStaticConfig> shared_cache_configuration() {
     static auto state = std::make_shared<FlotsamStaticConfig>();
     return state;
@@ -262,12 +667,22 @@ struct Backend final : AssetsModuleBackend, AssetConnectorBackend {
     RegionAssetRuntime::StructuredLog structured_log;
     std::shared_ptr<AssetStorageState> storage_state = std::make_shared<AssetStorageState>();
     std::shared_ptr<NativeAssetStorageBackend> storage;
-    std::shared_ptr<ConfiguredAssetService> service;
+    std::shared_ptr<AssetService> service;
+    std::shared_ptr<ConfiguredAssetService> local_service;
+    std::shared_ptr<network::WebHttpClients> http;
     framework::ObjectJobEngine callbacks;
+    framework::ObjectJobEngine local_reads;
+    framework::ObjectJobEngine remote_reads;
     explicit Backend(std::function<void(std::string)> logger, RegionAssetRuntime::StructuredLog typed)
         : log(std::move(logger)), structured_log(std::move(typed)),
           callbacks([](std::any value) { std::any_cast<std::function<void()>>(value)(); },
                     "RegionAssetCallbacks", 1000, 3,
+                    [this](const auto &name, const auto &error) { job_error(name, error); }),
+          local_reads([](std::any value) { std::any_cast<std::function<void()>>(value)(); },
+                    "GetAssetsWorkers", 2000, 2,
+                    [this](const auto &name, const auto &error) { job_error(name, error); }),
+          remote_reads([](std::any value) { std::any_cast<std::function<void()>>(value)(); },
+                    "GetRemoteAssetsWorkers", 2000, 2,
                     [this](const auto &name, const auto &error) { job_error(name, error); }) {
         // Capture the logger by value: storage may outlive the runtime through caps.
         storage = std::make_shared<NativeAssetStorageBackend>(
@@ -305,15 +720,25 @@ struct Backend final : AssetsModuleBackend, AssetConnectorBackend {
     void post(std::function<void()> callback, const std::string &) override {
         callbacks.enqueue(std::move(callback));
     }
-    bool try_post(std::function<void()> callback, const std::string &) override {
-        return callbacks.enqueue(std::move(callback));
+    bool queue_asset_read(std::function<void()> callback, bool remote) override {
+        return (remote ? remote_reads : local_reads).enqueue(std::move(callback));
     }
     std::shared_ptr<AssetService> load_service(const std::string &module,
                                                const server::IniConfig *config) override {
+        if (module == "OpenSim.Services.Connectors.dll:AssetServicesConnector") {
+            service = make_grid_asset_service(
+                *config, http, [this](auto task) { return callbacks.enqueue(std::move(task)); });
+            return service;
+        }
+        if (module == fs_asset_module) {
+            service = make_fs_asset_service(*config, storage);
+            return service;
+        }
         if (module != "OpenSim.Services.AssetService.dll:AssetService")
             throw std::invalid_argument("Unsupported local AssetService module: " + module);
         AssetStorageFactory factory(storage, storage_state);
-        service = factory.create(config);
+        local_service = factory.create(config);
+        service = local_service;
         return service;
     }
 };
@@ -384,6 +809,12 @@ struct Scene final : AssetsModuleScene, AssetConnectorScene, FlotsamCacheScene {
     }
 };
 }
+std::shared_ptr<AssetService>
+make_grid_asset_service(const server::IniConfig &config, std::shared_ptr<network::WebHttpClients> clients,
+                        std::function<bool(std::function<void()>)> schedule) {
+    return std::make_shared<GridAssetService>(config, std::move(clients), std::move(schedule));
+}
+
 struct RegionAssetRuntime::State {
     std::shared_ptr<FlotsamConsoleBackend> cache_dates;
     std::shared_ptr<Backend> backend;
@@ -398,7 +829,7 @@ struct RegionAssetRuntime::State {
         std::make_shared<std::vector<FlotsamConfigCommand>>();
     std::shared_ptr<AssetsModuleState> module_state = std::make_shared<AssetsModuleState>();
     std::shared_ptr<network::WebHttpClients> foreign_http;
-    std::string disallow_import;
+    AssetExchangePermissions exchange_permissions;
     std::atomic<bool> stopped = false;
     void stop() {
         if (stopped.exchange(true))
@@ -437,15 +868,22 @@ struct RegionAssetRuntime::State {
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
         if (connector && scene)
             attempt([&] { connector->remove_region(scene); });
+        if (backend) {
+            for (auto* queue : {&backend->local_reads, &backend->remote_reads})
+                attempt([&] { queue->dispose(); });
+            for (auto* queue : {&backend->local_reads, &backend->remote_reads})
+                while (queue->active_threads() != 0)
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
         if (connector)
             attempt([&] { connector->close(); });
-        if (backend)
+        if (backend) {
             attempt([&] { backend->callbacks.dispose(); });
-        if (backend)
             while (backend->callbacks.active_threads() != 0)
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        if (backend && backend->service && backend->service->database)
-            attempt([&] { backend->service->database->dispose(); });
+        }
+        if (backend && backend->local_service && backend->local_service->database)
+            attempt([&] { backend->local_service->database->dispose(); });
         module_state->handler.store(nullptr);
         module_state->service.store(nullptr);
         if (scene)
@@ -555,6 +993,7 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
         cache_options.loader_arguments = state_->cache_config->loader_arguments.value_or("");
     }
     state_->backend = std::make_shared<Backend>(std::move(log), std::move(structured_log));
+    state_->backend->http = http;
     state_->scene = std::make_shared<Scene>(std::move(events), std::move(region_name), region_id);
     if (cache) {
         state_->cache_backend = std::make_shared<CacheBackend>(state_->backend->storage);
@@ -563,8 +1002,9 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
         state_->cache_module->post_initialise();
         state_->cache_module->add_region(state_->scene);
     }
-    state_->connector = std::make_shared<LocalAssetConnector>(state_->backend);
-    if (config.get("Modules", "AssetServices") == "RegionAssetConnector") {
+    const bool region_connector = config.get("Modules", "AssetServices") == "RegionAssetConnector";
+    state_->connector = std::make_shared<LocalAssetConnector>(state_->backend, region_connector);
+    if (region_connector) {
         const auto module = config.get("AssetService", "LocalGridAssetService");
         if (module.empty())
             throw std::invalid_argument("RegionAssetConnector requires AssetService.LocalGridAssetService");
@@ -573,17 +1013,70 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
             if (foreign != "OpenSim.Services.Connectors.dll:HGAssetServiceConnector" || !http)
                 throw std::invalid_argument("Unsupported Hypergrid asset service: " + foreign);
             state_->foreign_http = std::move(http);
-            state_->disallow_import = config.get("HGAssetService", "DisallowImport");
+            state_->exchange_permissions = AssetExchangePermissions(config, "HGAssetService");
         }
         state_->connector->initialise_service(&config, module);
+        state_->connector->foreign_url_fetch([this](const auto& value) -> AssetService::Asset {
+            const auto target = foreign_asset_target(value);
+            if (!target)
+                return {};
+            const auto key = target->id.str();
+            auto asset = state_->connector->get_cached(key);
+            if (!asset)
+                asset = state_->backend->service->get_asset(key);
+            if (!asset && state_->foreign_http)
+                asset = GridAssetService(target->url, state_->foreign_http).get_asset(key);
+            if (!asset || !state_->exchange_permissions.allows_import(asset->type()))
+                return {};
+            state_->connector->store(asset);
+            return asset;
+        });
     } else {
         state_->connector->initialise(&config);
     }
-    if (state_->foreign_http)
+    if (state_->foreign_http) {
         state_->connector->foreign_fetch([this](const auto &id, const auto &server, bool local) {
             framework::Uuid asset;
             return framework::try_parse_sdk_uuid(id, asset) ? get_foreign(asset, server, local) : nullptr;
         });
+        state_->connector->foreign_store([http = state_->foreign_http, permissions = state_->exchange_permissions]
+                                          (const auto& asset) -> std::optional<std::string> {
+            if (!permissions.allows_export(asset->type()))
+                return std::string{};
+            const auto target = foreign_asset_target(asset->id());
+            if (!target)
+                return std::string{};
+            asset->full_id(target->id);
+            return GridAssetService(target->url, http).store(asset);
+        });
+        state_->connector->foreign_exists([http = state_->foreign_http](const auto& ids) {
+            struct Batch {
+                std::string url;
+                std::vector<std::string> ids;
+                std::vector<std::size_t> positions;
+            };
+            std::vector<Batch> batches;
+            std::unordered_map<std::string, std::size_t> by_url;
+            for (std::size_t index = 0; index < ids.size(); ++index) {
+                const auto target = foreign_asset_target(ids[index]);
+                if (!target)
+                    continue;
+                const auto [group, inserted] = by_url.try_emplace(target->url, batches.size());
+                if (inserted)
+                    batches.push_back({target->url, {}, {}});
+                auto& batch = batches[group->second];
+                batch.ids.push_back(target->id.str());
+                batch.positions.push_back(index);
+            }
+            std::vector<bool> result(ids.size());
+            for (const auto& batch : batches) {
+                const auto flags = GridAssetService(batch.url, http).assets_exist(batch.ids);
+                for (std::size_t index = 0; index < batch.positions.size(); ++index)
+                    result[batch.positions[index]] = flags.at(index);
+            }
+            return result;
+        });
+    }
     if (state_->foreign_http && foreign_server)
         state_->scene->directory = std::make_shared<AssetCircuitDirectory>(std::move(foreign_server));
     state_->connector->add_region(state_->scene);
@@ -598,10 +1091,18 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
     state_->module->add_region(state_->scene);
     state_->module->region_loaded(state_->scene);
 }
-std::shared_ptr<framework::AssetBase> RegionAssetRuntime::get(const framework::Uuid &id) {
+std::shared_ptr<AssetService> RegionAssetRuntime::asset_service() const {
     if (!state_ || state_->stopped || !state_->scene || !state_->scene->registered)
         throw std::runtime_error("Region asset service stopped");
-    return state_->scene->registered->get_asset(id.str());
+    return state_->scene->registered;
+}
+void RegionAssetRuntime::register_filesystem_console(
+    framework::ConsoleCommandResolver &commands, const std::function<void(const std::string &)> &output) const {
+    if (state_ && state_->backend)
+        register_fs_asset_console(state_->backend->service, commands, output);
+}
+std::shared_ptr<framework::AssetBase> RegionAssetRuntime::get(const framework::Uuid &id) {
+    return asset_service()->get_asset(id.str());
 }
 std::shared_ptr<framework::AssetBase>
 RegionAssetRuntime::get_foreign(const framework::Uuid &id, const std::optional<std::string> &server,
@@ -620,42 +1121,8 @@ RegionAssetRuntime::get_foreign(const framework::Uuid &id, const std::optional<s
         if (remote.resolved())
             asset = request_remote_asset(*state_->foreign_http, remote.uri, id);
         if (asset) {
-            static constexpr std::pair<int, std::string_view> names[] = {{-2, "OSMaterial"},
-                                                                         {-1, "Unknown"},
-                                                                         {0, "Texture"},
-                                                                         {1, "Sound"},
-                                                                         {2, "CallingCard"},
-                                                                         {3, "Landmark"},
-                                                                         {5, "Clothing"},
-                                                                         {6, "Object"},
-                                                                         {7, "Notecard"},
-                                                                         {8, "Folder"},
-                                                                         {10, "LSLText"},
-                                                                         {11, "LSLBytecode"},
-                                                                         {12, "TextureTGA"},
-                                                                         {13, "Bodypart"},
-                                                                         {17, "SoundWAV"},
-                                                                         {18, "ImageTGA"},
-                                                                         {19, "ImageJPEG"},
-                                                                         {20, "Animation"},
-                                                                         {21, "Gesture"},
-                                                                         {22, "Simstate"},
-                                                                         {24, "Link"},
-                                                                         {25, "LinkFolder"},
-                                                                         {26, "MarketplaceFolder"},
-                                                                         {49, "Mesh"},
-                                                                         {56, "Settings"},
-                                                                         {57, "Material"},
-                                                                         {58, "GLTF"},
-                                                                         {59, "GLTF_bin"}};
-            auto type = std::find_if(std::begin(names), std::end(names),
-                                     [&](const auto &pair) { return pair.first == asset->type(); });
-            std::istringstream imports(state_->disallow_import);
-            for (std::string entry; type != std::end(names) && std::getline(imports, entry, ',');)
-                if (framework::ordinal_equals_ignore_case(framework::trim_utf8(entry), type->second)) {
-                    asset.reset();
-                    break;
-                }
+            if (!state_->exchange_permissions.allows_import(asset->type()))
+                asset.reset();
             if (asset && store_local)
                 state_->backend->service->store(asset);
         }
@@ -669,16 +1136,16 @@ RegionAssetRuntime::get_foreign(const framework::Uuid &id, const std::optional<s
     return asset;
 }
 std::optional<std::string> RegionAssetRuntime::store(std::shared_ptr<framework::AssetBase> asset) {
-    if (!state_ || state_->stopped || !state_->scene || !state_->scene->registered)
-        throw std::runtime_error("Region asset service stopped");
-    return state_->scene->registered->store(std::move(asset));
+    return asset_service()->store(std::move(asset));
 }
 bool RegionAssetRuntime::default_assets_command(bool remove) {
     if (!state_ || state_->stopped)
         throw std::runtime_error("Region asset service stopped");
     if (!state_->cache_module)
         return false;
-    auto logger = [backend = state_->backend](const std::string &text) { backend->emit("normal", text); };
+    auto logger = [backend = state_->backend](const std::string &text) {
+        backend->emit("normal", text);
+    };
     if (remove)
         state_->cache_module->delete_default_assets(logger);
     else

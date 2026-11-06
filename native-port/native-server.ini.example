@@ -33,6 +33,10 @@ FriendsProvider = SQLite
 ; Expose the original grid-facing POST /avatar operations (implies avatar storage).
 EnableAvatarEndpoint = false
 AvatarDatabase = avatars.db
+; Expose the asset service on this listener. A Robust ServiceList entry can select its port.
+; EnableAssetEndpoint = true
+; Configure AssetService or DatabaseService with a SQLite provider and connection string.
+; EnableHGAssetEndpoint = true
 ; Expose POST /mutelist on this listener using the SQLite store below.
 ; A Robust ServiceList MuteListConnector can also select the listener port.
 ; EnableMuteListEndpoint = true
@@ -89,6 +93,42 @@ AuthType = None
 ; AuthType = BasicHttpAuthentication
 ; HttpAuthUsername = service
 ; HttpAuthPassword = configure-a-password
+
+; Asset service settings for EnableAssetEndpoint or a Robust AssetServiceConnector.
+; [AssetService]
+; LocalServiceModule = OpenSim.Services.AssetService.dll:AssetService
+; StorageProvider = OpenSim.Data.SQLite.dll
+; SQLite resolves this path from the server's working directory.
+; ConnectionString = "URI=file:assets.db;version=3;Pooling=false"
+; PostgreSQL-enabled builds also accept OpenSim.Data.PGSQL.dll.
+; ConnectionString = "Server=localhost;Database=opensim;User ID=opensim;Password=configure-a-password"
+; MySQL/MariaDB-enabled builds accept OpenSim.Data.MySQL.dll with the corresponding server settings.
+; To store payloads in files with a MySQL/MariaDB or PostgreSQL metadata index:
+; LocalServiceModule = OpenSim.Services.FSAssetService.dll:FSAssetConnector
+; StorageProvider = OpenSim.Data.MySQL.dll
+; StorageProvider = OpenSim.Data.PGSQL.dll
+; BaseDirectory = asset-files
+; SpoolDirectory = asset-spool
+; UseOsgridFormat = false
+; SecondaryInstance = false
+; ShowConsoleStats = true
+; AuthType = BasicHttpAuthentication
+; HttpAuthUsername = service
+; HttpAuthPassword = configure-a-password
+; AllowRemoteDelete = false
+; AllowRemoteDeleteAllTypes = false
+
+; The Hypergrid service shares the AssetService store and has its own HTTP policy.
+; With both services enabled, use different listener ports in [ServiceList].
+; HGAssetServiceConnector = HGAssetService@8002/OpenSim.Server.Handlers.dll:AssetServiceConnector
+; [HGAssetService]
+; LocalServiceModule = OpenSim.Services.HypergridService.dll:HGAssetService
+; For the filesystem asset service use OpenSim.Services.HypergridService.dll:HGFSAssetService.
+; UserAccountsService = OpenSim.Services.UserAccountService.dll:UserAccountService
+; HomeURI = http://localhost:8002
+; AuthType = None
+; DisallowImport = LSLBytecode
+; DisallowExport = LSLText
 
 [PresenceService]
 ; Required when a Robust connector registers this service.

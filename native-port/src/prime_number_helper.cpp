@@ -45,25 +45,32 @@ constexpr std::int32_t primes[] = {
 };
 }
 bool PrimeNumberHelper::is_prime(std::int32_t candidate) noexcept {
-    if ((candidate & 1) == 0) return candidate == 2;
+    if ((candidate & 1) == 0)
+        return candidate == 2;
     // C# converts sqrt(negative) to a nonpositive integer on the reference runtime,
     // so no divisibility loop executes. Avoid undefined NaN-to-integer casts in C++.
-    if (candidate < 0) return true;
+    if (candidate < 0)
+        return true;
     const auto upper = static_cast<std::int32_t>(std::sqrt(static_cast<double>(candidate)));
     for (std::int32_t i = 3; i < upper; i += 2)
-        if (candidate % i == 0) return false;
+        if (candidate % i == 0)
+            return false;
     return true;
 }
 std::int32_t PrimeNumberHelper::get_prime(std::int32_t minimum) noexcept {
-    if (minimum <= 2) return 2;
+    if (minimum <= 2)
+        return 2;
     if (primes[std::size(primes) - 1] < minimum) {
         for (auto i = minimum | 1; i < std::numeric_limits<std::int32_t>::max(); i += 2)
-            if (is_prime(i)) return i;
+            if (is_prime(i))
+                return i;
         return -1;
     }
     for (auto i = static_cast<int>(std::size(primes)) - 2; i >= 0; --i) {
-        if (minimum == primes[i]) return minimum;
-        if (minimum > primes[i]) return primes[i + 1];
+        if (minimum == primes[i])
+            return minimum;
+        if (minimum > primes[i])
+            return primes[i + 1];
     }
     return 2;
 }

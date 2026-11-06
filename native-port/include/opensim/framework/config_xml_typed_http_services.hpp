@@ -7,7 +7,7 @@ namespace opensim::framework {
 // Fills canonical HTTP address, full typed RedirectHandler and fresh cookie jar.
 // The caller explicitly owns proxy, TLS, credentials and OS failure policies.
 // Existing policy.address is retained only as the required nonHTTP dispatch.
-ConfigXmlNativeHttpServices config_xml_bind_typed_http(
- ConfigXmlNativeHttpServices policy,ConfigXmlUriObjects,ConfigUriObjectBackend,
- std::function<std::shared_ptr<ConfigHttpCookiesBackend>()> new_cookie_backend);
+ConfigXmlNativeHttpServices
+config_xml_bind_typed_http(ConfigXmlNativeHttpServices policy, ConfigXmlUriObjects, ConfigUriObjectBackend,
+                           std::function<std::shared_ptr<ConfigHttpCookiesBackend>()> new_cookie_backend);
 }

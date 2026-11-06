@@ -1,27 +1,258 @@
-using System;using System.Linq;using System.Collections.Generic;using System.Globalization;using OpenMetaverse;using OpenMetaverse.Packets;using OpenSim.Framework;
-enum ThrottleOutPacketType{Task}
-class PacketPool{public static PacketPool Instance=new();public Packet GetPacket(PacketType type)=>type switch{PacketType.AvatarPropertiesReply=>new AvatarPropertiesReplyPacket(),PacketType.AvatarInterestsReply=>new AvatarInterestsReplyPacket(),PacketType.AvatarNotesReply=>new AvatarNotesReplyPacket(),PacketType.UserInfoReply=>new UserInfoReplyPacket(),PacketType.ClassifiedInfoReply=>new ClassifiedInfoReplyPacket(),PacketType.PickInfoReply=>new PickInfoReplyPacket(),PacketType.AvatarPicksReply=>new AvatarPicksReplyPacket(),PacketType.AvatarClassifiedReply=>new AvatarClassifiedReplyPacket(),_=>throw new Exception()};}
-partial class ProfilePacketsReference{
- public ProfileScene Scene=new();
- UUID m_agentId=new UUID("00000000-0000-0000-0000-000000000001");
- void OutPacket(Packet packet,ThrottleOutPacketType type){var bytes=packet.ToBytes();var wire=new byte[bytes.Length*2+32];int length;if(packet.Header.Zerocoded)length=Helpers.ZeroEncode(bytes,bytes.Length,wire);else{bytes.CopyTo(wire,0);length=bytes.Length;}Console.WriteLine(Convert.ToHexString(bytes).ToLowerInvariant()+"|"+Convert.ToHexString(wire,0,length).ToLowerInvariant());}
- static string Text(string value){if(value=="-")return null;if(value==".")return "";var bytes=Convert.FromHexString(value);var chars=new char[bytes.Length/2];for(int i=0;i<chars.Length;++i)chars[i]=(char)(bytes[2*i]|bytes[2*i+1]<<8);return new string(chars);}
- static UUID Key(int i)=>new UUID("00000000-0000-0000-0000-"+i.ToString("x12"));
- static void Main(){CultureInfo.CurrentCulture=CultureInfo.InvariantCulture;var host=new ProfilePacketsReference();string line;while((line=Console.ReadLine())!=null){var p=line.Split(' ');try{int mode=int.Parse(p[0]),length=int.Parse(p[3]);string first=Text(p[1]),last=Text(p[2]);uint flags=uint.Parse(p[4]);var target=new UUID("00000000-0000-0000-0000-000000000002");if(mode==9){Console.WriteLine(GroupProbe(first,last,length,flags));continue;}if(mode==0){byte[] membership=length<0?null:new byte[length];if(membership!=null)for(int i=0;i<membership.Length;++i)membership[i]=(byte)i;host.SendAvatarProperties(target,first,last,membership,last,flags,UUID.Zero,UUID.Zero,first,UUID.Zero);}else if(mode==1)host.SendAvatarInterestsReply(target,flags,first,~flags,last,first);else if(mode==2)host.SendAvatarNotesReply(target,first);else if(mode==3)host.SendUserInfoReply((flags&1)!=0,(flags&2)!=0,first);else if(mode<=5){double[][] pos={new double[]{0.1,-0.0,256.25},new double[]{-123456.789,1e30,-1e-30},new double[]{double.PositiveInfinity,double.NegativeInfinity,0},new double[]{0,0,0}};var v=pos[length];if(mode==4)host.SendClassifiedInfoReply(target,host.m_agentId,flags,~flags,0x80000000,first,last,UUID.Zero,uint.MaxValue,target,first,new Vector3((float)v[0],(float)v[1],(float)v[2]),last,(byte)flags,unchecked((int)flags));else host.SendPickInfoReply(target,host.m_agentId,(flags&1)!=0,UUID.Zero,first,last,target,last,first,first,new Vector3d(v[0],v[1],v[2]),unchecked((int)flags),(flags&2)!=0);}else if(mode==8){UUID[] ids=length<0?null:new UUID[length];int n=unchecked((int)flags);string[] names=n<0?null:new string[n];host.SendAvatarClassifiedReply(target,ids,names);if(ids!=null&&names!=null&&ids.Length!=names.Length)Console.WriteLine("NONE");}else{Dictionary<UUID,string> list=length<0?null:new();if(list!=null){for(int i=0;i<length;i++)list[Key(i)]=i%4==0?first:i%4==1?last:i%4==2?first:null;if(length>3&&(flags&1)!=0){list.Remove(Key(0));list.Remove(Key(3));list[Key(10000)]=last;list[Key(10001)]=first;}if(length>1&&(flags&2)!=0)list[Key(1)]=first;}if(mode==6)host.SendAvatarPicksReply(target,list);else host.SendAvatarClassifiedReply(target,list);}}catch(Exception e){Console.WriteLine("EX:"+Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(e.Message)).ToLowerInvariant());}}}
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.Globalization;
+using OpenMetaverse;
+using OpenMetaverse.Packets;
+using OpenSim.Framework;
+enum ThrottleOutPacketType
+{
+    Task
+}
+class PacketPool
+{
+    public static PacketPool Instance = new();
+    public Packet GetPacket(PacketType type) => type switch {
+        PacketType.AvatarPropertiesReply => new AvatarPropertiesReplyPacket(),
+        PacketType.AvatarInterestsReply => new AvatarInterestsReplyPacket(),
+        PacketType.AvatarNotesReply => new AvatarNotesReplyPacket(),
+        PacketType.UserInfoReply => new UserInfoReplyPacket(),
+        PacketType.ClassifiedInfoReply => new ClassifiedInfoReplyPacket(),
+        PacketType.PickInfoReply => new PickInfoReplyPacket(),
+        PacketType.AvatarPicksReply => new AvatarPicksReplyPacket(),
+        PacketType.AvatarClassifiedReply => new AvatarClassifiedReplyPacket(),
+        _ => throw new Exception()
+    };
+}
+partial class ProfilePacketsReference
+{
+    public ProfileScene Scene = new();
+    UUID m_agentId = new UUID("00000000-0000-0000-0000-000000000001");
+    void OutPacket(Packet packet, ThrottleOutPacketType type)
+    {
+        var bytes = packet.ToBytes();
+        var wire = new byte[bytes.Length * 2 + 32];
+        int length;
+        if (packet.Header.Zerocoded)
+            length = Helpers.ZeroEncode(bytes, bytes.Length, wire);
+        else
+        {
+            bytes.CopyTo(wire, 0);
+            length = bytes.Length;
+        }
+        Console.WriteLine(Convert.ToHexString(bytes).ToLowerInvariant() + "|" +
+                          Convert.ToHexString(wire, 0, length).ToLowerInvariant());
+    }
+    static string Text(string value)
+    {
+        if (value == "-")
+            return null;
+        if (value == ".")
+            return "";
+        var bytes = Convert.FromHexString(value);
+        var chars = new char[bytes.Length / 2];
+        for (int i = 0; i < chars.Length; ++i)
+            chars[i] = (char)(bytes[2 * i] | bytes[2 * i + 1] << 8);
+        return new string(chars);
+    }
+    static UUID Key(int i) => new UUID("00000000-0000-0000-0000-" + i.ToString("x12"));
+    static void Main()
+    {
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        var host = new ProfilePacketsReference();
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var p = line.Split(' ');
+            try
+            {
+                int mode = int.Parse(p[0]), length = int.Parse(p[3]);
+                string first = Text(p[1]), last = Text(p[2]);
+                uint flags = uint.Parse(p[4]);
+                var target = new UUID("00000000-0000-0000-0000-000000000002");
+                if (mode == 9)
+                {
+                    Console.WriteLine(GroupProbe(first, last, length, flags));
+                    continue;
+                }
+                if (mode == 0)
+                {
+                    byte[] membership = length < 0 ? null : new byte[length];
+                    if (membership != null)
+                        for (int i = 0; i < membership.Length; ++i)
+                            membership[i] = (byte)i;
+                    host.SendAvatarProperties(target, first, last, membership, last, flags, UUID.Zero,
+                                              UUID.Zero, first, UUID.Zero);
+                }
+                else if (mode == 1)
+                    host.SendAvatarInterestsReply(target, flags, first, ~flags, last, first);
+                else if (mode == 2)
+                    host.SendAvatarNotesReply(target, first);
+                else if (mode == 3)
+                    host.SendUserInfoReply((flags & 1) != 0, (flags & 2) != 0, first);
+                else if (mode <= 5)
+                {
+                    double[][] pos = { new double[] { 0.1, -0.0, 256.25 },
+                                       new double[] { -123456.789, 1e30, -1e-30 },
+                                       new double[] { double.PositiveInfinity, double.NegativeInfinity, 0 },
+                                       new double[] { 0, 0, 0 } };
+                    var v = pos[length];
+                    if (mode == 4)
+                        host.SendClassifiedInfoReply(target, host.m_agentId, flags, ~flags, 0x80000000, first,
+                                                     last, UUID.Zero, uint.MaxValue, target, first,
+                                                     new Vector3((float)v[0], (float)v[1], (float)v[2]), last,
+                                                     (byte)flags, unchecked((int)flags));
+                    else
+                        host.SendPickInfoReply(target, host.m_agentId, (flags & 1) != 0, UUID.Zero, first,
+                                               last, target, last, first, first,
+                                               new Vector3d(v[0], v[1], v[2]), unchecked((int)flags),
+                                               (flags & 2) != 0);
+                }
+                else if (mode == 8)
+                {
+                    UUID[] ids = length < 0 ? null : new UUID[length];
+                    int n = unchecked((int)flags);
+                    string[] names = n < 0 ? null : new string[n];
+                    host.SendAvatarClassifiedReply(target, ids, names);
+                    if (ids != null && names != null && ids.Length != names.Length)
+                        Console.WriteLine("NONE");
+                }
+                else
+                {
+                    Dictionary<UUID, string> list = length < 0 ? null : new();
+                    if (list != null)
+                    {
+                        for (int i = 0; i < length; i++)
+                            list[Key(i)] = i % 4 == 0 ? first : i % 4 == 1 ? last : i % 4 == 2 ? first : null;
+                        if (length > 3 && (flags & 1) != 0)
+                        {
+                            list.Remove(Key(0));
+                            list.Remove(Key(3));
+                            list[Key(10000)] = last;
+                            list[Key(10001)] = first;
+                        }
+                        if (length > 1 && (flags & 2) != 0)
+                            list[Key(1)] = first;
+                    }
+                    if (mode == 6)
+                        host.SendAvatarPicksReply(target, list);
+                    else
+                        host.SendAvatarClassifiedReply(target, list);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(
+                    "EX:" +
+                    Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(e.Message)).ToLowerInvariant());
+            }
+        }
+    }
 }
 
-namespace OpenSim.Framework{static class Constants{public const int MaxProfilePicks=20;}}
-static class LLUDPServer{public const int MTU=1400;}
-
-interface IEventQueue{osUTF8 StartEvent(string name);byte[] EndEventToBytes(osUTF8 buffer);bool Enqueue(byte[] bytes,UUID agent);}
-static class OSUTF8Cached{public static osUTF8 Acquire()=>new osUTF8(1024);public static osUTF8 Acquire(int capacity)=>new osUTF8(capacity);public static byte[] GetArrayAndRelease(osUTF8 buffer)=>buffer.ToArray();}
-class ProfileScene{public T RequestModuleInterface<T>()where T:class{ProfileEventsReference.Trace+="Q|";return (ProfileEventsReference.Flags&2)!=0?null:new ProfileEventsReference() as T;}}
-partial class ProfileEventsReference:IEventQueue{
- public static uint Flags;public static string Trace;public static osUTF8 Buffer;
- osUTF8 IEventQueue.StartEvent(string name){Trace+="S|";if((Flags&32)!=0)throw new Exception("start");if((Flags&64)!=0)return null;return Buffer=StartEvent(name);}
- byte[] IEventQueue.EndEventToBytes(osUTF8 buffer){Trace+="F|";if((Flags&128)!=0)throw new Exception("finish");if((Flags&1024)!=0)return null;return EndEventToBytes(buffer);}
- public bool Enqueue(byte[] bytes,UUID agent){Trace+="E:"+agent+":"+(bytes==null?"-":Convert.ToHexString(bytes).ToLowerInvariant())+"|";if((Flags&512)!=0)throw new Exception("enqueue");return (Flags&256)==0;}
+namespace OpenSim.Framework
+{
+    static class Constants
+    {
+        public const int MaxProfilePicks = 20;
+    }
 }
-partial class ProfilePacketsReference{
- static string GroupProbe(string first,string last,int count,uint flags){ProfileEventsReference.Flags=flags;ProfileEventsReference.Trace="";ProfileEventsReference.Buffer=null;string result="OK";try{var host=new ProfilePacketsReference();if((flags&4)!=0)host.Scene=null;GroupMembershipData[] data=count<0?null:new GroupMembershipData[count];for(int i=0;i<count;i++){if(((flags&16)!=0&&i==0)||((flags&2048)!=0&&i==1))continue;data[i]=new GroupMembershipData{GroupID=Key(i+100),GroupPicture=i%2==0?UUID.Zero:Key(i+200),GroupName=first,GroupTitle=last,GroupPowers=new ulong[]{0,ulong.MaxValue,0x8000000000000000,0x0123456789abcdef}[i%4],ListInProfile=i%2==0};}host.SendAvatarGroupsReply((flags&1)!=0?host.m_agentId:new UUID("00000000-0000-0000-0000-000000000002"),data);}catch(Exception e){result="EX:"+Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(e.Message)).ToLowerInvariant();}return result+"|"+ProfileEventsReference.Trace+"|"+(ProfileEventsReference.Buffer==null?"-":Convert.ToHexString(ProfileEventsReference.Buffer.ToArray()).ToLowerInvariant());}
+static class LLUDPServer
+{
+    public const int MTU = 1400;
+}
+
+interface IEventQueue
+{
+    osUTF8 StartEvent(string name);
+    byte[] EndEventToBytes(osUTF8 buffer);
+    bool Enqueue(byte[] bytes, UUID agent);
+}
+static class OSUTF8Cached
+{
+    public static osUTF8 Acquire() => new osUTF8(1024);
+    public static osUTF8 Acquire(int capacity) => new osUTF8(capacity);
+    public static byte[] GetArrayAndRelease(osUTF8 buffer) => buffer.ToArray();
+}
+class ProfileScene
+{
+    public T RequestModuleInterface<T>()
+        where T : class
+    {
+        ProfileEventsReference.Trace += "Q|";
+        return (ProfileEventsReference.Flags & 2) != 0 ? null : new ProfileEventsReference() as T;
+    }
+}
+partial class ProfileEventsReference : IEventQueue
+{
+    public static uint Flags;
+    public static string Trace;
+    public static osUTF8 Buffer;
+    osUTF8 IEventQueue.StartEvent(string name)
+    {
+        Trace += "S|";
+        if ((Flags & 32) != 0)
+            throw new Exception("start");
+        if ((Flags & 64) != 0)
+            return null;
+        return Buffer = StartEvent(name);
+    }
+    byte[] IEventQueue.EndEventToBytes(osUTF8 buffer)
+    {
+        Trace += "F|";
+        if ((Flags & 128) != 0)
+            throw new Exception("finish");
+        if ((Flags & 1024) != 0)
+            return null;
+        return EndEventToBytes(buffer);
+    }
+    public bool Enqueue(byte[] bytes, UUID agent)
+    {
+        Trace +=
+            "E:" + agent + ":" + (bytes == null ? "-" : Convert.ToHexString(bytes).ToLowerInvariant()) + "|";
+        if ((Flags & 512) != 0)
+            throw new Exception("enqueue");
+        return (Flags & 256) == 0;
+    }
+}
+partial class ProfilePacketsReference
+{
+    static string GroupProbe(string first, string last, int count, uint flags)
+    {
+        ProfileEventsReference.Flags = flags;
+        ProfileEventsReference.Trace = "";
+        ProfileEventsReference.Buffer = null;
+        string result = "OK";
+        try
+        {
+            var host = new ProfilePacketsReference();
+            if ((flags & 4) != 0)
+                host.Scene = null;
+            GroupMembershipData[] data = count < 0 ? null : new GroupMembershipData[count];
+            for (int i = 0; i < count; i++)
+            {
+                if (((flags & 16) != 0 && i == 0) || ((flags & 2048) != 0 && i == 1))
+                    continue;
+                data[i] = new GroupMembershipData { GroupID = Key(i + 100),
+                                                    GroupPicture = i % 2 == 0 ? UUID.Zero : Key(i + 200),
+                                                    GroupName = first,
+                                                    GroupTitle = last,
+                                                    GroupPowers =
+                                                        new ulong[] { 0, ulong.MaxValue, 0x8000000000000000,
+                                                                      0x0123456789abcdef }[i % 4],
+                                                    ListInProfile = i % 2 == 0 };
+            }
+            host.SendAvatarGroupsReply(
+                (flags & 1) != 0 ? host.m_agentId : new UUID("00000000-0000-0000-0000-000000000002"), data);
+        }
+        catch (Exception e)
+        {
+            result =
+                "EX:" + Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(e.Message)).ToLowerInvariant();
+        }
+        return result + "|" + ProfileEventsReference.Trace + "|" +
+               (ProfileEventsReference.Buffer == null
+                    ? "-"
+                    : Convert.ToHexString(ProfileEventsReference.Buffer.ToArray()).ToLowerInvariant());
+    }
 }
