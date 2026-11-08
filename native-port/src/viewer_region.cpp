@@ -215,7 +215,10 @@ void ViewerRegion::restore_transferred_seat(ViewerAgent& avatar) {
     avatar.flying = false;
 }
 std::optional<ViewerAgent> ViewerRegion::update_physics(Uuid id, Uuid session, Vector3 position,
-                                                        Vector3 velocity, Vector3 acceleration, bool flying) {
+                                                        Vector3 velocity, Vector3 acceleration, bool flying,
+                                                        std::optional<framework::Quaternion> rotation,
+                                                        std::array<float, 4> collision_plane,
+                                                        Vector3 angular_velocity) {
     std::lock_guard lock(mutex_);
     auto i = agents_.find(id);
     if (i == agents_.end() || !i->second.root || i->second.circuit->session_id != session ||
@@ -226,6 +229,10 @@ std::optional<ViewerAgent> ViewerRegion::update_physics(Uuid id, Uuid session, V
     a.velocity = velocity;
     a.acceleration = acceleration;
     a.flying = flying;
+    a.collision_plane = collision_plane;
+    a.angular_velocity = angular_velocity;
+    if (rotation)
+        a.rotation = *rotation;
     return a;
 }
 std::optional<ViewerAgent> ViewerRegion::update_seat(Uuid id, Uuid session,
@@ -385,6 +392,38 @@ std::optional<ViewerAgent> ViewerRegion::update_appearance(Uuid id, Uuid session
         return {};
     found->second.appearance_override = std::move(appearance);
     return found->second;
+}
+void ViewerRegion::set_heal_rate(Uuid id, Uuid session, float rate) {
+    std::lock_guard lock(mutex_);
+    const auto found = agents_.find(id);
+    if (found != agents_.end() && found->second.circuit->session_id == session)
+        found->second.heal_rate = std::clamp(rate, 0.f, 100.f);
+}
+std::optional<float> ViewerRegion::heal(Uuid id, Uuid session, float frame_seconds) {
+    std::lock_guard lock(mutex_);
+    const auto found = agents_.find(id);
+    if (found == agents_.end() || !found->second.root || found->second.circuit->session_id != session)
+        return {};
+    auto& avatar = found->second;
+    const float amount = avatar.heal_rate * frame_seconds;
+    if (avatar.health <= 0.f || avatar.health == 100.f || amount <= 0.f)
+        return {};
+    avatar.health += amount;
+    const bool reached_full_health = avatar.health > 100.f;
+    if (reached_full_health)
+        avatar.health = 100.f;
+    if (!reached_full_health && !(std::abs(avatar.health - avatar.last_heal_health_sent) > 1.f))
+        return {};
+    avatar.last_heal_health_sent = avatar.health;
+    return avatar.health;
+}
+bool ViewerRegion::update_health(Uuid id, Uuid session, float health) {
+    std::lock_guard lock(mutex_);
+    const auto found = agents_.find(id);
+    if (found == agents_.end() || !found->second.root || found->second.circuit->session_id != session)
+        return false;
+    found->second.health = health;
+    return true;
 }
 std::optional<ViewerAgent> ViewerRegion::update_active_group(Uuid id, Uuid session, ActiveViewerGroup group) {
     std::lock_guard lock(mutex_);
@@ -587,6 +626,7 @@ void ViewerRegion::packet(const CircuitConnection& connection, const lludp::Pack
         } else if (p.spec->name == "AgentUpdate") {
             auto& b = p.block("AgentData");
             current.controls = number(b, "ControlFlags");
+            current.mute_collisions = (number(b, "Flags") & 0x80u) != 0;
             current.agent_state = static_cast<std::uint8_t>(number(b, "State"));
             current.flying = !current.seat && !current.ground_sitting &&
                              (region_flags() & block_flight) == 0 && (current.controls & fly_control) != 0;

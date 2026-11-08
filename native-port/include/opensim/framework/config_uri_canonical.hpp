@@ -6,5 +6,7 @@ struct ConfigUriCanonicalResult {
     std::int32_t check = 0;
     std::size_t position = 0;
 };
-ConfigUriCanonicalResult config_uri_check_canonical(std::u16string_view,std::size_t start,std::size_t end,char16_t delimiter,bool implicit_file,bool has_unicode,const ConfigUriSyntax* syntax);
-}
+ConfigUriCanonicalResult config_uri_check_canonical(std::u16string_view, std::size_t start, std::size_t end,
+                                                    char16_t delimiter, bool implicit_file, bool has_unicode,
+                                                    const ConfigUriSyntax* syntax);
+} // namespace opensim::framework

@@ -44,14 +44,20 @@ struct ViewerAgent {
     std::uint8_t agent_state = 0;
     bool connected = false, handshake_sent = false, handshake_reply = false, root = false,
          logout_requested = false;
+    bool mute_collisions = false;
     bool crossed_child = false;
     bool crossing_arrival_ready = false;
     framework::Vector3 position, look_at{1, 0, 0}, velocity, acceleration;
+    std::array<float, 4> collision_plane{0, 0, 0, 1};
+    framework::Vector3 angular_velocity;
     framework::Vector3 camera_position;
     framework::Vector3 camera_at_axis, camera_left_axis;
     framework::Vector3 camera_up_axis;
     framework::Quaternion camera_rotation;
     float camera_fov = 1.04f;
+    float health = 100.f;
+    float heal_rate = .5f;
+    float last_heal_health_sent = 0.f;
     std::uint32_t camera_fov_generation = 0;
     std::uint32_t view_width = 640;
     std::uint32_t view_height = 480;
@@ -97,6 +103,9 @@ class ViewerRegion {
     bool teleport_local(framework::Uuid agent, framework::Uuid session, const network::lludp::Packet&);
     void broadcast_terrain_changes();
     std::optional<ViewerAgent> agent(framework::Uuid id) const;
+    bool update_health(framework::Uuid id, framework::Uuid session, float health);
+    std::optional<float> heal(framework::Uuid id, framework::Uuid session, float frame_seconds);
+    void set_heal_rate(framework::Uuid id, framework::Uuid session, float rate);
     std::optional<ViewerAgent> demote_after_crossing(framework::Uuid id, framework::Uuid session);
     bool stage_crossing_arrival(const std::shared_ptr<framework::AgentCircuitData>& circuit);
     void cancel_crossing_arrival(framework::Uuid id, framework::Uuid session);
@@ -110,7 +119,10 @@ class ViewerRegion {
                                                    ActiveViewerGroup group);
     std::optional<ViewerAgent> update_physics(framework::Uuid id, framework::Uuid session,
                                               framework::Vector3 position, framework::Vector3 velocity,
-                                              framework::Vector3 acceleration, bool flying);
+                                              framework::Vector3 acceleration, bool flying,
+                                              std::optional<framework::Quaternion> rotation = {},
+                                              std::array<float, 4> collision_plane = {0, 0, 0, 1},
+                                              framework::Vector3 angular_velocity = {});
     std::vector<ViewerAgent> agents() const;
     std::vector<std::string> root_agent_names() const;
     network::CircuitTransport& transport() {

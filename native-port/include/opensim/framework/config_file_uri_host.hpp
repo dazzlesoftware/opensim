@@ -9,5 +9,6 @@ struct ConfigFileUriHostResult {
     std::int32_t error = 0;
     std::optional<std::u16string> rewritten_prefix;
 };
-ConfigFileUriHostResult config_file_uri_check_host(std::u16string_view,std::size_t start,std::size_t end,std::uint64_t flags,const ConfigUriUnicodeBackend&);
-}
+ConfigFileUriHostResult config_file_uri_check_host(std::u16string_view, std::size_t start, std::size_t end,
+                                                   std::uint64_t flags, const ConfigUriUnicodeBackend&);
+} // namespace opensim::framework

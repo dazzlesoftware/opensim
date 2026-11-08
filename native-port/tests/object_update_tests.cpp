@@ -1,6 +1,8 @@
 #include "opensim/scene/object_update.hpp"
 #include "opensim/scene/object_asset_xml.hpp"
 #include "opensim/framework/text.hpp"
+#include "opensim/framework/primitive_base_shape.hpp"
+#include <algorithm>
 #include <iostream>
 #include <iomanip>
 #include <stdexcept>
@@ -66,6 +68,162 @@ static ObjectUpdateOptions options(const SceneObject& o, int seed, int mode) {
     x.create_selected = mode & 4;
     return x;
 }
+static void check_terse_filter() {
+    ObjectTerseMotion previous{};
+    previous.rotation = {0, 0, 0, 1};
+    auto current = previous;
+    current.position = {.02f, .02f, 0};
+    if (object_terse_changed(previous, current, 250.) ||
+        !object_terse_changed(previous, current, 251.))
+        throw std::runtime_error("terse update did not honor its refresh interval");
+    current.position = {.04f, .04f, 0};
+    if (!object_terse_changed(previous, current, 100.))
+        throw std::runtime_error("stationary position change did not cross the vector tolerance");
+    current = previous;
+    current.acceleration = {.08f, .08f, 0};
+    if (!object_terse_changed(previous, current, 100.))
+        throw std::runtime_error("acceleration change did not cross the vector tolerance");
+
+    previous.velocity = {256, 128, 0};
+    current = previous;
+    current.velocity = {128, 64, 0};
+    current.position = {1, 2, 3};
+    if (object_terse_changed(previous, current, 100.))
+        throw std::runtime_error("equivalent clamped moving velocities triggered a terse update");
+    previous.velocity = {.02f, 0, 0};
+    current = previous;
+    current.velocity = {};
+    if (!object_terse_changed(previous, current, 100.))
+        throw std::runtime_error("stopping movement did not trigger a terse update");
+
+    previous.velocity = {};
+    previous.angular_velocity = {128, 64, 0};
+    current = previous;
+    current.angular_velocity = {64, 32, 0};
+    current.rotation.z = .01f;
+    if (object_terse_changed(previous, current, 100.))
+        throw std::runtime_error("equivalent clamped angular velocities triggered a terse update");
+    previous.angular_velocity = {};
+    current.angular_velocity = {};
+    if (!object_terse_changed(previous, current, 100.))
+        throw std::runtime_error("stationary rotation change did not trigger a terse update");
+}
+
+static void check_terse_batches() {
+    std::vector<SceneObject> objects;
+    for (int seed = 1; seed <= 26; ++seed)
+        objects.push_back(object(seed, 0));
+    std::vector<const SceneObject*> parts;
+    for (const auto& part : objects)
+        parts.push_back(&part);
+    const auto packets = object_terse_updates(parts, 123);
+    if (packets.size() != 2 || packets[0].blocks.at("ObjectData").size() != 25 ||
+        packets[1].blocks.at("ObjectData").size() != 1)
+        throw std::runtime_error("terse batches did not split at the managed payload limit");
+    std::size_t offset = 0;
+    for (const auto& packet : packets) {
+        if (network::lludp::packet_length(packet) >= 1200)
+            throw std::runtime_error("terse batch exceeded the managed payload limit");
+        const auto decoded = network::lludp::decode_datagram(network::lludp::encode_datagram(packet));
+        for (const auto& row : decoded.blocks.at("ObjectData")) {
+            const auto expected = object_terse_update(objects.at(offset++), 123);
+            if (row != expected.block("ObjectData"))
+                throw std::runtime_error("terse batch changed block order or contents");
+        }
+    }
+    AvatarUpdate avatar;
+    avatar.local_id = 0x01020304;
+    avatar.state = 7;
+    avatar.position = {128, 128, 25};
+    avatar.rotation = {.5f, .5f, 0, 0};
+    const auto mixed = object_terse_updates(std::span(parts).first(24), 123, {&avatar, 1});
+    if (mixed.size() != 2 || mixed[0].blocks.at("ObjectData").size() != 24 ||
+        mixed[1].blocks.at("ObjectData").size() != 1)
+        throw std::runtime_error("mixed avatar and prim terse packets did not honor block sizes");
+    const auto& row = mixed[1].block("ObjectData");
+    const auto& data = std::get<std::vector<std::uint8_t>>(row.at("Data"));
+    const std::vector<std::uint8_t> prefix{4, 3, 2, 1, 7, 1};
+    const std::vector<std::uint8_t> identity_yaw{255, 127, 255, 127, 255, 127, 255, 255};
+    if (data.size() != 60 || !std::equal(prefix.begin(), prefix.end(), data.begin()) ||
+        data[20] != 128 || data[21] != 63 ||
+        !std::equal(identity_yaw.begin(), identity_yaw.end(), data.begin() + 46))
+        throw std::runtime_error("avatar terse wire layout or yaw fallback changed");
+}
+
+static void check_uniform_linkset_scale() {
+    World world(framework::Uuid::random());
+    const auto owner = framework::Uuid::random();
+    const auto root = world.add(SceneObject::primitive(owner, {128, 128, 30}, {1, 2, 1}));
+    if (!root)
+        throw std::runtime_error("could not create the resize fixture root");
+    auto child = SceneObject::primitive(owner, {3, 1, 0}, {1, .5f, 4});
+    child.parent_id = root->local_id;
+    if (!world.add(child))
+        throw std::runtime_error("could not create the resize fixture child");
+    if (world.group_scale_limit(root->id, 10.f, true) != 10.f / (4.f + .001f) ||
+        world.group_scale_limit(root->id, .01f, false) != .01f / (.5f - .001f))
+        throw std::runtime_error("scale limits must include linked children and source margins");
+    if (world.resize_group_uniform(root->id, 3., .01f, 10.f) ||
+        world.object(root->id)->scale != root->scale || world.object(child.id)->scale != child.scale)
+        throw std::runtime_error("a rejected uniform resize must leave the whole linkset unchanged");
+    if (!world.resize_group_uniform(root->id, 2., .01f, 10.f))
+        throw std::runtime_error("valid uniform resize was rejected");
+    const auto scaled_root = world.object(root->id);
+    const auto scaled_child = world.object(child.id);
+    if (!scaled_root || !scaled_child || scaled_root->position != root->position ||
+        scaled_root->scale != framework::Vector3{2, 4, 2} ||
+        scaled_child->scale != framework::Vector3{2, 1, 8} ||
+        scaled_child->position != framework::Vector3{6, 2, 0})
+        throw std::runtime_error("uniform resize must scale child offsets and every part's dimensions");
+}
+
+static void check_root_physics_shape() {
+    World world(framework::Uuid::random());
+    const auto owner = framework::Uuid::random();
+    const auto mesh_asset = framework::Uuid::random();
+    const auto geometry = framework::PrimitiveBaseShapeCore::create_mesh(1, mesh_asset, [](const std::string&) {});
+
+    auto mesh = SceneObject::primitive(owner, {128, 128, 25});
+    mesh.extra_params = geometry.extra_params();
+    mesh.physics.shape = 1;
+    const auto mesh_root = world.add(mesh);
+    if (!mesh_root || mesh_root->physics.shape != 2)
+        throw std::runtime_error("a rezzed mesh root with shape None defaults to Convex Hull");
+
+    PrimPhysicsProperties requested;
+    requested.shape = 1;
+    const auto mesh_update = world.update_extra_physics(mesh.id, requested);
+    if (!mesh_update || mesh_update->shape != 2)
+        throw std::runtime_error("a mesh root rejects shape None in favor of Convex Hull");
+    requested.shape = 3;
+    const auto invalid_update = world.update_extra_physics(mesh.id, requested);
+    if (!invalid_update || invalid_update->shape != 2)
+        throw std::runtime_error("an invalid mesh shape request uses the mesh default");
+
+    auto prim = SceneObject::primitive(owner, {128, 128, 30});
+    prim.physics.shape = 1;
+    const auto prim_root = world.add(prim);
+    if (!prim_root || prim_root->physics.shape != 0)
+        throw std::runtime_error("a rezzed standard root with shape None defaults to Prim");
+
+    for (const bool promote_child : {false, true}) {
+        auto child = SceneObject::primitive(owner, {0, 0, 2});
+        child.parent_id = prim_root->local_id;
+        child.physics.shape = 1;
+        child.extra_params = mesh.extra_params;
+        const auto linked = world.add(child);
+        if (!linked || linked->physics.shape != 1)
+            throw std::runtime_error("linked children can retain shape None");
+        const bool delinked = promote_child ? world.delink_root(prim.id) : world.delink_child(child.id, prim.id);
+        const auto unlinked = world.object(child.id);
+        const auto colliders = world.collision_prims();
+        const auto collider = std::ranges::find(colliders, child.id, &PhysicalPrim::id);
+        if (!delinked || !unlinked || unlinked->parent_id || unlinked->physics.shape != 2 ||
+            collider == colliders.end() || !collider->convex_mesh || collider->mesh_asset != mesh_asset)
+            throw std::runtime_error("a delinked mesh child gains a convex collider when it becomes a root");
+    }
+}
+
 int main(int argc, char**) {
     try {
         if (argc > 1) {
@@ -212,6 +370,10 @@ int main(int argc, char**) {
         if (std::get<std::vector<std::uint8_t>>(terse_attachment.block("ObjectData").at("Data")) !=
             expected_attachment)
             throw std::runtime_error("terse attachment wire layout");
+        check_root_physics_shape();
+        check_uniform_linkset_scale();
+        check_terse_filter();
+        check_terse_batches();
         std::cout << "PASS: prim fields, full and terse wire round trips and unsupported-profile rejection\n";
     } catch (const std::exception& e) {
         std::cerr << e.what() << "\n";

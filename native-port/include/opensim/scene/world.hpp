@@ -28,6 +28,8 @@ struct PrimPhysicsProperties {
     float density = 1000.f, friction = .6f, restitution = .5f, gravity = 1.f;
     bool operator==(const PrimPhysicsProperties&) const = default;
 };
+inline constexpr std::uint32_t prim_flag_volume_detect = 1u << 14;
+
 struct PhysicalPrimPart {
     framework::Vector3 scale, offset;
     framework::Quaternion rotation;
@@ -39,6 +41,9 @@ struct PhysicalPrimPart {
     framework::Uuid mesh_asset;
     bool convex_mesh = false;
     framework::PrimContactMaterial contact_material;
+    framework::Uuid id;
+    bool volume_detect = false;
+    bool phantom = false;
     bool operator==(const PhysicalPrimPart&) const = default;
 };
 struct PhysicalPrim {
@@ -58,6 +63,14 @@ struct PhysicalPrim {
     float gravity_modifier = 1.f;
     float buoyancy = 0.f;
     framework::Vector3 force, torque;
+    framework::PrimHover hover;
+    framework::PrimMoveTarget move_target;
+    framework::PrimLookAt look_at;
+    bool volume_detect = false;
+    framework::Uuid root_id;
+    std::uint8_t rotation_axis_locks = 0;
+    std::optional<framework::PrimInertiaOverride> inertia_override;
+    bool phantom = false;
     bool operator==(const PhysicalPrim&) const = default;
 };
 // Single-root object projection for the scene owner. Full linked parts,
@@ -73,8 +86,12 @@ struct SceneObject {
     std::string face_media_xml;
     std::uint32_t text_argb = 0;
     framework::Uuid looped_sound;
+    std::optional<framework::PrimInertiaOverride> inertia_override;
+    std::uint8_t rotation_axis_locks = 0;
     framework::Uuid collision_sound;
     float collision_sound_volume = 0;
+    float damage = -1.f;
+    bool collision_sound_volume_override = false;
     float looped_sound_gain = 0;
     float sound_radius = 0;
     std::uint8_t sound_flags = 0;
@@ -84,6 +101,7 @@ struct SceneObject {
     std::uint8_t sale_type = 0;
     std::uint8_t click_action = 0;
     bool pass_touches = false;
+    bool pass_collisions = false;
     framework::Vector3 sit_target_position{};
     float sit_active_range = 0;
     framework::Vector3 stand_target{};
@@ -106,6 +124,9 @@ struct SceneObject {
     PrimPhysicsProperties physics;
     float buoyancy = 0.f;
     framework::Vector3 force, torque;
+    framework::PrimHover hover;
+    framework::PrimMoveTarget move_target;
+    framework::PrimLookAt look_at;
     std::vector<std::uint8_t> texture_entry;
     std::vector<std::uint8_t> texture_animation;
     std::vector<std::uint8_t> extra_params{0};
@@ -183,6 +204,7 @@ public:
     bool update_click_action(framework::Uuid id, std::uint8_t action, bool broadcast = false);
     void set_searchable(framework::Uuid id, bool searchable);
     void set_pass_touches(framework::Uuid id, bool pass);
+    void set_pass_collisions(framework::Uuid id, bool pass);
     void set_die_at_edge(framework::Uuid root, bool enabled);
     void set_return_at_edge(framework::Uuid root, bool enabled);
     void set_sandbox(framework::Uuid part, framework::Uuid root, bool enabled);
@@ -215,7 +237,8 @@ public:
                           std::uint8_t sync_flags);
     void set_sound_radius(framework::Uuid id, float radius);
     void set_sound_queueing(framework::Uuid id, bool queue);
-    void set_collision_sound(framework::Uuid id, framework::Uuid asset, float volume);
+    void set_collision_sound(framework::Uuid id, framework::Uuid asset, float volume,
+                             bool default_volume_override = false);
     void set_pay_prices(framework::Uuid id, const std::array<std::int32_t, 5>& prices);
     std::optional<SceneObject> prepare_attached_sound(framework::Uuid id, float default_radius);
     bool set_selected(framework::Uuid id, bool selected);
@@ -227,7 +250,11 @@ public:
     void publish_added_linkset(framework::Uuid root);
     bool delink_child(framework::Uuid id, framework::Uuid expected_root);
     bool delink_root(framework::Uuid id);
-    void set_group_flags(framework::Uuid root, bool physical, bool temporary, bool phantom);
+    void set_group_flags(framework::Uuid root, bool physical, bool temporary, bool phantom,
+                         std::optional<bool> volume_detect = {});
+    void set_part_volume_detect(framework::Uuid part, bool enabled);
+    void set_linkset_damage(framework::Uuid part, float damage);
+    bool set_script_permission_mask(framework::Uuid id, std::int32_t selector, std::int32_t value);
     bool set_sale_info(framework::Uuid root, std::uint8_t type, std::int32_t price);
     bool set_linkset_data(framework::Uuid root, std::vector<std::uint8_t> data,
                           std::optional<std::int32_t> empty_limit = {});
@@ -236,13 +263,21 @@ public:
     std::optional<PrimPhysicsProperties> update_extra_physics(framework::Uuid id, PrimPhysicsProperties requested,
                                                             bool update_shape = true);
     void set_prim_buoyancy(framework::Uuid id, float buoyancy);
+    void set_rotation_axes(framework::Uuid id, std::uint8_t axes, bool enabled);
+    void set_prim_inertia(framework::Uuid id, std::optional<framework::PrimInertiaOverride> inertia);
     void set_prim_force(framework::Uuid id, framework::Vector3 force);
     framework::Vector3 prim_force(framework::Uuid id) const;
     void set_prim_torque(framework::Uuid id, framework::Vector3 torque, bool local);
     framework::Vector3 prim_torque(framework::Uuid id) const;
+    void set_prim_velocity(framework::Uuid id, framework::Vector3 velocity, bool local, bool angular);
+    void set_prim_hover(framework::Uuid id, framework::PrimHover hover);
+    void set_prim_move_target(framework::Uuid id, framework::PrimMoveTarget target);
+    void set_prim_look_at(framework::Uuid id, framework::PrimLookAt target);
     void expire_temporary_objects(std::chrono::steady_clock::time_point now);
     bool resize_group(framework::Uuid root, framework::Vector3 scale, float minimum, float maximum,
                       std::optional<framework::Vector3> position = {});
+    float group_scale_limit(framework::Uuid root, float limit, bool maximum) const;
+    bool resize_group_uniform(framework::Uuid root, double factor, float minimum, float maximum);
     bool link_prim(framework::Uuid id, framework::Uuid root, int physical_capacity = 0);
     bool set_inventory_state(framework::Uuid id, bool empty, bool scripted, bool touch,
                              std::optional<std::uint32_t> script_local_flags = {});

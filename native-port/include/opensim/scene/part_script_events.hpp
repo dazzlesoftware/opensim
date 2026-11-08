@@ -9,6 +9,11 @@
 #include <atomic>
 namespace opensim::scene {
 namespace script_event {
+inline constexpr std::uint64_t collision = 1ull << 4;
+inline constexpr std::uint64_t collision_end = 1ull << 5;
+inline constexpr std::uint64_t collision_start = 1ull << 6;
+inline constexpr std::uint64_t land_collision = 1ull << 11, land_collision_end = 1ull << 12,
+                               land_collision_start = 1ull << 13;
 inline constexpr std::uint64_t touch = 1ull << 3, email = 1ull << 9, money = 1ull << 16,
                                touch_start = 1ull << 21, touch_end = 1ull << 29, state_entry = 1ull << 30;
 inline constexpr std::uint64_t any_touch = touch | touch_start | touch_end,

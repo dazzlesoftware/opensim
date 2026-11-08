@@ -40,7 +40,9 @@ struct UdpEndpoint {
     bool operator==(const UdpEndpoint&)const=default;
     std::string str()const;
 };
-struct UdpEndpointHash{std::size_t operator()(const UdpEndpoint& endpoint)const noexcept;};
+struct UdpEndpointHash {
+    std::size_t operator()(const UdpEndpoint& endpoint) const noexcept;
+};
 struct UdpSocketOptions {
     std::string address="127.0.0.1";
     int port=0,receive_buffer_bytes=0;

@@ -2,6 +2,7 @@
 // BSD license: native-port/LICENSE.txt.
 #pragma once
 #include "opensim/framework/uuid.hpp"
+#include "opensim/framework/prim_geometry.hpp"
 #include "opensim/framework/vector3d_text.hpp"
 #include <functional>
 #include <array>
@@ -33,11 +34,13 @@ struct LslRotation {
     double x = 0, y = 0, z = 0, w = 1;
     bool operator==(const LslRotation &) const = default;
 };
+enum class LslRotationSpace { Local, Root, World };
 struct LslCamera {
     framework::Vector3 position;
     LslRotation rotation;
     float fov;
     float aspect;
+    framework::Vector3 at_axis{}, left_axis{}, up_axis{};
 };
 struct LslRegionEnvironmentEdit {
     std::int32_t transition;
@@ -160,6 +163,7 @@ struct LslAvatarName {
 
 namespace object_status {
 inline constexpr std::int32_t physics = 1;
+inline constexpr std::int32_t rotate_x = 2, rotate_y = 4, rotate_z = 8;
 inline constexpr std::int32_t phantom = 16;
 inline constexpr std::int32_t sandbox = 32;
 inline constexpr std::int32_t block_grab = 64;
@@ -222,7 +226,7 @@ struct LslHost {
     std::function<void(framework::Uuid, const std::optional<std::string> &, double, std::uint8_t)> loop_sound;
     std::function<void(framework::Uuid, float)> adjust_sound_gain;
     std::function<void(framework::Uuid, float)> set_sound_radius;
-    std::function<void(framework::Uuid, const std::string &, float)> set_collision_sound;
+    std::function<void(framework::Uuid, const std::string&, double, bool)> set_collision_sound;
     std::function<void(framework::Uuid, const std::array<std::int32_t, 5> &)> set_pay_prices;
     std::function<bool(framework::Uuid, const std::string &)> preload_sound;
     using SoundBounds = std::pair<framework::Vector3, framework::Vector3>;
@@ -234,10 +238,30 @@ struct LslHost {
     std::function<std::optional<framework::Vector3>(framework::Uuid, framework::Vector3)> set_object_scale;
     std::function<void(framework::Uuid, std::uint8_t)> set_click_action;
     std::function<void(framework::Uuid, bool)> set_pass_touches;
+    std::function<void(framework::Uuid, bool)> set_pass_collisions;
+    std::function<void(framework::Uuid, std::u16string, framework::Uuid, bool)> set_collision_filter;
+    std::function<void(framework::Uuid, bool, bool)> set_volume_detect;
     std::function<void(framework::Uuid, std::int32_t, bool)> set_object_status;
+    std::function<void(framework::Uuid, float)> set_damage;
+    std::function<bool(framework::Uuid, framework::Uuid)> teleport_agent_home;
+    std::function<bool(framework::Uuid, framework::Uuid)> eject_from_land;
+    std::function<bool(framework::Uuid, std::int32_t)> has_render_material;
+    std::function<std::string(framework::Uuid, std::int32_t)> render_material;
     std::function<bool(framework::Uuid, std::int32_t)> object_status;
     std::function<void(framework::Uuid, std::int32_t, framework::Vector3d, LslRotation)> set_sit_target;
     std::function<bool(framework::Uuid, framework::Vector3d, bool)> set_object_position;
+    std::function<void(framework::Uuid, LslRotation, bool)> set_object_rotation;
+    std::function<std::optional<LslRotation>(framework::Uuid, LslRotationSpace)> object_rotation;
+    std::function<bool(framework::Vector3d, framework::Vector3d)> edge_of_world;
+    std::function<void(framework::Uuid, framework::Uuid, const std::string&, framework::Vector3d, std::uint32_t)>
+        map_destination;
+    std::function<void(framework::Uuid, framework::Uuid, const std::string&, const std::string&)> load_url;
+    std::function<std::optional<LslAvatarName>(framework::Uuid)> dialog_owner_name;
+    std::function<void(framework::Uuid, framework::Uuid, const LslAvatarName&, const std::string&,
+                       const std::vector<std::string>&, std::int32_t, bool text_box)> dialog;
+    std::function<double(framework::Uuid, bool)> group_scale_limit;
+    std::function<bool(framework::Uuid, double)> scale_group;
+    std::function<std::optional<framework::Vector3>(framework::Uuid)> object_scale;
     std::function<bool(framework::Uuid, const std::string&, framework::Vector3d, framework::Vector3d,
                        LslRotation, std::int32_t, bool)> rez_object;
     std::function<std::optional<framework::Vector3>(framework::Uuid, bool, bool)> object_position;
@@ -261,6 +285,11 @@ struct LslHost {
     std::function<std::optional<LslInventoryMetadata>(framework::Uuid, const std::string &)>
         inventory_metadata;
     std::function<framework::Uuid(framework::Uuid, const std::string &)> inventory_key;
+    std::function<void(framework::Uuid, const std::string&, std::int32_t, std::int32_t)>
+        set_inventory_permission;
+    std::function<void(framework::Uuid, std::int32_t, std::int32_t)> set_object_permission;
+    // Return true when the named item is the currently executing script.
+    std::function<bool(framework::Uuid, framework::Uuid, const std::string&)> remove_inventory;
     std::function<std::optional<std::uint32_t>(framework::Uuid, const std::string &, std::int32_t)>
         inventory_permission;
     std::function<std::pair<framework::Uuid, std::int32_t>(framework::Uuid, framework::Uuid)>
@@ -302,6 +331,9 @@ struct LslHost {
     std::function<void(framework::Uuid, framework::Uuid)> force_sit;
     std::function<std::optional<std::uint32_t>(framework::Uuid, std::int32_t)> object_permission;
     std::function<framework::Vector3(framework::Uuid)> geometric_center;
+    std::function<framework::Vector3(framework::Uuid)> center_of_mass;
+    std::function<std::optional<framework::PrimInertiaData>(framework::Uuid)> inertia_data;
+    std::function<void(framework::Uuid, std::optional<framework::PrimInertiaOverride>)> set_inertia;
     std::function<float()> region_fps;
     std::function<float(std::size_t)> simulator_stat;
     std::function<std::optional<std::string>(framework::Uuid)> object_name;
@@ -337,10 +369,20 @@ struct LslHost {
     std::function<framework::Vector3(framework::Uuid)> get_force;
     std::function<void(framework::Uuid, framework::Vector3, bool)> set_torque;
     std::function<framework::Vector3(framework::Uuid)> get_torque;
+    std::function<void(framework::Uuid, framework::Vector3, bool local, bool angular)> set_velocity;
+    std::function<void(framework::Uuid, framework::Vector3, bool local, bool angular)> apply_impulse;
+    std::function<void(framework::Uuid, framework::PrimHover)> set_hover;
+    std::function<void(framework::Uuid, double, bool, float)> ground_repel;
+    std::function<void(framework::Uuid, framework::PrimMoveTarget)> move_to_target;
+    std::function<bool(framework::Uuid, std::optional<framework::Quaternion>, double strength,
+                       double damping, bool point_target)> look_at;
     std::function<void(framework::Uuid, framework::Uuid, std::int32_t, LslTextureProperty, const LslValue&)>
         set_texture_property;
     std::function<framework::Vector3(framework::Uuid)> agent_size;
     std::function<std::int32_t(framework::Uuid)> agent_info;
+    std::function<std::optional<float>(framework::Uuid)> agent_health;
+    std::function<float(framework::Uuid)> agent_heal_rate;
+    std::function<void(framework::Uuid, float)> set_agent_heal_rate;
     std::function<std::optional<LslCamera>(framework::Uuid)> camera;
     std::function<std::array<framework::Vector3d, 2>(framework::Uuid)> bounding_box;
     std::function<std::shared_ptr<const std::vector<std::uint8_t>>(framework::Uuid)> agent_visual_params;
@@ -359,7 +401,7 @@ struct LslHost {
     std::function<std::vector<framework::Uuid>(std::int32_t, framework::Vector3)> region_agents;
     std::function<std::vector<std::string>()> region_agent_names;
 };
-enum class LslRunStatus { Idle, BudgetExhausted, Sleeping, Faulted };
+enum class LslRunStatus { Idle, BudgetExhausted, Sleeping, Faulted, DeleteSelf, DeleteLinkset };
 struct LslRunResult {
     LslRunStatus status;
     std::size_t instructions = 0;

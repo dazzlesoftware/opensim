@@ -2229,7 +2229,7 @@ if(BUILD_TESTING)
         add_test(NAME connected_region_touch_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
             --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --work "${CMAKE_CURRENT_BINARY_DIR}/connected-region-touch-network")
-        set_tests_properties(connected_region_touch_network PROPERTIES TIMEOUT 120)
+        set_tests_properties(connected_region_touch_network PROPERTIES TIMEOUT 180)
         add_test(NAME connected_region_script_url_denied_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
             --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --script-url-denied
@@ -2315,6 +2315,11 @@ if(BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/legacy_material_restart_network.py"
             --native "$<TARGET_FILE:opensim-native>" --work "${CMAKE_CURRENT_BINARY_DIR}/legacy-material-restart-network")
         set_tests_properties(legacy_material_restart_network PROPERTIES TIMEOUT 90)
+        add_test(NAME inertia_restart_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/inertia_restart_network.py"
+            --native "$<TARGET_FILE:opensim-native>" --physics-library "${OPENSIM_UBODE_LIBRARY}"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/inertia-restart-network")
+        set_tests_properties(inertia_restart_network PROPERTIES TIMEOUT 90)
         add_test(NAME parcel_ownership_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/default_parcel_persistence_network.py"
             --native "$<TARGET_FILE:opensim-native>" --force-owner

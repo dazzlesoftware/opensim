@@ -1909,7 +1909,24 @@ int main(int argc, char** argv) {
                 }
                 return updates.size();
             };
-            wait([&](const auto& list) { return count_updates(list) >= 1; });
+            wait([&](const auto& list) {
+                if (count_updates(list) >= 1)
+                    return true;
+                // A full update can absorb the initial target-omega update in the same scene frame.
+                for (const auto& packet : list) {
+                    if (packet.spec->name != "ObjectUpdate")
+                        continue;
+                    for (const auto& block : packet.blocks.at("ObjectData")) {
+                        if (std::get<std::uint64_t>(block.at("ID")) != local)
+                            continue;
+                        const auto& data = std::get<std::vector<std::uint8_t>>(block.at("ObjectData"));
+                        if (data.size() == 60 && real(data, 48) == 0.f && real(data, 52) == 0.f &&
+                            real(data, 56) == 2.5f)
+                            return true;
+                    }
+                }
+                return false;
+            });
             const auto before_deselect = count_updates(task_io.snapshot());
             transmit(deselect);
             wait([&](const auto& list) { return count_updates(list) > before_deselect; });
@@ -1941,6 +1958,18 @@ int main(int argc, char** argv) {
             resize.blocks["ObjectData"] = {std::move(scale_block)};
             transmit(resize);
             wait([&](const auto& list) { return chat(list, "Changed 8"); });
+            wait([&](const auto& list) {
+                for (const auto& packet : list) {
+                    if (!primitive(packet))
+                        continue;
+                    const auto& block = packet.block("ObjectData");
+                    const auto& data = std::get<std::vector<std::uint8_t>>(block.at("ObjectData"));
+                    if (real(data, 0) == 131.f &&
+                        std::get<std::vector<double>>(block.at("Scale")) == std::vector<double>{.75, .5, .5})
+                        return true;
+                }
+                return false;
+            });
             auto rotate = send("MultipleObjectUpdate");
             auto rotation_block = lludp::make_block(rotate.spec->blocks.at(1));
             rotation_block["ObjectLocalID"] = std::uint64_t(local);
@@ -1954,6 +1983,17 @@ int main(int argc, char** argv) {
             rotation_block["Data"] = std::move(rotation_data);
             rotate.blocks["ObjectData"] = {std::move(rotation_block)};
             transmit(rotate);
+            wait([&](const auto& list) {
+                for (const auto& packet : list) {
+                    if (!primitive(packet))
+                        continue;
+                    const auto& data =
+                        std::get<std::vector<std::uint8_t>>(packet.block("ObjectData").at("ObjectData"));
+                    if (real(data, 0) == 132.f && std::abs(real(data, 44) - .5f) < 1e-6f)
+                        return true;
+                }
+                return false;
+            });
             auto truncated = rotate;
             truncated.sequence = sequence++;
             truncated.block("ObjectData")["Type"] = std::uint64_t(5);
@@ -1988,17 +2028,6 @@ int main(int argc, char** argv) {
                         for (const auto& block : packet.blocks.at("ObjectData"))
                             if (std::get<std::uint64_t>(block.at("ID")) == missing_local_id)
                                 return true;
-                return false;
-            });
-            wait([&](const auto& list) {
-                for (const auto& packet : list) {
-                    if (!primitive(packet))
-                        continue;
-                    const auto& data =
-                        std::get<std::vector<std::uint8_t>>(packet.block("ObjectData").at("ObjectData"));
-                    if (real(data, 0) == 132.f && std::abs(real(data, 44) - .5f) < 1e-6f)
-                        return true;
-                }
                 return false;
             });
             auto half_turn = rotate;
@@ -2055,8 +2084,9 @@ int main(int argc, char** argv) {
                 for (const auto& packet : list) {
                     if (packet.spec->name != "TeleportStart" && packet.spec->name != "TeleportFinish")
                         continue;
-                    if (std::get<std::uint64_t>(packet.block("Info").at("TeleportFlags")) != (16u | 8192u))
-                        throw std::runtime_error("Remote teleport did not preserve flight");
+                    // The stored region fixture advertises BlockFly, so the flight request above is denied.
+                    if (std::get<std::uint64_t>(packet.block("Info").at("TeleportFlags")) != 16u)
+                        throw std::runtime_error("Remote teleport did not respect the source region's BlockFly setting");
                     started |= packet.spec->name == "TeleportStart";
                     finished |= packet.spec->name == "TeleportFinish";
                 }
@@ -2340,18 +2370,7 @@ int main(int argc, char** argv) {
                                lowered_area;
                 });
             });
-            wait([&](const auto& list) {
-                for (const auto& packet : list) {
-                    if (!primitive(packet))
-                        continue;
-                    const auto& block = packet.block("ObjectData");
-                    const auto& data = std::get<std::vector<std::uint8_t>>(block.at("ObjectData"));
-                    if (real(data, 0) == 131.f &&
-                        std::get<std::vector<double>>(block.at("Scale")) == std::vector<double>{.75, .5, .5})
-                        return true;
-                }
-                return false;
-            });
+
         }
         wait([&](const auto& list) {
             for (const auto& packet : list) {

@@ -5,7 +5,10 @@
 #include <span>
 namespace opensim::framework {
 using DotnetRegexClassText=std::optional<std::u16string_view>;
-struct DotnetRegexRange {char16_t first=0,last=0;};
+struct DotnetRegexRange {
+    char16_t first = 0;
+    char16_t last = 0;
+};
 struct DotnetRegexClassAnalysis {
  bool only_ranges=false,contains_only_ascii=false,contains_no_ascii=false,all_ascii_contained=false,all_non_ascii_contained=false;
  int lower_bound=0,upper_bound=0;

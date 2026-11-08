@@ -228,6 +228,129 @@ int main(int argc, char** argv) {
             return std::int64_t(0);
         };
         {
+            const auto program = compile_lsl(R"LSL(default {
+                state_entry() {
+                    llSetLocalRot(<0.0, 0.0, 1.0, 0.0>);
+                    rotation local = llGetLocalRot();
+                    rotation root = llGetRootRotation();
+                    rotation world = llGetRot();
+                    if (local.z == 1.0 && root.x == 1.0 && world.y == 1.0)
+                        llSay(0, "live rotation");
+                }
+            })LSL");
+            test(bool(program), "live rotation script compiles");
+            auto rotation_host = host;
+            rotation_host.script_delay_factor = 0.f;
+            LslRotation current;
+            rotation_host.set_object_rotation = [&](auto, LslRotation rotation, bool local) {
+                if (local)
+                    current = rotation;
+            };
+            rotation_host.object_rotation = [&](auto, LslRotationSpace space) -> std::optional<LslRotation> {
+                switch (space) {
+                case LslRotationSpace::Local: return current;
+                case LslRotationSpace::Root: return LslRotation{1, 0, 0, 0};
+                case LslRotationSpace::World: return LslRotation{0, 1, 0, 0};
+                }
+                return {};
+            };
+            LslInstance instance(program.program, context(), rotation_host);
+            test(instance.run(100).status == LslRunStatus::Idle &&
+                     messages == std::vector<std::string>{"live rotation"},
+                 "rotation queries use live host values in the same VM run");
+            messages.clear();
+        }
+        {
+            auto url_host = host;
+            bool delivered = false;
+            url_host.load_url = [&](auto, auto, const std::string&, const std::string&) { delivered = true; };
+            auto url_context = context();
+            url_context.group = framework::Uuid::random();
+            const auto program = compile_lsl(
+                "default { state_entry() { llLoadURL(llGetOwner(), \"Message\", \"ftp://example.invalid\"); } }");
+            test(bool(program), "llLoadURL compiles");
+            LslInstance rejected(program.program, url_context, url_host);
+            test(rejected.run(100).status == LslRunStatus::Sleeping && !delivered &&
+                     messages == std::vector<std::string>{"llLoadURL: Invalid url schema"},
+                 "llLoadURL rejects non-HTTP URLs before viewer delivery");
+            messages.clear();
+            url_context.group = url_context.owner;
+            LslInstance group_owned(program.program, url_context, url_host);
+            test(group_owned.run(100).status == LslRunStatus::Idle && !delivered && messages.empty(),
+                 "llLoadURL ignores group-owned objects before URL validation");
+        }
+        {
+            const auto program = compile_lsl(R"LSL(default {
+                state_entry() {
+                    llMapDestination("Owner map", <1, 2, 3>, ZERO_VECTOR);
+                }
+                touch_start(integer count) {
+                    llMapDestination("Detected map", <1, 2, 3>, <9, 9, 9>);
+                    llMapBeacon("Detected map", <1, 2, 3>, [BEACON_MAP, 1, 0]);
+                    llMapBeacon("Detected map", <1, 2, 3>, []);
+                }
+            })LSL");
+            test(bool(program), "map requests compile");
+            auto map_host = host;
+            map_host.script_delay_factor = 0.f;
+            auto script_context = context();
+            const auto target = framework::Uuid::random();
+            std::vector<std::uint32_t> options;
+            map_host.map_destination = [&](auto object, auto recipient, const std::string& name,
+                                           auto position, std::uint32_t flags) {
+                test(object == script_context.object && position == framework::Vector3d{1, 2, 3},
+                     "map request forwards the source prim and destination");
+                test((recipient == target && name == "Detected map") ||
+                         (recipient == script_context.owner && name == "Owner map"),
+                     "map request uses the detected target or attachment owner");
+                options.push_back(flags);
+            };
+            LslInstance rezzed(program.program, script_context, map_host);
+            rezzed.run(100);
+            test(options.empty(), "map request on a rezzed prim without a detector is ignored");
+            LslDetector detector;
+            detector.key = target;
+            rezzed.post_event({"touch_start", {std::int32_t(1)}, {detector}});
+            rezzed.run(100);
+            test(options == std::vector<std::uint32_t>{3, 1, 0}, "map destination and beacon flags");
+            script_context.attachment_point = 5;
+            LslInstance worn(program.program, script_context, map_host);
+            worn.run(100);
+            test(options == std::vector<std::uint32_t>{3, 1, 0, 3}, "worn script opens the owner's map");
+        }
+        {
+            const auto program = compile_lsl(
+                "default { state_entry() { llDie(); llSay(0, \"still running\"); } }");
+            test(bool(program), "llDie compiles");
+            auto script_context = context();
+            LslInstance rezzed(program.program, script_context, host);
+            test(rezzed.run(100).status == LslRunStatus::DeleteLinkset && messages.empty(),
+                 "llDie requests deletion and aborts the running event");
+            script_context.attachment_point = 5;
+            LslInstance attached(program.program, script_context, host);
+            test(attached.run(100).status == LslRunStatus::Idle &&
+                     messages == std::vector<std::string>{"still running"},
+                 "llDie has no effect on attachments");
+            messages.clear();
+        }
+        {
+            const auto program = compile_lsl(R"LSL(default {
+                state_entry() {
+                    integer calls = 0;
+                    llCollisionSprite((string)(++calls));
+                    llPointAt(<1, 2, 3>);
+                    llStopPointAt();
+                    llSay(0, (string)calls);
+                }
+            })LSL");
+            test(bool(program), "legacy no-op commands compile");
+            LslInstance script(program.program, context(), host);
+            test(script.run(100).status == LslRunStatus::Idle &&
+                     messages == std::vector<std::string>{"1"},
+                 "legacy no-op commands evaluate arguments without warnings or a sleep");
+            messages.clear();
+        }
+        {
             const auto program = compile_lsl("default { state_entry() { llSetBuoyancy(1.25); } }");
             test(bool(program), "llSetBuoyancy compiles");
             const auto script_context = context();
@@ -277,6 +400,87 @@ int main(int argc, char** argv) {
                      torques == std::vector<std::pair<opensim::framework::Vector3, bool>>{
                          {{1, 2, 3}, true}, {{7, 8, 9}, false}},
                  "force and torque dispatch with their respective coordinate modes");
+        }
+        {
+            const auto program = compile_lsl(R"LSL(
+                default {
+                    state_entry() {
+                        llSetVelocity(<1, 2, 3>, TRUE);
+                        llSetAngularVelocity(<4, 5, 6>, FALSE);
+                        llApplyImpulse(<7, 8, 9>, FALSE);
+                        llApplyRotationalImpulse(<10, 11, 12>, TRUE);
+                    }
+                }
+            )LSL");
+            test(bool(program), "linear and angular velocity setters compile");
+            const auto script_context = context();
+            auto velocity_host = host;
+            using Update = std::tuple<opensim::framework::Vector3, bool, bool>;
+            std::vector<Update> updates;
+            std::vector<Update> impulses;
+            velocity_host.set_velocity = [&](auto object, auto vector, bool local, bool angular) {
+                test(object == script_context.object, "velocity setter forwards the host prim");
+                updates.emplace_back(vector, local, angular);
+            };
+            velocity_host.apply_impulse = [&](auto object, auto vector, bool local, bool angular) {
+                test(object == script_context.object, "impulse forwards the host prim");
+                impulses.emplace_back(vector, local, angular);
+            };
+            LslInstance instance(program.program, script_context, velocity_host);
+            test(instance.run(100).status == LslRunStatus::Idle &&
+                     updates == std::vector<Update>{{{1, 2, 3}, true, false}, {{4, 5, 6}, false, true}} &&
+                     impulses == std::vector<Update>{{{7, 8, 9}, false, false}, {{10, 11, 12}, true, true}},
+                 "velocity and impulse calls dispatch the vector and coordinate mode");
+        }
+        {
+            const auto program = compile_lsl(R"LSL(
+                default {
+                    state_entry() {
+                        llLookAt(llGetPos() + <1, 0, 0>, 2, 3);
+                        llRotLookAt(ZERO_ROTATION, 4, 5);
+                        llStopLookAt();
+                    }
+                }
+            )LSL");
+            test(bool(program), "look-at calls compile");
+            auto look_host = host;
+            using Command = std::tuple<std::optional<opensim::framework::Quaternion>, double, double, bool>;
+            std::vector<Command> commands;
+            look_host.look_at = [&](auto, auto rotation, double strength, double damping, bool point_target) {
+                commands.emplace_back(rotation, strength, damping, point_target);
+                return false;
+            };
+            LslInstance instance(program.program, context(), look_host);
+            using opensim::framework::Quaternion;
+            test(instance.run(100).status == LslRunStatus::Idle &&
+                     commands == std::vector<Command>{{Quaternion{0, .707107f, 0, .707107f}, 2., 3., true},
+                                                      {Quaternion{0, 0, 0, 1}, 4., 5., false},
+                                                      {std::nullopt, 0., 0., false}},
+                 "look-at calls deliver point and rotation targets and stop");
+        }
+        {
+            const auto program = compile_lsl(
+                "default { state_entry() { llMoveToTarget(<1, 2, 3>, 0.25); llStopMoveToTarget(); } }");
+            test(bool(program), "move-to-target start and stop compile");
+            auto movement_host = host;
+            std::vector<opensim::framework::PrimMoveTarget> commands;
+            movement_host.move_to_target = [&](auto, auto target) { commands.push_back(target); };
+            LslInstance instance(program.program, context(), movement_host);
+            test(instance.run(100).status == LslRunStatus::Idle &&
+                     commands == std::vector<opensim::framework::PrimMoveTarget>{{{1, 2, 3}, .25f}, {}},
+                 "move-to-target calls deliver the destination and stop command");
+        }
+        {
+            const auto program = compile_lsl(
+                "default { state_entry() { llSetHoverHeight(3, TRUE, 0.25); llStopHover(); } }");
+            test(bool(program), "hover start and stop compile");
+            auto hover_host = host;
+            std::vector<opensim::framework::PrimHover> settings;
+            hover_host.set_hover = [&](auto, auto hover) { settings.push_back(hover); };
+            LslInstance instance(program.program, context(), hover_host);
+            test(instance.run(100).status == LslRunStatus::Idle &&
+                     settings == std::vector<opensim::framework::PrimHover>{{3.f, .25f, true}, {}},
+                 "hover calls deliver settings and a stop command");
         }
         {
             const auto program = compile_lsl(R"LSL(
@@ -671,6 +875,58 @@ int main(int argc, char** argv) {
         test(camera_messages() == departed_defaults,
              "camera queries use the managed fallback values after the avatar departs");
 
+        const auto health_query = compile_lsl(R"(
+            default {
+                state_entry() {
+                    llSay(1, (string)llGetHealth(llGetOwner()));
+                    llSay(1, (string)llGetHealth(NULL_KEY));
+                    llSay(1, (string)llGetHealth("invalid key"));
+                }
+            }
+        )");
+        test(bool(health_query), "avatar health query compiles");
+        const auto health_context = context();
+        camera_host.agent_health = [&](auto id) -> std::optional<float> {
+            if (id == health_context.owner)
+                return 72.5f;
+            return std::nullopt;
+        };
+        camera_chat.clear();
+        LslInstance health_instance(health_query.program, health_context, camera_host);
+        health_instance.run(100);
+        test(camera_messages() == std::vector<std::string>{"72.500000", "-1.000000", "-1.000000"},
+             "health queries return the current health or the missing-avatar sentinel");
+
+        const auto hud_projection = compile_lsl(R"(
+            default {
+                state_entry() {
+                    llSay(1, (string)llWorldPosToHUD(<20, 24, 32>));
+                    llSay(1, (string)llWorldPosToHUD(<0, 24, 32>));
+                }
+            }
+        )");
+        test(bool(hud_projection), "HUD projection compiles");
+        auto hud_context = context();
+        hud_context.owner = granter;
+        camera_host.camera = [&](auto id) -> std::optional<LslCamera> {
+            test(id == hud_context.owner, "HUD projection looks up the owner");
+            return LslCamera{{10, 20, 30}, {}, 1.57079632679f, 1.5f,
+                             {1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+        };
+        camera_chat.clear();
+        LslInstance world_projection(hud_projection.program, hud_context, camera_host);
+        world_projection.run(100);
+        test(camera_messages() == std::vector(2, std::string("<0.000000, 0.000000, 0.000000>")),
+             "HUD projection returns zero outside a HUD attachment");
+
+        hud_context.attachment_point = 34;
+        camera_chat.clear();
+        LslInstance hud_projection_granted(hud_projection.program, hud_context, camera_host);
+        hud_projection_granted.run(100);
+        test(camera_messages() == std::vector<std::string>{
+                 "<1.000000, -0.570000, -0.410000>", "<-1.000000, 3.250000, 1.500000>"},
+             "HUD projection applies the top-left anchor and preserves behind-camera coordinates");
+
         const auto media_query = compile_lsl(R"(
             default {
                 state_entry() {
@@ -706,8 +962,16 @@ int main(int argc, char** argv) {
                      std::vector<std::string>{"https://example.test|example.test%2Fa%20b, %2Aother.test|4",
                                               "512", "1000", ""},
              "media queries resolve link selectors, escape whitelist entries and preserve result types");
-        auto arithmetic = compile_lsl(
-            "default{state_entry(){llSay(1,(string)(2+3*4-8/4/2));llSay(1,(string)(0x80000000/-1));llSay(1,(string)(-5.5%2));llSay(1,(string)(1.0/0));}}");
+        auto arithmetic = compile_lsl(R"LSL(
+            default {
+                state_entry() {
+                    llSay(1, (string)(2 + 3 * 4 - 8 / 4 / 2));
+                    llSay(1, (string)(0x80000000 / -1));
+                    llSay(1, (string)(-5.5 % 2));
+                    llSay(1, (string)(1.0 / 0));
+                }
+            }
+        )LSL");
         test(bool(arithmetic), "multiplicative expressions compile");
         LslInstance arithmetic_script(arithmetic.program, context(), host);
         const auto arithmetic_start = messages.size();
@@ -717,8 +981,23 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + arithmetic_start, messages.end()) ==
                      std::vector<std::string>{"13", "-2147483648", "-1.500000"},
              "multiplicative precedence, left associativity, integer wrapping, and floating faults");
-        auto branches = compile_lsl(
-            "default{touch_start(integer n){if(n) if(n-1) llSay(1,\"many\"); else llSay(1,\"one\"); if(n-1) llSay(1,\"other\"); else { llSay(1,\"single\"); }}}");
+        auto branches = compile_lsl(R"LSL(
+            default {
+                touch_start(integer n) {
+                    if (n)
+                        if (n - 1)
+                            llSay(1, "many");
+                        else
+                            llSay(1, "one");
+
+                    if (n - 1)
+                        llSay(1, "other");
+                    else {
+                        llSay(1, "single");
+                    }
+                }
+            }
+        )LSL");
         test(bool(branches), "nested conditional statements compile");
         LslInstance branch_script(branches.program, context(), host);
         branch_script.run(100);
@@ -731,8 +1010,23 @@ int main(int argc, char** argv) {
         test(std::vector<std::string>(messages.begin() + branch_start, messages.end()) ==
                  std::vector<std::string>{"other", "one", "single", "many", "other"},
              "branches bind else to the nearest if and resume across instruction budgets");
-        auto loops = compile_lsl(
-            "default{state_entry(){while(0) llSay(1,\"skipped\");do llSay(1,\"once\"); while(0);while(llGetTime()) { llSay(1,\"again\"); llResetTime(); }}}");
+        auto loops = compile_lsl(R"LSL(
+            default {
+                state_entry() {
+                    while (0)
+                        llSay(1, "skipped");
+
+                    do
+                        llSay(1, "once");
+                    while (0);
+
+                    while (llGetTime()) {
+                        llSay(1, "again");
+                        llResetTime();
+                    }
+                }
+            }
+        )LSL");
         test(bool(loops), "while and do-while compile");
         monotonic = 0;
         LslInstance loop_script(loops.program, context(), time_host);
@@ -750,8 +1044,16 @@ int main(int argc, char** argv) {
         LslInstance endless_script(endless.program, context(), host);
         test(endless_script.run(16).status == LslRunStatus::BudgetExhausted,
              "empty infinite loop respects the instruction budget");
-        auto comparisons = compile_lsl(
-            "default{state_entry(){if(1+2>=3.0) llSay(1,(string)(2<3==4>3));llSay(1,(string)(\"alpha\"!=\"beta\"));llSay(1,(string)llCloud(<1<2,0,(3>2)>));}}");
+        auto comparisons = compile_lsl(R"LSL(
+            default {
+                state_entry() {
+                    if (1 + 2 >= 3.0)
+                        llSay(1, (string)(2 < 3 == 4 > 3));
+                    llSay(1, (string)("alpha" != "beta"));
+                    llSay(1, (string)llCloud(<1 < 2, 0, (3 > 2)>));
+                }
+            }
+        )LSL");
         test(bool(comparisons), "comparison expressions compile, including inside vector arguments");
         LslInstance comparison_script(comparisons.program, context(), host);
         const auto comparison_start = messages.size();
@@ -766,8 +1068,16 @@ int main(int argc, char** argv) {
         LslInstance ordinal_script(ordinal.program, context(), host);
         test(ordinal_script.run(100).status == LslRunStatus::Idle && messages.back() == "1",
              "ordinal comparisons order UTF-16 code units across the surrogate boundary");
-        auto logical = compile_lsl(
-            "default{state_entry(){llSay(1,(string)(1||0&&0));llSay(1,(string)(!0&&\"text\"));llSay(1,(string)(llGetAndResetTime()||1));llSay(1,(string)llGetTime());}}");
+        auto logical = compile_lsl(R"LSL(
+            default {
+                state_entry() {
+                    llSay(1, (string)(1 || 0 && 0));
+                    llSay(1, (string)(!0 && "text"));
+                    llSay(1, (string)(llGetAndResetTime() || 1));
+                    llSay(1, (string)llGetTime());
+                }
+            }
+        )LSL");
         test(bool(logical), "logical expressions compile");
         monotonic = 0;
         LslInstance logical_script(logical.program, context(), time_host);
@@ -817,8 +1127,22 @@ int main(int argc, char** argv) {
                  messages.back() == "handled",
              "return preserves subsequent queued events");
         test(!compile_lsl("default{state_entry(){return 1;}}"), "events reject return values");
-        auto variables = compile_lsl(
-            "default{touch_start(integer n){integer count;while(count<n){count=count+1;} {float count=2;llSay(1,(string)count);} n=count+1;llSay(1,(string)n);}}");
+        auto variables = compile_lsl(R"LSL(
+            default {
+                touch_start(integer n) {
+                    integer count;
+                    while (count < n) {
+                        count = count + 1;
+                    }
+                    {
+                        float count = 2;
+                        llSay(1, (string)count);
+                    }
+                    n = count + 1;
+                    llSay(1, (string)n);
+                }
+            }
+        )LSL");
         test(bool(variables), "local declarations and assignment compile");
         LslInstance variable_script(variables.program, context(), host);
         const auto variable_start = messages.size();
@@ -841,8 +1165,21 @@ int main(int argc, char** argv) {
             for_status = for_script.run(1).status;
         test(for_status == LslRunStatus::Idle && messages.back() == "6",
              "for initializer, condition, body and update run in order across yields");
-        auto increments = compile_lsl(
-            "default{state_entry(){integer n=2147483647;llSay(1,(string)n++);llSay(1,(string)n);float f=2;llSay(1,(string)--f);++f;llSay(1,(string)f--);llSay(1,(string)f);}}");
+        auto increments = compile_lsl(R"LSL(
+            default {
+                state_entry() {
+                    integer n = 2147483647;
+                    llSay(1, (string)n++);
+                    llSay(1, (string)n);
+
+                    float f = 2;
+                    llSay(1, (string)--f);
+                    ++f;
+                    llSay(1, (string)f--);
+                    llSay(1, (string)f);
+                }
+            }
+        )LSL");
         test(bool(increments), "prefix and postfix updates compile");
         LslInstance increment_script(increments.program, context(), host);
         const auto increment_start = messages.size();
@@ -862,8 +1199,23 @@ int main(int argc, char** argv) {
              "assignments associate right to left and return the converted stored value");
         test(!compile_lsl("default{state_entry(){llSay(1,(string)(1=2));}}"),
              "assignments require a writable variable");
-        auto compound = compile_lsl(
-            "default{state_entry(){integer n=2;integer m=3;n+=m*=4;n<<=1;n^=3;string s=\"a\";s+=\"b\";float f=5;f/=2;llSay(1,(string)n+\"/\"+s+\"/\"+(string)f);}}");
+        auto compound = compile_lsl(R"LSL(
+            default {
+                state_entry() {
+                    integer n = 2;
+                    integer m = 3;
+                    n += m *= 4;
+                    n <<= 1;
+                    n ^= 3;
+
+                    string s = "a";
+                    s += "b";
+                    float f = 5;
+                    f /= 2;
+                    llSay(1, (string)n + "/" + s + "/" + (string)f);
+                }
+            }
+        )LSL");
         test(bool(compound), "compound assignment expressions compile");
         LslInstance compound_script(compound.program, context(), host);
         test(compound_script.run(100).status == LslRunStatus::Idle && messages.back() == "31/ab/2.500000",

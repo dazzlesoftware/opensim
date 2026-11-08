@@ -5,7 +5,7 @@
 #include "opensim/framework/config_file_uri_path.hpp"
 namespace opensim::framework {
 class ConfigFileUriRangeError : public ConfigUriComponentsError {
-public:
+  public:
     ConfigFileUriRangeError(std::u16string message, std::u16string parameter,
                             std::optional<std::int64_t> value = {})
         : ConfigUriComponentsError("System.ArgumentOutOfRangeException", std::move(message), 0x80131502,
@@ -15,11 +15,16 @@ public:
 };
 bool config_file_uri_applies(const ConfigFileUriSchemeScan&);
 // Only file/DOS/UNC dispatch. Generic schemes belong to the composing backend.
-ConfigUriObjectPtr config_file_uri_create(ConfigUriText,ConfigUriObjectKind,std::shared_ptr<ConfigUriComponentsBackend>,bool windows);
-ConfigUriObjectPtr config_file_uri_try_create(ConfigUriText,ConfigUriObjectKind,std::shared_ptr<ConfigUriComponentsBackend>,bool windows);
+ConfigUriObjectPtr config_file_uri_create(ConfigUriText, ConfigUriObjectKind,
+                                          std::shared_ptr<ConfigUriComponentsBackend>, bool windows);
+ConfigUriObjectPtr config_file_uri_try_create(ConfigUriText, ConfigUriObjectKind,
+                                              std::shared_ptr<ConfigUriComponentsBackend>, bool windows);
 
-using ConfigFileUriCreate=std::function<ConfigUriObjectPtr(ConfigUriText,ConfigUriObjectKind)>;
-ConfigUriObjectPtr config_file_uri_combine_string(ConfigUriObjectPtr,ConfigUriText,const ConfigFileUriCreate&);
-ConfigUriObjectPtr config_file_uri_combine_uri(ConfigUriObjectPtr,ConfigUriObjectPtr,const ConfigFileUriCreate&);
-ConfigUriObjectPtr config_file_uri_with_fragment(ConfigUriObjectPtr,ConfigUriText,const ConfigFileUriCreate&);
-}
+using ConfigFileUriCreate = std::function<ConfigUriObjectPtr(ConfigUriText, ConfigUriObjectKind)>;
+ConfigUriObjectPtr config_file_uri_combine_string(ConfigUriObjectPtr, ConfigUriText,
+                                                  const ConfigFileUriCreate&);
+ConfigUriObjectPtr config_file_uri_combine_uri(ConfigUriObjectPtr, ConfigUriObjectPtr,
+                                               const ConfigFileUriCreate&);
+ConfigUriObjectPtr config_file_uri_with_fragment(ConfigUriObjectPtr, ConfigUriText,
+                                                 const ConfigFileUriCreate&);
+} // namespace opensim::framework

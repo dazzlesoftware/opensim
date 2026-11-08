@@ -88,6 +88,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/framework/filesystem.hpp"
 #include "opensim/framework/stream_reader_text.hpp"
 #include "opensim/scene/region_runtime.hpp"
+#include "opensim/scene/object_asset_xml.hpp"
 #include "opensim/services/region_asset_runtime.hpp"
 #include "opensim/services/simulator_features.hpp"
 #include "opensim/framework/console_parser.hpp"
@@ -2647,6 +2648,12 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     };
                 }
                 policies.target_poll_ms = region_poll_interval.count();
+                float scene_frame_time = 0.f;
+                if (framework::parse_invariant_float(config.get("Startup", "FrameTime"), scene_frame_time) &&
+                    std::isfinite(scene_frame_time) && scene_frame_time > 0.f)
+                    policies.scene_frame_time = scene_frame_time;
+                policies.update_objects_every_n_frames =
+                    config.integer("Startup", "UpdateObjectsEveryNFrames", 1);
                 if (config.boolean("Startup", "Normalized55FPS", true))
                     policies.statistics_fps_factor =
                         55.f * std::chrono::duration<float>(region_poll_interval).count();
@@ -2892,6 +2899,12 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     info["Position"] = std::vector<double>{position.x, position.y, position.z};
                     info["LookAt"] = std::vector<double>{look_at.x, look_at.y, look_at.z};
                     return {};
+                };
+                policies.grid_region_at = [&, lookup_remote_region, scope = region.scope](std::int32_t x, std::int32_t y) {
+                    if (!remote_grid_request)
+                        return grid->by_position(scope, x, y).has_value();
+                    return lookup_remote_region(scope, {{"X", std::to_string(x)}, {"Y", std::to_string(y)},
+                                                        {"METHOD", "get_region_by_position"}}).has_value();
                 };
                 policies.teleport_destination = [&, lookup_remote_region, scope = region.scope](std::uint64_t handle) {
                     auto destination = grid->by_handle(scope, handle);
@@ -4101,7 +4114,8 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     for (const std::string function :
                          {"osRequestURL", "osRequestSecureURL", "osForceOtherSit", "osGetAgents", "osGetAgentIP",
                           "osAvatarPlayAnimation", "osAvatarStopAnimation", "osSetRegionWaterHeight",
-                          "osSetRegionSunSettings", "osSunGetParam", "osReplaceAgentEnvironment"})
+                          "osSetRegionSunSettings", "osSunGetParam", "osReplaceAgentEnvironment",
+                          "osSetHealRate", "osGetHealRate"})
                         policies.script_ossl_rules.emplace(function, scene::RegionPolicies::OsslRule{
                             read("Allow_" + function), read("Creators_" + function)});
                 }
@@ -4124,6 +4138,8 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                         framework::nini_writer_text(u"ScriptHeapSize"), policies.script_heap_limit_bytes / 1024);
                     policies.script_heap_limit_bytes =
                         std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(heap_kib) << 10);
+                    policies.allow_god_functions = yengine->get_boolean(
+                        framework::nini_writer_text(u"AllowGodFunctions"), false);
                     policies.script_delay_factor = yengine->get_float(
                         framework::nini_writer_text(u"ScriptDelayFactor"), policies.script_delay_factor);
                     policies.script_distance_factor = yengine->get_float(
@@ -4870,6 +4886,9 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                 object.acceleration = {optional_real("AccelerationX"),
                                                        optional_real("AccelerationY"),
                                                        optional_real("AccelerationZ")};
+                                object.inertia_override = scene::read_prim_inertia_xml(optional_text("PhysInertia"));
+                                const auto locks = optional_text("RotationAxisLocks");
+                                std::from_chars(locks.data(), locks.data() + locks.size(), object.rotation_axis_locks);
                                 const auto shape_type = optional_text("PhysicsShapeType");
                                 if (shape_type == "1" && object.id != group)
                                     object.physics.shape = 1;
@@ -5014,6 +5033,9 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                             add("SitTargetOrientW", services::avatar_float_string(part.sit_target_orientation.w));
                             add("AllowedDrop", (part.flags & 0x10000u) ? "1" : "0");
                             add("Density", services::avatar_float_string(part.physics.density));
+                            add("RotationAxisLocks", std::to_string(part.rotation_axis_locks));
+                            add("PhysInertia", part.inertia_override ? scene::write_prim_inertia_xml(*part.inertia_override)
+                                                                     : std::string{});
                             add("GravityModifier", services::avatar_float_string(part.physics.gravity));
                             add("Friction", services::avatar_float_string(part.physics.friction));
                             add("Restitution", services::avatar_float_string(part.physics.restitution));

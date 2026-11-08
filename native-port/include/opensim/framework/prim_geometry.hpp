@@ -1,12 +1,48 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #pragma once
+#include "opensim/framework/uuid.hpp"
+#include "opensim/framework/quaternion_text.hpp"
 #include <cstdint>
 namespace opensim::framework {
 struct PrimContactMaterial {
     float friction = .6f;
     float restitution = .5f;
     bool operator==(const PrimContactMaterial&) const = default;
+};
+struct PrimInertiaOverride {
+    float mass = 0.f;
+    Vector3 center;
+    Vector3 diagonal;
+    Quaternion rotation{0, 0, 0, 1};
+    bool operator==(const PrimInertiaOverride&) const = default;
+};
+
+struct PrimInertiaData {
+    float mass = 0.f;
+    Vector3 center;
+    Vector3 diagonal;
+    Vector3 products;
+};
+
+struct PrimHover {
+    float height = 0.f;
+    float tau = 0.f;
+    bool above_water = false;
+    bool active() const { return height != 0.f && tau != 0.f; }
+    bool operator==(const PrimHover&) const = default;
+};
+struct PrimMoveTarget {
+    Vector3 position;
+    float tau = 0.f;
+    bool active() const { return tau > 0.f; }
+    bool operator==(const PrimMoveTarget&) const = default;
+};
+struct PrimLookAt {
+    Quaternion rotation{0, 0, 0, 1};
+    float strength = 0.f;
+    bool active() const { return strength >= .04f; }
+    bool operator==(const PrimLookAt&) const = default;
 };
 
 enum class PrimType : int {

@@ -127,7 +127,10 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
         def cli(*options, password=None, expected=0):
             result = subprocess.run([executable, "--config", str(config), *options],
                                     input=password, capture_output=True, text=True, encoding="utf-8", timeout=20)
-            check(result.returncode == expected, f"CLI {' '.join(options[:1])} exit {expected}: {result.stderr if result.returncode != expected else ''}")
+            check(
+                result.returncode == expected,
+                f"CLI {' '.join(options[:1])} exit {expected}: {result.stderr if result.returncode != expected else ''}",
+            )
             if password:
                 check(password.strip() not in result.stdout + result.stderr, "password not printed")
             return result
@@ -141,7 +144,10 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
             columns = connection.execute("PRAGMA table_info(regions)").fetchall()
             check({row[1] for row in columns} == expected_columns, "native SQLite region columns match canonical PostgreSQL GridStore field names")
         with contextlib.closing(sqlite3.connect(database)) as connection:
-            check(connection.execute("SELECT name,version FROM migrations ORDER BY name").fetchall()==[("AuthStore",2),("UserAccount",3),("migrations",1)],"account/authentication initialization executes original migrations and records v3 metadata")
+            check(
+                connection.execute("SELECT name,version FROM migrations ORDER BY name").fetchall()==[("AuthStore",2),("UserAccount",3),("migrations",1)],
+                "account/authentication initialization executes original migrations and records v3 metadata",
+            )
         before = database.read_bytes()
         cli("--init-db", expected=1)
         check(database.read_bytes() == before, "initialization refuses existing database without changing it")
@@ -296,84 +302,182 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
                 status, _, body = server.request("POST", "/accounts", urllib.parse.urlencode({"METHOD": method, **values}))
                 check(status == 200, "account service HTTP 200")
                 return ET.fromstring(body)
-            check(account_request("getaccount", FirstName="Test", LastName="User").findtext("result/PrincipalID") == principal, "account name lookup through HTTP")
-            check(account_request("getaccount", UserID=principal, PrincipalID=str(uuid.uuid4())).findtext("result/PrincipalID") == principal, "account UserID takes precedence")
-            check(account_request("getaccount", UserID="invalid", FirstName="Test", LastName="User").findtext("result") == "null", "invalid account ID suppresses lower-priority lookup")
-            check(account_request("setaccount", PrincipalID=principal, UserTitle="Network <&> 試験", Email="network@example").findtext("result/UserTitle") == "Network <&> 試験", "account update uses full SQLite replacement")
-            check(account_request("getaccount", Email="network@example").findtext("result/PrincipalID") == principal, "account email lookup sees update")
-            check(account_request("getaccounts", query="Tes").findtext("account0/PrincipalID") == principal, "account search through SQLite and HTTP")
+            check(
+                account_request("getaccount", FirstName="Test", LastName="User").findtext("result/PrincipalID") == principal,
+                "account name lookup through HTTP",
+            )
+            check(
+                account_request("getaccount", UserID=principal, PrincipalID=str(uuid.uuid4())).findtext("result/PrincipalID") == principal,
+                "account UserID takes precedence",
+            )
+            check(
+                account_request("getaccount", UserID="invalid", FirstName="Test", LastName="User").findtext("result") == "null",
+                "invalid account ID suppresses lower-priority lookup",
+            )
+            check(
+                account_request("setaccount", PrincipalID=principal, UserTitle="Network <&> 試験", Email="network@example").findtext("result/UserTitle") == "Network <&> 試験",
+                "account update uses full SQLite replacement",
+            )
+            check(
+                account_request("getaccount", Email="network@example").findtext("result/PrincipalID") == principal,
+                "account email lookup sees update",
+            )
+            check(
+                account_request("getaccounts", query="Tes").findtext("account0/PrincipalID") == principal,
+                "account search through SQLite and HTTP",
+            )
             status, _, body = server.request("POST", "/accounts", "METHOD=getmultiaccounts&IDS[]=" + principal)
             check(status == 200 and ET.fromstring(body).findtext("result") == "null", "SQLite multi-account query retains original empty result")
             created_id=str(uuid.uuid4())
             created=account_request("createuser", PrincipalID=created_id, ScopeID=str(uuid.uuid4()), FirstName=" New ", LastName=" Provisioned ", Password="provisioned-password", Email="new@example")
-            check(created.findtext("result/PrincipalID") == created_id and created.findtext("result/ScopeID") == str(uuid.UUID(int=0)), "account creation retains supplied principal and original zero-scope behavior")
-            check(created.findtext("result/FirstName") == "New" and created.findtext("result/LastName") == "Provisioned", "account creation trims names")
-            check(created.findtext("result/ServiceURLs") == "HomeURI*;InventoryServerURI*;AssetServerURI*;", "account creation stores original initial service URLs")
-            check(account_request("createuser", FirstName="New", LastName="Provisioned", Password="other").findtext("result") == "Failure", "duplicate names reject provisioning")
+            check(
+                created.findtext("result/PrincipalID") == created_id
+                and created.findtext("result/ScopeID") == str(uuid.UUID(int=0)),
+                "account creation retains supplied principal and original zero-scope behavior",
+            )
+            check(
+                created.findtext("result/FirstName") == "New"
+                and created.findtext("result/LastName") == "Provisioned",
+                "account creation trims names",
+            )
+            check(
+                created.findtext("result/ServiceURLs") == "HomeURI*;InventoryServerURI*;AssetServerURI*;",
+                "account creation stores original initial service URLs",
+            )
+            check(
+                account_request("createuser", FirstName="New", LastName="Provisioned", Password="other").findtext("result") == "Failure",
+                "duplicate names reject provisioning",
+            )
             with contextlib.closing(sqlite3.connect(database)) as connection:
                 password_hash,password_salt=connection.execute("SELECT passwordHash,passwordSalt FROM auth WHERE UUID=?",(created_id,)).fetchone()
                 expected=hashlib.md5((hashlib.md5(b"provisioned-password").hexdigest()+":"+password_salt).encode()).hexdigest()
                 check(password_hash == expected, "HTTP account provisioning sets the source salted password hash")
             check(server.request("GET", "/accounts")[0] == 405, "account endpoint requires POST")
-            check(server.request("POST", "/accounts", "METHOD=getaccount", headers={"X-SecondLife-Shard":""})[0] == 403, "account endpoint excludes script requests")
+            check(
+                server.request("POST", "/accounts", "METHOD=getaccount", headers={"X-SecondLife-Shard":""})[0] == 403,
+                "account endpoint excludes script requests",
+            )
             region_id = "00000000-0000-0000-0000-000000000010"
-            registration = {"METHOD":"register", "VERSIONMIN":"1", "VERSIONMAX":"1", "uuid":region_id, "regionName":"Network Region", "locX":"25600", "locY":"25600", "sizeX":"256", "sizeY":"256", "serverPort":"9000", "serverIP":"127.0.0.1"}
+            registration = {
+                "METHOD": "register",
+                "VERSIONMIN": "1",
+                "VERSIONMAX": "1",
+                "uuid": region_id,
+                "regionName": "Network Region",
+                "locX": "25600",
+                "locY": "25600",
+                "sizeX": "256",
+                "sizeY": "256",
+                "serverPort": "9000",
+                "serverIP": "127.0.0.1",
+            }
             def registry(values, headers=None):
                 status, _, body = server.request("POST", "/grid", urllib.parse.urlencode(values), headers=headers)
                 check(status == 200, "grid registry HTTP response")
                 return ET.fromstring(body)
             check(registry({"METHOD":"register"}).findtext("Result") == "Failure", "grid registration protocol version required")
             check(registry(registration).findtext("Result") == "Success", "grid region registration through real HTTP")
-            check(registry({"METHOD":"get_region_by_name", "NAME":"Network Region"}).findtext("result/uuid") == region_id, "registered region name lookup through HTTP")
+            check(
+                registry({"METHOD":"get_region_by_name", "NAME":"Network Region"}).findtext("result/uuid") == region_id,
+                "registered region name lookup through HTTP",
+            )
             linked = server.login({"region_name": "Network Region"}, "link_region")
             check(linked["result"] == "True" and linked["uuid"] == region_id, "Gatekeeper links a registered region")
             destination = server.login({"region_uuid": region_id}, "get_region")
             check(destination["result"] == "true" and destination["internal_port"] == "9000", "Gatekeeper resolves a linked region")
             check(server.login({"region_uuid": "00000000-0000-0000-0000-000000000000"}, "get_region")["result"] == "false",
                   "Gatekeeper reports a missing region")
-            check(registry({"METHOD":"get_region_by_name", "NAME":"http://127.0.0.1:9000/Network Region"}).findtext("result/uuid") == region_id, "configured local grid URL resolves through HTTP")
-            check(registry({"METHOD":"get_localregion_by_name", "NAME":"http://127.0.0.1:9000/Network Region"}).findtext("result/uuid") == region_id, "configured local-only grid URL resolves through HTTP")
+            check(
+                registry({"METHOD":"get_region_by_name", "NAME":"http://127.0.0.1:9000/Network Region"}).findtext("result/uuid") == region_id,
+                "configured local grid URL resolves through HTTP",
+            )
+            check(
+                registry({"METHOD":"get_localregion_by_name", "NAME":"http://127.0.0.1:9000/Network Region"}).findtext("result/uuid") == region_id,
+                "configured local-only grid URL resolves through HTTP",
+            )
             check(registry({"METHOD":"get_default_regions"}).findtext("region0/uuid") == region_id, "grid default flags applied through HTTP")
-            check(registry({"METHOD":"get_online_regions", "MC":"0"}).findtext("result") == "null", "grid online HTTP count zero skips service query")
+            check(
+                registry({"METHOD":"get_online_regions", "MC":"0"}).findtext("result") == "null",
+                "grid online HTTP count zero skips service query",
+            )
             check(registry({"METHOD":"get_region_flags", "REGIONID":region_id}).findtext("result") == "7", "grid wire flags query")
             with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
                 results = list(pool.map(lambda _:registry({"METHOD":"get_region_by_uuid", "REGIONID":region_id}).findtext("result/uuid"), range(12)))
             check(all(value == region_id for value in results), "concurrent grid HTTP reads")
             check(registry({"METHOD":"get_grid_extra_features"}).findtext("ExportSupported") == "true", "grid default extra feature through HTTP")
-            check(registry({"METHOD":"get_grid_extra_features"}).findtext("GridURLAlias") == "http://alias.example:80,", "grid alias normalization through real HTTP")
-            check(server.request("POST", "/grid", "METHOD=get_default_regions", headers={"X-SecondLife-Shard":""})[0] == 403, "grid script requests excluded")
+            check(
+                registry({"METHOD":"get_grid_extra_features"}).findtext("GridURLAlias") == "http://alias.example:80,",
+                "grid alias normalization through real HTTP",
+            )
+            check(
+                server.request("POST", "/grid", "METHOD=get_default_regions", headers={"X-SecondLife-Shard":""})[0] == 403,
+                "grid script requests excluded",
+            )
             check(server.request("GET", "/grid")[0] == 405, "grid URI requires POST")
             homed_id=str(uuid.uuid4())
-            check(account_request("createuser", PrincipalID=homed_id, FirstName="Home", LastName="Provisioned", Password="home-password").findtext("result/PrincipalID") == homed_id, "account creation connects the default-region service")
+            check(
+                account_request("createuser", PrincipalID=homed_id, FirstName="Home", LastName="Provisioned", Password="home-password").findtext("result/PrincipalID") == homed_id,
+                "account creation connects the default-region service",
+            )
             status, _, body = server.request("POST", "/griduser", "METHOD=getgriduserinfo&UserID="+homed_id)
             home=ET.fromstring(body)
-            check(status == 200 and home.findtext("result/HomeRegionID") == region_id and home.findtext("result/HomePosition") == "<128, 128, 0>" and home.findtext("result/HomeLookAt") == "<0, 1, 0>", "account creation persists source default home and look-at")
+            check(
+                status == 200
+                and home.findtext("result/HomeRegionID") == region_id
+                and home.findtext("result/HomePosition") == "<128, 128, 0>"
+                and home.findtext("result/HomeLookAt") == "<0, 1, 0>",
+                "account creation persists source default home and look-at",
+            )
             check(registry({"METHOD":"deregister", "REGIONID":region_id}).findtext("Result") == "Success", "grid deregistration through HTTP")
             check(registry({"METHOD":"get_region_by_uuid", "REGIONID":region_id}).findtext("result") == "null", "deregistered grid entry removed")
             persisted_id = "00000000-0000-0000-0000-000000000011"
             persisted_scope = "00000000-0000-0000-0000-000000000020"
-            check(registry({**registration, "uuid":persisted_id, "SCOPEID":persisted_scope, "regionName":"Persistent Region", "locX":"51200", "locY":"51200", "sizeY":"512"}).findtext("Result") == "Success", "scoped durable grid registration")
+            check(
+                registry({**registration, "uuid":persisted_id, "SCOPEID":persisted_scope, "regionName":"Persistent Region", "locX":"51200", "locY":"51200", "sizeY":"512"}).findtext("Result") == "Success",
+                "scoped durable grid registration",
+            )
             def grid_request(method, **values):
                 status, _, body = server.request("POST", "/griduser", urllib.parse.urlencode({"METHOD": method, **values}))
                 check(status == 200, "grid-user HTTP response")
                 return ET.fromstring(body)
             check(grid_request("getgriduserinfo", UserID=grid_user).findtext("result") == "Failure", "grid-user absent record failure")
             check(grid_request("loggedin", UserID=grid_user).findtext("result/Online") == "True", "grid-user login stored through HTTP")
-            check(grid_request("sethome", UserID=grid_user, RegionID=grid_region, Position="<10,20,30>").findtext("result") == "Success", "grid-user home updated through HTTP")
-            check(grid_request("setposition", UserID=grid_user, RegionID=grid_region, Position="<40,50,60>").findtext("result") == "Success", "grid-user last position updated through HTTP")
-            check(grid_request("loggedout", UserID=grid_user, RegionID=grid_region, Position="<70,80,90>").findtext("result") == "Success", "grid-user logout through HTTP")
-            check(server.request("POST", "/griduser", "METHOD=loggedin&UserID=blocked", headers={"X-SecondLife-Shard":""})[0] == 403, "grid-user script request excluded")
+            check(
+                grid_request("sethome", UserID=grid_user, RegionID=grid_region, Position="<10,20,30>").findtext("result") == "Success",
+                "grid-user home updated through HTTP",
+            )
+            check(
+                grid_request("setposition", UserID=grid_user, RegionID=grid_region, Position="<40,50,60>").findtext("result") == "Success",
+                "grid-user last position updated through HTTP",
+            )
+            check(
+                grid_request("loggedout", UserID=grid_user, RegionID=grid_region, Position="<70,80,90>").findtext("result") == "Success",
+                "grid-user logout through HTTP",
+            )
+            check(
+                server.request("POST", "/griduser", "METHOD=loggedin&UserID=blocked", headers={"X-SecondLife-Shard":""})[0] == 403,
+                "grid-user script request excluded",
+            )
             check(server.request("GET", "/griduser")[0] == 405, "grid-user URI requires POST")
             presence_body = b"METHOD=getagents&uuids[]=missing"
             status, _, result = server.request("POST", "/presence", presence_body, "application/x-www-form-urlencoded")
             check(status == 200 and ET.fromstring(result).findtext("result") == "null", "presence endpoint runs through real HTTP listener")
             status, _, result = server.request("POST", "/presence", b"METHOD=login&UserID=remote&SessionID=" + str(uuid.uuid4()).encode())
             check(status == 200 and ET.fromstring(result).findtext("result") == "Failure", "presence endpoint refuses remote login")
-            check(server.request("POST", "/presence", presence_body, headers={"X-SecondLife-Shard": ""})[0] == 403, "service request headers enforce script exclusion")
+            check(
+                server.request("POST", "/presence", presence_body, headers={"X-SecondLife-Shard": ""})[0] == 403,
+                "service request headers enforce script exclusion",
+            )
             check(server.request("GET", "/presence")[0] == 405, "presence URI requires POST")
             status, headers, body = server.request("GET", "/health")
             health = json.loads(body)
-            check(status == 200 and health["authentication_ready"] and not health["simulation_ready"] and not health["login_success_available"], "health reports actual migration readiness")
+            check(
+                status == 200
+                and health["authentication_ready"]
+                and not health["simulation_ready"]
+                and not health["login_success_available"],
+                "health reports actual migration readiness",
+            )
             check(server.request("GET", "/ready")[0] == 503, "simulator readiness is unavailable")
             check(server.request("GET", "/")[0] == 405, "login URI requires POST")
             check(server.request("GET", "/not-registered")[0] == 404, "unknown path returns 404")
@@ -394,12 +498,28 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
             check(server.login({})["message"].startswith("Incomplete login credentials"), "missing XML-RPC credentials match source failure")
             check(server.login({**credentials, "passwd": "wrong"})["message"].startswith("Could not authenticate"), "wrong credentials rejected")
             authenticated = server.login(credentials)
-            check(server.login({"first":"New","last":"Provisioned","passwd":"provisioned-password"}) == authenticated, "HTTP-provisioned credentials authenticate through viewer login intake")
-            check(authenticated["login"] == "false" and authenticated["message"].startswith("Error connecting to the desired location"), "valid password reaches unavailable-region response without fake session")
-            check(server.login({**credentials, "passwd": "$1$" + hashlib.md5(b"test-password").hexdigest()}) == authenticated, "viewer prehashed credential accepted")
-            check(server.login({"first": "O'Connor", "last": "試験", "passwd": "another-試験-password"}) == authenticated, "Unicode CLI/account/login and SQL parameter binding")
+            check(
+                server.login({"first":"New","last":"Provisioned","passwd":"provisioned-password"}) == authenticated,
+                "HTTP-provisioned credentials authenticate through viewer login intake",
+            )
+            check(
+                authenticated["login"] == "false"
+                and authenticated["message"].startswith("Error connecting to the desired location"),
+                "valid password reaches unavailable-region response without fake session",
+            )
+            check(
+                server.login({**credentials, "passwd": "$1$" + hashlib.md5(b"test-password").hexdigest()}) == authenticated,
+                "viewer prehashed credential accepted",
+            )
+            check(
+                server.login({"first": "O'Connor", "last": "試験", "passwd": "another-試験-password"}) == authenticated,
+                "Unicode CLI/account/login and SQL parameter binding",
+            )
             check(server.login({**credentials, "scope_id": str(uuid.uuid4())}) == authenticated, "unscoped account falls back for requested scope")
-            check(server.login({**credentials, "passwd": None, "web_login_key": str(uuid.uuid4())})["message"].startswith("Incomplete"), "null password does not use web-key fallback")
+            check(
+                server.login({**credentials, "passwd": None, "web_login_key": str(uuid.uuid4())})["message"].startswith("Incomplete"),
+                "null password does not use web-key fallback",
+            )
             try:
                 server.login({}, "unknown_method")
                 raise AssertionError("Expected XML-RPC fault")
@@ -448,15 +568,30 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
             status, _, body = restarted.request("POST", "/accounts", "METHOD=getaccount&UserID=" + created_id)
             check(status == 200 and ET.fromstring(body).findtext("result/FirstName") == "New", "provisioned account survives restart")
             status, _, body = restarted.request("POST", "/accounts", "METHOD=getaccount&UserID=" + principal)
-            check(status == 200 and ET.fromstring(body).findtext("result/UserTitle") == "Network <&> 試験", "account metadata persists after server restart")
+            check(
+                status == 200
+                and ET.fromstring(body).findtext("result/UserTitle") == "Network <&> 試験",
+                "account metadata persists after server restart",
+            )
             status, _, result = restarted.request("POST", "/grid", urllib.parse.urlencode({"METHOD":"get_region_by_uuid", "SCOPEID":persisted_scope, "REGIONID":persisted_id}))
             region = ET.fromstring(result).find("result")
-            check(status == 200 and region.findtext("regionName") == "Persistent Region" and region.findtext("sizeY") == "512", "grid region fields survive server restart")
+            check(
+                status == 200
+                and region.findtext("regionName") == "Persistent Region"
+                and region.findtext("sizeY") == "512",
+                "grid region fields survive server restart",
+            )
             status, _, result = restarted.request("POST", "/grid", urllib.parse.urlencode({"METHOD":"get_region_by_uuid", "SCOPEID":str(uuid.uuid4()), "REGIONID":persisted_id}))
             check(status == 200 and ET.fromstring(result).findtext("result") == "null", "durable region scope filter survives restart")
             status, _, result = restarted.request("POST", "/griduser", "METHOD=getgriduserinfo&UserID="+grid_user)
             info = ET.fromstring(result).find("result")
-            check(status == 200 and info.findtext("Online") == "False" and info.findtext("HomePosition") == "<10, 20, 30>" and info.findtext("LastPosition") == "<70, 80, 90>", "grid-user home and logout position survive server restart")
+            check(
+                status == 200
+                and info.findtext("Online") == "False"
+                and info.findtext("HomePosition") == "<10, 20, 30>"
+                and info.findtext("LastPosition") == "<70, 80, 90>",
+                "grid-user home and logout position survive server restart",
+            )
             check(restarted.login(credentials)["message"].startswith("Error connecting"), "account/password persistence survives server restart")
         config.write_text(base_config + f"\n[GatekeeperService]\nScopeID={persisted_scope}\nAllowTeleportsToAnyRegion=false\n", encoding="utf-8")
         with RunningServer() as restricted:
@@ -537,7 +672,11 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
         config.write_text(with_settings(base_config, "NativeServer", GridRegionProvider="Null"), encoding="utf-8")
         with RunningServer() as volatile:
             status, _, result = volatile.request("POST", "/grid", "METHOD=get_region_by_uuid&REGIONID="+persisted_id)
-            check(status == 200 and ET.fromstring(result).findtext("result") == "null", "Null region provider remains independent of durable storage")
+            check(
+                status == 200
+                and ET.fromstring(result).findtext("result") == "null",
+                "Null region provider remains independent of durable storage",
+            )
         config.write_text(with_settings(base_config, "NativeServer", GridRegionProvider="unknown"), encoding="utf-8")
         result = cli(expected=1)
         check("GridRegionProvider" in result.stderr, "unknown region provider rejected explicitly")
@@ -547,16 +686,29 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
             check(message in result.stderr, "invalid "+key+" rejected before listening")
         config.write_text(with_settings(with_settings(base_config, "PresenceService", AuthType="BasicHttpAuthentication", HttpAuthUsername="service", HttpAuthPassword="test-service-password"), "UserAccountService", AuthType="BasicHttpAuthentication", HttpAuthUsername="service", HttpAuthPassword="test-service-password"), encoding="utf-8")
         with RunningServer() as protected:
-            check(protected.request("POST", "/accounts", "METHOD=getaccount&UserID="+principal)[0] == 401, "account endpoint requires configured Basic authentication")
-            check(protected.request("POST", "/accounts", "METHOD=getaccount&UserID="+principal, headers={"Authorization":"Basic "+base64.b64encode(b"service:test-service-password").decode()})[0] == 200, "account endpoint accepts configured Basic authentication")
+            check(
+                protected.request("POST", "/accounts", "METHOD=getaccount&UserID="+principal)[0] == 401,
+                "account endpoint requires configured Basic authentication",
+            )
+            check(
+                protected.request("POST", "/accounts", "METHOD=getaccount&UserID="+principal, headers={"Authorization":"Basic "+base64.b64encode(b"service:test-service-password").decode()})[0] == 200,
+                "account endpoint accepts configured Basic authentication",
+            )
             status, headers, _ = protected.request("POST", "/presence", presence_body)
             check(status == 401 and headers.get("WWW-Authenticate") == 'Basic realm = "Asset Server"', "presence Basic challenge through HTTP")
             authorization = "Basic " + base64.b64encode(b"service:test-service-password").decode()
             status, _, result = protected.request("POST", "/presence", presence_body, headers={"Authorization": authorization})
             check(status == 200 and ET.fromstring(result).findtext("result") == "null", "presence Basic credentials accepted through HTTP")
-            check(protected.request("POST", "/presence", presence_body, headers={"Authorization": authorization, "X-SecondLife-Shard": "test"})[0] == 403, "script exclusion precedes Basic authentication")
+            check(
+                protected.request("POST", "/presence", presence_body, headers={"Authorization": authorization, "X-SecondLife-Shard": "test"})[0] == 403,
+                "script exclusion precedes Basic authentication",
+            )
             status, _, result = protected.request("POST", "/presence", presence_body, headers={"Authorization": "Basic invalid!"})
-            check(status == 500 and b"test-service-password" not in result, "malformed service authentication propagates to HTTP error without credentials")
+            check(
+                status == 500
+                and b"test-service-password" not in result,
+                "malformed service authentication propagates to HTTP error without credentials",
+            )
         startup_presence = with_settings(
             base_config.replace("EnablePresenceEndpoint = true\n", ""), "Startup",
             ServiceConnectors="0/OpenSim.Server.Handlers.dll:PresenceServiceConnector",
@@ -598,7 +750,11 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
         elif features["tls"]:
             with RunningServer() as secure:
                 try:
-                    check(secure.uri.scheme == "https" and secure.login(credentials)["message"].startswith("Error connecting"), "HTTPS login with certificate verification")
+                    check(
+                        secure.uri.scheme == "https"
+                        and secure.login(credentials)["message"].startswith("Error connecting"),
+                        "HTTPS login with certificate verification",
+                    )
                 except ssl.SSLCertVerificationError as error:
                     fixture_der = ssl.PEM_cert_to_DER_cert((fixture / "localhost-cert.pem").read_text(encoding="ascii"))
                     expected_fingerprint = hashlib.sha256(fixture_der).hexdigest()
@@ -625,7 +781,11 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
             skipped.append("TLS support not compiled")
         config.write_text(with_settings(with_settings(base_config, "UserAccountService", ConnectionString="untouched-accounts.db"), "AuthenticationService", ConnectionString="untouched-auth.db"), encoding="utf-8")
         cli("--init-db", expected=1)
-        check(not (root / "untouched-accounts.db").exists() and not (root / "untouched-auth.db").exists(), "existing service database rejected before account/auth initialization writes")
+        check(
+            not (root / "untouched-accounts.db").exists()
+            and not (root / "untouched-auth.db").exists(),
+            "existing service database rejected before account/auth initialization writes",
+        )
         # Both spellings run through real startup, account provisioning and login.
         # In the bundled provider a comma belongs to the filename, while a
         # semicolon separates properties (quoted here through the INI layer).
@@ -639,11 +799,21 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
                 check(separated.login({"first": "Separate", "last": "User", "passwd": "separate-password"})["message"].startswith("Error connecting"),
                       "separate account/auth SQLite ConnectionStrings " + tag)
             with contextlib.closing(sqlite3.connect(root / auth_file)) as connection:
-                check(connection.execute("SELECT count(*) FROM tokens").fetchone()[0] > 0, "authentication tokens persist in selected auth file " + tag)
-                check(connection.execute("SELECT name,version FROM migrations ORDER BY name").fetchall()==[("AuthStore",2),("migrations",1)],"authentication migrations select independent file "+tag)
+                check(
+                    connection.execute("SELECT count(*) FROM tokens").fetchone()[0] > 0,
+                    "authentication tokens persist in selected auth file " + tag,
+                )
+                check(
+                    connection.execute("SELECT name,version FROM migrations ORDER BY name").fetchall()==[("AuthStore",2),("migrations",1)],
+                    "authentication migrations select independent file "+tag,
+                )
             with contextlib.closing(sqlite3.connect(root / account_file)) as connection:
                 check(connection.execute("SELECT count(*) FROM UserAccounts").fetchone()[0] == 1, "account persists in selected account file " + tag)
-        check(not (root / "accounts.db").exists() and not (root / "auth.db").exists(), "comma connection strings do not silently redirect to truncated filenames")
+        check(
+            not (root / "accounts.db").exists()
+            and not (root / "auth.db").exists(),
+            "comma connection strings do not silently redirect to truncated filenames",
+        )
         # The real executable must use the configured account realm after the
         # original provider has already reached its migration revision.
         with contextlib.closing(sqlite3.connect(root/"accounts-options.db")) as connection, connection:
@@ -655,7 +825,10 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
         config.write_text(with_settings(with_settings(option_config, "UserAccountService", Realm="AccountRealm"), "AuthenticationService", Realm="AuthRealm"),encoding="utf-8")
         cli("--create-user","Realm","User",password="realm-password\n")
         with RunningServer() as realm_server:
-            check(realm_server.login({"first":"Realm","last":"User","passwd":"realm-password"})["message"].startswith("Error connecting"),"configured account and authentication realms support creation and login without default tables")
+            check(
+                realm_server.login({"first":"Realm","last":"User","passwd":"realm-password"})["message"].startswith("Error connecting"),
+                "configured account and authentication realms support creation and login without default tables",
+            )
         with contextlib.closing(sqlite3.connect(root/"accounts-options.db")) as connection:
             check(connection.execute("SELECT count(*) FROM AccountRealm").fetchone()[0]==2,"account writes use configured realm")
         legacy=root/"legacy-accounts.db"
@@ -671,17 +844,40 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
         config.write_text(option_config.replace("accounts-options.db","legacy-accounts.db").replace("auth-options.db","legacy-auth.db"),encoding="utf-8")
         for attempt in range(2):
             with RunningServer() as legacy_server:
-                check(legacy_server.login({"first":"Legacy","last":"User","passwd":"separate-password"})["message"].startswith("Error connecting"),"legacy account import supports authenticated login at restart "+str(attempt))
+                check(
+                    legacy_server.login({"first":"Legacy","last":"User","passwd":"separate-password"})["message"].startswith("Error connecting"),
+                    "legacy account import supports authenticated login at restart "+str(attempt),
+                )
             with contextlib.closing(sqlite3.connect(legacy)) as connection, connection:
-                check(connection.execute("SELECT PrincipalID,FirstName,LastName,Created,active FROM UserAccounts").fetchall()==[(source_id,"Legacy","User",111,1)],"legacy user migration preserves identity, metadata and v3 active default at restart "+str(attempt))
-                check(connection.execute("SELECT name,version FROM migrations ORDER BY name").fetchall()==[("UserAccount",3),("migrations",1)],"account restart preserves migration versions without duplicate stamps "+str(attempt))
+                check(
+                    connection.execute("SELECT PrincipalID,FirstName,LastName,Created,active FROM UserAccounts").fetchall()==[(source_id,"Legacy","User",111,1)],
+                    "legacy user migration preserves identity, metadata and v3 active default at restart "+str(attempt),
+                )
+                check(
+                    connection.execute("SELECT name,version FROM migrations ORDER BY name").fetchall()==[("UserAccount",3),("migrations",1)],
+                    "account restart preserves migration versions without duplicate stamps "+str(attempt),
+                )
                 if attempt==0:connection.execute("UPDATE users SET username='Changed',created=222")
             with contextlib.closing(sqlite3.connect(legacy_auth)) as connection, connection:
-                check(connection.execute("SELECT name,version FROM migrations ORDER BY name").fetchall()==[("AuthStore",2),("migrations",1)],"legacy authentication migration versions survive restart "+str(attempt))
-                check(connection.execute("SELECT UUID,passwordHash,passwordSalt FROM auth").fetchall()==[credentials_row[:3]],"legacy credentials migrate without reimport on restart "+str(attempt))
+                check(
+                    connection.execute("SELECT name,version FROM migrations ORDER BY name").fetchall()==[("AuthStore",2),("migrations",1)],
+                    "legacy authentication migration versions survive restart "+str(attempt),
+                )
+                check(
+                    connection.execute("SELECT UUID,passwordHash,passwordSalt FROM auth").fetchall()==[credentials_row[:3]],
+                    "legacy credentials migrate without reimport on restart "+str(attempt),
+                )
                 if attempt==0:connection.execute("UPDATE users SET passwordHash='changed',passwordSalt='changed'")
 
-    report = {"passed": True, "checks": len(checks), "features": features, "httpOnly": args.http_only, "skipped": skipped, "observations": checks, "regionSchemaSourceHash": hashlib.sha256(grid_migration.read_bytes()).hexdigest()}
+    report = {
+        "passed": True,
+        "checks": len(checks),
+        "features": features,
+        "httpOnly": args.http_only,
+        "skipped": skipped,
+        "observations": checks,
+        "regionSchemaSourceHash": hashlib.sha256(grid_migration.read_bytes()).hexdigest(),
+    }
     (args.work / "network-results.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(f"PASS: {len(checks)} native process/network/persistence observations; skipped: {skipped}")
 

@@ -8,5 +8,8 @@ struct ConfigFileUriMinimalResult {
     std::u16string parse_string;
     bool unix_file_syntax = false;
 };
-ConfigFileUriMinimalResult config_file_uri_parse_minimal(std::u16string,std::u16string_view original,std::uint64_t flags,bool windows,bool unix_file_syntax,const ConfigUriUnicodeBackend&);
-}
+ConfigFileUriMinimalResult config_file_uri_parse_minimal(std::u16string, std::u16string_view original,
+                                                         std::uint64_t flags, bool windows,
+                                                         bool unix_file_syntax,
+                                                         const ConfigUriUnicodeBackend&);
+} // namespace opensim::framework

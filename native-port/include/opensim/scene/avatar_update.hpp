@@ -11,6 +11,8 @@ struct AvatarUpdate {
     framework::Vector3 size{.45f, .6f, 1.9f}, position, velocity;
     framework::Quaternion rotation{0, 0, 0, 1};
     std::array<float, 4> collision_plane{};
+    framework::Vector3 angular_velocity;
+    std::uint8_t state = 0;
     std::string first_name, last_name, group_title;
     bool flying = false, sitting = false, hide_title = false;
 };

@@ -852,7 +852,69 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                 cleanup.callback(key_server.shutdown)
                 fixture = root / 'rotating-prim.lsl'
                 fixture.write_text(
-                    'string fixtureName = "Rotating fixture"; default { state_entry() { llTargetOmega(<0,0,1>,2.5,1); llSay(0,fixtureName); llSay(0,"Root agents " + (string)llGetRegionAgentCount()); llSay(0,"Region agents " + llList2CSV(llGetAgentList(AGENT_LIST_REGION | AGENT_LIST_EXCLUDENPC, []))); llSay(0,"Parcel agents " + llList2CSV(llGetAgentList(AGENT_LIST_PARCEL, []))); llSay(0,"Parcel owner agents " + llList2CSV(llGetAgentList(AGENT_LIST_PARCEL_OWNER, []))); llSay(0,"Water " + (string)llWater(<1,2,3>) + " Ground " + (string)llGround(<1,2,3>)); llSay(0,"Region terraform flag " + (string)(llGetRegionFlags() & (REGION_FLAG_BLOCK_TERRAFORM | REGION_FLAG_ALLOW_DAMAGE | REGION_FLAG_BLOCK_FLY | REGION_FLAG_DISABLE_PHYSICS))); llSay(0,"Parcel flags " + (string)llGetParcelFlags(<128,128,25>) + " " + (string)llGetParcelFlags(<132,128,25>)); llSay(0,"Parcel details " + llList2CSV(llGetParcelDetails(<132,128,25>, [PARCEL_DETAILS_OWNER, PARCEL_DETAILS_AREA, PARCEL_DETAILS_ID, PARCEL_DETAILS_FLAGS, PARCEL_DETAILS_NAME, PARCEL_DETAILS_DESC, PARCEL_DETAILS_GROUP, PARCEL_DETAILS_GETCLAIMDATE, PARCEL_DETAILS_LANDING_POINT, PARCEL_DETAILS_LANDING_LOOKAT, PARCEL_DETAILS_TP_ROUTING, PARCEL_DETAILS_SEE_AVATARS, PARCEL_DETAILS_DWELL, PARCEL_DETAILS_PRIM_CAPACITY, PARCEL_DETAILS_PRIM_USED, PARCEL_DETAILS_SCRIPT_DANGER]))); llSay(0,"Script danger " + (string)llScriptDanger(<128,128,25>) + " " + (string)llScriptDanger(<132,128,25>) + " " + (string)llScriptDanger(<-1,128,25>)); llSay(0,"Parcel center " + (string)(llVecDist(llList2Vector(llGetParcelDetails(<132,128,25>, [PARCEL_DETAILS_GEOMETRICCENTER]), 0), <194,128,0>) < 0.001)); llSay(0,"Unix " + (string)llGetUnixTime()); llResetTime(); llSetTimerEvent(.1); } timer() { llSetTimerEvent(0); if(llGetTime() >= 1.75) { llSay(0,"Configured timer for " + llGetScriptName() + " type " + (string)llGetInventoryType(llGetScriptName()) + " missing " + (string)llGetInventoryType("Missing") + " count " + (string)llGetInventoryNumber(10) + " first " + llGetInventoryName(10,0)); llSay(0,"Inventory asset " + (string)llGetInventoryKey(llGetScriptName()) + " missing " + (string)llGetInventoryKey("Missing") + " owner mask " + (string)llGetInventoryPermMask(llGetScriptName(),MASK_OWNER)); } else llSay(0,"Timer fired early"); } touch_start(integer n) { llTargetOmega(<0,0,1>,2.5,0); llSetObjectName("Scripted Prim"); llSetObjectDesc("Edited by LSL"); llSetText("Script label", <1.2,.5,-1>, .5); llSetPayPrice(PAY_DEFAULT, [5, 10]); llCollisionSound("12345678-1234-4234-8234-123456789abc", .625); llSetSoundRadius(31.5); llSetSoundQueueing(1); llPreloadSound("12345678-1234-4234-8234-123456789abc"); llTriggerSound("12345678-1234-4234-8234-123456789abc", .625); llTriggerSoundLimited("22345678-1234-4234-8234-123456789abc", 1, <150,150,80>, <100,100,0>); llTriggerSoundLimited("32345678-1234-4234-8234-123456789abc", 1, <10,10,10>, <0,0,0>); llPlaySound("12345678-1234-4234-8234-123456789abc", 1.5); llPlaySoundSlave("12345678-1234-4234-8234-123456789abc", .25); llLoopSoundSlave("12345678-1234-4234-8234-123456789abc", .5); llSleep(.1); llLoopSoundMaster("12345678-1234-4234-8234-123456789abc", .75); llAdjustSoundVolume(1.5); llSetTouchText("Activate extra"); llSetSitText("Take seat extra"); llSetScale(<2,300,4>); llSetClickAction(2); llSay(0,"Touched."); llSay(0,"Touch avatar " + (string)llDetectedKey(0) + " face " + (string)llDetectedTouchFace(0) + " size " + (string)llGetAgentSize(llDetectedKey(0)) + " language " + llGetAgentLanguage(llDetectedKey(0)) + "/" + llGetAgentLanguage("17495d6b-53c5-4ca7-a3fa-801ff116a0e1")); llSay(0,"Surface " + (string)llDetectedTouchPos(0) + (string)llDetectedTouchNormal(0) + (string)llDetectedTouchBinormal(0) + (string)llDetectedTouchST(0) + (string)llDetectedTouchUV(0)); } touch_end(integer n) { llStopSound(); } changed(integer mask) { llSay(0,"Changed " + (string)mask); } }',
+                    (
+                        'string fixtureName = "Rotating fixture"; '
+                        'default { '
+                        'state_entry() { '
+                        'llTargetOmega(<0,0,1>,2.5,1); '
+                        'llSay(0,fixtureName); '
+                        'llSay(0,"Root agents " + (string)llGetRegionAgentCount()); '
+                        'llSay(0,"Region agents " + llList2CSV(llGetAgentList(AGENT_LIST_REGION | AGENT_LIST_EXCLUDENPC, []))); '
+                        'llSay(0,"Parcel agents " + llList2CSV(llGetAgentList(AGENT_LIST_PARCEL, []))); '
+                        'llSay(0,"Parcel owner agents " + llList2CSV(llGetAgentList(AGENT_LIST_PARCEL_OWNER, []))); '
+                        'llSay(0,"Water " + (string)llWater(<1,2,3>) + " Ground " + (string)llGround(<1,2,3>)); '
+                        'llSay(0,"Region terraform flag " + (string)(llGetRegionFlags() & (REGION_FLAG_BLOCK_TERRAFORM | REGION_FLAG_ALLOW_DAMAGE | REGION_FLAG_BLOCK_FLY | REGION_FLAG_DISABLE_PHYSICS))); '
+                        'llSay(0,"Parcel flags " + (string)llGetParcelFlags(<128,128,25>) + " " + (string)llGetParcelFlags(<132,128,25>)); '
+                        'llSay(0,"Parcel details " + llList2CSV(llGetParcelDetails(<132,128,25>, [PARCEL_DETAILS_OWNER, PARCEL_DETAILS_AREA, PARCEL_DETAILS_ID, PARCEL_DETAILS_FLAGS, PARCEL_DETAILS_NAME, PARCEL_DETAILS_DESC, PARCEL_DETAILS_GROUP, PARCEL_DETAILS_GETCLAIMDATE, PARCEL_DETAILS_LANDING_POINT, PARCEL_DETAILS_LANDING_LOOKAT, PARCEL_DETAILS_TP_ROUTING, PARCEL_DETAILS_SEE_AVATARS, PARCEL_DETAILS_DWELL, PARCEL_DETAILS_PRIM_CAPACITY, PARCEL_DETAILS_PRIM_USED, PARCEL_DETAILS_SCRIPT_DANGER]))); '
+                        'llSay(0,"Script danger " + (string)llScriptDanger(<128,128,25>) + " " + (string)llScriptDanger(<132,128,25>) + " " + (string)llScriptDanger(<-1,128,25>)); '
+                        'llSay(0,"Parcel center " + (string)(llVecDist(llList2Vector(llGetParcelDetails(<132,128,25>, [PARCEL_DETAILS_GEOMETRICCENTER]), 0), <194,128,0>) < 0.001)); '
+                        'llSay(0,"Unix " + (string)llGetUnixTime()); '
+                        'llResetTime(); '
+                        'llSetTimerEvent(.1); '
+                        '} '
+                        'timer() { '
+                        'llSetTimerEvent(0); '
+                        'if(llGetTime() >= 1.75) { '
+                        'llSay(0,"Configured timer for " + llGetScriptName() + " type " + (string)llGetInventoryType(llGetScriptName()) + " missing " + (string)llGetInventoryType("Missing") + " count " + (string)llGetInventoryNumber(10) + " first " + llGetInventoryName(10,0)); '
+                        'llSay(0,"Inventory asset " + (string)llGetInventoryKey(llGetScriptName()) + " missing " + (string)llGetInventoryKey("Missing") + " owner mask " + (string)llGetInventoryPermMask(llGetScriptName(),MASK_OWNER)); '
+                        '} '
+                        'else llSay(0,"Timer fired early"); '
+                        '} '
+                        'touch_start(integer n) { '
+                        'llTargetOmega(<0,0,1>,2.5,0); '
+                        'llSetObjectName("Scripted Prim"); '
+                        'llSetObjectDesc("Edited by LSL"); '
+                        'llSetText("Script label", <1.2,.5,-1>, .5); '
+                        'llSetPayPrice(PAY_DEFAULT, [5, 10]); '
+                        'llCollisionSound("12345678-1234-4234-8234-123456789abc", .625); '
+                        'llSetSoundRadius(31.5); '
+                        'llSetSoundQueueing(1); '
+                        'llPreloadSound("12345678-1234-4234-8234-123456789abc"); '
+                        'llTriggerSound("12345678-1234-4234-8234-123456789abc", .625); '
+                        'llTriggerSoundLimited("22345678-1234-4234-8234-123456789abc", 1, <150,150,80>, <100,100,0>); '
+                        'llTriggerSoundLimited("32345678-1234-4234-8234-123456789abc", 1, <10,10,10>, <0,0,0>); '
+                        'llPlaySound("12345678-1234-4234-8234-123456789abc", 1.5); '
+                        'llPlaySoundSlave("12345678-1234-4234-8234-123456789abc", .25); '
+                        'llLoopSoundSlave("12345678-1234-4234-8234-123456789abc", .5); '
+                        'llSleep(.1); '
+                        'llLoopSoundMaster("12345678-1234-4234-8234-123456789abc", .75); '
+                        'llAdjustSoundVolume(1.5); '
+                        'llSetTouchText("Activate extra"); '
+                        'llSetSitText("Take seat extra"); '
+                        'llSetScale(<2,300,4>); '
+                        'llSetClickAction(2); '
+                        'llSay(0,"Touched."); '
+                        'llSay(0,"Touch avatar " + (string)llDetectedKey(0) + " face " + (string)llDetectedTouchFace(0) + " size " + (string)llGetAgentSize(llDetectedKey(0)) + " language " + llGetAgentLanguage(llDetectedKey(0)) + "/" + llGetAgentLanguage("17495d6b-53c5-4ca7-a3fa-801ff116a0e1")); '
+                        'llSay(0,"Surface " + (string)llDetectedTouchPos(0) + (string)llDetectedTouchNormal(0) + (string)llDetectedTouchBinormal(0) + (string)llDetectedTouchST(0) + (string)llDetectedTouchUV(0)); '
+                        '} '
+                        'touch_end(integer n) { '
+                        'llStopSound(); '
+                        '} '
+                        'changed(integer mask) { '
+                        'llSay(0,"Changed " + (string)mask); '
+                        '} '
+                        '}'
+                    ),
                     encoding='utf-8',
                 )
                 script = fixture.read_text(encoding='utf-8')
@@ -11008,19 +11070,32 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                             values = list(node)
                             return {values[i].text: values[i + 1] for i in range(0, len(values), 2)}
 
+                        group_ack = None
+
                         def check_group_update(notices=True, profile=False):
-                            poll = urllib.request.Request(
-                                event_cap,
-                                b'<llsd><map><key>ack</key><undef/><key>done</key><boolean>0</boolean></map></llsd>',
-                                {'Content-Type': 'application/llsd+xml'},
-                            )
-                            with urllib.request.urlopen(poll, timeout=8) as response:
-                                events = llsd_map(ET.fromstring(response.read())[0])['events']
-                            membership = next(
-                                llsd_map(event)['body']
-                                for event in events
-                                if llsd_map(event)['message'].text == 'AgentGroupDataUpdate'
-                            )
+                            nonlocal group_ack
+                            membership = None
+                            for _ in range(4):
+                                ack = '<undef/>' if group_ack is None else f'<integer>{group_ack}</integer>'
+                                poll = urllib.request.Request(
+                                    event_cap,
+                                    (
+                                        f'<llsd><map><key>ack</key>{ack}'
+                                        '<key>done</key><boolean>0</boolean></map></llsd>'
+                                    ).encode(),
+                                    {'Content-Type': 'application/llsd+xml'},
+                                )
+                                with urllib.request.urlopen(poll, timeout=8) as response:
+                                    batch = llsd_map(ET.fromstring(response.read())[0])
+                                group_ack = int(batch['id'].text)
+                                for event in batch['events']:
+                                    fields = llsd_map(event)
+                                    if fields['message'].text == 'AgentGroupDataUpdate':
+                                        membership = fields['body']
+                                        break
+                                if membership is not None:
+                                    break
+                            check(membership is not None, 'EventQueueGet delivers a group membership update')
                             body = llsd_map(membership)
                             group = llsd_map(body['GroupData'][0])
                             check(
@@ -12490,9 +12565,12 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                     )
                 restart_linkset = ['--linkset-target', target, '--linkset-data', prim]
                 with contextlib.closing(sqlite3.connect(root / 'estate.db')) as database, database:
-                    database.execute(
-                        'ALTER TABLE estate_settings ADD COLUMN PublicAccess INTEGER NOT NULL DEFAULT 0'
-                    )
+                    columns = {row[1].casefold() for row in database.execute('PRAGMA table_info(estate_settings)')}
+                    if 'publicaccess' not in columns:
+                        database.execute(
+                            'ALTER TABLE estate_settings ADD COLUMN PublicAccess INTEGER NOT NULL DEFAULT 0'
+                        )
+                    database.execute('UPDATE estate_settings SET PublicAccess=0 WHERE EstateID=100')
                     database.execute('INSERT INTO estate_users VALUES (100,?)', (str(home_target),))
                     database.execute(
                         'INSERT INTO estate_groups VALUES (100,?)', (estate_access_group,)

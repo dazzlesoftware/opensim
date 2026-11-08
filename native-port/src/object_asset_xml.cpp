@@ -2,6 +2,7 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/scene/object_asset_xml.hpp"
 #include "opensim/framework/text.hpp"
+#include "opensim/framework/vector_text.hpp"
 #include "opensim/framework/sdk_quaternion.hpp"
 #include "opensim/network/osd_value.hpp"
 #include <algorithm>
@@ -145,6 +146,7 @@ void write_part(framework::NativeXmlTextWriter &writer, const ObjectAssetPart &s
     element(writer, u"Name", part.name);
     number(u"Material", part.material);
     element(writer, u"PassTouches", part.pass_touches ? "true" : "false");
+    element(writer, u"PassCollisions", part.pass_collisions ? "true" : "false");
     vector(u"GroupPosition", root.position);
     vector(u"OffsetPosition", part.id == root.id ? framework::Vector3{} : part.position);
     quaternion(u"RotationOffset", part.rotation);
@@ -191,6 +193,16 @@ void write_part(framework::NativeXmlTextWriter &writer, const ObjectAssetPart &s
     number(u"NextOwnerMask", part.next_mask);
     element(writer, u"AllowedDrop", (part.flags & 0x10000u) ? "true" : "false");
     number(u"Flags", part.flags & ~0x10000u);
+    if (const auto& inertia = part.inertia_override) {
+        start(writer, u"PhysicsInertia");
+        number(u"MASS", inertia->mass);
+        vector(u"CM", inertia->center);
+        vector(u"INERTIA", inertia->diagonal);
+        quaternion(u"IROT", inertia->rotation);
+        writer.write_end_element();
+    }
+    if (part.id == root.id && part.rotation_axis_locks)
+        number(u"RotationAxisLocks", part.rotation_axis_locks);
     uuid(u"CollisionSound", part.collision_sound);
     number(u"CollisionSoundVolume", part.collision_sound_volume);
     if (!part.media_url.empty())
@@ -464,6 +476,48 @@ framework::TaskInventoryItem read_task_item(pugi::xml_node node) {
     item.owner_changed = std::string_view(node.child_value("OwnerChanged")) == "true";
     return item;
 }
+std::optional<framework::PrimInertiaOverride> read_inertia(pugi::xml_node field) {
+    if (!field)
+        return {};
+
+    const auto read_float = [](pugi::xml_node node, float& result) {
+        for (const auto child : node.children())
+            if (child.type() == pugi::node_element)
+                return false;
+        return framework::parse_invariant_float(node.child_value(), result);
+    };
+    const auto read_components = [&](pugi::xml_node node, std::initializer_list<float*> components) {
+        auto target = components.begin();
+        for (const auto child : node.children()) {
+            if (child.type() != pugi::node_element)
+                continue;
+            if (target == components.end() || !read_float(child, **target))
+                return false;
+            ++target;
+        }
+        return target == components.end();
+    };
+
+    framework::PrimInertiaOverride inertia;
+    inertia.rotation = {0, 0, 0, 0};
+    for (const auto child : field.children()) {
+        if (child.type() != pugi::node_element)
+            continue;
+        const std::string_view name = child.name();
+        if (name == "MASS" && !read_float(child, inertia.mass))
+            return {};
+        if (name == "CM" && !read_components(child, {&inertia.center.x, &inertia.center.y, &inertia.center.z}))
+            return {};
+        if (name == "INERTIA" &&
+            !read_components(child, {&inertia.diagonal.x, &inertia.diagonal.y, &inertia.diagonal.z}))
+            return {};
+        if (name == "IROT" && !read_components(child, {&inertia.rotation.x, &inertia.rotation.y,
+                                                       &inertia.rotation.z, &inertia.rotation.w}))
+            return {};
+    }
+    return inertia;
+}
+
 ObjectAssetPart read_part(pugi::xml_node node, bool root) {
     ObjectAssetPart result;
     auto &part = result.object;
@@ -473,6 +527,8 @@ ObjectAssetPart read_part(pugi::xml_node node, bool root) {
     read_uuid(node, "GroupID", part.group);
     read_uuid(node, "LastOwnerID", part.last_owner);
     read_uuid(node, "RezzerID", part.rezzer);
+    part.inertia_override = read_inertia(node.child("PhysicsInertia"));
+    read_number(node, "RotationAxisLocks", part.rotation_axis_locks);
     read_uuid(node, "CollisionSound", part.collision_sound);
     read_uuid(node, "SoundID", part.looped_sound);
     if (const auto name = node.child("Name"))
@@ -492,6 +548,7 @@ ObjectAssetPart read_part(pugi::xml_node node, bool root) {
     read_number(node, "ObjectSaleType", part.sale_type);
     read_number(node, "ClickAction", part.click_action);
     part.pass_touches = node.child("PassTouches").text().as_bool();
+    part.pass_collisions = node.child("PassCollisions").text().as_bool();
     read_number(node, "BaseMask", part.base_mask);
     read_number(node, "OwnerMask", part.owner_mask);
     read_number(node, "GroupMask", part.group_mask);
@@ -612,6 +669,32 @@ bool read_linkset(pugi::xml_node group, ObjectAssetLinkset &linkset) {
     return true;
 }
 }
+std::string write_prim_inertia_xml(const framework::PrimInertiaOverride& inertia) {
+    pugi::xml_document document;
+    auto node = document.append_child("PhysicsInertia");
+    node.append_child("MASS").text().set(inertia.mass);
+    const auto append_vector = [&](const char* name, const auto& value) {
+        auto field = node.append_child(name);
+        field.append_child("X").text().set(value.x);
+        field.append_child("Y").text().set(value.y);
+        field.append_child("Z").text().set(value.z);
+        return field;
+    };
+    append_vector("CM", inertia.center);
+    append_vector("INERTIA", inertia.diagonal);
+    append_vector("IROT", inertia.rotation).append_child("W").text().set(inertia.rotation.w);
+    std::ostringstream xml;
+    node.print(xml, "", pugi::format_raw);
+    return xml.str();
+}
+
+std::optional<framework::PrimInertiaOverride> read_prim_inertia_xml(std::string_view xml) {
+    pugi::xml_document document;
+    if (!document.load_buffer(xml.data(), xml.size()))
+        return {};
+    return read_inertia(document.child("PhysicsInertia"));
+}
+
 std::optional<ObjectAsset> read_object_asset_xml(std::span<const std::uint8_t> xml) {
     pugi::xml_document document;
     if (!document.load_buffer(xml.data(), xml.size()))

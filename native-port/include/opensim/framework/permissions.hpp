@@ -30,6 +30,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Distributed under the BSD license in native-port/LICENSE.txt.
 #pragma once
 #include <cstdint>
+#include <array>
 #include <string>
 
 namespace opensim::framework {
@@ -46,6 +47,29 @@ enum class PermissionMask : std::uint32_t {
 };
 constexpr std::uint32_t bits(PermissionMask mask) noexcept {
     return static_cast<std::uint32_t>(mask);
+}
+inline bool set_lsl_permission_mask(const std::array<std::uint32_t*, 5>& masks,
+                                    std::int32_t selector, std::int32_t value) {
+    constexpr std::uint32_t full = 0x8e000u;
+    const auto to_lsl = [](std::uint32_t permissions) {
+        const auto bits = permissions & full;
+        return static_cast<std::int32_t>(bits == full ? 0x7fffffffu : bits);
+    };
+    if (selector != 0) {
+        // The original masks the selector itself using the base and owner permissions.
+        selector &= to_lsl(*masks[0]);
+        if (selector != 1)
+            selector &= to_lsl(*masks[1]);
+    }
+    if (selector < 0 || static_cast<std::size_t>(selector) >= masks.size())
+        return false;
+    constexpr std::uint32_t copy = 0x8000u, transfer = 0x2000u;
+    auto bits = static_cast<std::uint32_t>(value) & full;
+    if ((selector == 0 || selector == 1 || selector == 4) && !(bits & (copy | transfer)))
+        bits |= transfer;
+    auto& target = *masks[selector];
+    target = (target & ~full) | bits;
+    return true;
 }
 struct PermissionsUtil {
     static std::string permissions_to_string(std::uint32_t permissions);

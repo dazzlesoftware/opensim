@@ -37,6 +37,9 @@ struct ObjectAsset {
     bool coalesced = false;
 };
 
+std::string write_prim_inertia_xml(const framework::PrimInertiaOverride& inertia);
+std::optional<framework::PrimInertiaOverride> read_prim_inertia_xml(std::string_view xml);
+
 std::optional<ObjectAsset> read_object_asset_xml(std::span<const std::uint8_t> bytes);
 
 }

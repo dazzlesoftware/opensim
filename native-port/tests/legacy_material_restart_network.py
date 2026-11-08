@@ -47,6 +47,8 @@ default {
         llSetPhysicsMaterial(GRAVITY_MULTIPLIER | RESTITUTION | FRICTION | DENSITY,
                              -0.5, 0.25, 1.5, 1234);
         llSetPhysicsMaterial(FRICTION | DENSITY, 5, 0.75, 2.5, 0);
+        osSetInertiaAsBox(18.0, <2.0, 3.0, 4.0>, <0.25, -0.5, 0.75>,
+                          <0.0, 0.0, 0.6, 0.8>);
         llSitTarget(<0,0,1>, ZERO_ROTATION);
         llSetRegionPos(<120,122,30>);
         llSleep(10.0);
@@ -124,7 +126,7 @@ def create_region_fixture(path, seed=True):
         "PositionX": 0, "PositionY": 0, "PositionZ": 0,
         "RotationX": 0, "RotationY": 0, "RotationZ": 0, "RotationW": 1,
         "AttachedPosX": 0, "AttachedPosY": 0, "AttachedPosZ": 0,
-        "DynAttrs": EMBEDDED, "sopanims": None, "TextureAnimation": "",
+        "DynAttrs": EMBEDDED, "sopanims": None, "TextureAnimation": "", "PhysInertia": None,
         "Density": "1000", "Friction": "0.6", "Restitution": "0.5", "GravityModifier": "1",
     }
     with closing(sqlite3.connect(path)) as database, database:
@@ -300,7 +302,11 @@ def cross_linkset(url, already_present=False):
 
     root = part(
         CROSSING_ROOT, f"<SOPAnims>{animation}</SOPAnims>"
-        f"<TextureAnimation>{CROSSING_TEXTURE_ANIMATION}</TextureAnimation>",
+        f"<TextureAnimation>{CROSSING_TEXTURE_ANIMATION}</TextureAnimation>"
+        "<PhysicsInertia><MASS>12</MASS>"
+        "<CM><X>0.75</X><Y>0</Y><Z>0</Z></CM>"
+        "<INERTIA><X>4</X><Y>5</Y><Z>6</Z></INERTIA>"
+        "<IROT><X>0</X><Y>0</Y><Z>0</Z><W>1</W></IROT></PhysicsInertia>",
     )
     child = part(CROSSING_CHILD, "")
     xml = f"<SceneObjectGroup>{root}<OtherParts>{child}</OtherParts></SceneObjectGroup>"
@@ -328,6 +334,25 @@ def check_crossing(path, position=("120", "121", "30"), texture_animation=CROSSI
     root, child = crossing_rows(path)
     assert root == (CROSSING_ROOT, *position, CROSSING_ANIMATION, texture_animation), root
     assert child == (CROSSING_ROOT,), child
+
+
+def check_crossing_inertia(path, expected_mass, expected_center, expected_axes, expected_rotation):
+    with closing(sqlite3.connect(path)) as database:
+        rows = dict(database.execute(
+            "SELECT UUID, PhysInertia FROM prims WHERE UUID IN (?, ?)",
+            (CROSSING_ROOT, CROSSING_CHILD),
+        ))
+    assert not rows[CROSSING_CHILD], "The root override must not be copied onto the child"
+    inertia = ElementTree.fromstring(rows[CROSSING_ROOT])
+    assert inertia.tag == "PhysicsInertia", rows[CROSSING_ROOT]
+
+    def vector(field, components="XYZ"):
+        return tuple(float(inertia.findtext(f"{field}/{component}")) for component in components)
+
+    assert float(inertia.findtext("MASS")) == expected_mass
+    assert vector("CM") == expected_center
+    assert vector("INERTIA") == expected_axes
+    assert all(abs(a - b) < 1e-6 for a, b in zip(vector("IROT", "XYZW"), expected_rotation))
 
 
 def viewer_channel(viewer, endpoint):
@@ -732,6 +757,7 @@ def cross_between_regions(executable, root, config, source_db):
         finally:
             asset_server.shutdown()
     assert asset_reads == {CROSSING_SCRIPT_ASSET, CHILD_SCRIPT_ASSET}, asset_reads
+    check_crossing_inertia(destination_db, 18.0, (0.25, -0.5, 0.75), (37.5, 30.0, 19.5), (0, 0, 0.6, 0.8))
     with closing(sqlite3.connect(destination_db)) as database:
         physics = database.execute(
             "SELECT GravityModifier, Restitution, Friction, Density FROM prims WHERE UUID=?",
@@ -823,6 +849,7 @@ def main():
         material = {key.text: value.text for key, value in zip(fields[::2], fields[1::2])}
         assert material["DiffuseAlphaMode"] == "2" and material["NormRepeatX"] == "10000"
         check_crossing(region_db)
+        check_crossing_inertia(region_db, 12.0, (0.75, 0, 0), (4, 5, 6), (0, 0, 0, 1))
 
         with running_server(args.native, config, region=True) as (url, _):
             assert read_attributes(region_db) == attributes
@@ -831,6 +858,7 @@ def main():
         assert read_attributes(region_db) == attributes
         assert read_asset(asset_db) == asset
         check_crossing(region_db)
+        check_crossing_inertia(region_db, 12.0, (0.75, 0, 0), (4, 5, 6), (0, 0, 0, 1))
         verify_script_restart(args.native, config, region_db, asset_db)
         verify_attachment_restart(args.native, config, region_db)
         cross_between_regions(args.native, root, config, region_db)

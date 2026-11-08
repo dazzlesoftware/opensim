@@ -12,9 +12,9 @@
 #include "opensim/framework/execution_stack.hpp"
 #include "opensim/network/osd_value.hpp"
 #include "opensim/network/osd_json.hpp"
-#include "opensim/framework/culture_sort.hpp"
 #include "opensim/framework/culture_prefix.hpp"
 #include "opensim/framework/config_uri_escape.hpp"
+#include "opensim/framework/config_native_uri_object.hpp"
 #include "opensim/framework/config_uri_unescape.hpp"
 #include "opensim/framework/primitive_base_shape.hpp"
 #include "opensim/framework/sdk_uuid.hpp"
@@ -39,6 +39,34 @@ namespace opensim::script {
 namespace {
 enum class Kind { End, Name, Integer, Float, String, Symbol };
 enum class Type { Integer, Float, String, Key, Vector, Rotation, List };
+constexpr std::pair<std::string_view, unsigned> event_mask_bits[] = {
+    {"state_entry", 30},
+    {"state_exit", 1},
+    {"touch_start", 21},
+    {"touch", 3},
+    {"touch_end", 29},
+    {"dataserver", 8},
+    {"collision", 4},
+    {"collision_end", 5},
+    {"collision_start", 6},
+    {"land_collision", 11},
+    {"land_collision_end", 12},
+    {"land_collision_start", 13},
+    {"control", 7},
+    {"listen", 15},
+    {"attach", 0},
+    {"http_request", 38},
+    {"changed", 33},
+    {"link_message", 34},
+    {"linkset_data", 41},
+    {"on_rez", 36},
+    {"object_rez", 22},
+    {"run_time_permissions", 28},
+    {"timer", 2},
+};
+bool is_land_collision_event(std::string_view event) {
+    return event == "land_collision_start" || event == "land_collision" || event == "land_collision_end";
+}
 bool numeric(Type type) {
     return type == Type::Integer || type == Type::Float;
 }
@@ -290,6 +318,7 @@ struct Expression {
         ObjectRootPosition,
         ObjectLocalPosition,
         GeometricCenter,
+        CenterOfMass,
         ObjectLocalRotation,
         ObjectRootRotation,
         ObjectWorldRotation,
@@ -297,6 +326,9 @@ struct Expression {
         ObjectOmega,
         ObjectAcceleration,
         ObjectScale,
+        GroupMinScaleFactor,
+        GroupMaxScaleFactor,
+        ScaleGroup,
         ObjectName,
         TextureProperty,
         SetTextureProperty,
@@ -311,12 +343,21 @@ struct Expression {
         SetTorque,
         GetTorque,
         SetForceAndTorque,
+        SetVelocity,
+        SetAngularVelocity,
+        ApplyImpulse,
+        ApplyRotationalImpulse,
+        SetHover,
+        GroundRepel,
+        MoveToTarget,
+        LookAt,
         ObjectDescription,
         StartString,
         StartParameter,
         ScriptPermissions,
         ScriptPermissionsKey,
         CameraPosition,
+        WorldPositionToHud,
         CameraRotation,
         CameraFov,
         CameraAspect,
@@ -364,6 +405,7 @@ struct Expression {
         ParcelMediaQuery,
         AgentList,
         RegionAgentNames,
+        InertiaData,
         AgentIpAddress,
         DrawingCommand,
         ApparentSunHour,
@@ -387,6 +429,8 @@ struct Expression {
         IsFriend,
         AgentSize,
         AgentInfo,
+        AgentHealth,
+        AgentHealRate,
         BoundingBox,
         VisualParams,
         KeyToName,
@@ -413,6 +457,8 @@ struct Expression {
         SetPrimMedia,
         ClearPrimMedia,
         LinkSides,
+        LinkHasRenderMaterial,
+        RenderMaterial,
         PrimCount,
         ObjectPrimCount,
         ObjectMass,
@@ -490,6 +536,7 @@ struct Expression {
         Ground,
         GroundNormal,
         GroundSlope,
+        EdgeOfWorld,
         GroundContour,
         Cloud,
         UnixTime,
@@ -500,7 +547,7 @@ struct Expression {
         TimeOfDay,
         Elapsed,
         ElapsedReset,
-        DeprecatedCommand,
+        LegacyCommand,
         Listen,
         ListenControl,
         ListenRemove,
@@ -517,13 +564,14 @@ struct Expression {
     std::unique_ptr<Expression> left, right, z, w;
     std::vector<std::unique_ptr<Expression>> elements;
 };
-struct DeprecatedCommand {
+struct LegacyCommand {
     std::string_view name;
     std::string_view replacement;
     std::initializer_list<Type> parameters;
     int script_delay = 0;
+    bool report_deprecation = true;
 };
-const DeprecatedCommand deprecated_commands[] = {
+const LegacyCommand legacy_commands[] = {
     {"llSound", "llPlaySound", {Type::String, Type::Float, Type::Integer, Type::Integer}},
     {"llSoundPreload", "llPreloadSound", {Type::String}},
     {"llMakeExplosion", "llParticleSystem",
@@ -541,6 +589,9 @@ const DeprecatedCommand deprecated_commands[] = {
     {"llRemoteDataSetRegion", "llOpenRemoteDataChannel", {}},
     {"llSetPrimURL", "llSetPrimMediaParams", {Type::String}, 2000},
     {"llRefreshPrimURL", "", {}, 20000},
+    {"llCollisionSprite", "", {Type::String}, 0, false},
+    {"llPointAt", "", {Type::Vector}, 0, false},
+    {"llStopPointAt", "", {}, 0, false},
 };
 enum class DrawingFormat { Arguments, LineFrom, Polygon, Color, DeprecatedColor };
 struct DrawingCommand {
@@ -668,6 +719,7 @@ struct Instruction {
     bool play_sound = false;
     bool trigger_sound = false;
     bool collision_sound = false;
+    bool ossl_collision_sound = false;
     std::uint8_t sound_sync_flags = 0;
     bool set_metadata = false;
     bool description = false;
@@ -677,9 +729,28 @@ struct Instruction {
     bool reset_linkset_data = false;
     bool start_animation = false;
     std::unique_ptr<Expression> object_position;
+    std::unique_ptr<Expression> object_rotation;
+    std::unique_ptr<Expression> inventory_remove_name;
+    std::array<std::unique_ptr<Expression>, 3> inventory_permission_args;
+    bool die = false;
+    std::array<std::unique_ptr<Expression>, 3> map_arguments;
+    bool map_beacon = false;
+    std::array<std::unique_ptr<Expression>, 3> load_url_arguments;
+    std::array<std::unique_ptr<Expression>, 4> dialog_arguments;
+    std::array<std::unique_ptr<Expression>, 2> object_permission_args;
+    bool local_object_rotation = false;
     std::array<std::unique_ptr<Expression>, 5> rez_arguments;
     bool rez_at_root = false;
     std::unique_ptr<Expression> status_mask, status_value;
+    std::unique_ptr<Expression> volume_detect;
+    std::unique_ptr<Expression> damage;
+    std::unique_ptr<Expression> relocate_agent;
+    bool eject_from_land = false;
+    std::unique_ptr<Expression> heal_agent, heal_rate;
+    bool volume_detect_part = false;
+    enum class InertiaShape { Clear, Principal, Box, Sphere, Cylinder };
+    std::optional<InertiaShape> inertia_shape;
+    std::vector<std::unique_ptr<Expression>> inertia_arguments;
     bool object_animation = false;
     std::unique_ptr<Expression> animation_avatar;
     bool reset_script = false;
@@ -703,11 +774,17 @@ struct Instruction {
     bool jump_when_true = false;
     std::string target_state;
     std::unique_ptr<Expression> channel, text, condition, permission_agent, permission_mask, animation_name,
-        override_state, override_animation, sleep, timer, event_delay, scale, click_action, pass_touches,
+        override_state, override_animation, sleep, timer, event_delay, scale, click_action, pass_touches, pass_collisions,
         allow_inventory_drop, text_color,
         text_alpha, sound_gain, adjust_sound_gain, sound_radius, preload_sound, sound_queueing, sound_link,
         sound_mode, sound_min,
         sound_max, pay_price, pay_buttons;
+    struct CollisionFilterArguments {
+        std::unique_ptr<Expression> name;
+        std::unique_ptr<Expression> key;
+        std::unique_ptr<Expression> accept;
+    };
+    std::optional<CollisionFilterArguments> collision_filter;
     std::optional<bool> sit_label;
     std::optional<LslParcelListAction> parcel_list_action;
     bool parcel_ban_list = false;
@@ -1388,6 +1465,9 @@ template <class Value> decltype(auto) component_at(Value& value, std::size_t slo
     auto& vector = std::get<framework::Vector3d>(value);
     return (slot == 0 ? vector.x : slot == 1 ? vector.y : vector.z);
 }
+struct ScriptTermination {
+    LslRunStatus status;
+};
 class OsslPermissionError final : public std::runtime_error {
 public:
     explicit OsslPermissionError(const std::string& reason) : std::runtime_error("OSSL Permission Error: " + reason) {}
@@ -1406,6 +1486,31 @@ framework::Vector3d rotate_vector(framework::Vector3d vector, LslRotation rotati
             vector.y + 2.0 * (rx * z - rz * x),
             vector.z + 2.0 * (ry * x - rx * y)};
 }
+LslRotation axes_to_rotation(framework::Vector3d forward, framework::Vector3d left, framework::Vector3d up) {
+    const auto trace = forward.x + left.y + up.z + 1.0;
+    if (trace >= 1.0) {
+        const auto scale = 0.5 / std::sqrt(trace);
+        return LslRotation{(left.z - up.y) * scale, (up.x - forward.z) * scale,
+                           (forward.y - left.x) * scale, 0.25 / scale};
+    }
+    const auto largest = left.y > up.z ? left.y : up.z;
+    if (largest < forward.x) {
+        const auto root = std::sqrt(forward.x - (left.y + up.z) + 1.0);
+        const auto scale = 0.5 / root;
+        return LslRotation{root * 0.5, (forward.y + left.x) * scale, (up.x + forward.z) * scale,
+                           (left.z - up.y) * scale};
+    }
+    if (largest == left.y) {
+        const auto root = std::sqrt(left.y - (up.z + forward.x) + 1.0);
+        const auto scale = 0.5 / root;
+        return LslRotation{(forward.y + left.x) * scale, root * 0.5, (left.z + up.y) * scale,
+                           (up.x - forward.z) * scale};
+    }
+    const auto root = std::sqrt(up.z - (forward.x + left.y) + 1.0);
+    const auto scale = 0.5 / root;
+    return LslRotation{(up.x + forward.z) * scale, (left.z + up.y) * scale, root * 0.5,
+                       (forward.y - left.x) * scale};
+}
 struct Evaluator {
     std::vector<LslValue>& locals;
     std::vector<LslValue>& globals;
@@ -1415,7 +1520,15 @@ struct Evaluator {
     const LslEvent* event;
     const LslContext& context;
     const LslHost& host;
-    LslRotation object_world_rotation() const {
+    LslRotation object_rotation(LslRotationSpace space) const {
+        if (host.object_rotation) {
+            if (const auto rotation = host.object_rotation(context.object, space))
+                return *rotation;
+        }
+        if (space == LslRotationSpace::Local)
+            return context.local_rotation;
+        if (space == LslRotationSpace::Root)
+            return context.root_rotation.value_or(context.local_rotation);
         if (context.world_rotation)
             return *context.world_rotation;
         const auto root = context.root_rotation.value_or(context.local_rotation);
@@ -2221,29 +2334,7 @@ struct Evaluator {
             const auto up = std::get<framework::Vector3d>(evaluate(*e.z));
             const auto left = std::get<framework::Vector3d>(evaluate(*e.right));
             const auto forward = std::get<framework::Vector3d>(evaluate(*e.left));
-            const auto trace = forward.x + left.y + up.z + 1.0;
-            if (trace >= 1.0) {
-                const auto scale = 0.5 / std::sqrt(trace);
-                return LslRotation{(left.z - up.y) * scale, (up.x - forward.z) * scale,
-                                   (forward.y - left.x) * scale, 0.25 / scale};
-            }
-            const auto largest = left.y > up.z ? left.y : up.z;
-            if (largest < forward.x) {
-                const auto root = std::sqrt(forward.x - (left.y + up.z) + 1.0);
-                const auto scale = 0.5 / root;
-                return LslRotation{root * 0.5, (forward.y + left.x) * scale, (up.x + forward.z) * scale,
-                                   (left.z - up.y) * scale};
-            }
-            if (largest == left.y) {
-                const auto root = std::sqrt(left.y - (up.z + forward.x) + 1.0);
-                const auto scale = 0.5 / root;
-                return LslRotation{(forward.y + left.x) * scale, root * 0.5, (left.z + up.y) * scale,
-                                   (up.x - forward.z) * scale};
-            }
-            const auto root = std::sqrt(up.z - (forward.x + left.y) + 1.0);
-            const auto scale = 0.5 / root;
-            return LslRotation{(up.x + forward.z) * scale, (left.z + up.y) * scale, root * 0.5,
-                               (forward.y - left.x) * scale};
+            return axes_to_rotation(forward, left, up);
         }
         case Expression::Op::EulerToRotation: {
             const auto [x, y, z] = std::get<framework::Vector3d>(evaluate(*e.left));
@@ -2682,10 +2773,92 @@ struct Evaluator {
                 host.set_physics_material(context.object, mask, values);
             return std::int32_t{0};
         }
+        case Expression::Op::LookAt: {
+            std::optional<framework::Quaternion> rotation;
+            double strength = 0.;
+            double damping = 0.;
+            const bool point_target = e.left && e.left->type == Type::Vector;
+            if (e.left) {
+                damping = list_float(evaluate(*e.z));
+                strength = list_float(evaluate(*e.right));
+                const auto value = evaluate(*e.left);
+                LslRotation target;
+                if (point_target) {
+                    const auto position = std::get<framework::Vector3d>(value);
+                    const auto normalize = [](framework::Vector3d v) {
+                        const double length = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+                        return length > 0. ? framework::Vector3d{v.x / length, v.y / length, v.z / length}
+                                           : framework::Vector3d{};
+                    };
+                    const auto from = context.position;
+                    const auto forward = normalize({position.x - from.x, position.y - from.y, position.z - from.z});
+                    const auto left = normalize({-forward.y, forward.x, 0.});
+                    const framework::Vector3d up{-forward.z * left.y, forward.z * left.x,
+                                                  forward.x * left.y - forward.y * left.x};
+                    const auto [x, y, z, w] = axes_to_rotation(forward, left, up);
+                    constexpr double half_turn = .707107;
+                    target = {half_turn * (x - z), half_turn * (y + w), half_turn * (z + x), half_turn * (w - y)};
+                } else {
+                    target = std::get<LslRotation>(value);
+                }
+                rotation = framework::Quaternion{static_cast<float>(target.x), static_cast<float>(target.y),
+                                                  static_cast<float>(target.z), static_cast<float>(target.w)};
+            }
+            if (host.look_at && host.look_at(context.object, rotation, strength, damping, point_target))
+                delay(200);
+            return std::int32_t{0};
+        }
+        case Expression::Op::MoveToTarget: {
+            framework::PrimMoveTarget target;
+            if (e.left) {
+                target.tau = static_cast<float>(list_float(evaluate(*e.right)));
+                const auto position = std::get<framework::Vector3d>(evaluate(*e.left));
+                target.position = {static_cast<float>(position.x), static_cast<float>(position.y),
+                                   static_cast<float>(position.z)};
+            }
+            if (host.move_to_target)
+                host.move_to_target(context.object, target);
+            return std::int32_t{0};
+        }
+        case Expression::Op::GroundRepel: {
+            const double height = list_float(evaluate(*e.left));
+            const bool water = std::get<std::int32_t>(evaluate(*e.right)) != 0;
+            const float tau = static_cast<float>(list_float(evaluate(*e.z)));
+            if (host.ground_repel)
+                host.ground_repel(context.object, height, water, tau);
+            return std::int32_t{0};
+        }
+        case Expression::Op::SetHover: {
+            framework::PrimHover hover;
+            if (e.left) {
+                hover.tau = static_cast<float>(list_float(evaluate(*e.z)));
+                hover.above_water = std::get<std::int32_t>(evaluate(*e.right)) != 0;
+                hover.height = static_cast<float>(list_float(evaluate(*e.left)));
+            }
+            if (host.set_hover)
+                host.set_hover(context.object, hover);
+            return std::int32_t{0};
+        }
         case Expression::Op::SetBuoyancy: {
             const float buoyancy = static_cast<float>(list_float(evaluate(*e.left)));
             if (host.set_buoyancy)
                 host.set_buoyancy(context.object, buoyancy);
+            return std::int32_t{0};
+        }
+        case Expression::Op::SetVelocity:
+        case Expression::Op::SetAngularVelocity:
+        case Expression::Op::ApplyImpulse:
+        case Expression::Op::ApplyRotationalImpulse: {
+            const bool local = std::get<std::int32_t>(evaluate(*e.right)) != 0;
+            const auto vector = std::get<framework::Vector3d>(evaluate(*e.left));
+            const bool impulse = e.op == Expression::Op::ApplyImpulse ||
+                                 e.op == Expression::Op::ApplyRotationalImpulse;
+            const bool angular = e.op == Expression::Op::SetAngularVelocity ||
+                                 e.op == Expression::Op::ApplyRotationalImpulse;
+            const auto& operation = impulse ? host.apply_impulse : host.set_velocity;
+            if (operation)
+                operation(context.object, {static_cast<float>(vector.x), static_cast<float>(vector.y),
+                                           static_cast<float>(vector.z)}, local, angular);
             return std::int32_t{0};
         }
         case Expression::Op::SetForce:
@@ -2704,7 +2877,7 @@ struct Evaluator {
                 torque = narrow_vector(vector);
             } else if (host.set_force) {
                 if (local)
-                    vector = rotate_vector(vector, object_world_rotation());
+                    vector = rotate_vector(vector, object_rotation(LslRotationSpace::World));
                 host.set_force(context.object, narrow_vector(vector));
             }
             if (e.op != Expression::Op::SetForce && host.set_torque)
@@ -2833,6 +3006,48 @@ struct Evaluator {
             if (e.op == Expression::Op::ScriptPermissionsKey)
                 return permissions.first.str();
             return permissions.second;
+        }
+        case Expression::Op::WorldPositionToHud: {
+            const auto target = std::get<framework::Vector3d>(evaluate(*e.left));
+            const auto point = context.attachment_point;
+            if (point < 31 || point > 38)
+                return framework::Vector3d{};
+            const auto [granter, mask] = host.script_permissions
+                                            ? host.script_permissions(context.object, context.item)
+                                            : std::pair<framework::Uuid, std::int32_t>{};
+            constexpr std::int32_t track_camera = 0x400;
+            if (granter != context.owner || (mask & track_camera) == 0) {
+                script_error("llGetCameraPos: No permissions to track the camera");
+                return framework::Vector3d{};
+            }
+            const auto camera = host.camera ? host.camera(context.owner) : std::nullopt;
+            if (!camera)
+                return framework::Vector3d{};
+
+            const framework::Vector3 delta{static_cast<float>(target.x) - camera->position.x,
+                                           static_cast<float>(target.y) - camera->position.y,
+                                           static_cast<float>(target.z) - camera->position.z};
+            const auto dot = [&](framework::Vector3 axis) {
+                return delta.x * axis.x + delta.y * axis.y + delta.z * axis.z;
+            };
+            const float at = dot(camera->at_axis);
+            float left = dot(camera->left_axis);
+            float up = dot(camera->up_axis);
+            const float view_scale = at * std::tan(camera->fov * .5f);
+            if (view_scale > 0) {
+                left *= .45f / view_scale;
+                up *= .45f / view_scale;
+            }
+            // HUD top right, top center and top left occupy points 32 through 34.
+            if (point >= 32 && point <= 34)
+                up -= .5f;
+            if (point >= 36)
+                up += .5f;
+            if (point == 34 || point == 36)
+                left -= .5f * camera->aspect;
+            if (point == 32 || point == 38)
+                left += .5f * camera->aspect;
+            return framework::Vector3d{at > 0 ? 1.0 : -1.0, left, up};
         }
         case Expression::Op::CameraPosition:
         case Expression::Op::CameraRotation:
@@ -3073,6 +3288,20 @@ struct Evaluator {
             }
             return std::shared_ptr<const LslList>(std::move(result));
         }
+        case Expression::Op::InertiaData: {
+            check_safe_ossl_permission();
+            auto result = std::make_shared<LslList>();
+            const auto data = host.inertia_data ? host.inertia_data(context.object) : std::nullopt;
+            if (data) {
+                const auto vector = [](framework::Vector3 value, float scale) {
+                    return framework::Vector3d{value.x * scale, value.y * scale, value.z * scale};
+                };
+                const float scale = data->mass > 0.f ? 1.f / data->mass : 1.f;
+                result->items = {double(data->mass), vector(data->center, 1.f),
+                                 vector(data->diagonal, scale), vector(data->products, scale)};
+            }
+            return std::shared_ptr<const LslList>(std::move(result));
+        }
         case Expression::Op::RegionAgentNames: {
             check_ossl_permission("osGetAgents");
             auto result = std::make_shared<LslList>();
@@ -3183,10 +3412,12 @@ struct Evaluator {
         }
         case Expression::Op::DrawingCommand:
             return evaluate_drawing_command(e);
-        case Expression::Op::DeprecatedCommand: {
+        case Expression::Op::LegacyCommand: {
             for (const auto& argument : e.elements)
                 evaluate(*argument);
-            const auto& command = deprecated_commands[e.slot];
+            const auto& command = legacy_commands[e.slot];
+            if (!command.report_deprecation)
+                return std::int32_t{0};
             auto message = std::string(command.name) + ": Command deprecated";
             if (!command.replacement.empty())
                 message += " - Use " + std::string(command.replacement) + " instead";
@@ -3442,6 +3673,23 @@ struct Evaluator {
                 bounds = host.bounding_box(id);
             return std::make_shared<const LslList>(LslList{{bounds[0], bounds[1]}});
         }
+        case Expression::Op::AgentHealRate: {
+            const auto key = std::get<std::string>(evaluate(*e.left));
+            check_ossl_permission("osGetHealRate");
+            framework::Uuid id;
+            if (host.agent_heal_rate && framework::try_parse_sdk_uuid(key, id))
+                return static_cast<double>(host.agent_heal_rate(id));
+            return 0.0;
+        }
+        case Expression::Op::AgentHealth: {
+            const auto key = std::get<std::string>(evaluate(*e.left));
+            framework::Uuid id;
+            if (host.agent_health && framework::try_parse_sdk_uuid(key, id)) {
+                if (const auto health = host.agent_health(id))
+                    return static_cast<double>(*health);
+            }
+            return -1.0;
+        }
         case Expression::Op::AgentInfo: {
             const auto text = std::get<std::string>(evaluate(*e.left));
             framework::Uuid id;
@@ -3500,6 +3748,19 @@ struct Evaluator {
         }
         case Expression::Op::PrimCount:
             return host.prim_count ? host.prim_count(context.object, true) : std::int32_t{1};
+        case Expression::Op::RenderMaterial: {
+            const auto face = std::get<std::int32_t>(evaluate(*e.left));
+            return host.render_material ? host.render_material(context.object, face) : framework::Uuid{}.str();
+        }
+        case Expression::Op::LinkHasRenderMaterial: {
+            const auto link = std::get<std::int32_t>(evaluate(*e.left));
+            const auto face = std::get<std::int32_t>(evaluate(*e.right));
+            const auto part = link == -4 ? context.object
+                             : link >= 0 && host.link_key ? host.link_key(context.object, link)
+                                                         : framework::Uuid{};
+            return std::int32_t(!part.is_zero() && host.has_render_material &&
+                                host.has_render_material(part, face));
+        }
         case Expression::Op::LinkSides: {
             const auto number = e.left ? std::get<std::int32_t>(evaluate(*e.left)) : -4;
             if (!host.face_count)
@@ -3643,18 +3904,31 @@ struct Evaluator {
                                                                         : context.acceleration;
             return framework::Vector3d{vector.x, vector.y, vector.z};
         }
-        case Expression::Op::ObjectScale:
-            return framework::Vector3d{context.object_scale.x, context.object_scale.y,
-                                       context.object_scale.z};
+        case Expression::Op::ObjectScale: {
+            const auto scale = host.object_scale ? host.object_scale(context.object) : std::nullopt;
+            const auto current = scale.value_or(context.object_scale);
+            return framework::Vector3d{current.x, current.y, current.z};
+        }
+        case Expression::Op::GroupMinScaleFactor:
+        case Expression::Op::GroupMaxScaleFactor:
+            return host.group_scale_limit
+                ? host.group_scale_limit(context.object, e.op == Expression::Op::GroupMaxScaleFactor) : 1.;
+        case Expression::Op::ScaleGroup: {
+            const auto factor = evaluate(*e.left);
+            const double value = std::holds_alternative<double>(factor) ? std::get<double>(factor)
+                                                                       : std::get<std::int32_t>(factor);
+            return std::int32_t(host.scale_group && host.scale_group(context.object, value));
+        }
         case Expression::Op::ObjectWorldRotation:
-            return object_world_rotation();
+            return object_rotation(LslRotationSpace::World);
         case Expression::Op::ObjectRootRotation:
-            return context.root_rotation.value_or(context.local_rotation);
+            return object_rotation(LslRotationSpace::Root);
         case Expression::Op::ObjectLocalRotation:
-            return context.local_rotation;
+            return object_rotation(LslRotationSpace::Local);
+        case Expression::Op::CenterOfMass:
         case Expression::Op::GeometricCenter: {
-            const auto center =
-                host.geometric_center ? host.geometric_center(context.object) : framework::Vector3{};
+            const auto& query = e.op == Expression::Op::CenterOfMass ? host.center_of_mass : host.geometric_center;
+            const auto center = query ? query(context.object) : framework::Vector3{};
             return framework::Vector3d{center.x, center.y, center.z};
         }
         case Expression::Op::SetRegionPosition: {
@@ -3809,6 +4083,11 @@ struct Evaluator {
                 timer_start = current;
             const bool round_up = remainder > 5000 || (remainder == 5000 && milliseconds % 2 != 0);
             return (milliseconds + round_up) / 1000.;
+        }
+        case Expression::Op::EdgeOfWorld: {
+            const auto position = std::get<framework::Vector3d>(evaluate(*e.left));
+            const auto direction = std::get<framework::Vector3d>(evaluate(*e.right));
+            return std::int32_t(!host.edge_of_world || host.edge_of_world(position, direction));
         }
         case Expression::Op::Water:
         case Expression::Op::Cloud:
@@ -5343,14 +5622,28 @@ class Parser {
                 fail(token, "native LSL expression depth exceeded");
             return e;
         }
-        if (is("llGetAgentInfo")) {
-            e->op = Op::AgentInfo;
+        if (is("osGetHealRate")) {
+            e->op = Op::AgentHealRate;
+            e->type = Type::Float;
+            advance();
+            require("(");
+            e->left = expression();
+            if (!assignable(Type::Key, e->left->type))
+                fail(token, "osGetHealRate requires an avatar key");
+            require(")");
+            return e;
+        }
+        if (is("llGetAgentInfo") || is("llGetHealth")) {
+            const bool health = is("llGetHealth");
+            e->op = health ? Op::AgentHealth : Op::AgentInfo;
+            if (health)
+                e->type = Type::Float;
             advance();
             require("(");
             e->left = expression();
             require(")");
             if (e->left->type != Type::Key && e->left->type != Type::String)
-                fail(token, "llGetAgentInfo requires a key");
+                fail(token, health ? "llGetHealth requires a key" : "llGetAgentInfo requires a key");
             e->height = e->left->height + 1;
             if (e->height > 128)
                 fail(token, "native LSL expression depth exceeded");
@@ -5637,6 +5930,17 @@ class Parser {
             e->height = 1 + e->left->height;
             if (e->height > 128)
                 fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llWorldPosToHUD")) {
+            e->op = Op::WorldPositionToHud;
+            e->type = Type::Vector;
+            advance();
+            require("(");
+            e->left = expression();
+            if (e->left->type != Type::Vector)
+                fail(token, "llWorldPosToHUD requires a world position vector");
+            require(")");
             return e;
         }
         if (is("llGetCameraPos") || is("llGetCameraRot") || is("llGetCameraFOV") || is("llGetCameraAspect")) {
@@ -6097,11 +6401,11 @@ class Parser {
                 fail(token, "native LSL expression depth exceeded");
             return e;
         }
-        if (is("osGetAgents")) {
+        if (is("osGetAgents") || is("osGetInertiaData")) {
+            e->op = is("osGetInertiaData") ? Op::InertiaData : Op::RegionAgentNames;
             advance();
             require("(");
             require(")");
-            e->op = Op::RegionAgentNames;
             e->type = Type::List;
             return e;
         }
@@ -6218,6 +6522,36 @@ class Parser {
             advance();
             require("(");
             require(")");
+            return e;
+        }
+        if (is("llGetRenderMaterial")) {
+            e->op = Op::RenderMaterial;
+            e->type = Type::String;
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Integer)
+                fail(token, "llGetRenderMaterial requires an integer face number");
+            e->height = 1 + e->left->height;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llIsLinkGLTFMaterial")) {
+            e->op = Op::LinkHasRenderMaterial;
+            e->type = Type::Integer;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if (e->left->type != Type::Integer || e->right->type != Type::Integer)
+                fail(token, "llIsLinkGLTFMaterial requires integer link and face numbers");
+            e->height = 1 + std::max(e->left->height, e->right->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
             return e;
         }
         if (is("llGetLinkNumberOfSides")) {
@@ -6396,8 +6730,13 @@ class Parser {
             require(")");
             return component_access(std::move(e));
         }
-        if (is("llGetGeometricCenter") || is("llGetForce") || is("llGetTorque")) {
-            e->op = is("llGetForce") ? Op::GetForce : is("llGetTorque") ? Op::GetTorque : Op::GeometricCenter;
+        if (is("llGetGeometricCenter") || is("llGetCenterOfMass") || is("llGetForce") || is("llGetTorque")) {
+            if (is("llGetCenterOfMass"))
+                e->op = Op::CenterOfMass;
+            else if (is("llGetGeometricCenter"))
+                e->op = Op::GeometricCenter;
+            else
+                e->op = is("llGetForce") ? Op::GetForce : Op::GetTorque;
             e->type = Type::Vector;
             advance();
             require("(");
@@ -6430,6 +6769,21 @@ class Parser {
             e->height = 1 + e->left->height;
             if (e->height > 128)
                 fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llGetMinScaleFactor") || is("llGetMaxScaleFactor") || is("llScaleByFactor")) {
+            const bool resize = is("llScaleByFactor");
+            e->op = resize ? Op::ScaleGroup : is("llGetMaxScaleFactor") ? Op::GroupMaxScaleFactor
+                                                                        : Op::GroupMinScaleFactor;
+            e->type = resize ? Type::Integer : Type::Float;
+            advance();
+            require("(");
+            if (resize) {
+                e->left = expression();
+                if (e->left->type != Type::Integer && e->left->type != Type::Float)
+                    fail(token, "llScaleByFactor requires a numeric factor");
+            }
+            require(")");
             return e;
         }
         if (is("llGetPos") || is("llGetRootPosition") || is("llGetLocalPos") || is("llGetScale") ||
@@ -6670,6 +7024,19 @@ class Parser {
             e->op = Expression::Op::UnixTime;
             return e;
         }
+        if (is("llEdgeOfWorld")) {
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if (e->left->type != Type::Vector || e->right->type != Type::Vector)
+                fail(token, "llEdgeOfWorld requires two vectors");
+            e->op = Op::EdgeOfWorld;
+            e->type = Type::Integer;
+            return e;
+        }
         if (is("llWater") || is("llGround") || is("llCloud") ||
             is("llGroundNormal") || is("llGroundSlope") || is("llGroundContour")) {
             e->type = Type::Float;
@@ -6759,6 +7126,7 @@ class Parser {
             {"ALL_SIDES", -1},
             {"ANIM_ON", 1}, {"LOOP", 2}, {"REVERSE", 4}, {"PING_PONG", 8},
             {"SMOOTH", 16}, {"ROTATE", 32}, {"SCALE", 64},
+            {"BEACON_MAP", 1}, {"BEACON_SHOW_MAP", 1}, {"BEACON_FOCUS_MAP", 2},
             {"DENSITY", 1}, {"FRICTION", 2}, {"RESTITUTION", 4}, {"GRAVITY_MULTIPLIER", 8},
             {"SIT_FLAG_SIT_TARGET", 0x01},
             {"SIT_FLAG_ALLOW_UNSIT", 0x02},
@@ -6868,6 +7236,8 @@ class Parser {
             {"AGENT_LIST_REGION", 4},
             {"AGENT_FLYING", 0x1}, {"AGENT_ATTACHMENTS", 0x2}, {"AGENT_SCRIPTED", 0x4},
             {"STATUS_PHYSICS", object_status::physics}, {"STATUS_PHANTOM", object_status::phantom},
+            {"STATUS_ROTATE_X", object_status::rotate_x}, {"STATUS_ROTATE_Y", object_status::rotate_y},
+            {"STATUS_ROTATE_Z", object_status::rotate_z},
             {"STATUS_SANDBOX", object_status::sandbox},
             {"STATUS_DIE_AT_EDGE", object_status::die_at_edge},
             {"STATUS_RETURN_AT_EDGE", object_status::return_at_edge},
@@ -7181,7 +7551,70 @@ class Parser {
     }
     Instruction expression_statement() {
         Instruction ins;
-        if (is("llSetBuoyancy") || is("llSetForce") || is("llSetTorque") || is("llSetForceAndTorque")) {
+        if (is("llLookAt") || is("llRotLookAt") || is("llStopLookAt")) {
+            const bool stop = is("llStopLookAt");
+            const auto target_type = is("llLookAt") ? Type::Vector : Type::Rotation;
+            auto call = std::make_unique<Expression>();
+            call->op = Expression::Op::LookAt;
+            advance();
+            require("(");
+            if (!stop) {
+                call->left = expression();
+                require(",");
+                call->right = expression();
+                require(",");
+                call->z = expression();
+                if (call->left->type != target_type || !numeric(call->right->type) || !numeric(call->z->type))
+                    fail(token, "Look-at requires a target, strength and damping");
+                call->height = 1 + std::max({call->left->height, call->right->height, call->z->height});
+                if (call->height > 128)
+                    fail(token, "native LSL expression depth exceeded");
+            }
+            require(")");
+            ins.text = std::move(call);
+        } else if (is("llMoveToTarget") || is("llStopMoveToTarget")) {
+            const bool start = is("llMoveToTarget");
+            auto call = std::make_unique<Expression>();
+            call->op = Expression::Op::MoveToTarget;
+            advance();
+            require("(");
+            if (start) {
+                call->left = expression();
+                require(",");
+                call->right = expression();
+                if (call->left->type != Type::Vector || !numeric(call->right->type))
+                    fail(token, "llMoveToTarget requires a vector and time constant");
+                call->height = 1 + std::max(call->left->height, call->right->height);
+                if (call->height > 128)
+                    fail(token, "native LSL expression depth exceeded");
+            }
+            require(")");
+            ins.text = std::move(call);
+        } else if (is("llSetHoverHeight") || is("llStopHover") || is("llGroundRepel")) {
+            const bool repel = is("llGroundRepel");
+            const bool start = repel || is("llSetHoverHeight");
+            auto call = std::make_unique<Expression>();
+            call->op = repel ? Expression::Op::GroundRepel : Expression::Op::SetHover;
+            advance();
+            require("(");
+            if (start) {
+                call->left = expression();
+                require(",");
+                call->right = expression();
+                require(",");
+                call->z = expression();
+                if (!numeric(call->left->type) || call->right->type != Type::Integer ||
+                    !numeric(call->z->type))
+                    fail(token, "llSetHoverHeight requires a height, integer water flag and time constant");
+                call->height = 1 + std::max({call->left->height, call->right->height, call->z->height});
+                if (call->height > 128)
+                    fail(token, "native LSL expression depth exceeded");
+            }
+            require(")");
+            ins.text = std::move(call);
+        } else if (is("llSetBuoyancy") || is("llSetForce") || is("llSetTorque") || is("llSetForceAndTorque") ||
+            is("llSetVelocity") || is("llSetAngularVelocity") ||
+            is("llApplyImpulse") || is("llApplyRotationalImpulse")) {
             const bool buoyancy = is("llSetBuoyancy");
             const bool combined = is("llSetForceAndTorque");
             auto call = std::make_unique<Expression>();
@@ -7189,6 +7622,14 @@ class Parser {
                 call->op = Expression::Op::SetBuoyancy;
             else if (combined)
                 call->op = Expression::Op::SetForceAndTorque;
+            else if (is("llSetVelocity"))
+                call->op = Expression::Op::SetVelocity;
+            else if (is("llSetAngularVelocity"))
+                call->op = Expression::Op::SetAngularVelocity;
+            else if (is("llApplyImpulse"))
+                call->op = Expression::Op::ApplyImpulse;
+            else if (is("llApplyRotationalImpulse"))
+                call->op = Expression::Op::ApplyRotationalImpulse;
             else
                 call->op = is("llSetForce") ? Expression::Op::SetForce : Expression::Op::SetTorque;
             advance();
@@ -7203,7 +7644,7 @@ class Parser {
                 call->right = expression();
                 if (call->left->type != Type::Vector || call->right->type != Type::Integer ||
                     (call->z && call->z->type != Type::Vector))
-                    fail(token, "Force and torque require vector arguments followed by an integer");
+                    fail(token, "Physics setter requires vector arguments followed by an integer");
             } else if (!numeric(call->left->type)) {
                 fail(token, "llSetBuoyancy requires a numeric argument");
             }
@@ -7316,6 +7757,11 @@ class Parser {
             is("llSetTextureAnim") || is("llSetLinkTextureAnim") ||
             is("llSetPhysicsMaterial") || is("llSetBuoyancy") || is("llSetForce") ||
             is("llSetTorque") || is("llSetForceAndTorque") ||
+            is("llSetVelocity") || is("llSetAngularVelocity") ||
+            is("llApplyImpulse") || is("llApplyRotationalImpulse") ||
+            is("llSetHoverHeight") || is("llStopHover") || is("llGroundRepel") ||
+            is("llMoveToTarget") || is("llStopMoveToTarget") ||
+            is("llLookAt") || is("llRotLookAt") || is("llStopLookAt") ||
             is("llMessageLinked") || is("llListen") || is("llListenControl") || is("llListenRemove") ||
             is("llRegionSayTo") ||
             is("llOffsetTexture") || is("llScaleTexture") || is("llRotateTexture") ||
@@ -7586,15 +8032,119 @@ class Parser {
             handler->instructions.push_back(std::move(ins));
             return;
         }
-        if (is("llPassTouches") || is("llAllowInventoryDrop")) {
-            const bool allow_drop = is("llAllowInventoryDrop");
+        if (is("osClearInertia") || is("osSetInertia") || is("osSetInertiaAsBox") ||
+            is("osSetInertiaAsSphere") || is("osSetInertiaAsCylinder")) {
+            using Shape = Instruction::InertiaShape;
+            std::span<const Type> types;
+            constexpr std::array vector_shape{Type::Float, Type::Vector, Type::Vector, Type::Rotation};
+            constexpr std::array sphere{Type::Float, Type::Float, Type::Vector};
+            constexpr std::array cylinder{Type::Float, Type::Float, Type::Float, Type::Vector, Type::Rotation};
+            if (is("osClearInertia")) {
+                ins.inertia_shape = Shape::Clear;
+            } else if (is("osSetInertiaAsSphere")) {
+                ins.inertia_shape = Shape::Sphere;
+                types = sphere;
+            } else if (is("osSetInertiaAsCylinder")) {
+                ins.inertia_shape = Shape::Cylinder;
+                types = cylinder;
+            } else {
+                ins.inertia_shape = is("osSetInertia") ? Shape::Principal : Shape::Box;
+                types = vector_shape;
+            }
+            const auto name = token.text;
             advance();
             require("(");
-            auto& value = allow_drop ? ins.allow_inventory_drop : ins.pass_touches;
+            for (const auto type : types) {
+                if (!ins.inertia_arguments.empty())
+                    require(",");
+                auto argument = expression();
+                if (type == Type::Float ? !numeric(argument->type) : argument->type != type)
+                    fail(token, "Invalid argument for " + name);
+                ins.inertia_arguments.push_back(std::move(argument));
+            }
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("osSetHealRate")) {
+            advance();
+            require("(");
+            ins.heal_agent = expression();
+            require(",");
+            ins.heal_rate = expression();
+            if (!assignable(Type::Key, ins.heal_agent->type) || !numeric(ins.heal_rate->type))
+                fail(token, "osSetHealRate requires an avatar key and numeric rate");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llTeleportAgentHome") || is("llEjectFromLand")) {
+            ins.eject_from_land = is("llEjectFromLand");
+            advance();
+            require("(");
+            ins.relocate_agent = expression();
+            if (!assignable(Type::Key, ins.relocate_agent->type))
+                fail(token, ins.eject_from_land ? "llEjectFromLand requires an avatar key"
+                                               : "llTeleportAgentHome requires an avatar key");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSetDamage")) {
+            advance();
+            require("(");
+            ins.damage = expression();
+            if (!numeric(ins.damage->type))
+                fail(token, "llSetDamage requires a numeric damage value");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llVolumeDetect") || is("osVolumeDetect")) {
+            const auto function = token.text;
+            ins.volume_detect_part = is("osVolumeDetect");
+            advance();
+            require("(");
+            ins.volume_detect = expression();
+            require(")");
+            require(";");
+            if (ins.volume_detect->type != Type::Integer)
+                fail(token, function + " requires an integer");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llCollisionFilter")) {
+            advance();
+            require("(");
+            auto& filter = ins.collision_filter.emplace();
+            filter.name = expression();
+            require(",");
+            filter.key = expression();
+            require(",");
+            filter.accept = expression();
+            require(")");
+            require(";");
+            const auto is_text = [](Type type) { return type == Type::String || type == Type::Key; };
+            if (!is_text(filter.name->type) || !is_text(filter.key->type) || filter.accept->type != Type::Integer)
+                fail(token, "llCollisionFilter requires a string, a key and an integer");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llPassTouches") || is("llAllowInventoryDrop") || is("llPassCollisions")) {
+            const bool allow_drop = is("llAllowInventoryDrop");
+            const bool collisions = is("llPassCollisions");
+            advance();
+            require("(");
+            auto& value = allow_drop ? ins.allow_inventory_drop : collisions ? ins.pass_collisions : ins.pass_touches;
             value = expression();
             if (value->type != Type::Integer)
                 fail(token, allow_drop ? "llAllowInventoryDrop requires an integer"
-                                       : "llPassTouches requires an integer");
+                                       : collisions ? "llPassCollisions requires an integer"
+                                                    : "llPassTouches requires an integer");
             require(")");
             require(";");
             handler->instructions.push_back(std::move(ins));
@@ -7685,14 +8235,15 @@ class Parser {
         }
         if (is("llLoopSound") || is("llLoopSoundMaster") || is("llLoopSoundSlave") || is("llStopSound") ||
             is("llPlaySound") || is("llPlaySoundSlave") || is("llTriggerSound") ||
-            is("llTriggerSoundLimited") || is("llCollisionSound") || is("llLinkPlaySound") ||
+            is("llTriggerSoundLimited") || is("llCollisionSound") || is("osCollisionSound") || is("llLinkPlaySound") ||
             is("llLinkStopSound")) {
             ins.sound = true;
             const bool linked_play = is("llLinkPlaySound");
             const bool linked = linked_play || is("llLinkStopSound");
             const bool limited = is("llTriggerSoundLimited");
             ins.trigger_sound = is("llTriggerSound") || limited;
-            ins.collision_sound = is("llCollisionSound");
+            ins.ossl_collision_sound = is("osCollisionSound");
+            ins.collision_sound = is("llCollisionSound") || ins.ossl_collision_sound;
             ins.play_sound = is("llPlaySound") || is("llPlaySoundSlave") || ins.trigger_sound;
             const bool has_sound = !is("llStopSound") && !is("llLinkStopSound");
             ins.sound_sync_flags = is("llLoopSoundMaster")                              ? 2
@@ -7747,6 +8298,116 @@ class Parser {
                 fail(token, "llSetText requires text, vector color and numeric alpha");
             require(")");
             require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llDialog") || is("llTextBox")) {
+            const bool text_box = is("llTextBox");
+            advance();
+            require("(");
+            const auto parse_argument = [&](std::size_t i, Type type) {
+                if (i)
+                    require(",");
+                auto argument = expression();
+                if (!assignable(type, argument->type))
+                    fail(token, text_box ? "llTextBox requires an avatar key, message and channel"
+                                         : "llDialog requires an avatar key, message, button list and channel");
+                ins.dialog_arguments[i] = std::move(argument);
+            };
+            parse_argument(0, Type::String);
+            parse_argument(1, Type::String);
+            if (!text_box)
+                parse_argument(2, Type::List);
+            parse_argument(3, Type::Integer);
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llLoadURL")) {
+            advance();
+            require("(");
+            for (std::size_t i = 0; i < ins.load_url_arguments.size(); ++i) {
+                if (i)
+                    require(",");
+                auto argument = expression();
+                if (!assignable(Type::String, argument->type))
+                    fail(token, "llLoadURL requires an avatar key, message and URL");
+                ins.load_url_arguments[i] = std::move(argument);
+            }
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llMapDestination") || is("llMapBeacon")) {
+            ins.map_beacon = is("llMapBeacon");
+            advance();
+            require("(");
+            for (std::size_t i = 0; i < ins.map_arguments.size(); ++i) {
+                if (i)
+                    require(",");
+                ins.map_arguments[i] = expression();
+            }
+            require(")");
+            require(";");
+            const auto name_type = ins.map_arguments[0]->type;
+            if ((name_type != Type::String && name_type != Type::Key) ||
+                ins.map_arguments[1]->type != Type::Vector ||
+                ins.map_arguments[2]->type != (ins.map_beacon ? Type::List : Type::Vector))
+                fail(token, "Invalid map destination arguments");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llDie")) {
+            advance();
+            require("(");
+            require(")");
+            require(";");
+            ins.die = true;
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSetObjectPermMask")) {
+            advance();
+            require("(");
+            ins.object_permission_args[0] = expression();
+            require(",");
+            ins.object_permission_args[1] = expression();
+            require(")");
+            require(";");
+            if (ins.object_permission_args[0]->type != Type::Integer ||
+                ins.object_permission_args[1]->type != Type::Integer)
+                fail(token, "llSetObjectPermMask requires an integer selector and mask");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSetInventoryPermMask")) {
+            advance();
+            require("(");
+            for (std::size_t i = 0; i < ins.inventory_permission_args.size(); ++i) {
+                if (i)
+                    require(",");
+                ins.inventory_permission_args[i] = expression();
+            }
+            require(")");
+            require(";");
+            const auto name_type = ins.inventory_permission_args[0]->type;
+            if ((name_type != Type::String && name_type != Type::Key) ||
+                ins.inventory_permission_args[1]->type != Type::Integer ||
+                ins.inventory_permission_args[2]->type != Type::Integer)
+                fail(token, "llSetInventoryPermMask requires a name, selector and integer mask");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llRemoveInventory")) {
+            advance();
+            require("(");
+            ins.inventory_remove_name = expression();
+            require(")");
+            require(";");
+            if (ins.inventory_remove_name->type != Type::String && ins.inventory_remove_name->type != Type::Key)
+                fail(token, "llRemoveInventory requires an inventory name");
             handler->instructions.push_back(std::move(ins));
             return;
         }
@@ -7894,6 +8555,18 @@ class Parser {
             handler->instructions.push_back(std::move(ins));
             return;
         }
+        if (is("llSetRot") || is("llSetLocalRot")) {
+            ins.local_object_rotation = is("llSetLocalRot");
+            advance();
+            require("(");
+            ins.object_rotation = expression();
+            require(")");
+            require(";");
+            if (ins.object_rotation->type != Type::Rotation)
+                fail(token, "Object rotation must be a rotation");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
         if (is("llSetPos")) {
             advance();
             require("(");
@@ -7997,15 +8670,15 @@ class Parser {
             handler->instructions.push_back(std::move(ins));
             return;
         }
-        const auto deprecated = std::ranges::find(deprecated_commands, token.text, &DeprecatedCommand::name);
-        if (deprecated != std::end(deprecated_commands)) {
+        const auto legacy = std::ranges::find(legacy_commands, token.text, &LegacyCommand::name);
+        if (legacy != std::end(legacy_commands)) {
             const auto command = token;
             advance();
             require("(");
             ins.text = std::make_unique<Expression>();
-            ins.text->op = Expression::Op::DeprecatedCommand;
-            ins.text->slot = static_cast<std::size_t>(deprecated - std::begin(deprecated_commands));
-            for (const auto parameter : deprecated->parameters) {
+            ins.text->op = Expression::Op::LegacyCommand;
+            ins.text->slot = static_cast<std::size_t>(legacy - std::begin(legacy_commands));
+            for (const auto parameter : legacy->parameters) {
                 if (!ins.text->elements.empty())
                     require(",");
                 auto argument = expression();
@@ -8082,11 +8755,9 @@ class Parser {
                 fail(token, "expected event handler");
             auto event = token.text;
             auto at = token;
-            if (event != "state_entry" && event != "touch_start" && event != "touch" &&
-                event != "touch_end" && event != "changed" && event != "linkset_data" && event != "on_rez" &&
-                event != "run_time_permissions" && event != "timer" && event != "state_exit" &&
-                event != "dataserver" && event != "http_request" && event != "link_message" &&
-                event != "control" && event != "listen" && event != "attach" && event != "object_rez")
+            const auto mask_bit = std::ranges::find(event_mask_bits, event,
+                                                    &std::pair<std::string_view, unsigned>::first);
+            if (mask_bit == std::ranges::end(event_mask_bits))
                 fail(at, "unsupported event in native LSL subset");
             advance();
             if (state.handlers.contains(event))
@@ -8096,7 +8767,8 @@ class Parser {
             scopes.emplace_back();
             require("(");
             const auto parameter = [&](Type type) {
-                require(type == Type::Integer ? "integer" : type == Type::Key ? "key" : "string");
+                require(type == Type::Integer ? "integer" : type == Type::Key ? "key"
+                                               : type == Type::Vector ? "vector" : "string");
                 if (token.kind != Kind::Name)
                     fail(token, "expected event parameter name");
                 if (std::string_view(
@@ -8132,6 +8804,8 @@ class Parser {
                 parameter(Type::Key);
                 require(",");
                 parameter(Type::String);
+            } else if (is_land_collision_event(event)) {
+                parameter(Type::Vector);
             } else if (event != "state_entry" && event != "timer" && event != "state_exit") {
                 parameter(Type::Integer);
             }
@@ -8154,23 +8828,7 @@ class Parser {
             resolve_jumps();
             scopes.pop_back();
             handler = nullptr;
-            state.event_mask |= event == "state_entry"            ? 1ull << 30
-                                : event == "state_exit"           ? 1ull << 1
-                                : event == "touch_start"          ? 1ull << 21
-                                : event == "touch"                ? 1ull << 3
-                                : event == "dataserver"           ? 1ull << 8
-                                : event == "control"              ? 1ull << 7
-                                : event == "listen"               ? 1ull << 15
-                                : event == "attach"               ? 1ull
-                                : event == "http_request"         ? 1ull << 38
-                                : event == "changed"              ? 1ull << 33
-                                : event == "link_message"         ? 1ull << 34
-                                : event == "linkset_data"         ? 1ull << 41
-                                : event == "on_rez"               ? 1ull << 36
-                                : event == "object_rez"           ? 1ull << 22
-                                : event == "run_time_permissions" ? 1ull << 28
-                                : event == "timer"                ? 1ull << 2
-                                                                  : 1ull << 29;
+            state.event_mask |= 1ull << mask_bit->second;
         }
         require("}");
         state.handlers.try_emplace("state_entry");
@@ -8453,6 +9111,9 @@ struct LslInstance::Impl {
                 !std::holds_alternative<std::string>(event.arguments[2]) ||
                 !std::holds_alternative<std::string>(event.arguments[3]))
                 return false;
+        } else if (is_land_collision_event(event.name)) {
+            if (!std::holds_alternative<framework::Vector3d>(event.arguments[0]))
+                return false;
         } else {
             if (expected && !std::holds_alternative<std::int32_t>(event.arguments[0]))
                 return false;
@@ -8701,6 +9362,130 @@ struct LslInstance::Impl {
                 host.set_object_status(context.object, mask, enabled);
             return;
         }
+        if (instruction.inertia_shape) {
+            using Shape = Instruction::InertiaShape;
+            const auto shape = *instruction.inertia_shape;
+            std::vector<LslValue> values;
+            for (const auto& argument : instruction.inertia_arguments)
+                values.push_back(evaluator.evaluate(*argument));
+            evaluator.check_safe_ossl_permission();
+            if (!host.set_inertia)
+                return;
+            if (shape == Shape::Clear) {
+                host.set_inertia(context.object, {});
+                return;
+            }
+
+            const auto scalar = [&](std::size_t index) {
+                const auto& value = values[index];
+                return std::holds_alternative<double>(value) ? std::get<double>(value)
+                                                             : double(std::get<std::int32_t>(value));
+            };
+            const auto vector = [&](std::size_t index) {
+                const auto [x, y, z] = std::get<framework::Vector3d>(values[index]);
+                return framework::Vector3{float(x), float(y), float(z)};
+            };
+            if (scalar(0) < 0.)
+                return;
+            framework::PrimInertiaOverride data;
+            data.mass = static_cast<float>(scalar(0));
+            if (shape == Shape::Principal || shape == Shape::Box) {
+                const auto [x, y, z] = vector(shape == Shape::Principal ? 2 : 1);
+                if (shape == Shape::Principal) {
+                    const auto& scaled = std::get<framework::Vector3d>(values[2]);
+                    if (scaled.x < 0. || scaled.y < 0. || scaled.z < 0.)
+                        return;
+                    data.diagonal = {data.mass * x, data.mass * y, data.mass * z};
+                    data.center = vector(1);
+                } else {
+                    const float factor = data.mass / 12.f;
+                    data.diagonal = {factor * (y * y + z * z), factor * (x * x + z * z),
+                                     factor * (x * x + y * y)};
+                    data.center = vector(2);
+                }
+            } else {
+                const float radius = static_cast<float>(scalar(1));
+                if (shape == Shape::Sphere) {
+                    const float axis = .4f * data.mass * radius * radius;
+                    data.diagonal = {axis, axis, axis};
+                    data.center = vector(2);
+                } else {
+                    const float length = static_cast<float>(scalar(2));
+                    const float radius_squared = radius * radius;
+                    const float axis = (length * length + 3.f * radius_squared) * (8.333333e-2f * data.mass);
+                    data.diagonal = {axis, axis, .5f * data.mass * radius_squared};
+                    data.center = vector(3);
+                }
+            }
+            if (shape != Shape::Sphere) {
+                const auto [x, y, z, w] = std::get<LslRotation>(values.back());
+                // The managed general setter uses Y for both the Y and Z rotation components.
+                const float qx = float(x), qy = float(y), qz = float(shape == Shape::Principal ? y : z), qw = float(w);
+                const float length = std::sqrt(qx * qx + qy * qy + qz * qz + qw * qw);
+                if (length > 0.f && std::isfinite(length))
+                    data.rotation = {qx / length, qy / length, qz / length, qw / length};
+            }
+            host.set_inertia(context.object, data);
+            return;
+        }
+        if (instruction.heal_agent) {
+            const auto key = std::get<std::string>(evaluator.evaluate(*instruction.heal_agent));
+            const auto rate = list_float(evaluator.evaluate(*instruction.heal_rate));
+            evaluator.check_ossl_permission("osSetHealRate");
+            framework::Uuid id;
+            if (host.set_agent_heal_rate && framework::try_parse_sdk_uuid(key, id))
+                host.set_agent_heal_rate(id, static_cast<float>(rate));
+            return;
+        }
+        if (instruction.relocate_agent) {
+            const auto key = std::get<std::string>(evaluator.evaluate(*instruction.relocate_agent));
+            const auto& relocate = instruction.eject_from_land ? host.eject_from_land : host.teleport_agent_home;
+            framework::Uuid agent;
+            if (framework::try_parse_sdk_uuid(key, agent) && !agent.is_zero() &&
+                (relocate ? !relocate(context.object, agent) : !instruction.eject_from_land))
+                return;
+            const float delay = (instruction.eject_from_land ? 1000.f : 5000.f) * host.script_delay_factor;
+            if (delay >= 10.f && delay < 2147483648.f)
+                schedule_sleep(static_cast<std::int32_t>(delay), now());
+            return;
+        }
+        if (instruction.damage) {
+            const auto value = evaluator.evaluate(*instruction.damage);
+            const float damage = std::holds_alternative<double>(value)
+                                     ? static_cast<float>(std::get<double>(value))
+                                     : static_cast<float>(std::get<std::int32_t>(value));
+            if (host.set_damage)
+                host.set_damage(context.object, damage);
+            return;
+        }
+        if (instruction.volume_detect) {
+            const auto detect = std::get<std::int32_t>(evaluator.evaluate(*instruction.volume_detect));
+            if (instruction.volume_detect_part)
+                evaluator.check_safe_ossl_permission();
+            if (host.set_volume_detect)
+                host.set_volume_detect(context.object, detect != 0, instruction.volume_detect_part);
+            return;
+        }
+        if (instruction.collision_filter) {
+            const auto& filter = *instruction.collision_filter;
+            const auto name = std::get<std::string>(evaluator.evaluate(*filter.name));
+            const auto key = std::get<std::string>(evaluator.evaluate(*filter.key));
+            const auto accept = std::get<std::int32_t>(evaluator.evaluate(*filter.accept)) != 0;
+            framework::Uuid id;
+            if (!framework::try_parse_sdk_uuid(key, id))
+                id = {};
+            if (host.set_collision_filter) {
+                auto lowered_name = framework::invariant_lower_utf16(framework::utf16(name));
+                host.set_collision_filter(context.object, std::move(lowered_name), id, accept);
+            }
+            return;
+        }
+        if (instruction.pass_collisions) {
+            const auto pass = std::get<std::int32_t>(evaluator.evaluate(*instruction.pass_collisions));
+            if (host.set_pass_collisions)
+                host.set_pass_collisions(context.object, pass == 1);
+            return;
+        }
         if (instruction.pass_touches) {
             const auto pass = std::get<std::int32_t>(evaluator.evaluate(*instruction.pass_touches));
             if (host.set_pass_touches)
@@ -8825,7 +9610,9 @@ struct LslInstance::Impl {
                                                                            : std::get<std::int32_t>(gain);
                 if (!host.set_collision_sound)
                     throw std::runtime_error("LSL host collision sound callback is required");
-                host.set_collision_sound(context.object, name, static_cast<float>(volume));
+                if (instruction.ossl_collision_sound)
+                    evaluator.check_safe_ossl_permission();
+                host.set_collision_sound(context.object, name, volume, instruction.ossl_collision_sound);
                 return;
             }
             if (instruction.play_sound) {
@@ -9000,6 +9787,158 @@ struct LslInstance::Impl {
                 if (delay >= 1.f && delay < 2147483648.f)
                     schedule_sleep(static_cast<std::int32_t>(delay), now());
             }
+            return;
+        }
+        if (instruction.dialog_arguments.front()) {
+            const auto& args = instruction.dialog_arguments;
+            const bool text_box = !args[2];
+            const auto avatar = std::get<std::string>(evaluator.evaluate(*args[0]));
+            const auto message = std::get<std::string>(evaluator.evaluate(*args[1]));
+            const auto buttons = args[2] ? std::get<std::shared_ptr<const LslList>>(evaluator.evaluate(*args[2]))
+                                         : nullptr;
+            const auto channel = std::get<std::int32_t>(evaluator.evaluate(*args[3]));
+            if (!host.dialog || !host.dialog_owner_name)
+                return;
+
+            framework::Uuid target;
+            if (!framework::try_parse_sdk_uuid(avatar, target) || target.is_zero()) {
+                evaluator.script_error(text_box ? "llTextBox: First parameter must be a valid agent key"
+                                                : "llDialog: First parameter must be a valid key");
+                return;
+            }
+            if (text_box && (message.empty() || message.size() > 512)) {
+                evaluator.script_error(message.empty() ? "llTextBox: Empty message"
+                                                       : "llTextBox: Message longer than 512 bytes");
+                return;
+            }
+            const auto owner = host.dialog_owner_name(context.object);
+            if (!owner)
+                return;
+            if (buttons && buttons->items.size() > 12) {
+                evaluator.script_error("llDialog: No more than 12 buttons can be shown");
+                return;
+            }
+            if (message.empty())
+                evaluator.script_error("llDialog: Empty message");
+            else if (message.size() > 512)
+                evaluator.script_error("llDialog: Message longer than 512 bytes");
+
+            std::vector<std::string> labels;
+            if (buttons) {
+                for (const auto& button : buttons->items) {
+                    auto label = value_text(button);
+                    if (label.empty()) {
+                        evaluator.script_error("llDialog: Button label cannot be blank");
+                        return;
+                    }
+                    labels.push_back(std::move(label));
+                }
+            }
+            if (labels.empty())
+                labels.emplace_back(text_box ? "!!llTextBox!!" : "Ok");
+            host.dialog(context.object, target, *owner, message, labels, channel, text_box);
+            const float delay = 1000.f * host.script_delay_factor;
+            if (delay >= 10.f && delay < 2147483648.f)
+                schedule_sleep(static_cast<std::int32_t>(delay), now());
+            return;
+        }
+        if (instruction.load_url_arguments.front()) {
+            const auto& args = instruction.load_url_arguments;
+            const auto avatar = std::get<std::string>(evaluator.evaluate(*args[0]));
+            const auto message = std::get<std::string>(evaluator.evaluate(*args[1]));
+            const auto url = std::get<std::string>(evaluator.evaluate(*args[2]));
+            if (context.owner == context.group)
+                return;
+
+            const auto uri = framework::native_config_uri_object_backend()->try_create(
+                std::make_shared<const std::u16string>(framework::utf16_replacing(url)),
+                framework::ConfigUriObjectKind::Absolute);
+            const auto scheme = uri ? uri->scheme() : nullptr;
+            if (!scheme || (*scheme != u"http" && *scheme != u"https")) {
+                const float delay = 200.f * host.script_delay_factor;
+                evaluator.script_error(uri ? "llLoadURL: Invalid url schema" : "llLoadURL: Invalid url",
+                    delay >= 10.f && delay < 2147483648.f ? static_cast<std::int32_t>(delay) : 1000);
+                return;
+            }
+
+            if (host.load_url)
+                host.load_url(context.object, framework::construct_sdk_uuid(framework::utf16_replacing(avatar)),
+                              message, url);
+            const float delay = 1000.f * host.script_delay_factor;
+            if (delay >= 10.f && delay < 2147483648.f)
+                schedule_sleep(static_cast<std::int32_t>(delay), now());
+            return;
+        }
+        if (instruction.map_arguments.front()) {
+            const auto name = std::get<std::string>(evaluator.evaluate(*instruction.map_arguments[0]));
+            const auto position = std::get<framework::Vector3d>(evaluator.evaluate(*instruction.map_arguments[1]));
+            const auto rules = evaluator.evaluate(*instruction.map_arguments[2]);
+            framework::Uuid target;
+            if (active && !active->detectors.empty())
+                target = active->detectors.front().key;
+            else if (context.attachment_point)
+                target = context.owner;
+            else
+                return;
+
+            std::uint32_t options = 3;
+            if (instruction.map_beacon) {
+                options = 0;
+                const auto& entries = std::get<std::shared_ptr<const LslList>>(rules)->items;
+                if (!entries.empty()) {
+                    if (entries.size() != 3)
+                        throw std::invalid_argument("Unknown llMapBeacon rules");
+                    const auto convertible = [](const LslValue& value) {
+                        return std::holds_alternative<std::int32_t>(value) || std::holds_alternative<double>(value) ||
+                               std::holds_alternative<std::string>(value);
+                    };
+                    if (!std::ranges::all_of(entries, convertible) || list_integer(entries[0]) != 1)
+                        throw std::invalid_argument("Invalid llMapBeacon rule");
+                    if (list_integer(entries[1]) != 0)
+                        options = list_integer(entries[2]) != 0 ? 3u : 1u;
+                }
+            }
+            if (host.map_destination)
+                host.map_destination(context.object, target, name, position, options);
+            const auto delay = 1000.f * host.script_delay_factor;
+            if (delay >= 10.f && delay < 2147483648.f)
+                schedule_sleep(static_cast<std::int32_t>(delay), now());
+            return;
+        }
+        if (instruction.die) {
+            if (!context.attachment_point)
+                throw ScriptTermination{LslRunStatus::DeleteLinkset};
+            return;
+        }
+        if (instruction.object_permission_args.front()) {
+            const auto selector = std::get<std::int32_t>(evaluator.evaluate(*instruction.object_permission_args[0]));
+            const auto value = std::get<std::int32_t>(evaluator.evaluate(*instruction.object_permission_args[1]));
+            if (host.set_object_permission)
+                host.set_object_permission(context.object, selector, value);
+            return;
+        }
+        if (instruction.inventory_permission_args.front()) {
+            const auto& args = instruction.inventory_permission_args;
+            const auto name = std::get<std::string>(evaluator.evaluate(*args[0]));
+            const auto selector = std::get<std::int32_t>(evaluator.evaluate(*args[1]));
+            const auto mask = std::get<std::int32_t>(evaluator.evaluate(*args[2]));
+            if (host.set_inventory_permission)
+                host.set_inventory_permission(context.object, name, selector, mask);
+            return;
+        }
+        if (instruction.inventory_remove_name) {
+            const auto name = std::get<std::string>(evaluator.evaluate(*instruction.inventory_remove_name));
+            if (host.remove_inventory && host.remove_inventory(context.object, context.item, name))
+                throw ScriptTermination{LslRunStatus::DeleteSelf};
+            return;
+        }
+        if (instruction.object_rotation) {
+            const auto rotation = std::get<LslRotation>(evaluator.evaluate(*instruction.object_rotation));
+            if (host.set_object_rotation)
+                host.set_object_rotation(context.object, rotation, instruction.local_object_rotation);
+            const auto delay = 200.f * host.script_delay_factor;
+            if (delay >= 10.f && delay < 2147483648.f)
+                schedule_sleep(static_cast<std::int32_t>(delay), now());
             return;
         }
         if (instruction.object_position) {
@@ -9401,6 +10340,11 @@ LslRunResult LslInstance::run(std::size_t budget) {
             s.execute(code[s.pc++]);
             ++out.instructions;
         }
+    } catch (const ScriptTermination& termination) {
+        s.set_running(false);
+        ++out.instructions;
+        out.status = termination.status;
+        return out;
     } catch (const std::exception& e) {
         s.fault = e.what();
         const bool out_of_heap = dynamic_cast<const OutOfHeap*>(&e) != nullptr;

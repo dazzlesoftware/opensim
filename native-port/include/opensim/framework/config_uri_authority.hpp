@@ -10,5 +10,7 @@ struct ConfigUriAuthorityResult {
     std::optional<std::u16string> rewritten_prefix;
 };
 // Validated parser slice, actual syntax flags and NFC provider; no URL policy.
-ConfigUriAuthorityResult config_uri_check_authority(std::u16string_view,std::size_t start,std::size_t end,std::uint64_t flags,const ConfigUriSyntax&,const ConfigUriUnicodeBackend&);
-}
+ConfigUriAuthorityResult config_uri_check_authority(std::u16string_view, std::size_t start, std::size_t end,
+                                                    std::uint64_t flags, const ConfigUriSyntax&,
+                                                    const ConfigUriUnicodeBackend&);
+} // namespace opensim::framework

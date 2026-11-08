@@ -2,6 +2,7 @@
 #include "opensim/physics/mesh_asset.hpp"
 #include "opensim/network/osd_value.hpp"
 #include "opensim/network/sdk_llsd_binary.hpp"
+#include <algorithm>
 #include <bit>
 #include <cmath>
 #include <iostream>
@@ -178,6 +179,9 @@ static void check_dynamic_boxes(const std::filesystem::path& path) {
     world.step(200);
     check(std::abs(world.body_state(lower).position.z - 21.5f) < .05f, "box rests on native terrain");
     check(std::abs(world.body_state(upper).position.z - 22.5f) < .05f, "box rests on another dynamic box");
+    const auto stacked = world.top_colliders();
+    check(stacked.size() == 2 && stacked[0] == std::pair{lower, 2.f} && stacked[1] == std::pair{upper, 1.f},
+          "top colliders rank active prims by terrain and prim contacts in the last step");
 
     world.remove_box(lower);
     terrain.clear_land(18);
@@ -189,6 +193,9 @@ static void check_dynamic_boxes(const std::filesystem::path& path) {
                   << updated.position.y << ", " << updated.position.z << '\n';
     check(std::abs(updated.position.z - 18.5f) < .05f,
           "removed box and terrain edits affect existing bodies");
+    const auto after_removal = world.top_colliders();
+    check(after_removal.size() == 1 && after_removal.front() == std::pair{upper, 1.f},
+          "top colliders omit removed bodies and reset each step");
 }
 
 static void check_sphere_contacts(const std::filesystem::path& path) {
@@ -651,6 +658,65 @@ static void check_compound_box_motion(const std::filesystem::path& path) {
     const auto moved = world.body_state(id);
     check(moved.position.x > 128.5f && moved.position.z < 30.f && moved.angular_velocity.z > 1.f,
           "compound root rotates around its offset center of mass");
+
+    physics::UbodePrimForces forces;
+    forces.inertia_override = framework::PrimInertiaOverride{
+        12.f, {.5f, 0, 0}, {4, 5, 6}, {0, 0, .382683432f, .923879533f}};
+    const auto pending = world.inertia_data(id, forces.inertia_override);
+    const auto previous = world.inertia_data(id);
+    check(pending && pending->mass == 12.f && previous && previous->mass == 4.f,
+          "pending inertia readback leaves the current solver body untouched");
+
+    world.remove_box(id);
+    world.add_dynamic_linkset(id, parts, initial, forces);
+    const auto applied = world.inertia_data(id);
+    check(applied && applied->mass == pending->mass && applied->center == pending->center &&
+              applied->diagonal == pending->diagonal && applied->products == pending->products,
+          "the pending tensor matches the tensor installed on the solver body");
+    const auto center = world.mass_properties(id);
+    check(center && std::abs(center->center.x - 128.f) < .001f &&
+              std::abs(center->center.y - 128.5f) < .001f,
+          "the solver body uses the override's rotated center of mass");
+}
+
+static void check_rotation_axis_locks(const std::filesystem::path& path) {
+    scene::Terrain terrain;
+    physics::UbodeWorld world(path, terrain);
+    const auto id = framework::Uuid::random();
+    const physics::UbodePrimPart part{{1, 1, 1}, {.25f, 0, 0}, {0, 0, 0, 1}, 2.f};
+    const physics::UbodeBodyState state{{128, 128, 30}, {0, 0, .70710678f, .70710678f}, {}, {2, 4, 1}};
+    physics::UbodePrimForces forces;
+    forces.rotation_axis_locks = 2;
+    world.add_dynamic_linkset(id, {&part, 1}, state, forces);
+    world.step();
+    const auto locked = world.body_state(id).angular_velocity;
+    check(std::abs(locked.y) < .01f && locked.x > 1.f && locked.z > .5f,
+          "the motor locks the prim's rotated local X axis and allows the other axes");
+    world.apply_prim_impulse(id, {400, 0, 0}, false);
+    check(world.update_body_motion(id, {}, {}, state.angular_velocity, {}, 0), "unlock the existing body");
+    world.step();
+    const auto unlocked = world.body_state(id);
+    check(unlocked.angular_velocity.y > 3.f, "removing the motor restores free rotation");
+    check(unlocked.velocity.x > 1.f, "removing the motor preserves pending linear forces");
+
+    check(world.update_body_motion(id, {}, {}, {}, {}, 4), "lock the existing body on its local Y axis");
+    check(world.body_state(id).angular_velocity == framework::Vector3{}, "applying a lock clears angular velocity");
+    check(world.body_state(id).position == unlocked.position, "applying a lock preserves the current pose");
+
+    const framework::Quaternion upright{0, 0, 0, 1};
+    check(world.update_body_motion(id, {}, {}, state.angular_velocity, {}, {}, upright),
+          "rotate the existing body and reanchor its lock");
+    const auto rotated = world.body_state(id);
+    check(std::abs(rotated.position.x - unlocked.position.x) < .001f &&
+          std::abs(rotated.position.y - unlocked.position.y) < .001f &&
+          std::abs(rotated.position.z - unlocked.position.z) < .001f,
+          "rotation preserves the prim origin with an offset center of mass");
+    check(rotated.rotation == upright && rotated.velocity == unlocked.velocity,
+          "rotating a live body applies its pose and preserves linear velocity");
+    world.step();
+    const auto reanchored = world.body_state(id).angular_velocity;
+    check(std::abs(reanchored.y) < .01f && reanchored.x > 1.f && reanchored.z > .5f,
+          "the motor follows the new local axis after rotation");
 }
 
 static void check_asset_mesh_centroid(const std::filesystem::path& path) {
@@ -687,10 +753,23 @@ static void check_prim_contact_materials(const std::filesystem::path& path) {
         const auto platform = framework::Uuid::random();
         const auto moving = framework::Uuid::random();
         world.add_static_prim(platform, framework::PrimType::Box, {20, 20, 1},
-                              {128, 128, 23}, {0, 0, 0, 1}, 0, 0.f, {}, {}, {1.f, 1.f});
-        physics::UbodePrimPart part{{1, 1, 1}, {}, {0, 0, 0, 1}, 1.f};
-        part.contact_material = material;
-        world.add_dynamic_linkset(moving, {&part, 1}, initial);
+                              {128, 128, 23}, {0, 0, 0, 1}, 0, 0.f, {}, {}, {0.f, 0.f});
+        const physics::UbodeColliderProperties platform_properties{{1.f, 1.f}};
+        check(world.update_collider_properties(platform, {&platform_properties, 1}), "update a static collider");
+
+        // The child hits the platform first. The root has a different material.
+        physics::UbodePrimPart parts[] = {
+            {{1, 1, 1}, {0, 0, 2}, {0, 0, 0, 1}, 1.f},
+            {{1, 1, 1}, {}, {0, 0, 0, 1}, 1.f}
+        };
+        parts[0].contact_material = {0.f, 0.f};
+        parts[1].contact_material = {0.f, 0.f};
+        // Hold the linkset upright so the friction measurement isolates sliding from tipping.
+        physics::UbodePrimForces forces;
+        forces.rotation_axis_locks = 0x0e;
+        world.add_dynamic_linkset(moving, parts, initial, forces);
+        const physics::UbodeColliderProperties properties[] = {{{0.f, 0.f}}, {material}};
+        check(world.update_collider_properties(moving, properties), "update a physical linkset's child collider");
 
         float peak_upward_speed = 0.f;
         for (int frame = 0; frame < 20; ++frame) {
@@ -717,6 +796,80 @@ static void check_prim_contact_materials(const std::filesystem::path& path) {
           "prim friction slows tangential motion");
 }
 
+static void check_prim_look_at_updates(const std::filesystem::path& path) {
+    scene::Terrain terrain;
+    physics::UbodeWorld world(path, terrain);
+    const auto id = framework::Uuid::random();
+    const physics::UbodePrimPart part{{1, 1, 1}, {}, {0, 0, 0, 1}, 2.f};
+    physics::UbodeBodyState state;
+    state.position = {128, 128, 30};
+    physics::UbodePrimForces forces;
+    forces.gravity_modifier = 0.f;
+    forces.look_at = {{0, 0, .70710678f, .70710678f}, 1.f};
+    world.add_dynamic_linkset(id, {&part, 1}, state, forces);
+    world.step();
+    check(world.body_state(id).angular_velocity == framework::Vector3{},
+          "look-at waits for a scene update");
+    world.update_prim_look_at();
+    const float first_speed = world.body_state(id).angular_velocity.z;
+    check(first_speed > 4.f, "look-at scene update sets angular velocity");
+    world.step(4);
+    const float integrated_speed = world.body_state(id).angular_velocity.z;
+    check(integrated_speed > first_speed * .98f, "physics substeps keep the scene's angular command");
+    world.update_prim_look_at();
+    check(world.body_state(id).angular_velocity.z < integrated_speed * .9f,
+          "the next scene update recomputes the angular command");
+}
+
+static void check_prim_water_hover(const std::filesystem::path& path) {
+    scene::Terrain terrain;
+    terrain.clear_land();
+    physics::UbodeWorld world(path, terrain);
+    world.set_water_height(26.f);
+    const auto id = framework::Uuid::random();
+    const physics::UbodePrimPart part{{1, 1, 1}, {}, {0, 0, 0, 1}, 2.f};
+    physics::UbodeBodyState state;
+    state.position = {128, 128, 25};
+    physics::UbodePrimForces forces;
+    forces.hover = {3.f, .25f, true};
+    world.add_dynamic_linkset(id, {&part, 1}, state, forces);
+    world.step(125);
+    const auto hovering = world.body_state(id);
+    check(std::abs(hovering.position.z - 29.f) < .03f && std::abs(hovering.velocity.z) < .12f,
+          "prim hover uses water when it is above terrain");
+}
+
+static void check_prim_impulses(const std::filesystem::path& path) {
+    scene::Terrain terrain;
+    terrain.clear_land();
+    physics::UbodeWorld world(path, terrain);
+    const auto id = framework::Uuid::random();
+    const physics::UbodePrimPart part{{1, 1, 1}, {}, {0, 0, 0, 1}, 2.f};
+    physics::UbodeBodyState initial;
+    initial.position = {128, 128, 30};
+    physics::UbodePrimForces forces;
+    forces.gravity_modifier = 0.f;
+    world.add_dynamic_linkset(id, {&part, 1}, initial, forces);
+    world.apply_prim_impulse(id, {4, 0, 0}, false);
+    world.apply_prim_impulse(id, {0, 0, 1}, true);
+    world.step();
+    const auto first = world.body_state(id);
+    check(std::abs(first.velocity.x - 2.f) < .02f &&
+              std::abs(first.angular_velocity.z - 3.f) < .03f,
+          "prim impulses change linear and angular momentum");
+    world.step();
+    const auto second = world.body_state(id);
+    check(std::abs(second.velocity.x - first.velocity.x) < .02f &&
+              std::abs(second.angular_velocity.z - first.angular_velocity.z) < .03f,
+          "prim impulses apply for one solver step");
+
+    physics::UbodeWorld avatar(path, terrain);
+    avatar.add_avatar({128, 128, 30}, {.45f, .6f, 1.9f});
+    avatar.push_avatar({20, 0, 0});
+    avatar.step();
+    check(avatar.snapshot().body_velocity.x > 1.f, "avatar push applies momentum");
+}
+
 static void check_avatar_buoyancy(const std::filesystem::path& path) {
     scene::Terrain terrain;
     terrain.clear_land();
@@ -736,6 +889,38 @@ static void check_avatar_buoyancy(const std::filesystem::path& path) {
           "a recreated avatar actor starts with normal gravity");
 }
 
+static void check_avatar_contact_planes(const std::filesystem::path& path) {
+    scene::Terrain terrain;
+    terrain.clear_land();
+    for (const bool upper_first : {false, true}) {
+        physics::UbodeWorldOptions options;
+        options.report_prim_collisions = true;
+        physics::UbodeWorld first(path, terrain, options);
+        physics::UbodeWorld second(first);
+        const framework::Vector3 size{.45f, .6f, 1.9f};
+        const framework::Vector3 lower{128, 128, 25};
+        const framework::Vector3 upper{128, 128, 26.7f};
+        const physics::PrimCollisionActor first_actor{framework::Uuid::random(), 1};
+        const physics::PrimCollisionActor second_actor{framework::Uuid::random(), 2};
+        first.add_avatar(upper_first ? upper : lower, size, true, first_actor);
+        second.add_avatar(upper_first ? lower : upper, size, true, second_actor);
+        physics::UbodeWorld* peers[] = {&second};
+        first.step_with(peers, 5);
+        const auto reports = first.take_prim_collision_reports();
+        check(std::ranges::any_of(reports, [&](const auto& report) {
+            return report.avatar_contacts.contains({first_actor, second_actor}) &&
+                   report.avatar_contacts.contains({second_actor, first_actor});
+        }), "avatar collision reports both recipients");
+        const auto top = (upper_first ? first : second).snapshot();
+        const auto bottom = (upper_first ? second : first).snapshot();
+        check(top.collision_plane[2] > .99f && top.collision_plane[3] > lower.z &&
+                  top.collision_plane[3] < upper.z,
+              "upper avatar reports the contact plane under its feet");
+        check(bottom.collision_plane == std::array<float, 4>{0, 0, 0, 1},
+              "lower avatar has no foot contact from the same collision");
+    }
+}
+
 static void check_avatar_box_contacts(const std::filesystem::path& path) {
     scene::Terrain terrain;
     terrain.clear_land();
@@ -744,17 +929,26 @@ static void check_avatar_box_contacts(const std::filesystem::path& path) {
     const framework::Uuid platform("88f8f560-a0e4-4e08-bc88-c8592dc9a70f");
     world.add_static_box(platform, {4, 4, 1}, {128, 128, 23}, {0, 0, 0, 1});
     avatar.add_avatar({128, 128, 27}, {.45f, .6f, 1.9f});
+    check(avatar.snapshot().collision_plane == std::array<float, 4>{0, 0, 0, 1},
+          "airborne avatar starts with the default collision plane");
     physics::UbodeWorld* peers[] = {&avatar};
     world.step_with(peers, 120);
     const auto standing = avatar.snapshot();
     check(std::abs(standing.body_position.z - 24.45f) < .05f && standing.colliding &&
               !standing.colliding_ground,
           "avatar stands on the box with an object contact");
+    check(standing.collision_plane[2] > .99f && std::abs(standing.collision_plane[3] - 23.5f) < .05f,
+          "avatar collision plane follows the platform top");
     world.remove_box(platform);
     world.step_with(peers, 120);
     const auto on_terrain = avatar.snapshot();
     check(on_terrain.body_position.z < 22.1f && on_terrain.colliding_ground,
           "avatar falls to terrain when a supporting box is removed");
+    if (!(on_terrain.collision_plane[2] > .99f &&
+          std::abs(on_terrain.collision_plane[3] - terrain.height_at(128, 128)) < .05f))
+        throw std::runtime_error("Expected a terrain collision plane, got Z=" +
+                                 std::to_string(on_terrain.collision_plane[2]) + " D=" +
+                                 std::to_string(on_terrain.collision_plane[3]));
 
     avatar.remove_avatar();
     avatar.add_avatar({128, 128, 26}, {.45f, .6f, 1.9f});
@@ -765,6 +959,50 @@ static void check_avatar_box_contacts(const std::filesystem::path& path) {
     world.step_with(peers, 15);
     check(avatar.snapshot().body_position.x > 128.1f && world.body_state(platform).velocity.x < 7.f,
           "moving box transfers momentum to the avatar");
+}
+
+static void check_avatar_volume_detect(const std::filesystem::path& path) {
+    scene::Terrain terrain;
+    terrain.clear_land();
+    physics::UbodeWorldOptions options;
+    options.report_prim_collisions = true;
+    physics::UbodeWorld world(path, terrain, options);
+    const auto sensor = framework::Uuid::random();
+    const physics::PrimCollisionActor avatar{framework::Uuid::random(), 1};
+    world.add_static_prim(sensor, framework::PrimType::Box, {4, 4, 1}, {128, 128, 23},
+                          {0, 0, 0, 1});
+    world.add_avatar({128, 128, 27}, {.45f, .6f, 1.9f}, false, avatar);
+    world.step(120);
+    check(world.snapshot().body_position.z > 24.f, "solid collider supports the avatar");
+    world.take_prim_collision_reports();
+
+    const physics::UbodeColliderProperties detector{{}, true};
+    check(world.update_collider_properties(sensor, {&detector, 1}), "enable volume detection on a live collider");
+    world.step(120);
+
+    const auto reports = world.take_prim_collision_reports();
+    check(std::ranges::any_of(reports, [&](const auto& report) {
+        return report.objects.contains({sensor, avatar});
+    }), "volume detector reports an avatar crossing it");
+    const auto on_terrain = world.snapshot();
+    check(on_terrain.body_position.z < 22.1f && on_terrain.colliding_ground,
+          "volume detector allows the avatar to fall to terrain");
+
+    const physics::UbodeColliderProperties solid;
+    check(world.update_collider_properties(sensor, {&solid, 1}), "disable volume detection on the same collider");
+    world.remove_avatar();
+    world.add_avatar({128, 128, 27}, {.45f, .6f, 1.9f}, false, avatar);
+    world.step(120);
+    check(world.snapshot().body_position.z > 24.f, "disabling volume detection restores solid contact");
+
+    const auto moving = framework::Uuid::random();
+    physics::UbodeBodyState motion;
+    motion.position = {128, 128, 50};
+    world.add_dynamic_box(moving, {1, 1, 1}, 2.f, motion);
+    world.apply_prim_impulse(moving, {6, 0, 0}, false);
+    check(world.update_collider_properties(moving, {&detector, 1}), "enable detection on a live body");
+    world.step();
+    check(world.body_state(moving).velocity.x > 2.f, "switching collision mode preserves a pending impulse");
 }
 
 int main(int argc, char** argv) {
@@ -784,10 +1022,16 @@ int main(int argc, char** argv) {
         check_ring_mesh(path);
         check_ellipsoid_mesh(path);
         check_compound_box_motion(path);
+        check_rotation_axis_locks(path);
         check_asset_mesh_centroid(path);
         check_prim_contact_materials(path);
+        check_prim_look_at_updates(path);
+        check_prim_water_hover(path);
+        check_prim_impulses(path);
         check_avatar_buoyancy(path);
+        check_avatar_contact_planes(path);
         check_avatar_box_contacts(path);
+        check_avatar_volume_detect(path);
         scene::Terrain terrain;
         terrain.clear_land();
         std::atomic<bool> failed = false;
@@ -920,6 +1164,9 @@ int main(int argc, char** argv) {
         first.step_with(collision_peers, 10);
         check(second_avatar.snapshot().body_position.x - first.snapshot().body_position.x > .2f,
               "shared solver separates overlapping avatar capsules");
+        check(first.snapshot().collision_plane == std::array<float, 4>{0, 0, 0, 1} &&
+                  second_avatar.snapshot().collision_plane == std::array<float, 4>{0, 0, 0, 1},
+              "side contacts do not replace either avatar's collision plane");
         physics::UbodeWorld water_host(path, terrain, {.0909f, 35.f});
         physics::UbodeWorld water_avatar(water_host);
         physics::UbodeWorld ground_avatar(path, terrain, {.0909f, 35.f});

@@ -142,6 +142,8 @@ struct RegionPolicies : EstateSettings {
     std::uint32_t object_capacity = 15000;
     float statistics_fps_factor = 1.f;
     double target_poll_ms = 50.;
+    float scene_frame_time = .0909f;
+    int update_objects_every_n_frames = 1;
     std::function<std::shared_ptr<framework::IAssetCache>()> baked_texture_cache;
     std::function<void(framework::Uuid, const framework::WearableCacheItems&)> store_baked_appearance;
     std::function<framework::WearableCacheItems(framework::Uuid)> fetch_baked_appearance;
@@ -218,6 +220,7 @@ struct RegionPolicies : EstateSettings {
     std::function<std::optional<services::GridRegion>(std::string_view, bool)> script_grid_region;
     std::function<std::vector<services::GridRegion>(const std::string&)> map_region_search;
     std::function<std::vector<services::GridRegion>(int, int, int, int)> map_region_range;
+    std::function<bool(std::int32_t, std::int32_t)> grid_region_at;
     bool map_layer_enabled = true;
     MapJpegEncoder encode_map_jpeg;
     MapJpeg2000Encoder encode_map_jpeg2000;
@@ -381,6 +384,7 @@ struct RegionPolicies : EstateSettings {
     bool legacy_sit_offsets = true;
     std::int32_t script_heap_limit_bytes = 1024 * 1024;
     float script_delay_factor = 1.f;
+    bool allow_god_functions = false;
     float script_distance_factor = 1.f;
     bool disable_underground_movement = true;
     std::optional<std::string> script_url_host;

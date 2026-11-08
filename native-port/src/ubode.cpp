@@ -30,6 +30,7 @@
 namespace opensim::physics {
 namespace {
 constexpr float world_gravity_z = -9.8f;
+constexpr float avatar_density = 3.f;
 
 struct Vec {
     float X = 0, Y = 0, Z = 0;
@@ -249,6 +250,7 @@ void SetSmooth(Vec& dst, const Vec& value) {
     X(void, BodySetQuaternion, (void*, const NativeQuaternion*), "dBodySetQuaternion")                       \
     X(void, BodyAddForce, (void*, float, float, float), "dBodyAddForce")                                     \
     X(void, BodyAddTorque, (void*, float, float, float), "dBodyAddTorque")                                   \
+    X(void, BodySetTorque, (void*, float, float, float), "dBodySetTorque")                                   \
     X(const float*, BodyGetQuaternion, (void*), "dBodyGetQuaternion")                                        \
     X(const float*, BodyGetForce, (void*), "dBodyGetForce")                                                  \
     X(const float*, BodyGetPosition, (void*), "dBodyGetPosition")                                            \
@@ -382,13 +384,28 @@ struct OdeScene {
         framework::Vector3 inertia_size;
         framework::Vector3 centroid;
         framework::PrimContactMaterial contact_material;
+        framework::Uuid part_id;
+        bool volume_detect = false;
+        bool phantom = false;
+        float collision_score = 0.f;
+        float mass = 0.f;
+        framework::Vector3 offset;
+        framework::Quaternion rotation;
     };
     struct Box {
         void* body = nullptr;
         std::vector<Collider> colliders;
+        void* axis_motor = nullptr;
+        std::uint8_t rotation_locks = 0;
         framework::Vector3 center_of_mass;
+        UbodeBodyState static_pose;
+        framework::PrimInertiaData inertia;
         Vec constant_force;
         Vec constant_torque;
+        float mass = 0.f;
+        framework::PrimHover hover;
+        framework::PrimMoveTarget move_target;
+        framework::PrimLookAt look_at;
     };
 
     float water_height = 20.f;
@@ -401,12 +418,42 @@ struct OdeScene {
     void* terrain_geom = nullptr;
     void* object_space = nullptr;
     std::map<framework::Uuid, Box> boxes;
+    PrimCollisionReport prim_contacts;
+    std::vector<PrimCollisionReport> prim_collision_reports;
+    int prim_collision_elapsed_ms = 0;
+    bool report_prim_collisions = false;
     std::size_t dynamic_box_count = 0;
     static constexpr unsigned dynamic_box_category = 1u, static_box_category = 2u;
-    static constexpr unsigned avatar_category = 4u;
+    static constexpr unsigned avatar_category = 4u, volume_detect_category = 8u;
     static constexpr int max_pair_contacts = 8;
 
     explicit OdeScene(std::shared_ptr<Api> value) : api(std::move(value)) {
+    }
+    std::optional<Mass> override_mass(const framework::PrimInertiaOverride& custom) const {
+        const auto [ix, iy, iz] = custom.diagonal;
+        if (!(custom.mass > 0.f) || !std::isfinite(custom.mass) || !finite(from(custom.center)) ||
+            !finite(custom.rotation) || !std::isfinite(ix) || !std::isfinite(iy) || !std::isfinite(iz) ||
+            !(ix > 0.f && iy > 0.f && iz > 0.f))
+            return {};
+
+        Mass inertia{};
+        inertia.mass = custom.mass;
+        inertia.inertia[0] = ix;
+        inertia.inertia[5] = iy;
+        inertia.inertia[10] = iz;
+        const auto rotation = normalize(custom.rotation);
+        if (std::abs(rotation.w) < .999f) {
+            const auto x = framework::sdk_rotate_vector({1, 0, 0}, rotation);
+            const auto y = framework::sdk_rotate_vector({0, 1, 0}, rotation);
+            const auto z = framework::sdk_rotate_vector({0, 0, 1}, rotation);
+            const float matrix[] = {x.x, y.x, z.x, 0, x.y, y.y, z.y, 0, x.z, y.z, z.z, 0};
+            api->MassRotate(&inertia, matrix);
+        }
+        return inertia;
+    }
+    static framework::PrimInertiaData describe_inertia(const Mass& mass, framework::Vector3 center) {
+        return {mass.mass, center, {mass.inertia[0], mass.inertia[5], mass.inertia[10]},
+                {mass.inertia[1], mass.inertia[2], mass.inertia[6]}};
     }
     void refresh_collision_terrain_bounds(int width, int height) {
         const auto [lowest, highest] = std::minmax_element(terrain_heights.begin(), terrain_heights.end());
@@ -436,7 +483,36 @@ struct OdeScene {
         if (!object_space)
             throw std::runtime_error("ubODE object space creation failed");
     }
+    static framework::PrimContactMaterial clamp_contact_material(framework::PrimContactMaterial material) {
+        return {
+            std::isfinite(material.friction) ? std::clamp(material.friction, 0.f, 255.f) : .6f,
+            std::isfinite(material.restitution) ? std::clamp(material.restitution, 0.f, 1.f) : .5f
+        };
+    }
+
+    void configure_collision_filter(Collider& collider, bool dynamic, bool volume_detect, bool phantom) {
+        collider.volume_detect = volume_detect;
+        collider.phantom = phantom;
+        if (volume_detect) {
+            const unsigned mask = dynamic ? dynamic_box_category | static_box_category : 0u;
+            api->GeomSetCategoryBits(collider.geom, volume_detect_category);
+            api->GeomSetCollideBits(collider.geom, mask);
+        } else if (phantom) {
+            // Physical phantom prims still contact terrain in the separate terrain pass.
+            api->GeomSetCategoryBits(collider.geom, 0);
+            api->GeomSetCollideBits(collider.geom, 0);
+        } else {
+            const unsigned category = dynamic ? dynamic_box_category : static_box_category;
+            const unsigned mask = dynamic ? dynamic_box_category | static_box_category | volume_detect_category
+                                          : dynamic_box_category;
+            api->GeomSetCategoryBits(collider.geom, category);
+            api->GeomSetCollideBits(collider.geom, mask | avatar_category);
+        }
+    }
+
     void destroy_box(const Box& box) {
+        if (box.axis_motor)
+            api->JointDestroy(box.axis_motor);
         for (const auto& collider : box.colliders) {
             if (collider.geom)
                 api->GeomDestroy(collider.geom);
@@ -446,6 +522,51 @@ struct OdeScene {
         if (box.body)
             api->BodyDestroy(box.body);
     }
+    bool lock_rotation(Box& box, std::uint8_t locks, framework::Quaternion rotation) {
+        constexpr unsigned rotation_axes = 0x0e;
+        locks &= rotation_axes;
+        if (!locks) {
+            if (box.axis_motor)
+                api->JointDestroy(box.axis_motor);
+            box.axis_motor = nullptr;
+            box.rotation_locks = 0;
+            return true;
+        }
+
+        const auto motor = api->JointCreateAMotor(world, nullptr);
+        if (!motor)
+            return false;
+
+        api->JointAttach(motor, box.body, nullptr);
+        api->JointSetAMotorMode(motor, 0);
+        api->JointSetAMotorNumAxes(motor, std::popcount(static_cast<unsigned>(locks)));
+        constexpr framework::Vector3 axes[] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+        int slot = 0;
+        for (unsigned i = 0; i < 3; ++i) {
+            if (!(locks & (2u << i)))
+                continue;
+            const auto [x, y, z] = framework::sdk_rotate_vector(axes[i], rotation);
+            api->JointSetAMotorAxis(motor, slot, 0, x, y, z);
+            api->JointSetAMotorAngle(motor, slot, 0.f);
+            const int parameter = slot * 256;
+            api->JointSetAMotorParam(motor, parameter + 0, 0.f); // LoStop
+            api->JointSetAMotorParam(motor, parameter + 1, 0.f); // HiStop
+            api->JointSetAMotorParam(motor, parameter + 2, 0.f); // Vel
+            api->JointSetAMotorParam(motor, parameter + 3, 5.e8f); // FMax
+            api->JointSetAMotorParam(motor, parameter + 4, .0001f); // FudgeFactor
+            api->JointSetAMotorParam(motor, parameter + 5, 0.f); // Bounce
+            api->JointSetAMotorParam(motor, parameter + 6, 0.f); // CFM
+            api->JointSetAMotorParam(motor, parameter + 7, .8f); // StopERP
+            api->JointSetAMotorParam(motor, parameter + 8, 0.f); // StopCFM
+            ++slot;
+        }
+        if (box.axis_motor)
+            api->JointDestroy(box.axis_motor);
+        box.axis_motor = motor;
+        box.rotation_locks = locks;
+        return true;
+    }
+
     static std::vector<float> profile_fractions(int count, const framework::LinearPrimPath& path) {
         const bool cut = path.profile_begin > 0.f || path.profile_end < 1.f;
         std::vector<float> fractions;
@@ -819,26 +940,147 @@ struct OdeScene {
             return terrain_material;
         return static_cast<const Collider*>(api->GeomGetData(geom))->contact_material;
     }
-    void collide(void* first_geom, void* second_geom, void* first_body, void* second_body,
-                 std::size_t& budget) {
+    Vec linear_velocity(void* body) const {
+        return body ? api->BodyGetLinearVelOMV(body) : Vec{};
+    }
+    void record_impact(PrimCollisionActor recipient, PrimCollisionActor other, CollisionImpact impact) {
+        const auto [entry, added] = prim_contacts.impacts.try_emplace({recipient, other}, impact);
+        if (added)
+            return;
+        auto& previous = entry->second;
+        if (previous.depth < impact.depth) {
+            if (std::abs(previous.depth) > std::abs(impact.speed))
+                impact.speed = previous.depth;
+            previous = impact;
+        } else if (std::abs(previous.speed) < std::abs(impact.speed)) {
+            previous.speed = impact.speed;
+        }
+    }
+    bool collide(void* first_geom, void* second_geom, void* first_body, void* second_body,
+                 std::size_t& budget, CollisionImpact& impact) {
         NativeContact collision[max_pair_contacts];
         const int count = collect_contacts(first_geom, second_geom, collision, budget);
         if (count <= 0)
-            return;
+            return false;
+        if (report_prim_collisions) {
+            const auto contacts = std::span(collision).first(static_cast<std::size_t>(count));
+            const auto deepest = std::ranges::max_element(contacts, {}, &NativeContact::depth);
+            const auto shallowest = std::ranges::min_element(contacts, {}, &NativeContact::depth);
+            const Vec normal{shallowest->normal.X, shallowest->normal.Y, shallowest->normal.Z};
+            const auto relative = linear_velocity(second_body) - linear_velocity(first_body);
+            impact = {{deepest->position.X, deepest->position.Y, deepest->position.Z},
+                      Vec::Dot(relative, normal), deepest->depth};
+        }
         const auto first_material = contact_material(first_geom);
         const auto second_material = contact_material(second_geom);
         const float friction = std::sqrt(first_material.friction * second_material.friction);
         const float restitution = first_material.restitution * second_material.restitution;
+        const auto initial_budget = budget;
         for (int i = 0; i < count; ++i) {
             auto& contact = collision[i];
             contact.mu = friction;
             contact.bounce = restitution;
             attach_contact(contact, first_body, second_body, budget);
         }
+        return budget != initial_budget;
     }
-    void apply_prim_forces() {
+    Vec root_position(const Box& box) const {
+        const auto center = api->BodyGetPositionOMV(box.body);
+        const auto rotation = api->BodyGetQuaternion(box.body);
+        const framework::Quaternion orientation{rotation[1], rotation[2], rotation[3], rotation[0]};
+        return center - from(framework::sdk_rotate_vector(box.center_of_mass, orientation));
+    }
+    float hover_force(const Box& box, const auto& terrain_height) const {
+        const auto root = root_position(box);
+        const float ground = terrain_height(root.X, root.Y);
+        const float base = box.hover.above_water ? std::max(ground, water_height) : ground;
+        const float target = base + box.hover.height;
+        if (target <= ground)
+            return 0.f;
+
+        const auto velocity = api->BodyGetLinearVelOMV(box.body);
+        const float error = target - root.Z;
+        if (std::abs(error) < .01f) {
+            api->BodySetPosition(box.body, root.X, root.Y, target);
+            api->BodySetLinearVel(box.body, velocity.X, velocity.Y, 0.f);
+            return 0.f;
+        }
+        const float speed = error / box.hover.tau;
+        const float target_speed = speed < 0.f ? std::clamp(speed, -50.f, -.1f) : std::max(speed, .1f);
+        const float force = box.mass * ((target_speed - velocity.Z) / UbodeWorld::time_step);
+        return std::isfinite(force) ? force : 0.f;
+    }
+    bool apply_move_target(const Box& box, Vec& force) const {
+        const auto target = from(box.move_target.position);
+        const auto error = target - root_position(box);
+        if (std::abs(error.X) < .02f && std::abs(error.Y) < .02f && std::abs(error.Z) < .02f) {
+            api->BodySetPosition(box.body, target.X, target.Y, target.Z);
+            api->BodySetLinearVel(box.body, 0.f, 0.f, 0.f);
+            return false;
+        }
+        const auto distance = std::sqrt(error.LengthSquared());
+        const float speed = std::clamp(distance / box.move_target.tau, .05f, 50.f);
+        const auto desired_velocity = error * (speed / distance);
+        const auto velocity = api->BodyGetLinearVelOMV(box.body);
+        const auto control_force = (desired_velocity - velocity) * (box.mass / UbodeWorld::time_step);
+        if (finite(control_force))
+            force = force + control_force;
+        return true;
+    }
+    void update_look_at() {
         for (const auto& [id, box] : boxes) {
-            const auto force = box.constant_force;
+            if (!box.look_at.active())
+                continue;
+            const auto native_rotation = api->BodyGetQuaternion(box.body);
+            const framework::Quaternion orientation{
+                native_rotation[1], native_rotation[2], native_rotation[3], native_rotation[0]};
+            const framework::Quaternion inverse{-orientation.x, -orientation.y, -orientation.z, orientation.w};
+            const auto error = framework::sdk_multiply_quaternion(inverse, box.look_at.rotation);
+            const float sine = std::hypot(error.x, error.y, error.z);
+            Vec angular_velocity;
+            if (sine > 1.e-6f) {
+                const float angle = 2.f * std::atan2(sine, std::abs(error.w));
+                const float strength = std::min(1.f / box.look_at.strength, 1.f);
+                const float direction = error.w < 0.f ? -1.f : 1.f;
+                const float scale = direction * angle * strength * std::numbers::pi_v<float> / sine;
+                const auto axis = framework::sdk_rotate_vector({error.x, error.y, error.z}, orientation);
+                angular_velocity = from(axis) * scale;
+            }
+            api->BodySetAngularVel(box.body, angular_velocity.X, angular_velocity.Y, angular_velocity.Z);
+        }
+    }
+    void configure_prim_forces(Box& box, const UbodePrimForces& forces) {
+        box.hover = std::isfinite(forces.hover.height) && std::isfinite(forces.hover.tau)
+            ? forces.hover : framework::PrimHover{};
+        box.move_target = std::isfinite(forces.move_target.tau) && finite(from(forces.move_target.position))
+            ? forces.move_target : framework::PrimMoveTarget{};
+        box.look_at = {};
+        if (forces.look_at.active() && finite(forces.look_at.rotation))
+            box.look_at = {normalize(forces.look_at.rotation), forces.look_at.strength};
+
+        const auto force = from(forces.force);
+        const auto torque = from(forces.torque);
+        box.constant_force = finite(force) ? force : Vec{};
+        box.constant_torque = finite(torque) ? torque : Vec{};
+
+        const float gravity_scale = (1.f - forces.buoyancy) * forces.gravity_modifier;
+        const float gravity_force_z = box.mass * (world_gravity_z * gravity_scale);
+        const float combined_force_z = box.constant_force.Z + gravity_force_z;
+        const bool custom_gravity = gravity_scale != 1.f && std::isfinite(combined_force_z);
+        const bool controlled = box.move_target.active() || box.hover.active();
+        api->BodySetGravityMode(box.body, !controlled && !custom_gravity);
+        if (!controlled && custom_gravity)
+            box.constant_force.Z = combined_force_z;
+    }
+
+    void apply_prim_forces(const auto& terrain_height) {
+        for (const auto& [id, box] : boxes) {
+            auto force = box.constant_force;
+            if (box.move_target.active()) {
+                if (!apply_move_target(box, force))
+                    continue;
+            } else if (box.hover.active())
+                force.Z += hover_force(box, terrain_height);
             if (!force.IsZero())
                 api->BodyAddForce(box.body, force.X, force.Y, force.Z);
             const auto torque = box.constant_torque;
@@ -849,14 +1091,29 @@ struct OdeScene {
     void collide_dynamic_boxes(std::size_t& budget) {
         if (!dynamic_box_count)
             return;
-        for (const auto& [id, box] : boxes) {
+        // ubODE resets active prim scores after the character collision pass.
+        for (auto& [id, box] : boxes) {
+            if (box.body)
+                for (auto& collider : box.colliders)
+                    collider.collision_score = 0.f;
+        }
+        for (auto& [id, box] : boxes) {
             if (!box.body)
                 continue;
-            for (const auto& collider : box.colliders) {
+            for (auto& collider : box.colliders) {
+                if (collider.volume_detect)
+                    continue;
                 // The native terrain collider uses the box's cached bounds.
                 float bounds[6];
                 api->GeomGetAABB(collider.geom, bounds);
-                collide(collider.geom, terrain_geom, box.body, nullptr, budget);
+                CollisionImpact impact;
+                if (collide(collider.geom, terrain_geom, box.body, nullptr, budget, impact)) {
+                    ++collider.collision_score;
+                    if (report_prim_collisions) {
+                        prim_contacts.terrain.insert(collider.part_id);
+                        record_impact({collider.part_id}, {}, impact);
+                    }
+                }
                 if (!budget)
                     return;
             }
@@ -871,12 +1128,52 @@ struct OdeScene {
                 auto& scene = pass.scene;
                 const auto first_body = scene.api->GeomGetBody(first);
                 const auto second_body = scene.api->GeomGetBody(second);
-                if (first_body != second_body)
-                    scene.collide(first, second, first_body, second_body, pass.budget);
+                if (first_body == second_body)
+                    return;
+                auto& first_part = *static_cast<Collider*>(scene.api->GeomGetData(first));
+                auto& second_part = *static_cast<Collider*>(scene.api->GeomGetData(second));
+                if (first_part.volume_detect || second_part.volume_detect) {
+                    if (first_part.volume_detect == second_part.volume_detect)
+                        return;
+                    NativeContact overlaps[max_pair_contacts];
+                    if (scene.collect_contacts(first, second, overlaps, pass.budget) > 0) {
+                        ++first_part.collision_score;
+                        ++second_part.collision_score;
+                        if (scene.report_prim_collisions) {
+                            const auto& sensor = first_part.volume_detect ? first_part : second_part;
+                            const auto& other = first_part.volume_detect ? second_part : first_part;
+                            scene.prim_contacts.objects.emplace(sensor.part_id, PrimCollisionActor{other.part_id});
+                        }
+                    }
+                    return;
+                }
+                CollisionImpact impact;
+                if (!scene.collide(first, second, first_body, second_body, pass.budget, impact))
+                    return;
+                ++first_part.collision_score;
+                ++second_part.collision_score;
+                if (scene.report_prim_collisions) {
+                    const PrimCollisionActor first_actor{first_part.part_id};
+                    const PrimCollisionActor second_actor{second_part.part_id};
+                    scene.prim_contacts.objects.emplace(first_actor.id, second_actor);
+                    scene.prim_contacts.objects.emplace(second_actor.id, first_actor);
+                    scene.record_impact(first_actor, second_actor, impact);
+                    scene.record_impact(second_actor, first_actor, impact);
+                }
             }
         };
         CollisionPass pass{*this, budget};
         api->SpaceCollide(object_space, &pass, CollisionPass::on_pair);
+    }
+    void finish_prim_collision_frame() {
+        if (!report_prim_collisions)
+            return;
+        prim_collision_elapsed_ms += static_cast<int>(UbodeWorld::time_step * 1000.f + .5f);
+        if (prim_collision_elapsed_ms < 50)
+            return;
+        prim_collision_reports.push_back(std::move(prim_contacts));
+        prim_contacts = {};
+        prim_collision_elapsed_ms = 0;
     }
     void initialize(float frame_time) {
         std::lock_guard guard(api->mutex);
@@ -931,6 +1228,7 @@ struct UbodeWorld::Impl {
     void*& world = native_scene->world;
     void*& TopSpace = native_scene->space;
     std::thread::id owner = std::this_thread::get_id();
+    PrimCollisionActor collision_actor;
     void* Body = nullptr;
     void* collider = nullptr;
     void* Amotor = nullptr;
@@ -967,8 +1265,34 @@ struct UbodeWorld::Impl {
         if (!Body)
             throw std::logic_error("ubODE avatar not added");
     }
-    void AddCollisionEvent(unsigned, const ContactPoint&) {
-    } // Source has no subscribers by default.
+    std::array<float, 4> collision_plane{0, 0, 0, 1};
+    std::array<float, 4> pending_collision_plane{0, 0, 0, 1};
+    float lowest_foot_contact = std::numeric_limits<float>::max();
+    int collision_elapsed_ms = 0;
+    void reset_collision_plane() {
+        collision_plane = {0, 0, 0, 1};
+        pending_collision_plane = collision_plane;
+        lowest_foot_contact = std::numeric_limits<float>::max();
+        collision_elapsed_ms = 0;
+    }
+    void finish_collision_frame() {
+        constexpr int report_interval_ms = 100;
+        constexpr int step_ms = static_cast<int>(UbodeWorld::time_step * 1000.f + .5f);
+        collision_elapsed_ms = std::min(report_interval_ms, collision_elapsed_ms + step_ms);
+        if (collision_elapsed_ms < report_interval_ms || !api->BodyIsEnabled(Body))
+            return;
+        collision_plane = pending_collision_plane;
+        pending_collision_plane = {0, 0, 0, 1};
+        lowest_foot_contact = std::numeric_limits<float>::max();
+        collision_elapsed_ms = 0;
+    }
+    void AddCollisionEvent(unsigned, const ContactPoint& contact) {
+        if (contact.CharacterFeet && contact.Position.Z < lowest_foot_contact) {
+            const auto normal = -contact.SurfaceNormal;
+            pending_collision_plane = {normal.X, normal.Y, normal.Z, Vec::Dot(contact.Position, normal)};
+            lowest_foot_contact = contact.Position.Z;
+        }
+    }
     void filter_collision() {
         if (Colliderfilter < -1) {
             Colliderfilter = -1;
@@ -1002,15 +1326,33 @@ struct UbodeWorld::Impl {
         auto& scene = *native_scene;
         NativeContact contacts[OdeScene::max_pair_contacts];
         const int count = scene.collect_contacts(collider, geom, contacts, budget);
+        const auto& part = *static_cast<const OdeScene::Collider*>(api->GeomGetData(geom));
+        if (part.volume_detect) {
+            if (count > 0 && scene.report_prim_collisions && collision_actor.avatar_local_id)
+                scene.prim_contacts.objects.emplace(part.part_id, collision_actor);
+            return;
+        }
         const auto box_body = api->GeomGetBody(geom);
         constexpr int sphere_class = 0;
         const bool small_dynamic_sphere = box_body && api->GeomGetClass(geom) == sphere_class &&
                                           api->GeomSphereGetRadius(geom) < .5f;
+        ContactPoint reported{};
+        float deepest = -std::numeric_limits<float>::max();
+        float shallowest = std::numeric_limits<float>::max();
         for (int i = 0; i < count; ++i) {
             auto& contact = contacts[i];
             const float height = contact.position.Z - _position.Z;
+            const bool on_top = contact.normal.Z > .35f;
+            if (contact.depth > deepest) {
+                deepest = contact.depth;
+                reported.Position = {contact.position.X, contact.position.Y, contact.position.Z};
+                reported.CharacterFeet = !small_dynamic_sphere && height <= feet_offset && (on_top || !m_flying);
+            }
+            if (contact.depth < shallowest) {
+                shallowest = contact.depth;
+                reported.SurfaceNormal = {-contact.normal.X, -contact.normal.Y, -contact.normal.Z};
+            }
             if (!small_dynamic_sphere && height <= feet_offset) {
-                const bool on_top = contact.normal.Z > .35f;
                 if ((on_top || !m_flying) && height < .3f - CapsuleSizeZ) {
                     CollideNormal = {contact.normal.X, contact.normal.Y, contact.normal.Z};
                     Colliderfilter = std::min(9, Colliderfilter + 3);
@@ -1031,6 +1373,19 @@ struct UbodeWorld::Impl {
                 }
             }
             scene.attach_contact(contact, Body, box_body, budget);
+        }
+        if (count > 0) {
+            AddCollisionEvent(0, reported);
+            if (scene.report_prim_collisions && collision_actor.avatar_local_id) {
+                const PrimCollisionActor other{part.part_id};
+                scene.prim_contacts.objects.emplace(part.part_id, collision_actor);
+                const auto relative = scene.linear_velocity(box_body) - scene.linear_velocity(Body);
+                const CollisionImpact impact{to(reported.Position),
+                                             Vec::Dot(relative, reported.SurfaceNormal), deepest};
+                scene.record_impact(other, collision_actor, impact);
+                scene.record_impact(collision_actor, other, impact);
+                scene.prim_contacts.avatar_contacts.emplace(collision_actor, other);
+            }
         }
     }
     float horizontal_radius_squared_inverse(Vec direction) const {
@@ -1107,6 +1462,20 @@ struct UbodeWorld::Impl {
         if (!joint)
             return false;
         api->JointAttach(joint, Body, other.Body);
+        if (feet) {
+            auto& standing = feet > 0 ? *this : other;
+            const auto reported_normal = feet > 0 ? -normal : normal;
+            standing.AddCollisionEvent(0, {.PenetrationDepth = depth,
+                                           .Position = position,
+                                           .SurfaceNormal = reported_normal,
+                                           .RelativeSpeed = 0.f,
+                                           .CharacterFeet = true});
+        }
+        if (native_scene->report_prim_collisions && collision_actor.avatar_local_id &&
+            other.collision_actor.avatar_local_id) {
+            native_scene->prim_contacts.avatar_contacts.emplace(collision_actor, other.collision_actor);
+            native_scene->prim_contacts.avatar_contacts.emplace(other.collision_actor, collision_actor);
+        }
         avatar_contact_filter = other.avatar_contact_filter = 2;
         m_pidControllerActive = other.m_pidControllerActive = false;
         return true;
@@ -1185,6 +1554,7 @@ struct UbodeWorld::Impl {
         : native_scene(std::move(value)), width(terrain.width()), height(terrain.height()),
           m_heightmapWidthSamples(0), m_heightmapHeightSamples(0) {
         native_scene->water_height = options.water_height;
+        native_scene->report_prim_collisions = options.report_prim_collisions;
         if (!std::isfinite(options.scene_frame_time) || options.scene_frame_time <= 0)
             throw std::invalid_argument("Invalid ubODE scene frame time");
         if (width < 2 || height < 2 || width > 8192 || height > 8192)
@@ -1291,8 +1661,8 @@ struct UbodeWorld::Impl {
             throw std::runtime_error("ubODE capsule creation failed");
         api->GeomSetCategoryBits(collider, OdeScene::avatar_category);
         api->GeomSetCollideBits(collider, OdeScene::avatar_category | OdeScene::dynamic_box_category |
-                                        OdeScene::static_box_category | 0x2000u);
-        m_mass = 8.f * 3.f * half.X * half.Y * half.Z;
+                                        OdeScene::static_box_category | OdeScene::volume_detect_category | 0x2000u);
+        m_mass = 8.f * avatar_density * half.X * half.Y * half.Z;
         api->MassSetBoxTotal(&ShellMass, m_mass, 2.f * half.X, 2.f * half.Y, 2.f * half.Z);
         m_massInvTimeScaled = m_mass * m_sceneInverseTimeStep;
         PID_D = .55f * m_massInvTimeScaled;
@@ -1500,6 +1870,11 @@ struct UbodeWorld::Impl {
                                          .RelativeSpeed = Vec::Dot(m_lastFallVel, n),
                                          .CharacterFeet = true};
                     AddCollisionEvent(0, contact);
+                    if (native_scene->report_prim_collisions && collision_actor.avatar_local_id) {
+                        native_scene->prim_contacts.avatar_contacts.emplace(collision_actor, PrimCollisionActor{});
+                        native_scene->record_impact(collision_actor, {},
+                            {to(contact.Position), contact.RelativeSpeed, contact.PenetrationDepth});
+                    }
                     m_lastFallVel = Vec{};
                 }
             }
@@ -1708,11 +2083,15 @@ UbodeWorld::UbodeWorld(UbodeWorld& scene) {
     impl_ = std::make_unique<Impl>(*scene.impl_);
 }
 UbodeWorld::~UbodeWorld() = default;
-void UbodeWorld::add_avatar(framework::Vector3 p, framework::Vector3 size, bool flying) {
+void UbodeWorld::add_avatar(framework::Vector3 p, framework::Vector3 size, bool flying,
+                            PrimCollisionActor collision_actor) {
     std::lock_guard guard(impl_->api->mutex);
     impl_->api->allocate();
     impl_->add(from(p), from(size), flying);
+    impl_->collision_actor = collision_actor;
     impl_->m_buoyancy = 0.f;
+    impl_->m_useHoverPID = false;
+    impl_->reset_collision_plane();
 }
 void UbodeWorld::resize_avatar(framework::Vector3 size) {
     auto& avatar = *impl_;
@@ -1835,6 +2214,18 @@ void UbodeWorld::set_momentum(framework::Vector3 momentum) {
     avatar.api->BodySetLinearVel(avatar.Body, velocity.X, velocity.Y, velocity.Z);
     avatar.api->BodyEnable(avatar.Body);
 }
+void UbodeWorld::snap_avatar_position(framework::Vector3 position) {
+    impl_->avatar();
+    const auto target = from(position);
+    if (!finite(target))
+        return;
+    std::lock_guard guard(impl_->api->mutex);
+    impl_->api->allocate();
+    impl_->api->BodySetPosition(impl_->Body, target.X, target.Y, target.Z);
+    impl_->api->BodySetLinearVel(impl_->Body, 0.f, 0.f, 0.f);
+    impl_->_position = target;
+    impl_->_velocity = {};
+}
 void UbodeWorld::avatar_jump(float impulse) {
     impl_->avatar();
     if (!std::isfinite(impulse))
@@ -1849,6 +2240,17 @@ void UbodeWorld::avatar_jump(float impulse) {
     if (force != 0)
         c.api->BodyAddForce(c.Body, 0, 0, force);
     c.api->BodyEnable(c.Body);
+}
+void UbodeWorld::push_avatar(framework::Vector3 impulse) {
+    impl_->avatar();
+    const auto force = from(impulse) * (avatar_density / (time_step * 28.f));
+    if (!finite(force))
+        return;
+    std::lock_guard guard(impl_->api->mutex);
+    impl_->api->allocate();
+    impl_->set_free_move();
+    impl_->api->BodyAddForce(impl_->Body, force.X, force.Y, force.Z);
+    impl_->api->BodyEnable(impl_->Body);
 }
 void UbodeWorld::step(std::size_t count) {
     step_with({}, count);
@@ -1873,9 +2275,9 @@ void UbodeWorld::add_static_prim(framework::Uuid id, framework::PrimType type, f
                                  framework::Vector3 position, framework::Quaternion rotation,
                                  std::uint8_t mesh_segments, float hollow, framework::LinearPrimPath path,
                                  std::shared_ptr<const AssetPhysicsMesh> asset_mesh,
-                                 framework::PrimContactMaterial contact_material) {
-    const UbodePrimPart part{size, {}, {0, 0, 0, 1}, 0.f, type, mesh_segments, hollow, path,
-                            std::move(asset_mesh), contact_material};
+                                 framework::PrimContactMaterial contact_material, bool volume_detect, float mass) {
+    const UbodePrimPart part{size, {}, {0, 0, 0, 1}, mass, type, mesh_segments, hollow, path,
+                            std::move(asset_mesh), contact_material, id, volume_detect};
     add_prims(id, {&part, 1}, {position, rotation, {}, {}}, false);
 }
 void UbodeWorld::add_prims(framework::Uuid id, std::span<const UbodePrimPart> parts,
@@ -1947,14 +2349,15 @@ void UbodeWorld::add_prims(framework::Uuid id, std::span<const UbodePrimPart> pa
     };
     const auto orientation = normalize(state.rotation);
     const auto native_rotation = to_native(orientation);
-    const unsigned box_collisions = dynamic ? OdeScene::dynamic_box_category | OdeScene::static_box_category
-                                            : OdeScene::dynamic_box_category;
     try {
         for (std::size_t i = 0; i < parts.size(); ++i) {
             const auto& part = parts[i];
             const auto size = part.size;
             auto& collider = box.colliders[i];
             collider.inertia_size = size;
+            collider.mass = part.mass;
+            collider.offset = part.offset;
+            collider.rotation = normalize(part.rotation);
             if (part.type == framework::PrimType::Sculpt) {
                 const auto& mesh = *part.asset_mesh;
                 if (mesh.vertices.empty() || mesh.vertices.size() > std::numeric_limits<int>::max() ||
@@ -2029,15 +2432,10 @@ void UbodeWorld::add_prims(framework::Uuid id, std::span<const UbodePrimPart> pa
             }
             if (!collider.geom)
                 throw std::runtime_error("ubODE prim collider creation failed");
-            const auto material = part.contact_material;
-            collider.contact_material = {
-                std::isfinite(material.friction) ? std::clamp(material.friction, 0.f, 255.f) : .6f,
-                std::isfinite(material.restitution) ? std::clamp(material.restitution, 0.f, 1.f) : .5f
-            };
+            collider.contact_material = scene.clamp_contact_material(part.contact_material);
             scene.api->GeomSetData(collider.geom, &collider);
-            scene.api->GeomSetCategoryBits(collider.geom, dynamic ? OdeScene::dynamic_box_category
-                                                                 : OdeScene::static_box_category);
-            scene.api->GeomSetCollideBits(collider.geom, box_collisions | OdeScene::avatar_category);
+            collider.part_id = part.id.is_zero() ? id : part.id;
+            scene.configure_collision_filter(collider, dynamic, part.volume_detect, part.phantom);
         }
     } catch (...) {
         scene.destroy_box(box);
@@ -2045,6 +2443,8 @@ void UbodeWorld::add_prims(framework::Uuid id, std::span<const UbodePrimPart> pa
         throw;
     }
     if (!dynamic) {
+        box.static_pose = state;
+        box.static_pose.rotation = orientation;
         const auto geom = box.colliders.front().geom;
         scene.api->GeomSetQuaternion(geom, &native_rotation);
         scene.api->GeomSetPosition(geom, state.position.x, state.position.y, state.position.z);
@@ -2074,18 +2474,16 @@ void UbodeWorld::add_prims(framework::Uuid id, std::span<const UbodePrimPart> pa
     }
     box.center_of_mass = {inertia.c[0], inertia.c[1], inertia.c[2]};
     scene.api->MassTranslate(&inertia, -inertia.c[0], -inertia.c[1], -inertia.c[2]);
-    scene.api->BodySetMass(box.body, &inertia);
-    const float gravity_scale = (1.f - forces.buoyancy) * forces.gravity_modifier;
-    const float gravity_force_z = inertia.mass * (world_gravity_z * gravity_scale);
-    if (const auto force = from(forces.force); finite(force))
-        box.constant_force = force;
-    if (const auto torque = from(forces.torque); finite(torque))
-        box.constant_torque = torque;
-    const float combined_force_z = box.constant_force.Z + gravity_force_z;
-    if (gravity_scale != 1.f && std::isfinite(combined_force_z)) {
-        scene.api->BodySetGravityMode(box.body, 0);
-        box.constant_force.Z = combined_force_z;
+    if (const auto& custom = forces.inertia_override) {
+        if (const auto mass = scene.override_mass(*custom)) {
+            inertia = *mass;
+            box.center_of_mass = custom->center;
+        }
     }
+    scene.api->BodySetMass(box.body, &inertia);
+    box.inertia = scene.describe_inertia(inertia, box.center_of_mass);
+    box.mass = inertia.mass;
+    scene.configure_prim_forces(box, forces);
     for (std::size_t i = 0; i < parts.size(); ++i) {
         const auto& part = parts[i];
         const auto offset = from(part.offset) - from(box.center_of_mass);
@@ -2103,8 +2501,116 @@ void UbodeWorld::add_prims(framework::Uuid id, std::span<const UbodePrimPart> pa
     scene.api->BodySetLinearVel(box.body, state.velocity.x, state.velocity.y, state.velocity.z);
     scene.api->BodySetAngularVel(box.body, state.angular_velocity.x, state.angular_velocity.y,
                                 state.angular_velocity.z);
+    if (!scene.lock_rotation(box, forces.rotation_axis_locks, orientation))
+        fail_creation();
     ++scene.dynamic_box_count;
 }
+void UbodeWorld::update_prim_look_at() {
+    impl_->check();
+    auto& scene = *impl_->native_scene;
+    std::lock_guard guard(scene.api->mutex);
+    scene.api->allocate();
+    scene.update_look_at();
+}
+std::vector<PrimCollisionReport> UbodeWorld::take_prim_collision_reports() {
+    impl_->check();
+    auto& reports = impl_->native_scene->prim_collision_reports;
+    std::vector<PrimCollisionReport> result;
+    result.swap(reports);
+    return result;
+}
+void UbodeWorld::apply_prim_impulse(framework::Uuid id, framework::Vector3 impulse, bool angular) {
+    impl_->check();
+    const auto force = from(impulse) * (1.f / time_step);
+    if (!finite(force) || force.IsZero())
+        return;
+    auto& scene = *impl_->native_scene;
+    std::lock_guard guard(scene.api->mutex);
+    const auto entry = scene.boxes.find(id);
+    if (entry == scene.boxes.end() || !entry->second.body)
+        return;
+    scene.api->allocate();
+    const auto body = entry->second.body;
+    if (angular)
+        scene.api->BodyAddTorque(body, force.X, force.Y, force.Z);
+    else
+        scene.api->BodyAddForce(body, force.X, force.Y, force.Z);
+    scene.api->BodyEnable(body);
+}
+bool UbodeWorld::update_body_motion(framework::Uuid id, std::optional<framework::Vector3> position,
+                                   std::optional<framework::Vector3> linear, std::optional<framework::Vector3> angular,
+                                   const std::optional<UbodePrimForces>& forces,
+                                   std::optional<std::uint8_t> rotation_locks,
+                                   std::optional<framework::Quaternion> rotation) {
+    impl_->check();
+    if ((position && !finite(from(*position))) ||
+        (linear && !finite(from(*linear))) || (angular && !finite(from(*angular))))
+        return false;
+    auto& scene = *impl_->native_scene;
+    const auto entry = scene.boxes.find(id);
+    if (entry == scene.boxes.end() || !entry->second.body)
+        return false;
+    std::lock_guard guard(scene.api->mutex);
+    scene.api->allocate();
+    auto& box = entry->second;
+    const auto body = box.body;
+    const auto q = scene.api->BodyGetQuaternion(body);
+    const framework::Quaternion previous_orientation{q[1], q[2], q[3], q[0]};
+    const auto orientation = rotation ? normalize(*rotation) : previous_orientation;
+    if (rotation_locks || (rotation && box.axis_motor)) {
+        if (!scene.lock_rotation(box, rotation_locks.value_or(box.rotation_locks), orientation))
+            return false;
+        if (box.axis_motor) {
+            scene.api->BodySetTorque(body, 0.f, 0.f, 0.f);
+            scene.api->BodySetAngularVel(body, 0.f, 0.f, 0.f);
+        }
+    }
+    if (position || rotation) {
+        const auto previous_offset = from(framework::sdk_rotate_vector(box.center_of_mass, previous_orientation));
+        const auto body_position = scene.api->BodyGetPosition(body);
+        const Vec previous_center{body_position[0], body_position[1], body_position[2]};
+        const auto root = position ? from(*position) : previous_center - previous_offset;
+        if (rotation) {
+            const auto native_rotation = to_native(orientation);
+            scene.api->BodySetQuaternion(body, &native_rotation);
+        }
+        const auto offset = from(framework::sdk_rotate_vector(box.center_of_mass, orientation));
+        const auto center = root + offset;
+        scene.api->BodySetPosition(body, center.X, center.Y, center.Z);
+        for (auto& collider : box.colliders)
+            collider.collision_score = 0.f;
+    }
+    if (linear)
+        scene.api->BodySetLinearVel(body, linear->x, linear->y, linear->z);
+    if (angular)
+        scene.api->BodySetAngularVel(body, angular->x, angular->y, angular->z);
+    if (forces)
+        scene.configure_prim_forces(box, *forces);
+    if (position || rotation || linear || angular || forces || rotation_locks)
+        scene.api->BodyEnable(body);
+    return true;
+}
+bool UbodeWorld::update_collider_properties(framework::Uuid id,
+                                           std::span<const UbodeColliderProperties> properties) {
+    impl_->check();
+    auto& scene = *impl_->native_scene;
+    std::lock_guard guard(scene.api->mutex);
+    const auto entry = scene.boxes.find(id);
+    if (entry == scene.boxes.end() || entry->second.colliders.size() != properties.size())
+        return false;
+
+    scene.api->allocate();
+    auto& box = entry->second;
+    for (std::size_t i = 0; i < properties.size(); ++i) {
+        auto& collider = box.colliders[i];
+        collider.contact_material = scene.clamp_contact_material(properties[i].material);
+        if (collider.volume_detect != properties[i].volume_detect || collider.phantom != properties[i].phantom)
+            scene.configure_collision_filter(collider, box.body != nullptr,
+                                             properties[i].volume_detect, properties[i].phantom);
+    }
+    return true;
+}
+
 void UbodeWorld::remove_box(framework::Uuid id) {
     impl_->check();
     auto& scene = *impl_->native_scene;
@@ -2158,6 +2664,9 @@ void UbodeWorld::step_with(std::span<UbodeWorld* const> peers, std::size_t count
             move(*impl_);
         for (auto peer : peers)
             move(*peer->impl_);
+        impl_->native_scene->apply_prim_forces([&](float x, float y) {
+            return impl_->GetTerrainHeightAtXY(x, y);
+        });
         std::size_t contact_budget = 6000;
         for (std::size_t i = 0; i <= peers.size(); ++i) {
             auto& avatar = controller(i);
@@ -2179,10 +2688,79 @@ void UbodeWorld::step_with(std::span<UbodeWorld* const> peers, std::size_t count
             }
         }
         impl_->native_scene->collide_dynamic_boxes(contact_budget);
-        impl_->native_scene->apply_prim_forces();
+        impl_->native_scene->finish_prim_collision_frame();
         impl_->api->WorldQuickStep(impl_->world, time_step);
         impl_->api->JointGroupEmpty(impl_->native_scene->contacts);
+        if (impl_->Body)
+            impl_->finish_collision_frame();
+        for (auto* peer : peers)
+            peer->impl_->finish_collision_frame();
     }
+}
+std::optional<UbodeMassProperties> UbodeWorld::mass_properties(framework::Uuid actor, framework::Uuid part) const {
+    impl_->check();
+    const auto& scene = *impl_->native_scene;
+    const auto entry = scene.boxes.find(actor);
+    if (entry == scene.boxes.end())
+        return {};
+    const auto& box = entry->second;
+    const auto& api = scene.api;
+    std::lock_guard guard(api->mutex);
+    api->allocate();
+    if (box.body && part.is_zero()) {
+        float mass = 0.f;
+        for (const auto& collider : box.colliders)
+            mass += collider.mass;
+        return UbodeMassProperties{mass, to(api->BodyGetPositionOMV(box.body))};
+    }
+
+    const auto id = part.is_zero() ? actor : part;
+    const auto collider = std::ranges::find(box.colliders, id, &OdeScene::Collider::part_id);
+    if (collider == box.colliders.end())
+        return {};
+    auto position = from(box.static_pose.position);
+    auto rotation = box.static_pose.rotation;
+    if (box.body) {
+        position = scene.root_position(box);
+        const auto q = api->BodyGetQuaternion(box.body);
+        rotation = {q[1], q[2], q[3], q[0]};
+    }
+    const auto centroid = from(framework::sdk_rotate_vector(collider->centroid, collider->rotation));
+    const auto local = from(collider->offset) + centroid;
+    const auto center = position + from(framework::sdk_rotate_vector(to(local), rotation));
+    return UbodeMassProperties{collider->mass, to(center)};
+}
+
+std::optional<framework::PrimInertiaData> UbodeWorld::inertia_data(
+    framework::Uuid root, const std::optional<framework::PrimInertiaOverride>& requested) const {
+    impl_->check();
+    const auto& scene = *impl_->native_scene;
+    const auto entry = scene.boxes.find(root);
+    if (entry == scene.boxes.end() || !entry->second.body)
+        return {};
+    if (requested) {
+        std::lock_guard guard(scene.api->mutex);
+        scene.api->allocate();
+        if (const auto mass = scene.override_mass(*requested))
+            return scene.describe_inertia(*mass, requested->center);
+    }
+    return entry->second.inertia;
+}
+
+std::vector<std::pair<framework::Uuid, float>> UbodeWorld::top_colliders() const {
+    impl_->check();
+    std::vector<std::pair<framework::Uuid, float>> ranked;
+    for (const auto& [id, box] : impl_->native_scene->boxes) {
+        if (box.body)
+            for (const auto& collider : box.colliders)
+                ranked.emplace_back(collider.part_id, collider.collision_score);
+    }
+    std::stable_sort(ranked.begin(), ranked.end(), [](const auto& left, const auto& right) {
+        return left.second > right.second;
+    });
+    if (ranked.size() > 25)
+        ranked.resize(25);
+    return ranked;
 }
 UbodeSnapshot UbodeWorld::snapshot() const {
     impl_->avatar();
@@ -2203,7 +2781,9 @@ UbodeSnapshot UbodeWorld::snapshot() const {
             [&] {
                 auto q = c.api->BodyGetQuaternion(c.Body);
                 return framework::Quaternion{q[1], q[2], q[3], q[0]};
-            }()};
+            }(),
+            c.collision_plane,
+            to(c.m_rotationalVelocity)};
 }
 float UbodeWorld::avatar_mass() const {
     impl_->check();

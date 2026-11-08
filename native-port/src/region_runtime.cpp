@@ -1019,9 +1019,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             [weak](const ViewerAgent& a) {
                 if (auto v = weak.lock()) {
                     v->begin_avatar_crossing(a);
-                    for (auto& recipient : v->viewers->agents())
-                        if (recipient.root)
-                            v->send_avatar(a, recipient);
+                    v->pending_avatar_motion.insert_or_assign(a.circuit->agent_id, a);
                 }
             },
             [weak](const std::string& error) {
@@ -1066,7 +1064,8 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                     state->policies.schedule_asset_fetch(std::move(fetch));
                 else
                     fetch();
-            });
+            },
+            ScenePhysicsTiming{policies.scene_frame_time});
         viewer_physics.store(physics);
         for (const auto& avatar : viewers->agents())
             if (avatar.root)
@@ -1269,6 +1268,8 @@ struct RegionRuntime::State : SceneAdmissionBackend,
     struct ObjectState {
         std::uint32_t crc = 0;
         bool selected = false;
+        ObjectTerseMotion last_terse;
+        std::optional<std::chrono::steady_clock::time_point> last_terse_time;
     };
     struct ObjectAnimationEntry {
         Uuid id;
@@ -1281,6 +1282,17 @@ struct RegionRuntime::State : SceneAdmissionBackend,
     };
     std::mutex objects_mutex;
     std::map<Uuid, ObjectState> object_state;
+    struct PendingObjectUpdate {
+        std::uint64_t sequence = 0;
+        bool child = false;
+        bool full = false;
+        bool terse = false;
+        bool animations = false;
+        bool materials = false;
+    };
+    std::map<Uuid, PendingObjectUpdate> pending_object_updates;
+    std::map<Uuid, ViewerAgent> pending_avatar_motion;
+    std::optional<std::chrono::steady_clock::time_point> last_object_update;
     std::map<Uuid, ObjectAnimationState> object_animation_state;
     std::mutex object_crossings_mutex;
     struct ObjectCrossingArrival {
@@ -1453,7 +1465,27 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         std::future<std::optional<std::string>> result;
     };
     std::optional<DataserverLookup> dataserver_lookup;
+    struct CollisionFilter {
+        std::u16string name;
+        Uuid key;
+        bool accept;
+
+        bool allows(const script::LslDetector& detector) const {
+            if (name.empty())
+                return key.is_zero() ? accept : (key == detector.key) == accept;
+
+            const auto detected_name = framework::utf16(detector.name);
+            if (key.is_zero())
+                return framework::invariant_equals_ignore_case_utf16(name, detected_name) == accept;
+
+            // The managed simulator compares the concatenated name and UUID as one string.
+            const auto expected = name + framework::utf16(key.str());
+            const auto detected = detected_name + framework::utf16(detector.key.str());
+            return framework::invariant_equals_ignore_case_utf16(expected, detected) == accept;
+        }
+    };
     struct TaskPart {
+        std::optional<CollisionFilter> collision_filter;
         std::unique_ptr<TaskInventoryRegistry> inventory;
         std::unique_ptr<TaskInventoryFile> file;
         std::unique_ptr<PartScriptEvents> events;
@@ -1813,11 +1845,12 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             if (function == "osForceOtherSit" || function == "osAvatarPlayAnimation" ||
                 function == "osAvatarStopAnimation")
                 function_level = "VeryHigh";
-            else if (function == "osGetAgents" || function == "osSunGetParam")
+            else if (function == "osGetAgents" || function == "osSunGetParam" || function == "osGetHealRate")
                 function_level = "None";
             else if (function == "osGetAgentIP")
                 function_level = "Severe";
-            else if (function == "osSetRegionWaterHeight" || function == "osSetRegionSunSettings")
+            else if (function == "osSetRegionWaterHeight" || function == "osSetRegionSunSettings" ||
+                     function == "osSetHealRate")
                 function_level = "High";
             const auto required = std::find(levels.begin(), levels.end(), function_level);
             if (maximum >= required)
@@ -2029,6 +2062,14 @@ struct RegionRuntime::State : SceneAdmissionBackend,
     bool script_updates_open = false;
     std::deque<std::shared_ptr<ScriptUpdateJob>> script_update_jobs;
     std::map<Uuid, TaskPart> task_parts;
+    std::set<Uuid> scripted_terrain_contacts;
+    using ColliderSet = std::set<physics::PrimCollisionActor>;
+    using ObjectContacts = std::map<Uuid, ColliderSet>;
+    ObjectContacts scripted_object_contacts;
+    std::map<physics::PrimCollisionActor, ColliderSet> scripted_avatar_contacts;
+    std::set<std::pair<physics::PrimCollisionActor, physics::PrimCollisionActor>> previous_impacts;
+    std::map<Uuid, std::chrono::steady_clock::time_point> last_part_impact_sound;
+    std::map<Uuid, std::chrono::steady_clock::time_point> last_group_impact_sound;
     std::vector<TaskCommand> task_commands;
     std::vector<std::pair<ViewerAgent, WearableCacheItems>> pending_bake_restores;
     struct WearablesReply {
@@ -2389,6 +2430,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         update.position = a.position;
         update.velocity = a.velocity;
         update.rotation = a.rotation;
+        update.collision_plane = a.collision_plane;
         update.flying = a.flying;
         update.sitting = a.ground_sitting;
         if (a.seat) {
@@ -5580,7 +5622,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         const auto wearer = attachment_wearer(root);
         return wearer && can_see_avatar(*wearer, recipient);
     }
-    enum class FullObjectUpdate { Basic, Animation, Initial, Added, CacheMiss, Materials };
+    enum class FullObjectUpdate { Basic, Animation, Initial, CacheMiss, Materials, AnimationAndMaterials };
 
     void send_object(const SceneObject& object, const ViewerAgent& viewer,
                      FullObjectUpdate update = FullObjectUpdate::Basic) {
@@ -5813,7 +5855,22 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         viewers->transport().enqueue_if_session(viewer.circuit->agent_id, viewer.circuit->session_id,
                                                 std::move(packet), ThrottleOutPacketType::Task);
     }
+    bool record_terse_motion(const SceneObject& object, std::chrono::steady_clock::time_point now,
+                             bool filter) {
+        const ObjectTerseMotion current{script_world_position(object), object.velocity, object.acceleration,
+                                        object.angular_velocity, object.rotation};
+        std::lock_guard lock(objects_mutex);
+        auto& state = object_state[object.id];
+        if (filter && state.last_terse_time &&
+            !object_terse_changed(state.last_terse, current,
+                                  std::chrono::duration<double, std::milli>(now - *state.last_terse_time).count()))
+            return false;
+        state.last_terse = current;
+        state.last_terse_time = now;
+        return true;
+    }
     void broadcast_terse(const SceneObject& object) {
+        record_terse_motion(object, std::chrono::steady_clock::now(), false);
         for (const auto& viewer : viewers->agents())
             if (viewer.root && object_visible_to(object, viewer))
                 viewers->transport().enqueue_if_session(viewer.circuit->agent_id, viewer.circuit->session_id,
@@ -5899,6 +5956,9 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             world.set_return_at_edge(root->id, enabled);
         if (mask & status::sandbox)
             world.set_sandbox(id, root->id, enabled);
+        const auto axes = mask & (status::rotate_x | status::rotate_y | status::rotate_z);
+        if (axes)
+            world.set_rotation_axes(id, static_cast<std::uint8_t>(axes), enabled);
         if (!(mask & (status::physics | status::phantom)))
             return;
         bool physical = (root->flags & 1u) != 0;
@@ -5928,6 +5988,71 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         const auto factor = 10.f / std::sqrt(squared);
         position = {origin.x + delta.x * factor, origin.y + delta.y * factor, origin.z + delta.z * factor};
         return true;
+    }
+
+    bool script_edge_of_world(Vector3d position, Vector3d direction) const {
+        if (!policies.grid_region_at || (direction.x == 0. && direction.y == 0.))
+            return true;
+
+        const float width = static_cast<float>(descriptor.size_x);
+        const float height = static_cast<float>(descriptor.size_y);
+        const float x = std::clamp(static_cast<float>(position.x), .5f, width - .5f);
+        const float y = std::clamp(static_cast<float>(position.y), .5f, height - .5f);
+        float edge_x = x;
+        float edge_y = y;
+        if (direction.x == 0.) {
+            edge_y = direction.y > 0. ? height + 1.f : -1.f;
+        } else if (direction.y == 0.) {
+            edge_x = direction.x > 0. ? width + 1.f : -1.f;
+        } else {
+            float dx = static_cast<float>(direction.x);
+            float dy = static_cast<float>(direction.y);
+            const float length = std::sqrt(dx * dx + dy * dy);
+            dx /= length;
+            dy /= length;
+            const float tx = dx > 0.f ? (width + 1.f - x) / dx : -(x + 1.f) / dx;
+            const float ty = dy > 0.f ? (height + 1.f - y) / dy : -(y + 1.f) / dy;
+            const float distance = tx > ty ? ty : tx;
+            edge_x += distance * dx;
+            edge_y += distance * dy;
+        }
+        edge_x += static_cast<float>(descriptor.x);
+        edge_y += static_cast<float>(descriptor.y);
+        const auto fits_coordinate = [](float value) {
+            return value >= -2147483648.f && value < 2147483648.f;
+        };
+        if (!fits_coordinate(edge_x) || !fits_coordinate(edge_y))
+            return true;
+        return !policies.grid_region_at(static_cast<std::int32_t>(edge_x), static_cast<std::int32_t>(edge_y));
+    }
+
+    void set_script_object_rotation(Uuid id, script::LslRotation requested, bool local) {
+        const auto part = world.object(id);
+        if (!part)
+            return;
+        const bool is_root = part->is_attachment || !part->parent_id;
+        if (is_root && !part->is_attachment && (part->flags & 1u) && viewer_physics.load())
+            return;
+
+        Quaternion rotation{static_cast<float>(requested.x), static_cast<float>(requested.y),
+                            static_cast<float>(requested.z), static_cast<float>(requested.w)};
+        if (!local && !is_root) {
+            const auto root = world.object(part->parent_id);
+            if (!root)
+                return;
+            rotation = framework::sdk_multiply_quaternion(root->rotation, rotation);
+        }
+        const float length_squared = framework::sdk_quaternion_length_squared(rotation);
+        if (!std::isfinite(length_squared))
+            return;
+        if (length_squared > 1.e-6f) {
+            const float length = std::sqrt(length_squared);
+            rotation = {rotation.x / length, rotation.y / length, rotation.z / length, rotation.w / length};
+        } else {
+            rotation = {0, 0, 0, 1};
+        }
+        if (rotation != part->rotation)
+            world.patch_transform(id, {}, rotation, {});
     }
 
     bool set_script_object_position(Uuid id, Vector3d target, bool region_position) {
@@ -6397,7 +6522,15 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         offset.z += up_z * correction + 0.4f;
         return offset;
     }
-    void flush_objects() {
+    bool object_updates_due(std::chrono::steady_clock::time_point now) {
+        const auto interval = std::chrono::duration<double>(
+            static_cast<double>(policies.scene_frame_time) * std::max(1, policies.update_objects_every_n_frames));
+        if (last_object_update && now - *last_object_update < interval)
+            return false;
+        last_object_update = now;
+        return true;
+    }
+    void flush_objects(bool update_object_groups) {
         auto events = world.drain_events();
         if (!initial_legacy_material_scan_done) {
             initial_legacy_material_scan_done = true;
@@ -6445,7 +6578,6 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                     stand_from_seat(avatar, removed_part, removed_root);
             }
         }
-        std::set<Uuid> published_animations;
         std::map<std::uint32_t, Uuid> removed_hud_roots;
         for (const auto& event : events)
             if (event.kind == WorldEventKind::Removed && is_hud_attachment(event.object))
@@ -6455,51 +6587,129 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 for (auto& [id, script] : scripts)
                     if (script.item.parent == event.object.id && script.instance)
                         script.instance->post_event({"changed", {event.script_changes}, {}});
-            if (event.kind == WorldEventKind::TerseUpdated) {
-                broadcast_terse(event.object);
-                continue;
-            }
-            if (event.kind == WorldEventKind::AnimationsUpdated) {
-                if (published_animations.insert(event.object.id).second) {
-                    for (const auto& viewer : viewers->agents()) {
-                        if (viewer.root && object_visible_to(event.object, viewer) &&
-                            (terrain_cap_flags(*viewer.circuit) & Caps::ObjectAnim))
-                            send_object_animations(event.object, viewer);
-                    }
-                }
-                continue;
-            }
             if (event.kind == WorldEventKind::Updated || event.kind == WorldEventKind::MaterialsUpdated) {
                 std::lock_guard lock(objects_mutex);
                 ++object_state[event.object.id].crc;
             }
+            if (event.kind != WorldEventKind::Removed) {
+                auto& update = pending_object_updates[event.object.id];
+                if (!update.sequence)
+                    update.sequence = event.sequence;
+                update.child = event.object.parent_id && !event.object.is_attachment;
+                const bool added = event.kind == WorldEventKind::Added;
+                const bool edited = event.kind == WorldEventKind::Updated;
+                const bool materials = event.kind == WorldEventKind::MaterialsUpdated;
+                update.full |= added || edited || materials;
+                update.terse |= event.kind == WorldEventKind::TerseUpdated;
+                update.animations |= added || edited || event.kind == WorldEventKind::AnimationsUpdated;
+                update.materials |= added || materials;
+                continue;
+            }
+            pending_object_updates.erase(event.object.id);
             for (const auto& viewer : viewers->agents())
                 if (viewer.root) {
-                    if (event.kind != WorldEventKind::Removed) {
-                        auto update = FullObjectUpdate::Animation;
-                        if (event.kind == WorldEventKind::Added)
-                            update = FullObjectUpdate::Added;
-                        else if (event.kind == WorldEventKind::MaterialsUpdated)
-                            update = FullObjectUpdate::Materials;
-                        send_object(event.object, viewer, update);
-                    }
-                    else {
-                        const auto hud = removed_hud_roots.find(event.object.is_attachment
-                            ? event.object.local_id : event.object.parent_id);
-                        if (hud != removed_hud_roots.end() && viewer.circuit->agent_id != hud->second)
-                            continue;
-                        auto kill = lludp::make_packet("KillObject");
-                        kill.blocks["ObjectData"].push_back({{"ID", std::uint64_t(event.object.local_id)}});
-                        viewers->transport().enqueue_if_session(viewer.circuit->agent_id,
-                                                                viewer.circuit->session_id, std::move(kill),
-                                                                ThrottleOutPacketType::Task);
-                    }
+                    const auto hud = removed_hud_roots.find(event.object.is_attachment
+                        ? event.object.local_id : event.object.parent_id);
+                    if (hud != removed_hud_roots.end() && viewer.circuit->agent_id != hud->second)
+                        continue;
+                    auto kill = lludp::make_packet("KillObject");
+                    kill.blocks["ObjectData"].push_back({{"ID", std::uint64_t(event.object.local_id)}});
+                    viewers->transport().enqueue_if_session(viewer.circuit->agent_id,
+                                                            viewer.circuit->session_id, std::move(kill),
+                                                            ThrottleOutPacketType::Task);
                 }
-            if (event.kind == WorldEventKind::Removed) {
-                std::lock_guard lock(objects_mutex);
-                object_state.erase(event.object.id);
-                object_animation_state.erase(event.object.id);
+            std::lock_guard lock(objects_mutex);
+            object_state.erase(event.object.id);
+            object_animation_state.erase(event.object.id);
+        }
+        if (!update_object_groups) {
+            send_scheduled_motion({});
+            return;
+        }
+        std::vector<std::pair<Uuid, PendingObjectUpdate>> ordered;
+        ordered.reserve(pending_object_updates.size());
+        for (const auto& [id, update] : pending_object_updates)
+            ordered.emplace_back(id, update);
+        std::ranges::sort(ordered, [](const auto& left, const auto& right) {
+            return std::pair{left.second.child, left.second.sequence} <
+                   std::pair{right.second.child, right.second.sequence};
+        });
+        std::vector<SceneObject> terse_objects;
+        const auto now = std::chrono::steady_clock::now();
+        for (const auto& [id, update] : ordered) {
+            auto object = world.object(id);
+            if (!object)
+                continue;
+            if (!update.full) {
+                if (update.animations)
+                    for (const auto& viewer : viewers->agents())
+                        if (viewer.root && object_visible_to(*object, viewer) &&
+                            (terrain_cap_flags(*viewer.circuit) & Caps::ObjectAnim))
+                            send_object_animations(*object, viewer);
+                if (update.terse && record_terse_motion(*object, now, !update.animations))
+                    terse_objects.push_back(std::move(*object));
+                continue;
             }
+            const auto kind = update.materials
+                ? (update.animations ? FullObjectUpdate::AnimationAndMaterials : FullObjectUpdate::Materials)
+                : FullObjectUpdate::Animation;
+            if (update.terse)
+                record_terse_motion(*object, now, false);
+            for (const auto& viewer : viewers->agents())
+                if (viewer.root)
+                    send_object(*object, viewer, kind);
+        }
+        send_scheduled_motion(terse_objects);
+        pending_object_updates.clear();
+    }
+    void send_scheduled_motion(std::span<const SceneObject> objects) {
+        if (objects.empty() && pending_avatar_motion.empty())
+            return;
+        const auto started = std::chrono::steady_clock::now();
+        std::vector<const SceneObject*> visible_objects;
+        visible_objects.reserve(objects.size());
+        std::vector<AvatarUpdate> visible_avatars;
+        visible_avatars.reserve(pending_avatar_motion.size());
+        const auto recipients = viewers->agents();
+        for (const auto& viewer : recipients) {
+            if (!viewer.root)
+                continue;
+            visible_objects.clear();
+            visible_avatars.clear();
+            for (const auto& object : objects)
+                if (object_visible_to(object, viewer))
+                    visible_objects.push_back(&object);
+            for (const auto& [id, motion] : pending_avatar_motion) {
+                const auto current = viewers->agent(id);
+                if (!current || !current->root || current->seat || current->ground_sitting ||
+                    current->circuit->session_id != motion.circuit->session_id || !can_see_avatar(*current, viewer))
+                    continue;
+                AvatarUpdate avatar;
+                avatar.local_id = motion.local_id;
+                avatar.position = motion.position;
+                avatar.velocity = motion.velocity;
+                avatar.rotation = motion.rotation;
+                avatar.flying = motion.flying;
+                avatar.collision_plane = motion.collision_plane;
+                avatar.angular_velocity = motion.angular_velocity;
+                avatar.state = motion.agent_state;
+                visible_avatars.push_back(std::move(avatar));
+            }
+            for (auto& packet : object_terse_updates(visible_objects, descriptor.handle(), visible_avatars)) {
+                const auto& rows = packet.blocks.at("ObjectData");
+                const auto avatar_count = std::ranges::count_if(rows, [](const auto& row) {
+                    return std::get<std::vector<std::uint8_t>>(row.at("Data")).size() == 60;
+                });
+                if (viewers->transport().enqueue_if_session(viewer.circuit->agent_id, viewer.circuit->session_id,
+                                                           std::move(packet), ThrottleOutPacketType::Task))
+                    stats_agent_updates.fetch_add(avatar_count, std::memory_order_relaxed);
+            }
+        }
+        if (!pending_avatar_motion.empty()) {
+            const auto elapsed = std::chrono::steady_clock::now() - started;
+            stats_agent_ns.fetch_add(std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count(),
+                                     std::memory_order_relaxed);
+            pending_avatar_motion.clear();
         }
     }
     struct RegionProfileScene final : ProfileRequestScene {
@@ -7671,7 +7881,9 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                                    .count() /
                                100 +
                            621355968000000000LL;
-        object_state[id] = {static_cast<std::uint32_t>(ticks), selected};
+        auto& state = object_state[id];
+        state.crc = static_cast<std::uint32_t>(ticks);
+        state.selected = selected;
     }
     std::optional<Uuid> store_object_inventory_asset(
         const SceneObject& root, Uuid creator,
@@ -10205,6 +10417,22 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         if (world.set_linkset_data(root->id, {}) && changed)
             post_linkset_data_event(*root, 0, {}, {});
     }
+    static script::LslRotation script_object_rotation(const SceneObject& object, const SceneObject* root,
+                                                      std::optional<Quaternion> wearer_rotation,
+                                                      script::LslRotationSpace space) {
+        auto rotation = object.rotation;
+        if (space != script::LslRotationSpace::Local) {
+            const auto& root_part = root ? *root : object;
+            rotation = wearer_rotation.value_or(root_part.rotation);
+            if (root && space == script::LslRotationSpace::World) {
+                rotation = framework::sdk_multiply_quaternion(root->rotation, object.rotation);
+                if (wearer_rotation)
+                    rotation = framework::sdk_multiply_quaternion(*wearer_rotation, rotation);
+            }
+        }
+        return {rotation.x, rotation.y, rotation.z, rotation.w};
+    }
+
     script::LslContext script_context(const SceneObject& object, const services::InventoryItem& item) const {
         const auto root =
             !object.is_attachment && object.parent_id != 0 ? world.object(object.parent_id) : std::nullopt;
@@ -10218,22 +10446,13 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                     velocity = seat_root->velocity;
             }
         }
-        const auto as_script_rotation = [](const Quaternion& rotation) {
-            return script::LslRotation{rotation.x, rotation.y, rotation.z, rotation.w};
-        };
-        std::optional<script::LslRotation> root_rotation;
-        std::optional<script::LslRotation> world_rotation;
-        if (wearer) {
-            const auto wearer_rotation = wearer->mouselook_rotation.value_or(wearer->rotation);
-            root_rotation = as_script_rotation(wearer_rotation);
-            if (root) {
-                const auto part_rotation = framework::sdk_multiply_quaternion(root->rotation, object.rotation);
-                world_rotation = as_script_rotation(
-                    framework::sdk_multiply_quaternion(wearer_rotation, part_rotation));
-            }
-        } else if (root) {
-            root_rotation = as_script_rotation(root->rotation);
-        }
+        const auto wearer_rotation = wearer ? std::optional{wearer->mouselook_rotation.value_or(wearer->rotation)}
+                                            : std::nullopt;
+        const auto root_part_ptr = root ? &*root : nullptr;
+        const auto root_rotation = script_object_rotation(object, root_part_ptr, wearer_rotation,
+                                                          script::LslRotationSpace::Root);
+        const auto world_rotation = script_object_rotation(object, root_part_ptr, wearer_rotation,
+                                                           script::LslRotationSpace::World);
         const auto position = script_world_position(object);
         const auto root_position = root ? std::optional(wearer ? wearer->position : root->position)
                                         : std::nullopt;
@@ -10540,7 +10759,26 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 ? static_cast<float>(avatar->view_width) / static_cast<float>(avatar->view_height)
                 : 1.f;
             return script::LslCamera{avatar->camera_position, {rotation.x, rotation.y, rotation.z, rotation.w},
-                                     avatar->camera_fov, aspect};
+                                     avatar->camera_fov, aspect, avatar->camera_at_axis,
+                                     avatar->camera_left_axis, avatar->camera_up_axis};
+        };
+        host.agent_heal_rate = [weak](Uuid id) {
+            const auto state = weak.lock();
+            const auto avatar = state && state->viewers ? state->viewers->agent(id) : std::nullopt;
+            return avatar ? avatar->heal_rate : 0.f;
+        };
+        host.set_agent_heal_rate = [weak](Uuid id, float rate) {
+            const auto state = weak.lock();
+            const auto avatar = state && state->viewers ? state->viewers->agent(id) : std::nullopt;
+            if (avatar)
+                state->viewers->set_heal_rate(id, avatar->circuit->session_id, rate);
+        };
+        host.agent_health = [weak](Uuid id) -> std::optional<float> {
+            const auto state = weak.lock();
+            const auto avatar = state && state->viewers ? state->viewers->agent(id) : std::nullopt;
+            if (!avatar)
+                return std::nullopt;
+            return avatar->health;
         };
         host.agent_info = [weak](Uuid id) -> std::int32_t {
             const auto state = weak.lock();
@@ -10706,13 +10944,20 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 return avatar->active_group_id();
             return {};
         };
-        host.object_mass = [weak](Uuid id) {
+        const auto prim_mass = [](const State& state, Uuid part) {
+            const auto physics = state.viewer_physics.load();
+            if (!physics)
+                return 0.f;
+            const auto root = state.world.link_key(part, 1);
+            const auto properties = physics->mass_properties(root);
+            return properties ? properties->mass : 0.f;
+        };
+        host.object_mass = [weak, prim_mass](Uuid id) {
             const auto state = weak.lock();
             if (!state)
                 return 0.f;
-            // Prim parts currently have no native physics actors.
             if (state->world.object(id))
-                return 0.f;
+                return prim_mass(*state, id);
             const auto avatar = state->viewers->agent(id);
             if (!avatar)
                 return 0.f;
@@ -10720,7 +10965,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 return 1.f;
             return state->avatar_actor_mass(*avatar);
         };
-        host.script_mass = [weak](Uuid id) {
+        host.script_mass = [weak, prim_mass](Uuid id) {
             const auto state = weak.lock();
             if (!state)
                 return 0.f;
@@ -10732,7 +10977,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                     part = parent;
             }
             const auto wearer = state->attachment_wearer(*part);
-            return wearer ? state->avatar_actor_mass(*wearer) : 0.f;
+            return wearer ? state->avatar_actor_mass(*wearer) : prim_mass(*state, id);
         };
         host.prim_count = [weak](Uuid id, bool include_attachments) {
             if (const auto state = weak.lock()) {
@@ -10742,6 +10987,73 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 return prims;
             }
             return std::int32_t{0};
+        };
+        const auto read_material_entries = [](const SceneObject& part) {
+            framework::PrimitiveBaseShapeCore shape([](const std::string&) {});
+            shape.read_extra_params(std::make_shared<framework::ShapeByteArray>(part.extra_params));
+            return shape.render_materials ? shape.render_materials->entries : nullptr;
+        };
+        host.has_render_material = [weak, read_material_entries](Uuid id, std::int32_t face) {
+            const auto state = weak.lock();
+            const auto part = state ? state->world.object(id) : std::nullopt;
+            if (!part)
+                return false;
+            const auto entries = read_material_entries(*part);
+            if (!entries || entries->empty())
+                return false;
+            const auto sides = part->shape.face_count();
+            // The original ALL_SIDES scan never marks face zero.
+            if (face == -1)
+                return sides == 0;
+            if (face < 0 || face >= sides)
+                return false;
+            const auto material = std::ranges::find(*entries, face, &framework::ShapeMaterialEntry::te_index);
+            return material != entries->end() && !material->id.is_zero();
+        };
+        host.render_material = [weak, read_material_entries](Uuid id, std::int32_t face) {
+            using framework::PermissionMask;
+            const auto null_key = Uuid{}.str();
+            const auto state = weak.lock();
+            const auto part = state ? state->world.object(id) : std::nullopt;
+            if (!part || face < -1 || face >= part->shape.face_count())
+                return null_key;
+            const auto entries = read_material_entries(*part);
+            if (!entries)
+                return null_key;
+            const auto material = std::ranges::find(*entries, std::max(face, 0),
+                                                    &framework::ShapeMaterialEntry::te_index);
+            if (material == entries->end())
+                return null_key;
+
+            std::lock_guard lock(state->task_data_mutex);
+            const auto task = state->task_parts.find(id);
+            if (task != state->task_parts.end() && task->second.inventory)
+                for (const auto& item : task->second.inventory->items())
+                    if (item->type == static_cast<int>(framework::AssetType::Material) && item->asset_id == material->id)
+                        return item->name.value_or("");
+
+            const auto root = part->parent_id && !part->is_attachment ? state->world.object(part->parent_id) : part;
+            if (!root)
+                return null_key;
+            auto effective = root->owner_mask;
+            for (const auto& [part_id, child_task] : state->task_parts) {
+                if (!child_task.inventory)
+                    continue;
+                const auto child = state->world.object(part_id);
+                if (!child || (part_id != root->id && (child->is_attachment || child->parent_id != root->local_id)))
+                    continue;
+                for (const auto& item : child_task.inventory->items())
+                    if (item->inventory_type != 3)
+                        effective &= item->current_permissions;
+            }
+            constexpr auto move_modify = bits(PermissionMask::Move) | bits(PermissionMask::Modify);
+            constexpr auto copy_transfer = bits(PermissionMask::Copy) | bits(PermissionMask::Transfer);
+            constexpr auto all = bits(PermissionMask::All);
+            effective |= root->owner_mask & move_modify;
+            if (!(effective & copy_transfer))
+                effective |= bits(PermissionMask::Transfer);
+            effective &= root->base_mask | bits(PermissionMask::Move);
+            return (effective & all) == all ? material->id.str() : null_key;
         };
         host.texture_property = [weak](Uuid id, std::int32_t face,
                                       script::LslTextureProperty property) -> std::optional<script::LslValue> {
@@ -10845,6 +11157,93 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 state->world.set_prim_buoyancy(id, buoyancy);
             }
         };
+        host.look_at = [weak](Uuid id, std::optional<Quaternion> rotation, double strength,
+                              double damping, bool point_target) {
+            const auto state = weak.lock();
+            const auto part = state ? state->world.object(id) : std::nullopt;
+            if (!part)
+                return false;
+            if (!rotation) {
+                state->world.set_prim_look_at(id, {});
+                return false;
+            }
+            const auto root = part->parent_id && !part->is_attachment ? state->world.object(part->parent_id) : part;
+            if (!root)
+                return false;
+            const bool physical = !root->is_attachment && (root->flags & 1u);
+            if (!physical || strength == 0.) {
+                if (point_target && !physical && (strength <= 0. || damping <= 0.))
+                    return false;
+                if (!physical || part->id != root->id) {
+                    const auto q = *rotation;
+                    if (std::isfinite(q.x) && std::isfinite(q.y) && std::isfinite(q.z) && std::isfinite(q.w))
+                        state->world.patch_transform(id, {}, q, {});
+                }
+                return true;
+            }
+            state->world.set_prim_look_at(id, {*rotation, static_cast<float>(strength)});
+            return false;
+        };
+        host.move_to_target = [weak](Uuid id, framework::PrimMoveTarget target) {
+            const auto state = weak.lock();
+            if (!state || !std::isfinite(target.tau) ||
+                (target.active() && (!std::isfinite(target.position.x) || !std::isfinite(target.position.y) ||
+                                     !std::isfinite(target.position.z))))
+                return;
+            auto root = state->world.object(id);
+            if (root && !root->is_attachment && root->parent_id)
+                root = state->world.object(root->parent_id);
+            if (!root)
+                return;
+            if (!root->is_attachment) {
+                state->world.set_prim_move_target(id, target);
+                return;
+            }
+            const auto physics = state->viewer_physics.load();
+            auto wearer = state->attachment_wearer(*root);
+            if (!physics || !wearer || !wearer->root || wearer->seat)
+                return;
+            if (wearer->ground_sitting && target.active()) {
+                const auto agent = wearer->circuit->agent_id;
+                state->change_ground_sit(*wearer, false);
+                wearer = state->viewers->agent(agent);
+            }
+            if (wearer)
+                physics->move_to_target(*wearer, target);
+        };
+        host.ground_repel = [weak](Uuid id, double height, bool water, float tau) {
+            const auto state = weak.lock();
+            if (!state)
+                return;
+            const auto part = state->world.object(id);
+            const auto physics = state->viewer_physics.load();
+            if (!part || !physics || part->is_attachment)
+                return;
+            const auto root = part->parent_id ? state->world.object(part->parent_id) : part;
+            if (!root || root->is_attachment || !physics->mass_properties(root->id, id))
+                return;
+            const auto position = state->script_world_position(*part);
+            const float ground = state->world.terrain().height_at(position.x, position.y);
+            const float reference = water ? std::max(ground, state->water_height.load()) : ground;
+            state->world.set_prim_hover(id, {static_cast<float>(height + reference), tau, water});
+        };
+        host.set_hover = [weak](Uuid id, framework::PrimHover hover) {
+            const auto state = weak.lock();
+            if (!state || !std::isfinite(hover.height) || !std::isfinite(hover.tau))
+                return;
+            auto root = state->world.object(id);
+            if (root && !root->is_attachment && root->parent_id)
+                root = state->world.object(root->parent_id);
+            if (!root)
+                return;
+            if (root->is_attachment) {
+                const auto physics = state->viewer_physics.load();
+                if (const auto wearer = state->attachment_wearer(*root); wearer && physics)
+                    physics->set_hover(*wearer, hover);
+            } else {
+                state->world.set_prim_hover(id, hover);
+            }
+        };
         host.set_force = [weak](Uuid id, Vector3 force) {
             if (const auto state = weak.lock())
                 state->world.set_prim_force(id, force);
@@ -10860,6 +11259,51 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         host.get_torque = [weak](Uuid id) {
             const auto state = weak.lock();
             return state ? state->world.prim_torque(id) : Vector3{};
+        };
+        host.set_velocity = [weak](Uuid id, Vector3 velocity, bool local, bool angular) {
+            const auto state = weak.lock();
+            const auto part = state ? state->world.object(id) : std::nullopt;
+            if (!part || part->is_attachment)
+                return;
+            const auto root = part->parent_id ? state->world.object(part->parent_id) : part;
+            if (!root)
+                return;
+            std::lock_guard lock(state->object_crossings_mutex);
+            if (!state->object_crossings.contains(root->id))
+                state->world.set_prim_velocity(id, velocity, local, angular);
+        };
+        host.apply_impulse = [weak](Uuid id, Vector3 impulse, bool local, bool angular) {
+            const auto state = weak.lock();
+            const auto physics = state ? state->viewer_physics.load() : nullptr;
+            const auto part = physics ? state->world.object(id) : std::nullopt;
+            if (!part || !std::isfinite(impulse.x) || !std::isfinite(impulse.y) ||
+                !std::isfinite(impulse.z))
+                return;
+            const auto root = part->parent_id && !part->is_attachment ? state->world.object(part->parent_id) : part;
+            if (!root)
+                return;
+            if (!angular) {
+                const float length = std::hypot(impulse.x, impulse.y, impulse.z);
+                if (length > 20000.f) {
+                    const float scale = 20000.f / length;
+                    impulse = {impulse.x * scale, impulse.y * scale, impulse.z * scale};
+                }
+            }
+            if (local) {
+                const auto& source = angular ? *root : *part;
+                const auto rotation = source.parent_id
+                    ? framework::sdk_multiply_quaternion(root->rotation, source.rotation) : source.rotation;
+                impulse = framework::sdk_rotate_vector(impulse, rotation);
+            }
+            if (root->is_attachment) {
+                if (!angular)
+                    if (const auto wearer = state->attachment_wearer(*root))
+                        physics->push_avatar(*wearer, impulse);
+                return;
+            }
+            std::lock_guard lock(state->object_crossings_mutex);
+            if ((root->flags & 1u) && !state->object_crossings.contains(root->id))
+                physics->apply_prim_impulse(root->id, impulse, angular);
         };
         host.set_texture_animation = [weak](Uuid id, const std::vector<std::uint8_t>& bytes) {
             if (const auto state = weak.lock())
@@ -11213,6 +11657,16 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             else
                 state->change_ground_sit(*avatar, false);
         };
+        host.set_object_permission = [weak](Uuid id, std::int32_t selector, std::int32_t value) {
+            const auto state = weak.lock();
+            if (!state || !state->policies.allow_god_functions)
+                return;
+            const auto part = state->world.object(id);
+            if (!part || part->owner.is_zero() ||
+                (!state->policies.bypass_object_permissions && state->god_rights_level(part->owner) < 200))
+                return;
+            state->world.set_script_permission_mask(id, selector, value);
+        };
         host.object_permission = [weak](Uuid id, std::int32_t selector) -> std::optional<std::uint32_t> {
             if (const auto state = weak.lock())
                 if (const auto part = state->world.object(id)) {
@@ -11242,6 +11696,47 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             if (const auto state = weak.lock())
                 return state->world.geometric_center(id);
             return Vector3{};
+        };
+        host.set_inertia = [weak](Uuid id, std::optional<framework::PrimInertiaOverride> inertia) {
+            if (const auto state = weak.lock())
+                state->world.set_prim_inertia(id, std::move(inertia));
+        };
+        host.inertia_data = [weak](Uuid id) -> std::optional<framework::PrimInertiaData> {
+            const auto state = weak.lock();
+            if (!state)
+                return {};
+            const auto root = state->world.object(state->world.link_key(id, 1));
+            if (!root)
+                return {};
+            physics::UbodeMassProperties properties;
+            if (const auto physics = state->viewer_physics.load()) {
+                if (root->flags & 1u)
+                    if (const auto inertia = physics->inertia_data(root->id, root->inertia_override))
+                        return inertia;
+                if (const auto mass = physics->mass_properties(root->id))
+                    properties = *mass;
+            }
+            const auto position = state->script_world_position(*root);
+            const Vector3 relative{properties.center.x - position.x, properties.center.y - position.y,
+                                   properties.center.z - position.z};
+            const auto [x, y, z, w] = root->rotation;
+            return framework::PrimInertiaData{properties.mass,
+                framework::sdk_rotate_vector(relative, {-x, -y, -z, w}), {}, {}};
+        };
+        host.center_of_mass = [weak](Uuid id) {
+            const auto state = weak.lock();
+            if (!state)
+                return Vector3{};
+            const auto part = state->world.object(id);
+            if (!part)
+                return Vector3{};
+            const auto root = state->world.link_key(id, 1);
+            const auto physics = state->viewer_physics.load();
+            const auto properties = physics ? physics->mass_properties(root, id == root ? Uuid{} : id)
+                                            : std::nullopt;
+            if (properties)
+                return properties->center;
+            return id == root ? Vector3{} : state->script_world_position(*part);
         };
         host.link_number = [weak](Uuid id) {
             if (const auto state = weak.lock())
@@ -11299,6 +11794,124 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             if (const auto object = state->world.object(id))
                 return state->script_world_position(*object);
             return {};
+        };
+        host.object_rotation = [weak](Uuid id, script::LslRotationSpace space) -> std::optional<script::LslRotation> {
+            const auto state = weak.lock();
+            if (!state)
+                return {};
+            const auto part = state->world.object(id);
+            if (!part)
+                return {};
+            const auto root = part->parent_id && !part->is_attachment
+                ? state->world.object(part->parent_id) : std::nullopt;
+            const auto wearer = space == script::LslRotationSpace::Local
+                ? std::nullopt : state->attachment_wearer(root ? *root : *part);
+            const auto wearer_rotation = wearer ? std::optional{wearer->mouselook_rotation.value_or(wearer->rotation)}
+                                                : std::nullopt;
+            return script_object_rotation(*part, root ? &*root : nullptr, wearer_rotation, space);
+        };
+        host.dialog_owner_name = [weak](Uuid part) -> std::optional<script::LslAvatarName> {
+            const auto state = weak.lock();
+            if (!state)
+                return {};
+            const auto object = state->world.object(part);
+            if (!object)
+                return {};
+            const auto root = object->parent_id && !object->is_attachment
+                                  ? state->world.object(object->parent_id) : object;
+            if (!root)
+                return {};
+            if (root->owner == root->group) {
+                if (state->policies.group_record_name)
+                    if (const auto name = state->policies.group_record_name(root->owner))
+                        return script::LslAvatarName{"", *name, ""};
+                return {};
+            }
+            if (state->viewers)
+                if (const auto avatar = state->viewers->agent(root->owner))
+                    return script::LslAvatarName{avatar->circuit->first_name.value_or(""),
+                                                 avatar->circuit->last_name.value_or(""), ""};
+            if (state->policies.script_account)
+                if (const auto account = state->policies.script_account(root->owner))
+                    return script::LslAvatarName{account->first_name.value_or(""),
+                                                 account->last_name.value_or(""), ""};
+            return {};
+        };
+        host.dialog = [weak](Uuid part, Uuid target, const script::LslAvatarName& owner,
+                             const std::string& message, const std::vector<std::string>& labels,
+                             std::int32_t channel, bool text_box) {
+            const auto state = weak.lock();
+            if (!state || !state->viewers)
+                return;
+            const auto avatar = state->viewers->agent(target);
+            const auto object = state->world.object(part);
+            if (!avatar || !object)
+                return;
+
+            static const Uuid image("00000000-0000-2222-3333-100000001000");
+            auto packet = lludp::make_packet("ScriptDialog");
+            auto& data = packet.block("Data");
+            data["ObjectID"] = object->id;
+            data["FirstName"] = profile_string_bytes(framework::utf16_replacing(owner.first), 255);
+            data["LastName"] = profile_string_bytes(framework::utf16_replacing(owner.last), 255);
+            data["ObjectName"] = profile_string_bytes(framework::utf16_replacing(object->name), 255);
+            data["Message"] = profile_string_bytes(framework::utf16_replacing(message), 512);
+            data["ChatChannel"] = static_cast<std::int64_t>(channel);
+            data["ImageID"] = text_box ? Uuid{} : image;
+            for (const auto& label : labels)
+                packet.blocks["Buttons"].push_back(
+                    {{"ButtonLabel", profile_string_bytes(framework::utf16_replacing(label), 24)}});
+            packet.blocks["OwnerData"].push_back({{"OwnerID", object->owner}});
+            state->viewers->transport().enqueue_if_session(target, avatar->circuit->session_id, std::move(packet),
+                                                           ThrottleOutPacketType::Task);
+        };
+        host.load_url = [weak](Uuid part, Uuid target, const std::string& message, const std::string& url) {
+            const auto state = weak.lock();
+            if (!state || !state->viewers)
+                return;
+            const auto avatar = state->viewers->agent(target);
+            const auto object = state->world.object(part);
+            if (!avatar || !object)
+                return;
+            auto packet = lludp::make_packet("LoadURL");
+            auto& data = packet.block("Data");
+            data["ObjectName"] = profile_string_bytes(framework::utf16_replacing(object->name), 255);
+            data["ObjectID"] = object->id;
+            data["OwnerID"] = object->owner;
+            data["OwnerIsGroup"] = false;
+            data["Message"] = profile_string_bytes(framework::utf16_replacing(message), 255);
+            data["URL"] = profile_string_bytes(framework::utf16_replacing(url), 255);
+            state->viewers->transport().enqueue_if_session(target, avatar->circuit->session_id, std::move(packet),
+                                                           ThrottleOutPacketType::Task);
+        };
+        host.map_destination = [weak](Uuid part, Uuid target, const std::string& name, Vector3d position,
+                                      std::uint32_t options) {
+            const auto state = weak.lock();
+            if (!state || !state->viewers)
+                return;
+            const auto avatar = state->viewers->agent(target);
+            const auto object = state->world.object(part);
+            if (!avatar || !object)
+                return;
+            auto packet = lludp::make_packet("ScriptTeleportRequest");
+            packet.zerocoded = true;
+            auto& data = packet.block("Data");
+            data["ObjectName"] = profile_string_bytes(framework::utf16_replacing(object->name), 255);
+            data["SimName"] = profile_string_bytes(framework::utf16_replacing(name), 255);
+            data["SimPosition"] = std::vector<double>{position.x, position.y, position.z};
+            data["LookAt"] = std::vector<double>{0., 0., 0.};
+            if (options != 3)
+                packet.blocks["Options"].push_back({{"Flags", std::uint64_t(options)}});
+            state->viewers->transport().enqueue_if_session(target, avatar->circuit->session_id, std::move(packet),
+                                                           ThrottleOutPacketType::Task);
+        };
+        host.edge_of_world = [weak](Vector3d position, Vector3d direction) {
+            const auto state = weak.lock();
+            return !state || state->script_edge_of_world(position, direction);
+        };
+        host.set_object_rotation = [weak](Uuid id, script::LslRotation rotation, bool local) {
+            if (const auto state = weak.lock())
+                state->set_script_object_rotation(id, rotation, local);
         };
         host.set_object_position = [weak](Uuid id, Vector3d position, bool region_position) {
             const auto state = weak.lock();
@@ -11502,6 +12115,18 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         host.region_agent_names = [weak] {
             const auto state = weak.lock();
             return state && state->viewers ? state->viewers->root_agent_names() : std::vector<std::string>{};
+        };
+        host.remove_inventory = [weak](Uuid part, Uuid script, const std::string& name) {
+            const auto state = weak.lock();
+            if (!state)
+                return false;
+            const auto item = state->script_inventory_item(part, name);
+            if (!item)
+                return false;
+            if (item->item_id == script)
+                return true;
+            state->task_inventory(part).remove(item->item_id);
+            return false;
         };
         host.inventory_names = [weak](Uuid id, std::int32_t type) {
             std::vector<std::string> names;
@@ -11847,6 +12472,26 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             }
             return result;
         };
+        host.set_inventory_permission = [weak, inventory_item](Uuid id, const std::string& name,
+                                                               std::int32_t selector, std::int32_t value) {
+            const auto state = weak.lock();
+            if (!state || !state->policies.allow_god_functions)
+                return;
+            const auto part = state->world.object(id);
+            if (!part || part->owner.is_zero() ||
+                (!state->policies.bypass_object_permissions && state->god_rights_level(part->owner) < 200))
+                return;
+            const auto item = inventory_item(id, name);
+            if (!item)
+                return;
+
+            if (!framework::set_lsl_permission_mask(
+                    {&item->base_permissions, &item->current_permissions, &item->group_permissions,
+                     &item->everyone_permissions, &item->next_permissions}, selector, value))
+                return;
+            state->task_inventory(id).inventory_changed(true);
+            state->refresh_script_flags(id);
+        };
         host.inventory_permission = [inventory_item](Uuid id, const std::string& name,
                                                      std::int32_t selector) -> std::optional<std::uint32_t> {
             const auto item = inventory_item(id, name);
@@ -11882,6 +12527,69 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             if (const auto state = weak.lock())
                 state->world.set_pass_touches(id, pass);
         };
+        host.set_pass_collisions = [weak](Uuid id, bool pass) {
+            if (const auto state = weak.lock())
+                state->world.set_pass_collisions(id, pass);
+        };
+        host.set_collision_filter = [weak](Uuid part, std::u16string name, Uuid key, bool accept) {
+            if (const auto state = weak.lock()) {
+                std::lock_guard lock(state->task_data_mutex);
+                const auto entry = state->task_parts.find(part);
+                if (entry != state->task_parts.end())
+                    entry->second.collision_filter = CollisionFilter{std::move(name), key, accept};
+            }
+        };
+        host.eject_from_land = [weak](Uuid part, Uuid agent) {
+            const auto state = weak.lock();
+            const auto viewer = state && state->viewers ? state->viewers->agent(agent) : std::nullopt;
+            if (!viewer)
+                return true;
+            const auto parcel = state->policies.script_parcel_at
+                                    ? state->policies.script_parcel_at(viewer->position) : nullptr;
+            if (!parcel)
+                return false;
+            const auto object = state->world.object(part);
+            if (object && parcel->owner == object->owner &&
+                state->relocate_parcel_viewer(*viewer, state->nearest_allowed_parcel_position(*viewer, parcel->id)))
+                state->send_parcel_access_alert(*viewer, "You have been ejected from this land");
+            return true;
+        };
+        host.teleport_agent_home = [weak](Uuid part, Uuid agent) {
+            const auto state = weak.lock();
+            const auto viewer = state && state->viewers ? state->viewers->agent(agent) : std::nullopt;
+            if (!viewer || !viewer->root || viewer->logout_requested ||
+                state->agent_transfer_pending(viewer->circuit->session_id))
+                return false;
+            if (!viewer->circuit->verified_foreign_login && state->policies.script_account) {
+                if (const auto account = state->policies.script_account(agent); account && account->user_level >= 200)
+                    return false;
+            }
+            const auto object = state->world.object(part);
+            const auto parcel = state->policies.script_parcel_at
+                                    ? state->policies.script_parcel_at(viewer->position) : nullptr;
+            if (object && parcel && parcel->owner == object->owner)
+                state->send_viewer_home(*viewer, false);
+            return true;
+        };
+        host.set_damage = [weak](Uuid id, float damage) {
+            if (const auto state = weak.lock())
+                state->world.set_linkset_damage(id, damage);
+        };
+        host.set_volume_detect = [weak](Uuid id, bool enabled, bool only_part) {
+            const auto state = weak.lock();
+            if (!state)
+                return;
+            const auto root = state->world.object(state->world.link_key(id, 1));
+            if (!root || (only_part && root->is_attachment))
+                return;
+            if (only_part && id != root->id) {
+                state->world.set_part_volume_detect(id, enabled);
+                return;
+            }
+            const bool physical = (root->flags & 1u) && state->can_enable_linkset_physics(*root);
+            state->world.set_group_flags(root->id, physical, (root->flags & 0x20000000u) != 0,
+                                         (root->flags & 0x400u) != 0, enabled);
+        };
         host.set_object_status = [weak](Uuid id, std::int32_t mask, bool enabled) {
             if (const auto state = weak.lock())
                 state->set_script_object_status(id, mask, enabled);
@@ -11907,6 +12615,10 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             switch (requested_status) {
             case status::physics:
                 return (root->flags & 1u) != 0;
+            case status::rotate_x:
+            case status::rotate_y:
+            case status::rotate_z:
+                return !(root->rotation_axis_locks & requested_status);
             case status::phantom:
                 return (root->flags & 0x400u) != 0;
             case status::die_at_edge:
@@ -11985,6 +12697,41 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                     state->script_events(root).aggregate();
                 }
         };
+        host.object_scale = [weak](Uuid id) -> std::optional<Vector3> {
+            if (const auto state = weak.lock())
+                if (const auto part = state->world.object(id))
+                    return part->scale;
+            return {};
+        };
+        host.group_scale_limit = [weak](Uuid id, bool maximum) -> double {
+            const auto state = weak.lock();
+            if (!state)
+                return 1.;
+            const auto root = state->world.object(state->world.link_key(id, 1));
+            if (!root)
+                return 1.;
+            std::lock_guard lock(state->object_crossings_mutex);
+            if (state->object_crossings.contains(root->id))
+                return 1.;
+            const bool physical = !root->is_attachment && (root->flags & 1u) && state->viewer_physics.load();
+            const float limit = physical
+                ? (maximum ? state->policies.physical_prim_max : state->policies.physical_prim_min)
+                : (maximum ? state->policies.nonphysical_prim_max : state->policies.nonphysical_prim_min);
+            return state->world.group_scale_limit(root->id, limit, maximum);
+        };
+        host.scale_group = [weak](Uuid id, double factor) {
+            const auto state = weak.lock();
+            if (!state)
+                return false;
+            const auto root = state->world.object(state->world.link_key(id, 1));
+            if (!root || (!root->is_attachment && (root->flags & 1u) && state->viewer_physics.load()))
+                return false;
+            std::lock_guard lock(state->object_crossings_mutex);
+            if (state->object_crossings.contains(root->id))
+                return false;
+            return state->world.resize_group_uniform(root->id, factor, state->policies.nonphysical_prim_min,
+                                                     state->policies.nonphysical_prim_max);
+        };
         host.set_object_scale = [weak](Uuid id, Vector3 requested) -> std::optional<Vector3> {
             const auto state = weak.lock();
             if (!state)
@@ -12035,15 +12782,25 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             if (const auto state = weak.lock())
                 state->world.set_pay_prices(id, prices);
         };
-        host.set_collision_sound = [weak, resolve_sound](Uuid id, const std::string& name, float volume) {
-            if (const auto state = weak.lock()) {
-                const auto asset = resolve_sound(id, name);
-                const auto object = state->world.object(id);
-                if (object)
-                    state->world.set_collision_sound(
-                        id, asset.is_zero() ? Uuid("ffffffff-ffff-ffff-ffff-ffffffffffff") : asset,
-                        !name.empty() && asset.is_zero() ? object->collision_sound_volume : volume);
+        host.set_collision_sound = [weak, resolve_sound](Uuid id, const std::string& name, double volume, bool ossl) {
+            const auto state = weak.lock();
+            if (!state)
+                return;
+            const auto object = state->world.object(id);
+            if (!object)
+                return;
+
+            static const Uuid disabled("ffffffff-ffff-ffff-ffff-ffffffffffff");
+            if (ossl && name.empty()) {
+                const bool override_volume = volume != 0.0 && volume != 1.0;
+                const auto asset = volume == 1.0 ? Uuid{} : disabled;
+                state->world.set_collision_sound(id, asset, static_cast<float>(volume), override_volume);
+                return;
             }
+            const auto asset = resolve_sound(id, name);
+            const float gain = !name.empty() && asset.is_zero() ? object->collision_sound_volume
+                                                               : static_cast<float>(volume);
+            state->world.set_collision_sound(id, asset.is_zero() ? disabled : asset, gain);
         };
         host.play_sound = [weak, resolve_sound](Uuid id, const std::string& name, double gain,
                                                 std::uint8_t flags, bool triggered,
@@ -17960,6 +18717,22 @@ struct RegionRuntime::State : SceneAdmissionBackend,
     mutable std::uint64_t cached_snapshot_object_revision = 0;
     void packet(const ViewerAgent& a, const lludp::Packet& p) {
         const auto& packet_name = p.spec->name;
+        if (packet_name == "ScriptDialogReply") {
+            const auto& identity = p.block("AgentData");
+            if (!a.root || std::get<Uuid>(identity.at("AgentID")) != a.circuit->agent_id ||
+                std::get<Uuid>(identity.at("SessionID")) != a.circuit->session_id)
+                return;
+
+            const auto& data = p.block("Data");
+            const auto channel = static_cast<std::int32_t>(std::get<std::int64_t>(data.at("ChatChannel")));
+            auto label = framework::utf8(framework::sdk_bytes_to_string(
+                std::get<std::vector<std::uint8_t>>(data.at("ButtonLabel"))));
+            // The original server delivers the selected label as region-wide chat.
+            std::lock_guard lock(commands_mutex);
+            viewer_script_chat.push_back({script::LslChatType::Region, channel, a.circuit->name(),
+                                          a.circuit->agent_id, std::move(label), a.position});
+            return;
+        }
         if (packet_name == "ChatFromViewer") {
             const auto& identity = p.blocks.at("AgentData").front();
             if (!a.root || std::get<Uuid>(identity.at("AgentID")) != a.circuit->agent_id ||
@@ -18416,9 +19189,9 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             }
             const bool requested_physics = std::get<bool>(data.at("UsePhysics"));
             const bool physical = requested_physics && can_enable_linkset_physics(*root);
-            world.set_group_flags(root->id, physical,
-                                  std::get<bool>(data.at("IsTemporary")),
-                                  std::get<bool>(data.at("IsPhantom")));
+            const bool phantom = std::get<bool>(data.at("IsPhantom"));
+            const bool detect = phantom && (root->flags & prim_flag_volume_detect);
+            world.set_group_flags(root->id, physical, std::get<bool>(data.at("IsTemporary")), phantom, detect);
             if (requested_physics && !physical) {
                 alert(a.circuit->agent_id, policies.physical_linkset_capacity > 0
                     ? "Object physics cancelled because it exceeds limits for physical prims, either size or number of primswith shape type not set to None"
@@ -20006,7 +20779,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             viewers->transport().send(recipient.circuit->agent_id, packet);
         }
     }
-    void send_land_stats(const LandStatsRequest& request, std::uint32_t type) {
+    void send_land_stats(const LandStatsRequest& request, std::uint32_t type, bool empty = false) {
         constexpr std::uint32_t filter_by_parcel_id = 1u;
         constexpr std::uint32_t filter_by_owner_name = 2u;
         constexpr std::uint32_t filter_by_object_name = 4u;
@@ -20025,10 +20798,12 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             std::string owner;
             std::string parcel;
             std::int32_t url_count;
+            std::chrono::system_clock::time_point rezzed_at;
         };
         std::vector<Row> rows;
-        if (type == 0) {
-            std::map<Uuid, std::int32_t> url_counts;
+        std::map<Uuid, std::int32_t> url_counts;
+        std::vector<std::pair<Uuid, ScriptStats>> ranked;
+        if (!empty && type == 0) {
             {
                 std::lock_guard lock(script_http_mutex);
                 for (const auto& [id, url] : script_urls)
@@ -20050,14 +20825,24 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                     stats.heap_bytes += heap_bytes;
                 }
             }
-            std::vector<std::pair<Uuid, ScriptStats>> ranked(scores.begin(), scores.end());
+            ranked.assign(scores.begin(), scores.end());
             std::stable_sort(ranked.begin(), ranked.end(), [](const auto& left, const auto& right) {
                 return left.second.time_ms > right.second.time_ms;
             });
+        } else if (!empty && type == 1) {
+            if (const auto physics = viewer_physics.load()) {
+                for (const auto& [id, score] : physics->top_colliders()) {
+                    if (score >= 0.001f)
+                        ranked.emplace_back(id, ScriptStats{score, 0});
+                }
+            }
+        }
+        if (!ranked.empty()) {
             const auto lower = [](std::string_view text) {
                 return framework::utf8(framework::invariant_lower_utf16(framework::utf16_replacing(text)));
             };
-            const auto name_filter_flags = filter_by_owner_name | filter_by_object_name | filter_by_parcel_name;
+            const auto name_filter_flags = filter_by_object_name | filter_by_parcel_name |
+                                           (type == 0 ? filter_by_owner_name : 0u);
             std::string filter;
             if ((request.flags & name_filter_flags) && !framework::trim_utf8(request.filter).empty())
                 filter = lower(request.filter);
@@ -20067,9 +20852,17 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                     filter.replace(dot, 1, dot + 1 == filter.size() ? "" : " ");
             }
             for (const auto& [id, stats] : ranked) {
-                const auto object = world.object(id);
-                if (!object)
+                const auto part = world.object(id);
+                if (!part)
                     continue;
+                const auto object = type == 1 && part->parent_id ? world.object(part->parent_id) : part;
+                if (!object || (type == 1 && object->is_attachment))
+                    continue;
+                if (type == 1) {
+                    std::lock_guard lock(object_crossings_mutex);
+                    if (object_crossings.contains(object->id))
+                        continue;
+                }
                 const auto position = script_world_position(*object);
                 const auto parcel = parcel_at_truncated_position(position);
                 if ((request.flags & filter_by_parcel_id) && (!parcel || parcel->local_id != request.parcel))
@@ -20090,7 +20883,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                     if (lower(name).find(filter) == std::string::npos)
                         continue;
                 }
-                rows.push_back({*object, position, stats, owner_name, parcel_name, url_counts[id]});
+                rows.push_back({*object, position, stats, owner_name, parcel_name, url_counts[id], part->rezzed_at});
                 if (rows.size() == report_limit)
                     break;
             }
@@ -20123,7 +20916,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 std::vector<Value> reports, extended;
                 for (const auto& row : rows) {
                     const auto rez_seconds = std::chrono::duration_cast<std::chrono::seconds>(
-                        row.object.rezzed_at.time_since_epoch());
+                        row.rezzed_at.time_since_epoch());
                     reports.push_back(Value::object({
                         {"LocationX", real(row.position.x)}, {"LocationY", real(row.position.y)},
                         {"LocationZ", real(row.position.z)}, {"OwnerName", row.owner},
@@ -20176,12 +20969,638 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             if (!viewer || viewer->circuit->session_id != request.session)
                 continue;
             try {
+                // The managed collider handler sends an empty reply before continuing the query.
+                if (request.type == 1 && !can_edit_estate_region(*viewer))
+                    send_land_stats(request, 1, true);
                 send_land_stats(request, request.type);
                 if (request.type > 1)
                     send_land_stats(request, 0);
             } catch (const std::exception& failure) {
                 error(std::string("Land statistics failed: ") + failure.what());
             }
+        }
+    }
+
+    ObjectContacts resolve_object_contacts(const physics::PrimCollisionReport& report) {
+        ObjectContacts contacts;
+        for (const auto& [recipient, collider] : report.objects) {
+            if (collider.avatar_local_id) {
+                contacts[recipient].insert(collider);
+                continue;
+            }
+            const auto part = world.object(collider.id);
+            if (!part)
+                continue;
+            const auto root = part->parent_id ? world.object(part->parent_id) : part;
+            if (root && !root->is_attachment)
+                contacts[recipient].insert(physics::PrimCollisionActor{root->id});
+        }
+        return contacts;
+    }
+
+    std::optional<script::LslDetector> detect_colliding_avatar(const physics::PrimCollisionActor& collider,
+                                                              std::int32_t link_number) const {
+        const auto avatar = viewers->agent(collider.id);
+        if (!avatar || !avatar->root || avatar->local_id != collider.avatar_local_id)
+            return {};
+
+        script::LslDetector detector;
+        detector.key = collider.id;
+        detector.owner = collider.id;
+        detector.name = avatar->circuit->name();
+        detector.group = avatar->active_group_id();
+        detector.position = {avatar->position.x, avatar->position.y, avatar->position.z};
+        detector.velocity = {avatar->velocity.x, avatar->velocity.y, avatar->velocity.z};
+        detector.rotation = {avatar->rotation.x, avatar->rotation.y, avatar->rotation.z, avatar->rotation.w};
+        detector.link_number = link_number;
+        detector.type = 1; // AGENT
+        if (avatar->seat)
+            detector.type |= 4; // PASSIVE
+        else if (avatar->velocity != Vector3{})
+            detector.type |= 2; // ACTIVE
+        return detector;
+    }
+
+    script::LslEvent make_object_collision_event(const char* name, std::int32_t link_number,
+                                                 const ColliderSet& colliders) {
+        script::LslEvent event{name, {}, {}};
+        for (const auto& collider : colliders) {
+            if (collider.avatar_local_id) {
+                if (auto detector = detect_colliding_avatar(collider, link_number))
+                    event.detectors.push_back(std::move(*detector));
+                continue;
+            }
+
+            const auto id = collider.id;
+            const auto object = world.object(id);
+            if (!object)
+                continue;
+
+            script::LslDetector detector;
+            detector.key = id;
+            detector.name = object->name;
+            detector.owner = object->owner;
+            detector.group = object->group;
+            const auto [x, y, z] = object->position;
+            detector.position = {x, y, z};
+            const auto [vx, vy, vz] = object->velocity;
+            detector.velocity = {vx, vy, vz};
+            const auto [rx, ry, rz, rw] = object->rotation;
+            detector.rotation = {rx, ry, rz, rw};
+            detector.link_number = link_number;
+
+            constexpr std::uint32_t scripted_flag = 0x40;
+            constexpr std::uint32_t physics_flag = 0x01;
+            constexpr std::int32_t active = 2;
+            constexpr std::int32_t passive = 4;
+            constexpr std::int32_t scripted = 8;
+            detector.type = object->velocity == Vector3{} ? passive : active;
+            bool has_scripts = (object->flags & scripted_flag) != 0;
+            const auto part_count = world.prim_count(id, false);
+            for (int link = 2; link <= part_count && !has_scripts; ++link) {
+                const auto child = world.object(world.link_key(id, link));
+                has_scripts = child && (child->flags & scripted_flag);
+            }
+            if (has_scripts) {
+                if (object->flags & physics_flag)
+                    detector.type = active;
+                detector.type |= scripted;
+            }
+            event.detectors.push_back(std::move(detector));
+        }
+        event.arguments.emplace_back(static_cast<std::int32_t>(event.detectors.size()));
+        return event;
+    }
+
+    enum class ImpactSound { Disabled, Default, DefaultWithVolume, Custom };
+
+    static ImpactSound impact_sound_type(const SceneObject& part) {
+        if (part.collision_sound_volume_override)
+            return ImpactSound::DefaultWithVolume;
+        static const Uuid disabled("ffffffff-ffff-ffff-ffff-ffffffffffff");
+        if (part.collision_sound == disabled)
+            return ImpactSound::Disabled;
+        return part.collision_sound.is_zero() ? ImpactSound::Default : ImpactSound::Custom;
+    }
+
+    static Uuid material_impact_sound(std::uint8_t first, std::uint8_t second) {
+        first = first < 7 ? first : 3;
+        second = second < 7 ? second : 3;
+        const auto [low, high] = std::minmax(first, second);
+        std::string id = "be7295c0-a158-11e1-b3dd-0800200c9a66";
+        id[27] = static_cast<char>('0' + low);
+        id[30] = static_cast<char>('0' + high);
+        return Uuid(id);
+    }
+
+    std::optional<SceneObject> impact_sound_root(const SceneObject& part) {
+        const auto root = part.parent_id && !part.is_attachment ? world.object(part.parent_id)
+                                                               : std::optional{part};
+        if (!root || root->is_attachment)
+            return {};
+        std::lock_guard lock(object_crossings_mutex);
+        return object_crossings.contains(root->id) ? std::nullopt : root;
+    }
+
+    void send_impact_sound(const SceneObject& part, const SceneObject& root, Uuid sound, float gain,
+                           Vector3 position, std::chrono::steady_clock::time_point now) {
+        if (sound.is_zero())
+            return;
+        auto& last_sent = last_part_impact_sound[part.id];
+        if (now - last_sent < std::chrono::milliseconds(200))
+            return;
+        last_sent = now;
+
+        const float radius = root.sound_radius == 0.f ? *policies.sound_max_distance : root.sound_radius;
+        if (root.sound_radius == 0.f)
+            world.set_sound_radius(root.id, radius);
+        auto packet = lludp::make_packet("SoundTrigger");
+        auto& data = packet.block("SoundData");
+        data["ObjectID"] = root.id;
+        data["ParentID"] = root.id;
+        data["OwnerID"] = part.owner;
+        data["SoundID"] = sound;
+        data["Gain"] = double(std::clamp(gain, 0.f, 1.f));
+        data["Handle"] = descriptor.handle();
+        data["Position"] = std::vector<double>{position.x, position.y, position.z};
+        for (const auto& viewer : viewers->agents()) {
+            if (!viewer.root || viewer.mute_collisions)
+                continue;
+            const float x = viewer.position.x - position.x;
+            const float y = viewer.position.y - position.y;
+            const float z = viewer.position.z - position.z;
+            if (x * x + y * y + z * z <= radius * radius)
+                viewers->transport().enqueue_if_session(viewer.circuit->agent_id, viewer.circuit->session_id,
+                                                        packet, ThrottleOutPacketType::Task, false);
+        }
+    }
+
+    using ImpactContacts = std::map<physics::PrimCollisionActor, physics::CollisionImpact>;
+
+    void play_prim_impact_sounds(const SceneObject& part, const SceneObject& root, const ImpactContacts& contacts,
+                                std::chrono::steady_clock::time_point now) {
+        const auto type = impact_sound_type(part);
+        if (type == ImpactSound::Disabled || !(part.flags & 1u) || (part.flags & prim_flag_volume_detect))
+            return;
+        const auto throttled = [&](Uuid id, ImpactSound sound_type) {
+            auto& last = last_group_impact_sound[id];
+            const auto interval = sound_type == ImpactSound::Custom ? 200 : 300;
+            if (now - last < std::chrono::milliseconds(interval))
+                return true;
+            last = now;
+            return false;
+        };
+        if (throttled(root.id, type))
+            return;
+
+        const bool custom = type == ImpactSound::Custom;
+        Uuid sound = part.collision_sound;
+        float gain = type == ImpactSound::Default ? 1.f : part.collision_sound_volume;
+        if (gain == 0.f)
+            return;
+        bool played_own_sound = false;
+        for (const auto& [other, impact] : contacts) {
+            const auto speed_gain = std::min(impact.speed * impact.speed * .0625f, 1.f);
+            if (other.id.is_zero()) {
+                if (!played_own_sound) {
+                    if (!custom) {
+                        sound = Uuid("be7295c0-a158-11e1-b3dd-0807200c9a66");
+                        gain *= speed_gain;
+                    }
+                    send_impact_sound(part, root, sound, gain, impact.position, now);
+                    played_own_sound = true;
+                }
+                continue;
+            }
+            if (other.avatar_local_id)
+                continue;
+            const auto collider = world.object(other.id);
+            if (!collider || (collider->flags & prim_flag_volume_detect))
+                continue;
+            const auto collider_root = impact_sound_root(*collider);
+            if (!collider_root)
+                continue;
+            const auto other_type = impact_sound_type(*collider);
+            if (other_type == ImpactSound::Disabled)
+                continue;
+            if (!custom) {
+                if (throttled(collider_root->id, other_type))
+                    continue;
+                if (other_type == ImpactSound::Custom) {
+                    sound = collider->collision_sound;
+                    gain = collider->collision_sound_volume;
+                    if (gain == 0.f)
+                        continue;
+                } else {
+                    if (other_type == ImpactSound::DefaultWithVolume) {
+                        gain = collider->collision_sound_volume;
+                        if (gain == 0.f)
+                            continue;
+                    }
+                    sound = material_impact_sound(part.material, collider->material);
+                    gain *= speed_gain;
+                }
+            }
+            if (played_own_sound)
+                send_impact_sound(*collider, *collider_root, sound, gain, impact.position, now);
+            else {
+                send_impact_sound(part, root, sound, gain, impact.position, now);
+                played_own_sound = true;
+            }
+        }
+    }
+
+    void play_avatar_impact_sounds(const ImpactContacts& contacts, std::chrono::steady_clock::time_point now) {
+        for (const auto& [other, impact] : contacts) {
+            const auto part = world.object(other.id);
+            if (!part || (part->flags & prim_flag_volume_detect))
+                continue;
+            const auto root = impact_sound_root(*part);
+            if (!root)
+                continue;
+            const auto type = impact_sound_type(*part);
+            if (type == ImpactSound::Disabled)
+                continue;
+            if (type == ImpactSound::Custom && part->collision_sound_volume > 0.f) {
+                send_impact_sound(*part, *root, part->collision_sound, part->collision_sound_volume,
+                                  impact.position, now);
+            } else if (std::abs(impact.speed) >= 3.2f) {
+                const float volume = type == ImpactSound::DefaultWithVolume ? part->collision_sound_volume : 1.f;
+                if (volume == 0.f)
+                    continue;
+                const float gain = volume * std::min(impact.speed * impact.speed * .0125f, .2f);
+                send_impact_sound(*part, *root, material_impact_sound(4, part->material), gain, impact.position, now);
+            }
+        }
+    }
+
+    void publish_impact_sounds(const std::vector<physics::PrimCollisionReport>& reports) {
+        if (!policies.sound_max_distance || reports.empty())
+            return;
+        const auto now = std::chrono::steady_clock::now();
+        const auto expired = [&](const auto& item) { return now - item.second >= std::chrono::milliseconds(300); };
+        std::erase_if(last_part_impact_sound, expired);
+        std::erase_if(last_group_impact_sound, expired);
+        for (const auto& report : reports) {
+            decltype(previous_impacts) current;
+            std::map<physics::PrimCollisionActor, ImpactContacts> starts;
+            for (const auto& [pair, impact] : report.impacts) {
+                const auto& [recipient, collider] = pair;
+                auto other = collider;
+                if (!collider.id.is_zero() && !collider.avatar_local_id) {
+                    const auto part = world.object(collider.id);
+                    if (!part)
+                        continue;
+                    const auto root = part->parent_id ? world.object(part->parent_id) : part;
+                    if (!root)
+                        continue;
+                    other.id = root->id;
+                }
+                const auto contact = std::pair{recipient, other};
+                current.insert(contact);
+                if (previous_impacts.contains(contact) || !(std::abs(impact.speed) > .2f))
+                    continue;
+                auto& contacts = starts[recipient];
+                const auto [entry, inserted] = contacts.try_emplace(other, impact);
+                if (!inserted && std::abs(entry->second.speed) < std::abs(impact.speed))
+                    entry->second = impact;
+            }
+            previous_impacts.swap(current);
+            for (const auto& [recipient, contacts] : starts) {
+                if (recipient.avatar_local_id) {
+                    const auto avatar = viewers->agent(recipient.id);
+                    if (avatar && avatar->root && avatar->local_id == recipient.avatar_local_id &&
+                        avatar_sound_allowed(*avatar))
+                        play_avatar_impact_sounds(contacts, now);
+                } else if (const auto part = world.object(recipient.id)) {
+                    if (const auto root = impact_sound_root(*part))
+                        play_prim_impact_sounds(*part, *root, contacts, now);
+                }
+            }
+        }
+    }
+
+    void post_collision_to_part(Uuid destination, const script::LslEvent& event) {
+        const auto target = task_parts.find(destination);
+        std::optional<script::LslEvent> filtered;
+        if (!event.detectors.empty() && target != task_parts.end() && target->second.collision_filter) {
+            const auto& filter = *target->second.collision_filter;
+            filtered = event;
+            std::erase_if(filtered->detectors, [&](const auto& detector) { return !filter.allows(detector); });
+            if (filtered->detectors.empty())
+                return;
+            filtered->arguments.front() = static_cast<std::int32_t>(filtered->detectors.size());
+        }
+
+        for (auto& [item, entry] : scripts) {
+            if (entry.instance && entry.item.parent == destination)
+                entry.instance->post_event(filtered ? *filtered : event);
+        }
+    }
+
+    void send_avatar_health(Uuid agent, Uuid session, float health) {
+        auto packet = lludp::make_packet("HealthMessage");
+        packet.block("HealthData")["Health"] = static_cast<double>(health);
+        viewers->transport().enqueue_if_session(agent, session, std::move(packet), ThrottleOutPacketType::Task);
+    }
+
+    std::optional<std::chrono::steady_clock::time_point> last_avatar_heal;
+
+    void heal_avatars() {
+        const auto now = std::chrono::steady_clock::now();
+        const auto frame = std::chrono::duration<double>(policies.scene_frame_time);
+        if (last_avatar_heal && now - *last_avatar_heal < frame)
+            return;
+        last_avatar_heal = now;
+        for (const auto& avatar : viewers->agents()) {
+            if (!avatar.root || avatar.health <= 0.f || avatar.health == 100.f)
+                continue;
+            const auto agent = avatar.circuit->agent_id;
+            const auto session = avatar.circuit->session_id;
+            if (const auto health = viewers->heal(agent, session, policies.scene_frame_time))
+                send_avatar_health(agent, session, *health);
+        }
+    }
+
+    void respawn_after_collision(const ViewerAgent& avatar, Uuid killer_part) {
+        const auto& circuit = *avatar.circuit;
+        std::string message = killer_part.is_zero() ? "You committed suicide!" : "You died!";
+        if (!killer_part.is_zero()) {
+            if (const auto part = world.object(killer_part)) {
+                if (const auto killer = viewers->agent(part->owner)) {
+                    message = "You got killed by " + killer->circuit->name() + "!";
+                    alert(part->owner, "You fragged " + circuit.name() + "!");
+                } else {
+                    std::string owner_name = "Unknown User";
+                    if (policies.script_account)
+                        if (const auto account = policies.script_account(part->owner))
+                            owner_name = account->name();
+                    message = "You impaled yourself on " + part->name + " owned by " + owner_name + "!";
+                }
+            }
+        }
+        viewers->transport().enqueue_if_session(circuit.agent_id, circuit.session_id,
+            agent_alert(circuit.agent_id, message, true), ThrottleOutPacketType::Task);
+        if (!viewers->update_health(circuit.agent_id, circuit.session_id, 100.f))
+            return;
+        send_avatar_health(circuit.agent_id, circuit.session_id, 100.f);
+        try {
+            send_viewer_home(avatar, false);
+        } catch (const std::exception& failure) {
+            error(std::string("Combat home teleport failed: ") + failure.what());
+        }
+    }
+
+    void apply_avatar_collision_damage(const std::vector<physics::PrimCollisionReport>& reports) {
+        constexpr std::uint32_t region_allow_damage = 0x1u;
+        constexpr std::uint32_t parcel_allow_damage = 0x20u;
+        if (!viewers)
+            return;
+        const bool region_damage = (region_flags() & region_allow_damage) != 0;
+        std::set<physics::PrimCollisionActor> respawned;
+        for (const auto& report : reports) {
+            std::map<physics::PrimCollisionActor, std::vector<physics::PrimCollisionActor>> contacts;
+            for (const auto& [actor, collider] : report.avatar_contacts)
+                if (!collider.avatar_local_id)
+                    contacts[actor].push_back(collider);
+            for (const auto& [actor, colliders] : contacts) {
+                if (respawned.contains(actor))
+                    continue;
+                const auto avatar = viewers->agent(actor.id);
+                if (!avatar || !avatar->root || avatar->local_id != actor.avatar_local_id ||
+                    viewer_is_god(actor.id, avatar->circuit->session_id))
+                    continue;
+                if (!region_damage) {
+                    const auto parcel = policies.script_parcel_at ? policies.script_parcel_at(avatar->position) : nullptr;
+                    if (!parcel || !(parcel->flags & parcel_allow_damage))
+                        continue;
+                }
+                float health = avatar->health;
+                Uuid killer_part;
+                for (const auto& collider : colliders) {
+                    const auto impact = report.impacts.find({actor, collider});
+                    const float speed = impact == report.impacts.end() ? 0.f : impact->second.speed;
+                    if (collider.id.is_zero()) {
+                        if (speed < -5.f)
+                            health -= .01f * speed * speed;
+                        continue;
+                    }
+                    const auto part = world.object(collider.id);
+                    if (!part)
+                        continue;
+                    const auto root = part->parent_id && !part->is_attachment ? world.object(part->parent_id) : part;
+                    if (!root || root->is_attachment || (root->flags & prim_flag_volume_detect))
+                        continue;
+                    if (root->damage > 0.f) {
+                        if (world.remove(root->id))
+                            health -= root->damage;
+                    } else if (speed < -5.f) {
+                        health -= .005f * speed * speed;
+                    }
+                    if (health <= 0.f)
+                        killer_part = collider.id;
+                }
+                const auto session = avatar->circuit->session_id;
+                if (health == avatar->health || !viewers->update_health(actor.id, session, health))
+                    continue;
+                if (health <= 0.f || avatar->health - health > 1.f)
+                    send_avatar_health(actor.id, session, health);
+                if (health <= 0.f) {
+                    respawned.insert(actor);
+                    respawn_after_collision(*avatar, killer_part);
+                }
+            }
+        }
+    }
+
+    void publish_attachment_collisions(const std::vector<physics::PrimCollisionReport>& reports) {
+        if (!scripts_enabled()) {
+            scripted_avatar_contacts.clear();
+            return;
+        }
+        if (reports.empty())
+            return;
+
+        std::lock_guard lock(task_data_mutex);
+        constexpr physics::PrimCollisionActor ground{};
+        for (const auto& report : reports) {
+            decltype(scripted_avatar_contacts) current;
+            for (const auto& [wearer, collider] : report.avatar_contacts) {
+                auto other = collider;
+                if (!collider.id.is_zero() && !collider.avatar_local_id) {
+                    const auto part = world.object(collider.id);
+                    if (!part)
+                        continue;
+                    const auto root = part->parent_id ? world.object(part->parent_id) : part;
+                    if (!root || root->is_attachment)
+                        continue;
+                    other.id = root->id;
+                }
+                current[wearer].insert(other);
+            }
+            for (const auto& [wearer, previous] : scripted_avatar_contacts)
+                current.try_emplace(wearer);
+
+            const ColliderSet no_contacts;
+            for (const auto& [wearer, contacts] : current) {
+                const auto avatar = viewers->agent(wearer.id);
+                if (!avatar || !avatar->root || avatar->local_id != wearer.avatar_local_id)
+                    continue;
+                const auto attachments = world.attachments(wearer.avatar_local_id);
+                if (attachments.empty())
+                    continue;
+
+                const auto entry = scripted_avatar_contacts.find(wearer);
+                const auto& previous = entry == scripted_avatar_contacts.end() ? no_contacts : entry->second;
+                ColliderSet started;
+                std::ranges::set_difference(contacts, previous, std::inserter(started, started.end()));
+                ColliderSet ended;
+                std::ranges::set_difference(previous, contacts, std::inserter(ended, ended.end()));
+                const bool on_ground = contacts.contains(ground);
+                const bool was_on_ground = previous.contains(ground);
+                const auto [x, y, z] = avatar->position;
+                for (const auto& attachment : attachments) {
+                    const auto task = task_parts.find(attachment.id);
+                    if (task == task_parts.end() || !task->second.events)
+                        continue;
+                    const auto mask = task->second.events->aggregated();
+                    const auto post_objects = [&](const char* name, std::uint64_t event_mask,
+                                                  const ColliderSet& colliders) {
+                        if (!(mask & event_mask) || colliders.empty())
+                            return;
+                        const auto event = make_object_collision_event(name, 0, colliders);
+                        if (!event.detectors.empty())
+                            post_collision_to_part(attachment.id, event);
+                    };
+                    const auto post_land = [&](const char* name, std::uint64_t event_mask) {
+                        if (mask & event_mask)
+                            post_collision_to_part(attachment.id, {name, {Vector3d{x, y, z}}, {}});
+                    };
+                    post_objects("collision_start", script_event::collision_start, started);
+                    // The managed avatar path sends ongoing events using the previous contact set.
+                    if (!contacts.empty())
+                        post_objects("collision", script_event::collision, previous);
+                    post_objects("collision_end", script_event::collision_end, ended);
+                    if (on_ground) {
+                        if (!was_on_ground)
+                            post_land("land_collision_start", script_event::land_collision_start);
+                        post_land("land_collision", script_event::land_collision);
+                    } else if (was_on_ground) {
+                        post_land("land_collision_end", script_event::land_collision_end);
+                    }
+                }
+            }
+            std::erase_if(current, [](const auto& entry) { return entry.second.empty(); });
+            scripted_avatar_contacts.swap(current);
+        }
+    }
+
+    void publish_prim_collisions(const std::vector<physics::PrimCollisionReport>& reports) {
+        if (!scripts_enabled()) {
+            scripted_terrain_contacts.clear();
+            scripted_object_contacts.clear();
+            return;
+        }
+        if (reports.empty())
+            return;
+
+        std::lock_guard lock(task_data_mutex);
+        constexpr auto land_events = script_event::land_collision_start | script_event::land_collision |
+                                     script_event::land_collision_end;
+        constexpr auto object_events = script_event::collision_start | script_event::collision |
+                                       script_event::collision_end;
+        const auto event_mask = [&](Uuid id) -> std::uint64_t {
+            const auto part = task_parts.find(id);
+            if (part == task_parts.end() || !part->second.events)
+                return 0;
+            return part->second.events->aggregated();
+        };
+        const ColliderSet no_colliders;
+        const auto colliders_for = [&](const ObjectContacts& contacts, Uuid id) -> const ColliderSet& {
+            const auto entry = contacts.find(id);
+            return entry == contacts.end() ? no_colliders : entry->second;
+        };
+
+        for (const auto& report : reports) {
+            auto current_objects = resolve_object_contacts(report);
+            std::set<Uuid> candidates = report.terrain;
+            candidates.insert(scripted_terrain_contacts.begin(), scripted_terrain_contacts.end());
+            for (const auto& [id, colliders] : current_objects)
+                candidates.insert(id);
+            for (const auto& [id, colliders] : scripted_object_contacts)
+                candidates.insert(id);
+
+            std::set<Uuid> active_terrain;
+            ObjectContacts active_objects;
+            for (const auto& id : candidates) {
+                const auto part = world.object(id);
+                if (!part || part->is_attachment)
+                    continue;
+                const auto root = part->parent_id ? world.object(part->parent_id) : part;
+                if (!root || root->is_attachment)
+                    continue;
+                {
+                    std::lock_guard crossing_lock(object_crossings_mutex);
+                    if (object_crossings.contains(root->id))
+                        continue;
+                }
+
+                const auto part_mask = event_mask(id);
+                const auto root_mask = event_mask(root->id);
+                const auto combined_mask = part_mask | root_mask;
+                const bool volume_detect = (part->flags & prim_flag_volume_detect) != 0;
+                const auto post = [&](const script::LslEvent& event, std::uint64_t mask) {
+                    const bool to_part = (part_mask & mask) != 0;
+                    const bool to_root = id != root->id && (root_mask & mask) &&
+                                         (!to_part || part->pass_collisions);
+                    if (to_part)
+                        post_collision_to_part(id, event);
+                    if (to_root)
+                        post_collision_to_part(root->id, event);
+                };
+
+                if (combined_mask & object_events) {
+                    const auto& current = colliders_for(current_objects, id);
+                    const auto& previous = colliders_for(scripted_object_contacts, id);
+                    const auto post_objects = [&](const char* name, std::uint64_t mask,
+                                                  const ColliderSet& colliders) {
+                        if (!(combined_mask & mask) || colliders.empty())
+                            return;
+                        auto event = make_object_collision_event(name, world.link_number(id), colliders);
+                        if (!event.detectors.empty())
+                            post(event, mask);
+                    };
+
+                    ColliderSet started;
+                    std::ranges::set_difference(current, previous, std::inserter(started, started.end()));
+                    post_objects("collision_start", script_event::collision_start, started);
+                    ColliderSet ended;
+                    std::ranges::set_difference(previous, current, std::inserter(ended, ended.end()));
+                    post_objects("collision_end", script_event::collision_end, ended);
+                    if (!volume_detect)
+                        post_objects("collision", script_event::collision, current);
+                    if (!current.empty())
+                        active_objects.emplace(id, current);
+                }
+
+                if (!volume_detect && (combined_mask & land_events)) {
+                    const auto [x, y, z] = root->position;
+                    const auto post_land = [&](const char* name, std::uint64_t mask) {
+                        if (combined_mask & mask)
+                            post({name, {Vector3d{x, y, z}}, {}}, mask);
+                    };
+                    if (report.terrain.contains(id)) {
+                        active_terrain.insert(id);
+                        if (!scripted_terrain_contacts.contains(id))
+                            post_land("land_collision_start", script_event::land_collision_start);
+                        post_land("land_collision", script_event::land_collision);
+                    } else if (scripted_terrain_contacts.contains(id)) {
+                        post_land("land_collision_end", script_event::land_collision_end);
+                    }
+                }
+            }
+            scripted_terrain_contacts.swap(active_terrain);
+            scripted_object_contacts.swap(active_objects);
         }
     }
 
@@ -20313,6 +21732,20 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                         std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count();
                     stats_script_ms += elapsed;
                     i->second.cpu_ms += elapsed;
+                }
+                if (result.status == script::LslRunStatus::DeleteLinkset) {
+                    if (const auto root = world.object(root_id); root && !root->is_attachment) {
+                        world.remove(root_id);
+                        replace_script_instance(i->second);
+                        i = scripts.erase(i);
+                        continue;
+                    }
+                }
+                if (result.status == script::LslRunStatus::DeleteSelf) {
+                    // The registry can erase this VM through its removal hook.
+                    const auto item = (i++)->first;
+                    task_inventory(object->id).remove(item);
+                    continue;
                 }
                 const auto current_mask = instance.event_mask();
                 if (current_mask != previous_mask) {
@@ -20504,6 +21937,15 @@ UdpEndpoint RegionRuntime::start(std::shared_ptr<server::RegistryCapabilityListe
     if (s->running)
         throw std::logic_error("Region already started");
     s->initial_legacy_material_scan_done = false;
+    s->pending_object_updates.clear();
+    s->pending_avatar_motion.clear();
+    s->scripted_terrain_contacts.clear();
+    s->scripted_object_contacts.clear();
+    s->scripted_avatar_contacts.clear();
+    s->previous_impacts.clear();
+    s->last_part_impact_sound.clear();
+    s->last_group_impact_sound.clear();
+    s->last_object_update.reset();
     s->registry = std::move(listener);
     s->secure_script_registry = std::move(secure_script_listener);
     s->plain_script_registry = std::move(plain_script_listener);
@@ -21012,8 +22454,11 @@ void RegionRuntime::poll(double host_sleep_ms) {
             state.error(std::string("Region physics activation failed: ") + failure.what());
         }
     }
+    const bool update_object_groups = state.object_updates_due(std::chrono::steady_clock::now());
+    ViewerPhysics::PollResult physics_sample;
     if (const auto physics = state.viewer_physics.load()) {
-        const auto sample = physics->poll(simulate_physics);
+        physics_sample = physics->poll(simulate_physics, update_object_groups);
+        const auto& sample = physics_sample;
         state.stats_physics_steps += sample.steps;
         state.stats_physics_ms += sample.solver_ms;
         state.stats_agent_ns.fetch_add(static_cast<std::int64_t>(sample.agent_ms * 1000000.),
@@ -21027,6 +22472,11 @@ void RegionRuntime::poll(double host_sleep_ms) {
     state.deliver_script_http_events();
     const auto reparented = state.viewers->refresh_seated_positions();
     state.run_scripts();
+    state.publish_impact_sounds(physics_sample.prim_collision_reports);
+    state.publish_prim_collisions(physics_sample.prim_collision_reports);
+    state.publish_attachment_collisions(physics_sample.prim_collision_reports);
+    state.heal_avatars();
+    state.apply_avatar_collision_damage(physics_sample.prim_collision_reports);
     state.run_land_stats_requests();
     const auto scene_updates_start = std::chrono::steady_clock::now();
     state.world.expire_temporary_objects(scene_updates_start);
@@ -21039,7 +22489,7 @@ void RegionRuntime::poll(double host_sleep_ms) {
     state.send_due_appearances();
     state.save_due_appearances();
     state.send_due_wearables();
-    state.flush_objects();
+    state.flush_objects(update_object_groups);
     state.backup_legacy_materials(false);
     for (const auto& moved : reparented) {
         const auto current = state.viewers->agent(moved.circuit->agent_id);

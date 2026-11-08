@@ -27,7 +27,7 @@ std::int32_t tick_count() {
 }
 }
 struct ViewerPhysics::Impl {
-    enum class Kind { Enter, Input, Running, Leave, Teleport, Appearance, Buoyancy };
+    enum class Kind { Enter, Input, Running, Leave, Teleport, Appearance, Buoyancy, Push, Hover, MoveToTarget };
     struct Command {
         Kind kind;
         ViewerAgent agent;
@@ -35,6 +35,9 @@ struct ViewerPhysics::Impl {
         std::map<Uuid, Uuid> overrides;
         std::optional<MovementAnimation> movement;
         float buoyancy = 0.f;
+        Vector3 impulse{};
+        framework::PrimHover hover{};
+        framework::PrimMoveTarget move_target{};
     };
     ViewerRegion& viewers;
     std::shared_ptr<const DefaultAnimations> catalog;
@@ -56,19 +59,26 @@ struct ViewerPhysics::Impl {
     std::map<MeshKey, std::shared_ptr<MeshRequest>> mesh_requests;
     std::mutex queue_mutex;
     std::vector<Command> queue;
+    struct PrimImpulse {
+        Uuid id;
+        Vector3 impulse;
+        bool angular;
+    };
+    std::vector<PrimImpulse> prim_impulses;
     mutable std::mutex animation_mutex;
     std::map<std::pair<Uuid, Uuid>, MovementAnimation> animation_snapshots;
     std::optional<float> pending_water_height;
     double last_clock = milliseconds();
     float accumulated = 0;
-    static constexpr float scene_frame_time = .0909f;
+    const ScenePhysicsTiming timing;
     Impl(World& scene, ViewerRegion& v, const std::filesystem::path& library,
          std::shared_ptr<const DefaultAnimations> c, Publish p, Log l, float water_height,
-         AvatarVisibility visibility, ObjectCrossing crossing, MeshLoader loader)
+         AvatarVisibility visibility, ObjectCrossing crossing, MeshLoader loader, ScenePhysicsTiming timing)
         : viewers(v), catalog(std::move(c)), publish(std::move(p)), log(std::move(l)),
           visible(std::move(visibility)), cross_object(std::move(crossing)), load_mesh(std::move(loader)),
           scene_objects(scene),
-          world(library, scene.terrain(), {scene_frame_time, water_height}), terrain(scene.terrain()) {
+          world(library, scene.terrain(), {timing.frame_time, water_height, true}), terrain(scene.terrain()),
+          timing(timing) {
         if (!catalog)
             throw std::invalid_argument("Physics animation catalog required");
     }
@@ -86,6 +96,8 @@ struct ViewerPhysics::Impl {
         Uuid owner, owner_session;
         std::uint32_t local_id;
         MovementState movement;
+        Vector3 move_destination;
+        std::optional<Quaternion> pending_rotation;
         MovementAnimator animator{tick_count};
         std::uint32_t movement_flags = 0,
                       sequence_counter = static_cast<std::uint32_t>(tick_count()) & 0x5fffafu;
@@ -106,9 +118,12 @@ struct ViewerPhysics::Impl {
             movement.controls = crossing ? a.controls : a.controls & 0x2000u;
         }
         void reset_body(const ViewerAgent& a) {
+            movement.moving_to_target = false;
+            movement.move_to_speed = -1.f;
+            pending_rotation.reset();
             const auto appearance = a.appearance();
             auto size = appearance ? appearance->avatar_box_size() : Vector3{.45f, .6f, 2.1f};
-            world.add_avatar(a.position, size, a.flying);
+            world.add_avatar(a.position, size, a.flying, {owner, local_id});
             world.set_orientation(a.rotation);
             world.set_running(always_run);
         }
@@ -206,13 +221,80 @@ struct ViewerPhysics::Impl {
             world.set_target_velocity(movement.target_velocity);
             animate();
         }
+        void stop_move_to_target() {
+            if (!movement.moving_to_target)
+                return;
+            movement.moving_to_target = false;
+            movement.move_to_speed = -1.f;
+            movement.controls = 0;
+            movement.delayed_stop = -1;
+        }
+        void start_move_to_target(const ViewerAgent& agent, PrimMoveTarget target) {
+            if (!target.active()) {
+                stop_move_to_target();
+                return;
+            }
+            move_destination = target.position;
+            move_destination.x = std::clamp(move_destination.x, .5f, scene.terrain.width() - .5f);
+            move_destination.y = std::clamp(move_destination.y, .5f, scene.terrain.height() - .5f);
+            const auto appearance = agent.appearance();
+            const float height = appearance && appearance->avatar_height > 0.f ? appearance->avatar_height : 2.1f;
+            const float ground = scene.terrain.height_at(move_destination.x, move_destination.y) + height * .5f + .2f;
+            move_destination.z = std::max(move_destination.z, ground);
+            const auto state = world.snapshot();
+            const bool flying = state.flying || move_destination.z > ground + height;
+            world.set_flying(flying);
+            always_run = false;
+            world.set_running(false);
+            const auto p = state.body_position;
+            const float dz = flying ? move_destination.z - p.z : 0.f;
+            const float distance = std::hypot(move_destination.x - p.x, move_destination.y - p.y, dz);
+            movement.move_to_speed = std::clamp(distance / std::max(target.tau, scene.timing.frame_time), .5f, 50.f);
+            movement.moving_to_target = true;
+            movement.delayed_stop = -1;
+        }
+        void advance_move_to_target() {
+            if (!movement.moving_to_target)
+                return;
+            const auto state = world.snapshot();
+            const auto p = state.body_position;
+            const float dx = move_destination.x - p.x;
+            const float dy = move_destination.y - p.y;
+            const float horizontal = std::hypot(dx, dy);
+            if (horizontal <= .5f) {
+                auto destination = move_destination;
+                if (!state.flying)
+                    destination.z = p.z;
+                world.snap_avatar_position(destination);
+                stop_move_to_target();
+                movement_flags = 0;
+                apply_target({}, 0.f);
+                return;
+            }
+            const float dz = state.flying ? move_destination.z - p.z : 0.f;
+            const float distance = std::hypot(horizontal, dz);
+            movement.move_to_speed = std::min(movement.move_to_speed, distance / scene.timing.frame_time);
+            const float yaw = .5f * std::atan2(dy, dx);
+            movement.rotation = {0, 0, std::sin(yaw), std::cos(yaw)};
+            world.set_orientation(movement.rotation);
+            pending_rotation = movement.rotation;
+            movement_flags = 1;
+            movement.controls = 1 | (state.flying ? 0x2000u : 0u);
+            apply_target({horizontal, 0, dz}, 4.096f);
+        }
         void update_input(const ViewerAgent& agent, double now) {
             auto q = agent.rotation;
             if (!std::isfinite(q.x) || !std::isfinite(q.y) || !std::isfinite(q.z) || !std::isfinite(q.w))
                 return;
+            auto projected = project_controls(agent.controls, 0, always_run, movement_flags);
+            if (movement.moving_to_target) {
+                if (!projected.key_pressed && !(agent.controls & 0x4000u))
+                    return;
+                stop_move_to_target();
+                pending_rotation.reset();
+            }
             movement.rotation = q;
             world.set_orientation(q);
-            auto projected = project_controls(agent.controls, 0, always_run, movement_flags);
             movement_flags = projected.movement_flags;
             movement.controls = projected.controls;
             bool changed = projected.changed;
@@ -351,6 +433,21 @@ struct ViewerPhysics::Impl {
             avatar.world.set_buoyancy(command.buoyancy);
             return;
         }
+        if (command.kind == Kind::Push) {
+            avatar.world.push_avatar(command.impulse);
+            return;
+        }
+        if (command.kind == Kind::Hover) {
+            const auto hover = command.hover;
+            const auto reference = hover.above_water ? physics::HoverReference::GroundAndWater
+                                                    : physics::HoverReference::Ground;
+            avatar.world.set_hover(hover.height, hover.tau, reference, hover.active());
+            return;
+        }
+        if (command.kind == Kind::MoveToTarget) {
+            avatar.start_move_to_target(a, command.move_target);
+            return;
+        }
         avatar.update_input(a, now);
     }
     void remove_box(std::map<Uuid, PhysicalPrim>::iterator entry) {
@@ -382,54 +479,60 @@ struct ViewerPhysics::Impl {
         std::lock_guard lock(entry->second->mutex);
         return entry->second->mesh;
     }
+    static float part_mass(Vector3 scale, float density, PrimType type, float hollow,
+                           const LinearPrimPath& path) {
+        if (!std::isfinite(density))
+            throw std::invalid_argument("Invalid box density");
+        double shape_factor = 1.;
+        if (type == PrimType::Sphere)
+            shape_factor = .5236;
+        else if (type == PrimType::Cylinder)
+            shape_factor = .78539816339;
+        else if (type == PrimType::Prism)
+            shape_factor = .32475953;
+        else if (type == PrimType::Torus || type == PrimType::Tube || type == PrimType::Ring) {
+            const double profile_factor = type == PrimType::Torus ? .6168502750680849 :
+                                          type == PrimType::Tube ? .78539816339 : .32475953;
+            const double inner = 1. - 2. * path.hole_y;
+            shape_factor = profile_factor * path.hole_x * (1. - inner * inner);
+        }
+        double hollow_factor = 1.;
+        if (type == PrimType::Prism || type == PrimType::Ring) {
+            hollow_factor = .25;
+            if (path.hollow_segments == 4)
+                hollow_factor = .499849 * 3.07920140172638;
+            else if (path.hollow_segments == 24)
+                hollow_factor = .1963495 * 3.07920140172638;
+        } else if (type == PrimType::Cylinder || type == PrimType::Torus) {
+            if (path.hollow_segments == 4)
+                hollow_factor = .5 * 2.5984480504799;
+            else if (path.hollow_segments == 3)
+                hollow_factor = .5 * 1.27323954473516;
+        } else if (path.hollow_segments == 24) {
+            hollow_factor = .78539816339;
+        } else if (path.hollow_segments == 3) {
+            hollow_factor = .25;
+        }
+        const double hollow_area = static_cast<double>(hollow) * hollow;
+        const bool swept = type == PrimType::Torus || type == PrimType::Tube || type == PrimType::Ring;
+        shape_factor *= 1. - hollow_area * (swept ? hollow : 1.f) * hollow_factor;
+        const double taper_x = std::abs(path.taper_x);
+        const double taper_y = std::abs(path.taper_y);
+        const double base_x = 1. - taper_x;
+        const double base_y = 1. - taper_y;
+        const double taper_factor = base_x * base_y + .5 * (base_x * taper_y + taper_x * base_y) +
+                                    taper_x * taper_y / 3.;
+        const double volume = static_cast<double>(scale.x) * scale.y * scale.z * shape_factor *
+                              taper_factor * (path.end - path.begin) * (path.profile_end - path.profile_begin);
+        return static_cast<float>(std::clamp(volume * density / 100., .0001, 10000.01));
+    }
+
+    static physics::UbodePrimForces prim_forces(const PhysicalPrim& box) {
+        return {box.gravity_modifier, box.buoyancy, box.force, box.torque, box.hover, box.move_target,
+                box.look_at, box.inertia_override, box.rotation_axis_locks};
+    }
+
     bool add_dynamic_prim(const PhysicalPrim& box) {
-        const auto part_mass = [](Vector3 scale, float density, PrimType type, float hollow,
-                                  const LinearPrimPath& path) {
-            if (!std::isfinite(density))
-                throw std::invalid_argument("Invalid box density");
-            double shape_factor = 1.;
-            if (type == PrimType::Sphere)
-                shape_factor = .5236;
-            else if (type == PrimType::Cylinder)
-                shape_factor = .78539816339;
-            else if (type == PrimType::Prism)
-                shape_factor = .32475953;
-            else if (type == PrimType::Torus || type == PrimType::Tube || type == PrimType::Ring) {
-                const double profile_factor = type == PrimType::Torus ? .6168502750680849 :
-                                              type == PrimType::Tube ? .78539816339 : .32475953;
-                const double inner = 1. - 2. * path.hole_y;
-                shape_factor = profile_factor * path.hole_x * (1. - inner * inner);
-            }
-            double hollow_factor = 1.;
-            if (type == PrimType::Prism || type == PrimType::Ring) {
-                hollow_factor = .25;
-                if (path.hollow_segments == 4)
-                    hollow_factor = .499849 * 3.07920140172638;
-                else if (path.hollow_segments == 24)
-                    hollow_factor = .1963495 * 3.07920140172638;
-            } else if (type == PrimType::Cylinder || type == PrimType::Torus) {
-                if (path.hollow_segments == 4)
-                    hollow_factor = .5 * 2.5984480504799;
-                else if (path.hollow_segments == 3)
-                    hollow_factor = .5 * 1.27323954473516;
-            } else if (path.hollow_segments == 24) {
-                hollow_factor = .78539816339;
-            } else if (path.hollow_segments == 3) {
-                hollow_factor = .25;
-            }
-            const double hollow_area = static_cast<double>(hollow) * hollow;
-            const bool swept = type == PrimType::Torus || type == PrimType::Tube || type == PrimType::Ring;
-            shape_factor *= 1. - hollow_area * (swept ? hollow : 1.f) * hollow_factor;
-            const double taper_x = std::abs(path.taper_x);
-            const double taper_y = std::abs(path.taper_y);
-            const double base_x = 1. - taper_x;
-            const double base_y = 1. - taper_y;
-            const double taper_factor = base_x * base_y + .5 * (base_x * taper_y + taper_x * base_y) +
-                                        taper_x * taper_y / 3.;
-            const double volume = static_cast<double>(scale.x) * scale.y * scale.z * shape_factor *
-                                  taper_factor * (path.end - path.begin) * (path.profile_end - path.profile_begin);
-            return static_cast<float>(std::clamp(volume * density / 100., .0001, 10000.01));
-        };
         const physics::UbodeBodyState state{box.position, box.rotation, box.velocity, box.angular_velocity};
         std::vector<physics::UbodePrimPart> parts;
         parts.reserve(box.children.size() + 1);
@@ -438,21 +541,87 @@ struct ViewerPhysics::Impl {
         parts.push_back({box.scale, {}, {0, 0, 0, 1},
                          part_mass(box.scale, box.density, box.type, box.hollow, box.path),
                          box.type, box.mesh_segments, std::min(box.hollow, .95f), box.path,
-                         std::move(mesh), box.contact_material});
+                         std::move(mesh), box.contact_material, box.id, box.volume_detect, box.phantom});
         for (const auto& child : box.children) {
             auto child_mesh = resolve_mesh(child.mesh_asset, child.convex_mesh);
             ready = (child.mesh_asset.is_zero() || child_mesh != nullptr) && ready;
             parts.push_back({child.scale, child.offset, child.rotation,
                              part_mass(child.scale, child.density, child.type, child.hollow, child.path),
                              child.type, child.mesh_segments, std::min(child.hollow, .95f), child.path,
-                             std::move(child_mesh), child.contact_material});
+                             std::move(child_mesh), child.contact_material, child.id, child.volume_detect, child.phantom});
         }
         if (!ready)
             return false;
-        world.add_dynamic_linkset(box.id, parts, state,
-                                  {box.gravity_modifier, box.buoyancy, box.force, box.torque});
+        world.add_dynamic_linkset(box.id, parts, state, prim_forces(box));
         return true;
     }
+    bool update_box(const PhysicalPrim& previous, const PhysicalPrim& current) {
+        if (previous.children.size() != current.children.size())
+            return false;
+
+        auto without_properties = current;
+        const auto restore_properties = [](auto& updated, const auto& original) {
+            const bool changed = updated.contact_material != original.contact_material ||
+                                 updated.volume_detect != original.volume_detect || updated.phantom != original.phantom;
+            // ubODE reads the new density when rebuilding the prim's geometry.
+            updated.density = original.density;
+            updated.contact_material = original.contact_material;
+            updated.volume_detect = original.volume_detect;
+            updated.phantom = original.phantom;
+            return changed;
+        };
+        bool colliders_changed = restore_properties(without_properties, previous);
+        for (std::size_t i = 0; i < current.children.size(); ++i)
+            colliders_changed |= restore_properties(without_properties.children[i], previous.children[i]);
+
+        if (without_properties != previous && !update_box_motion(previous, current, without_properties))
+            return false;
+        if (!colliders_changed)
+            return true;
+
+        // The colliders are created in root-first order, followed by the linkset children.
+        std::vector<physics::UbodeColliderProperties> properties;
+        properties.reserve(1 + current.children.size());
+        properties.push_back({current.contact_material, current.volume_detect, current.phantom});
+        for (const auto& child : current.children)
+            properties.push_back({child.contact_material, child.volume_detect, child.phantom});
+        return world.update_collider_properties(current.id, properties);
+    }
+
+    bool update_box_motion(const PhysicalPrim& previous, const PhysicalPrim& current, PhysicalPrim& without_motion) {
+        if (!previous.dynamic || !current.dynamic)
+            return false;
+        without_motion.position = previous.position;
+        without_motion.rotation = previous.rotation;
+        without_motion.velocity = previous.velocity;
+        without_motion.angular_velocity = previous.angular_velocity;
+        without_motion.acceleration = previous.acceleration;
+        without_motion.gravity_modifier = previous.gravity_modifier;
+        without_motion.buoyancy = previous.buoyancy;
+        without_motion.force = previous.force;
+        without_motion.torque = previous.torque;
+        without_motion.hover = previous.hover;
+        without_motion.move_target = previous.move_target;
+        without_motion.look_at = previous.look_at;
+        without_motion.rotation_axis_locks = previous.rotation_axis_locks;
+        if (without_motion != previous)
+            return false;
+
+        // Keep the body in place when updating motion, forces, or rotation locks.
+        const auto position = current.position != previous.position ? std::optional{current.position} : std::nullopt;
+        const auto linear = current.velocity != previous.velocity ? std::optional{current.velocity} : std::nullopt;
+        const auto angular = current.angular_velocity != previous.angular_velocity
+            ? std::optional{current.angular_velocity} : std::nullopt;
+        const auto next_forces = prim_forces(current);
+        auto previous_forces = prim_forces(previous);
+        previous_forces.rotation_axis_locks = next_forces.rotation_axis_locks;
+        const auto forces = next_forces != previous_forces ? std::optional{next_forces} : std::nullopt;
+        const auto rotation = current.rotation != previous.rotation ? std::optional{current.rotation} : std::nullopt;
+        const auto rotation_locks = current.rotation_axis_locks != previous.rotation_axis_locks
+            ? std::optional{current.rotation_axis_locks} : std::nullopt;
+        return world.update_body_motion(current.id, position, linear, angular, forces, rotation_locks, rotation);
+    }
+
     void sync_boxes() {
         auto candidates = scene_objects.collision_prims();
         if (!mesh_requests.empty()) {
@@ -474,10 +643,18 @@ struct ViewerPhysics::Impl {
         for (auto entry = boxes.begin(); entry != boxes.end();) {
             const auto current = std::lower_bound(candidates.begin(), candidates.end(), entry->first,
                 [](const PhysicalPrim& box, Uuid id) { return box.id < id; });
-            if (current == candidates.end() || *current != entry->second)
+            if (current == candidates.end() || current->id != entry->first) {
                 remove_box(entry++);
-            else
-                ++entry;
+                continue;
+            }
+            if (*current != entry->second) {
+                if (!update_box(entry->second, *current)) {
+                    remove_box(entry++);
+                    continue;
+                }
+                entry->second = *current;
+            }
+            ++entry;
         }
         for (const auto& box : candidates) {
             if (boxes.contains(box.id))
@@ -496,7 +673,8 @@ struct ViewerPhysics::Impl {
                         }
                         world.add_static_prim(box.id, box.type, box.scale, box.position, box.rotation,
                                               box.mesh_segments, std::min(box.hollow, .95f), box.path,
-                                              std::move(mesh), box.contact_material);
+                                              std::move(mesh), box.contact_material, box.volume_detect,
+                                              part_mass(box.scale, box.density, box.type, box.hollow, box.path));
                     }
                 } catch (...) {
                     boxes.erase(entry);
@@ -555,7 +733,7 @@ struct ViewerPhysics::Impl {
                 remove_box(current);
         }
     }
-    PollResult poll(bool simulate) {
+    PollResult poll(bool simulate, bool update_object_groups) {
         const auto revision = terrain.revision();
         if (revision != terrain_revision) {
             try {
@@ -590,6 +768,12 @@ struct ViewerPhysics::Impl {
         if (simulate)
             sync_boxes();
         if (!simulate || (avatars.empty() && !has_dynamic_boxes())) {
+            if (simulate)
+                result.prim_collision_reports.emplace_back();
+            if (simulate) {
+                std::lock_guard lock(queue_mutex);
+                prim_impulses.clear();
+            }
             last_clock = now;
             accumulated = 0;
             return result;
@@ -598,7 +782,7 @@ struct ViewerPhysics::Impl {
         last_clock = now;
         // Source solver uses a20ms quantum,10ms half-step gate,1.2-frame work
         // budget and400ms lag drop. Other scene scheduling/mesh work is not modeled.
-        const double deadline = now + static_cast<int>(scene_frame_time * 1200.f);
+        const double deadline = now + timing.frame_time * 1200.;
         std::vector<Avatar*> ordered;
         for (auto& [owner, avatar] : avatars)
             ordered.push_back(avatar.get());
@@ -610,6 +794,17 @@ struct ViewerPhysics::Impl {
             peers.push_back(&ordered[i]->world);
         while (accumulated > .010f) {
             const auto started = milliseconds();
+            if (!result.steps) {
+                for (auto* avatar : ordered)
+                    avatar->advance_move_to_target();
+                std::vector<PrimImpulse> impulses;
+                {
+                    std::lock_guard lock(queue_mutex);
+                    impulses.swap(prim_impulses);
+                }
+                for (const auto& impulse : impulses)
+                    world.apply_prim_impulse(impulse.id, impulse.impulse, impulse.angular);
+            }
             first.step_with(peers);
             const auto finished = milliseconds();
             result.solver_ms += finished - started;
@@ -623,18 +818,23 @@ struct ViewerPhysics::Impl {
             last_clock = milliseconds();
         }
         publish_boxes(result.steps);
+        result.prim_collision_reports = world.take_prim_collision_reports();
+        if (update_object_groups)
+            world.update_prim_look_at();
         for (auto& [owner, avatar] : avatars) {
             if (avatar->movement.delayed_stop > 0 && now > avatar->movement.delayed_stop)
                 avatar->apply_target({}, 4.096f);
             // Source RegionHeartbeatEnd reevaluates the animator every second heartbeat.
-            if (now - avatar->last_animation >= scene_frame_time * 2000.f) {
+            if (now - avatar->last_animation >= timing.frame_time * 2000.f) {
                 avatar->animate();
                 avatar->last_animation = now;
             }
-            if (now - avatar->last_publish >= scene_frame_time * 1000.f) {
+            if (now - avatar->last_publish >= timing.frame_time * 1000.f) {
                 const auto state = avatar->world.snapshot();
                 auto a = viewers.update_physics(owner, avatar->owner_session, state.position, state.velocity,
-                                                state.acceleration, state.flying);
+                                                state.acceleration, state.flying, avatar->pending_rotation,
+                                                state.collision_plane, state.angular_velocity);
+                avatar->pending_rotation.reset();
                 if (a && publish)
                     publish(*a);
                 avatar->last_publish = now;
@@ -646,10 +846,10 @@ struct ViewerPhysics::Impl {
 ViewerPhysics::ViewerPhysics(World& world, ViewerRegion& viewers, const std::filesystem::path& library,
                              std::shared_ptr<const DefaultAnimations> catalog, Publish publish, Log log,
                              float water_height, AvatarVisibility visibility, ObjectCrossing crossing,
-                             MeshLoader loader)
+                             MeshLoader loader, ScenePhysicsTiming timing)
     : impl_(std::make_unique<Impl>(world, viewers, library, std::move(catalog), std::move(publish),
                                    std::move(log), water_height, std::move(visibility),
-                                   std::move(crossing), std::move(loader))) {}
+                                   std::move(crossing), std::move(loader), timing)) {}
 ViewerPhysics::~ViewerPhysics() = default;
 void ViewerPhysics::entered(const ViewerAgent& a, std::vector<AvatarAnimationEntry> animations,
                             std::map<Uuid, Uuid> overrides, std::optional<MovementAnimation> movement) {
@@ -677,12 +877,61 @@ void ViewerPhysics::running(const ViewerAgent& a) {
 void ViewerPhysics::left(const ViewerAgent& a) {
     impl_->post(Impl::Kind::Leave, a);
 }
-ViewerPhysics::PollResult ViewerPhysics::poll(bool simulate) {
-    return impl_->poll(simulate);
+ViewerPhysics::PollResult ViewerPhysics::poll(bool simulate, bool update_object_groups) {
+    return impl_->poll(simulate, update_object_groups);
+}
+std::vector<std::pair<Uuid, float>> ViewerPhysics::top_colliders() const {
+    return impl_->world.top_colliders();
+}
+std::optional<framework::PrimInertiaData> ViewerPhysics::inertia_data(
+    Uuid root, const std::optional<framework::PrimInertiaOverride>& requested) const {
+    return impl_->world.inertia_data(root, requested);
+}
+std::optional<physics::UbodeMassProperties> ViewerPhysics::mass_properties(Uuid root, Uuid part) const {
+    const auto entry = impl_->boxes.find(root);
+    if (entry != impl_->boxes.end() && entry->second.dynamic)
+        return impl_->world.mass_properties(root, part);
+    if (!part.is_zero())
+        return impl_->world.mass_properties(part);
+
+    physics::UbodeMassProperties result;
+    for (const auto& [id, box] : impl_->boxes) {
+        if (box.root_id != root)
+            continue;
+        if (const auto properties = impl_->world.mass_properties(id)) {
+            result.mass += properties->mass;
+            result.center.x += properties->center.x * properties->mass;
+            result.center.y += properties->center.y * properties->mass;
+            result.center.z += properties->center.z * properties->mass;
+        }
+    }
+    if (result.mass > 0.f) {
+        const float inverse_mass = 1.f / result.mass;
+        result.center.x *= inverse_mass;
+        result.center.y *= inverse_mass;
+        result.center.z *= inverse_mass;
+    }
+    return result;
 }
 void ViewerPhysics::set_buoyancy(const ViewerAgent& agent, float buoyancy) {
     std::lock_guard lock(impl_->queue_mutex);
     impl_->queue.push_back({Impl::Kind::Buoyancy, agent, {}, {}, {}, buoyancy});
+}
+void ViewerPhysics::set_hover(const ViewerAgent& agent, framework::PrimHover hover) {
+    std::lock_guard lock(impl_->queue_mutex);
+    impl_->queue.push_back({Impl::Kind::Hover, agent, {}, {}, {}, 0.f, {}, hover});
+}
+void ViewerPhysics::move_to_target(const ViewerAgent& agent, PrimMoveTarget target) {
+    std::lock_guard lock(impl_->queue_mutex);
+    impl_->queue.push_back({Impl::Kind::MoveToTarget, agent, {}, {}, {}, 0.f, {}, {}, target});
+}
+void ViewerPhysics::push_avatar(const ViewerAgent& agent, Vector3 impulse) {
+    std::lock_guard lock(impl_->queue_mutex);
+    impl_->queue.push_back({Impl::Kind::Push, agent, {}, {}, {}, 0.f, impulse});
+}
+void ViewerPhysics::apply_prim_impulse(Uuid id, Vector3 impulse, bool angular) {
+    std::lock_guard lock(impl_->queue_mutex);
+    impl_->prim_impulses.push_back({id, impulse, angular});
 }
 void ViewerPhysics::set_water_height(float height) {
     std::lock_guard lock(impl_->queue_mutex);

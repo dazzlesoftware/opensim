@@ -70,12 +70,63 @@ void quaternion(std::vector<std::uint8_t>& b, framework::Quaternion q) {
         b.insert(b.end(), 12, 0);
 }
 }
-network::lludp::Packet object_terse_update(const SceneObject& object, std::uint64_t region_handle) {
+bool object_terse_changed(const ObjectTerseMotion& previous, const ObjectTerseMotion& current,
+                          double elapsed_ms) {
+    if (elapsed_ms > 250.)
+        return true;
+    const auto close_vector = [](framework::Vector3 a, framework::Vector3 b, float tolerance) {
+        const float x = a.x - b.x, y = a.y - b.y, z = a.z - b.z;
+        return x * x + y * y + z * z < tolerance * tolerance;
+    };
+    const auto max_axis = [](framework::Vector3 v) {
+        return std::max({std::abs(v.x), std::abs(v.y), std::abs(v.z)});
+    };
+    const auto clamp_vector = [&](framework::Vector3 vector, float limit) {
+        const float largest = max_axis(vector);
+        if (largest <= limit)
+            return vector;
+        const float scale = limit / largest;
+        return framework::Vector3{vector.x * scale, vector.y * scale, vector.z * scale};
+    };
+    const auto velocity = clamp_vector(current.velocity, 128.f);
+    if (!close_vector(current.acceleration, previous.acceleration, .1f) ||
+        !close_vector(velocity, clamp_vector(previous.velocity, 128.f), .1f))
+        return true;
+    if (max_axis(velocity) < 1.e-4f &&
+        (!close_vector(current.position, previous.position, .05f) || max_axis(previous.velocity) > 1.e-4f))
+        return true;
+    if (!close_vector(clamp_vector(current.angular_velocity, 64.f),
+                      clamp_vector(previous.angular_velocity, 64.f), .002f))
+        return true;
+    if (max_axis(current.angular_velocity) < 1.e-4f) {
+        const auto a = current.rotation;
+        const auto b = previous.rotation;
+        const float x = a.x - b.x, y = a.y - b.y, z = a.z - b.z, w = a.w - b.w;
+        if (!(x * x + y * y + z * z + w * w < .002f * .002f))
+            return true;
+    }
+    return false;
+}
+namespace {
+network::lludp::Packet terse_packet(std::uint64_t region_handle) {
     auto packet = network::lludp::make_packet("ImprovedTerseObjectUpdate");
     // The simulator sets zero coding on its terse updates despite the template.
     packet.zerocoded = true;
     packet.block("RegionData")["RegionHandle"] = region_handle;
     packet.block("RegionData")["TimeDilation"] = std::uint64_t(65535);
+    return packet;
+}
+void pack_terse_vector(std::vector<std::uint8_t>& data, framework::Vector3 value, float range) {
+    const float scale = 1.f / std::max({range, std::abs(value.x), std::abs(value.y), std::abs(value.z)});
+    for (const float axis : {value.x, value.y, value.z})
+        quantized(data, axis * scale);
+}
+void append_terse_data(network::lludp::Packet& packet, std::vector<std::uint8_t> data) {
+    auto block = network::lludp::make_block(packet.spec->blocks.at(1));
+    block["Data"] = std::move(data);
+    packet.blocks["ObjectData"].push_back(std::move(block));
+}
+void append_terse_object(network::lludp::Packet& packet, const SceneObject& object) {
     std::vector<std::uint8_t> data;
     data.reserve(44);
     for (int i = 0; i < 4; ++i)
@@ -83,21 +134,78 @@ network::lludp::Packet object_terse_update(const SceneObject& object, std::uint6
     data.push_back(attachment_state(object));
     data.push_back(0);
     vector(data, object.position);
-    const auto pack_vector = [&](framework::Vector3 value, float range) {
-        const float scale = 1.f / std::max({range, std::abs(value.x), std::abs(value.y), std::abs(value.z)});
-        for (const float axis : {value.x, value.y, value.z})
-            quantized(data, axis * scale);
-    };
-    pack_vector(object.velocity, 128.f);
-    pack_vector(object.acceleration, 64.f);
+    pack_terse_vector(data, object.velocity, 128.f);
+    pack_terse_vector(data, object.acceleration, 64.f);
     const auto& rotation = object.rotation;
     for (const float axis : {rotation.x, rotation.y, rotation.z, rotation.w})
         quantized(data, axis);
-    pack_vector(object.angular_velocity, 64.f);
-    auto block = network::lludp::make_block(packet.spec->blocks.at(1));
-    block["Data"] = std::move(data);
-    packet.blocks["ObjectData"].push_back(std::move(block));
+    pack_terse_vector(data, object.angular_velocity, 64.f);
+    append_terse_data(packet, std::move(data));
+}
+void append_terse_avatar(network::lludp::Packet& packet, const AvatarUpdate& avatar) {
+    std::vector<std::uint8_t> data;
+    data.reserve(60);
+    for (int i = 0; i < 4; ++i)
+        data.push_back(static_cast<std::uint8_t>(avatar.local_id >> (8 * i)));
+    data.push_back(avatar.state);
+    data.push_back(1);
+    const auto plane = avatar.collision_plane == std::array<float, 4>{}
+        ? std::array<float, 4>{0, 0, 0, 1} : avatar.collision_plane;
+    for (const float component : plane)
+        real(data, component);
+    vector(data, avatar.position);
+    pack_terse_vector(data, avatar.velocity, 128.f);
+    pack_terse_vector(data, {}, 64.f);
+    auto rotation = avatar.rotation;
+    if (!avatar.flying && avatar.parent_id == 0) {
+        const float length_squared = rotation.z * rotation.z + rotation.w * rotation.w;
+        if (length_squared < 1.e-6f) {
+            rotation = {0, 0, 0, 1};
+        } else {
+            const float scale = 1.f / std::sqrt(length_squared);
+            rotation = {0, 0, rotation.z * scale, rotation.w * scale};
+        }
+    }
+    for (const float component : {rotation.x, rotation.y, rotation.z, rotation.w})
+        quantized(data, component);
+    pack_terse_vector(data, avatar.angular_velocity, 64.f);
+    append_terse_data(packet, std::move(data));
+}
+}
+network::lludp::Packet object_terse_update(const SceneObject& object, std::uint64_t region_handle) {
+    auto packet = terse_packet(region_handle);
+    append_terse_object(packet, object);
     return packet;
+}
+std::vector<network::lludp::Packet> object_terse_updates(
+    std::span<const SceneObject* const> objects, std::uint64_t region_handle,
+    std::span<const AvatarUpdate> avatars) {
+    constexpr std::size_t payload_limit = 1200;
+    constexpr std::size_t header_bytes = 18;
+    constexpr std::size_t object_bytes = 1 + 44 + 2;
+    constexpr std::size_t avatar_bytes = 1 + 60 + 2;
+    std::vector<network::lludp::Packet> packets;
+    auto packet = terse_packet(region_handle);
+    std::size_t size = header_bytes;
+    const auto reserve_block = [&](std::size_t bytes) {
+        if (size + bytes >= payload_limit) {
+            packets.push_back(std::move(packet));
+            packet = terse_packet(region_handle);
+            size = header_bytes;
+        }
+        size += bytes;
+    };
+    for (const auto* object : objects) {
+        reserve_block(object_bytes);
+        append_terse_object(packet, *object);
+    }
+    for (const auto& avatar : avatars) {
+        reserve_block(avatar_bytes);
+        append_terse_avatar(packet, avatar);
+    }
+    if (size != header_bytes)
+        packets.push_back(std::move(packet));
+    return packets;
 }
 network::lludp::Packet object_update(const SceneObject& o, std::uint64_t region, float dilation,
                                      const ObjectUpdateOptions& options) {

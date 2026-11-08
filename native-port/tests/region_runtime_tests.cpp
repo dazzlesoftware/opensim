@@ -1,6 +1,8 @@
 #include "opensim/scene/region_runtime.hpp"
 #include "opensim/scene/object_asset_xml.hpp"
+#include "opensim/scene/object_update.hpp"
 #include "opensim/framework/agent_data.hpp"
+#include "opensim/framework/text.hpp"
 #include "opensim/framework/vector_text.hpp"
 #include "opensim/framework/primitive_base_shape.hpp"
 #include "opensim/server/object_handler.hpp"
@@ -233,6 +235,47 @@ void verify_unattended_object_physics(RegionRuntime& runtime) {
     }, "Buoyancy did not combine with the gravity modifier");
     runtime.world().remove(suspended.id);
 
+    const float hover_ground = runtime.world().terrain().height_at(220, 215);
+    auto hover_prim = SceneObject::primitive(prim.owner, {220, 215, hover_ground + 5.f});
+    hover_prim.flags = 1u;
+    if (!runtime.world().add(hover_prim))
+        throw std::runtime_error("Could not rez the hovering prim");
+    runtime.world().set_prim_hover(hover_prim.id, {3.f, .2f, false});
+    poll_until([&] {
+        const auto object = runtime.world().object(hover_prim.id);
+        return object && std::abs(object->position.z - (hover_ground + 3.f)) < .03f &&
+               std::abs(object->velocity.z) < .12f;
+    }, "Hovering prim did not approach the target height above terrain");
+    const Quaternion desired_rotation{0, 0, .70710678f, .70710678f};
+    runtime.world().set_prim_look_at(hover_prim.id, {desired_rotation, 1.f});
+    poll_until([&] {
+        const auto object = runtime.world().object(hover_prim.id);
+        return object && std::abs(object->rotation.z - desired_rotation.z) < .02f &&
+               std::abs(object->rotation.w - desired_rotation.w) < .02f;
+    }, "Look-at did not rotate the physical prim");
+    runtime.world().set_prim_look_at(hover_prim.id, {});
+    if (runtime.world().object(hover_prim.id)->angular_velocity != Vector3{})
+        throw std::runtime_error("Stopping look-at did not clear angular velocity");
+    const Vector3 move_target{221, 215, hover_ground + 4.f};
+    runtime.world().set_prim_move_target(hover_prim.id, {move_target, .2f});
+    poll_until([&] {
+        const auto object = runtime.world().object(hover_prim.id);
+        return object && std::abs(object->position.x - move_target.x) < .03f &&
+               std::abs(object->position.z - move_target.z) < .03f &&
+               std::abs(object->velocity.x) < .12f;
+    }, "Move-to-target did not take precedence over hover");
+    runtime.world().set_prim_move_target(hover_prim.id, {});
+    poll_until([&] {
+        const auto object = runtime.world().object(hover_prim.id);
+        return object && std::abs(object->position.z - (hover_ground + 3.f)) < .03f;
+    }, "Stopping move-to-target did not resume hover");
+    runtime.world().set_prim_hover(hover_prim.id, {});
+    poll_until([&] {
+        const auto object = runtime.world().object(hover_prim.id);
+        return object && object->position.z < hover_ground + 2.8f && object->velocity.z < 0.f;
+    }, "Stopping hover did not restore prim gravity");
+    runtime.world().remove(hover_prim.id);
+
     auto compound_root = SceneObject::primitive(prim.owner, {220, 215, 26}, {1, 1, 1});
     compound_root.flags = 1u;
     const auto compound = runtime.world().add(compound_root);
@@ -279,6 +322,29 @@ void verify_unattended_object_physics(RegionRuntime& runtime) {
                root->angular_velocity.z > .1f;
     }, "Buoyancy, force and torque from a child did not move the linkset");
     runtime.world().remove(compound->id);
+
+    auto velocity_root = SceneObject::primitive(prim.owner, {220, 215, 28});
+    velocity_root.physics.gravity = 0.f;
+    const auto velocity_linkset = runtime.world().add(velocity_root);
+    if (!velocity_linkset)
+        throw std::runtime_error("Could not rez the scripted velocity root");
+    auto velocity_child = SceneObject::primitive(prim.owner, {1, 0, 0});
+    velocity_child.parent_id = velocity_linkset->local_id;
+    velocity_child.rotation = {0, 0, 1, 0};
+    if (!runtime.world().add(velocity_child))
+        throw std::runtime_error("Could not rez the scripted velocity child");
+    runtime.world().set_prim_velocity(velocity_child.id, {3, 0, 0}, true, false);
+    if (runtime.world().object(velocity_root.id)->velocity != Vector3{})
+        throw std::runtime_error("Scripted velocity changed a static prim");
+    runtime.world().set_group_flags(velocity_root.id, true, false, false);
+    runtime.world().set_prim_velocity(velocity_child.id, {3, 0, 0}, true, false);
+    runtime.world().set_prim_velocity(velocity_child.id, {0, 0, 2}, false, true);
+    poll_until([&] {
+        const auto root = runtime.world().object(velocity_root.id);
+        return root && root->position.x < velocity_root.position.x - .2f &&
+               root->velocity.x < -2.f && root->angular_velocity.z > 1.f;
+    }, "Scripted linear and angular velocity did not reach the root body");
+    runtime.world().remove(velocity_root.id);
 
     auto sphere = SceneObject::primitive(prim.owner, {220, 215, 25}, {1, 1, 1});
     sphere.flags = 1u;
@@ -526,6 +592,1139 @@ void verify_unattended_object_physics(RegionRuntime& runtime) {
         return object && object->velocity.x == 0 && object->position.x < 256;
     }, "Rejected physics crossing did not stop the box at the region edge");
     runtime.world().remove(rejected.id);
+
+    auto locked = SceneObject::primitive(prim.owner, {218, 216, 34}, {1, 1, 1});
+    locked.flags = 1u;
+    locked.buoyancy = 1.f;
+    locked.inertia_override = framework::PrimInertiaOverride{10.f, {.5f, 0, 0}, {1, 1, 1}, {0, 0, 0, 1}};
+    if (!runtime.world().add(locked))
+        throw std::runtime_error("Could not rez the rotation motor fixture");
+    runtime.world().set_rotation_axes(locked.id, 2, false);
+    runtime.world().set_prim_velocity(locked.id, {0, 0, 2}, false, true);
+    poll_until([&] {
+        const auto object = runtime.world().object(locked.id);
+        return object && object->rotation.z > .2f && object->angular_velocity.z > 1.f;
+    }, "The rotation motor fixture did not turn about the unlocked Z axis");
+
+    // The local X axis has rotated away from world X, where the motor is anchored.
+    runtime.world().set_prim_velocity(locked.id, {2, 0, 0}, false, false);
+    runtime.world().set_prim_velocity(locked.id, {3, 0, 0}, false, true);
+    poll_until([&] {
+        const auto object = runtime.world().object(locked.id);
+        return object && object->velocity.x > 1.f && std::abs(object->angular_velocity.x) < .05f &&
+               std::abs(object->angular_velocity.y) < .05f && std::abs(object->angular_velocity.z) < .05f;
+    }, "A velocity update moved the existing rotation motor away from its original axis");
+
+    const Vector3 destination{218, 220, 35};
+    if (!runtime.world().patch_transform(locked.id, destination, {}, {}))
+        throw std::runtime_error("Could not translate the rotation motor fixture");
+    runtime.world().set_prim_velocity(locked.id, {3, 0, 0}, false, true);
+    poll_until([&] {
+        const auto object = runtime.world().object(locked.id);
+        return object && object->velocity.x > 1.f && std::abs(object->position.y - destination.y) < .02f &&
+               std::abs(object->position.z - destination.z) < .02f &&
+               std::abs(object->angular_velocity.x) < .05f && std::abs(object->angular_velocity.y) < .05f;
+    }, "Translation did not preserve the root pose, linear motion, and existing rotation motor");
+
+    const auto translated = runtime.world().object(locked.id);
+    runtime.world().set_prim_force(locked.id, {10, 0, 0});
+    runtime.world().set_prim_torque(locked.id, {10, 0, 0}, false);
+    poll_until([&] {
+        const auto object = runtime.world().object(locked.id);
+        return object && object->velocity.x > translated->velocity.x + .3f &&
+               std::abs(object->angular_velocity.x) < .05f && std::abs(object->angular_velocity.y) < .05f;
+    }, "Runtime force and torque did not preserve the rotation motor");
+
+    runtime.world().set_prim_force(locked.id, {});
+    runtime.world().set_prim_torque(locked.id, {}, false);
+    runtime.world().set_prim_buoyancy(locked.id, 0.f);
+    poll_until([&] {
+        const auto object = runtime.world().object(locked.id);
+        return object && object->velocity.z < -.5f && object->position.z < destination.z;
+    }, "Clearing neutral buoyancy did not restore world gravity");
+    runtime.world().remove(locked.id);
+
+    const Vector3 drop_position{218, 218, 30};
+    auto phantom_platform = SceneObject::primitive(prim.owner, {218, 218, 27}, {4, 4, 1});
+    auto falling = SceneObject::primitive(prim.owner, drop_position, {1, 1, 1});
+    falling.flags = 1u;
+    if (!runtime.world().add(phantom_platform) || !runtime.world().add(falling))
+        throw std::runtime_error("Could not rez the physical phantom fixture");
+    const auto resting_on_platform = [&] {
+        const auto object = runtime.world().object(falling.id);
+        return object && std::abs(object->position.z - 28.f) < .15f && std::abs(object->velocity.z) < .15f;
+    };
+    poll_until(resting_on_platform, "The solid prim did not land on the platform");
+
+    runtime.world().set_group_flags(falling.id, true, false, true);
+    poll_until([&] {
+        const auto object = runtime.world().object(falling.id);
+        return object && object->position.z < 26.f && object->velocity.z < -.5f;
+    }, "The physical phantom did not fall through the platform");
+    poll_until([&] {
+        const auto object = runtime.world().object(falling.id);
+        return object && object->position.z > 0.f && object->position.z < 26.f &&
+               std::abs(object->velocity.z) < .15f;
+    }, "The physical phantom did not land on terrain");
+
+    runtime.world().set_group_flags(falling.id, true, false, false);
+    if (!runtime.world().patch_transform(falling.id, drop_position, {}, {}) ||
+        !runtime.world().update_motion(falling.id, {}, {}, {}))
+        throw std::runtime_error("Could not reset the physical phantom fixture");
+    poll_until(resting_on_platform, "Disabling phantom did not restore prim contact");
+    runtime.world().remove(falling.id);
+    runtime.world().remove(phantom_platform.id);
+}
+
+void verify_prim_mass_queries(RegionRuntime& runtime, Uuid script_asset, Uuid admin) {
+    const framework::PrimInertiaOverride stored{12.f, {.5f, -.25f, 0.f}, {3.f, 4.f, 5.f}, {0, 0, .6f, .8f}};
+    if (read_prim_inertia_xml(write_prim_inertia_xml(stored)) != stored || read_prim_inertia_xml(""))
+        throw std::runtime_error("The legacy PhysInertia column did not round-trip");
+    const auto partial = read_prim_inertia_xml("<PhysicsInertia><MASS> 12 </MASS></PhysicsInertia>");
+    if (!partial || partial->mass != 12.f || partial->rotation.w != 0.f ||
+        read_prim_inertia_xml("<PhysicsInertia><MASS>bad</MASS></PhysicsInertia>") ||
+        read_prim_inertia_xml("<PhysicsInertia><CM><X>1</X><Y>2</Y></CM></PhysicsInertia>"))
+        throw std::runtime_error("The legacy PhysInertia parser mishandled missing or malformed fields");
+    for (const bool physical : {false, true}) {
+        const auto owner = physical ? admin : Uuid::random();
+        auto root = SceneObject::primitive(owner, {216, 218, 32}, {1, 1, 1});
+        if (physical) {
+            root.flags = 1u;
+            root.buoyancy = 1.f;
+        }
+        const auto placed = runtime.world().add(root);
+        if (!placed)
+            throw std::runtime_error("Could not rez the mass query root");
+
+        auto child = SceneObject::primitive(owner, {2, 1, 0}, {1, 1, 1});
+        child.parent_id = placed->local_id;
+        child.physics.density = 2000.f;
+        if (!runtime.world().add(child))
+            throw std::runtime_error("Could not rez the mass query child");
+
+        for (const auto& part : {root.id, child.id}) {
+            auto item = std::make_shared<TaskInventoryItem>();
+            item->item_id = Uuid::random();
+            item->parent_id = part;
+            item->parent_part_id = part;
+            item->asset_id = script_asset;
+            item->owner_id = owner;
+            item->creator_id = owner;
+            item->type = 10;
+            item->inventory_type = 10;
+            item->script_running = true;
+            item->name = "Prim mass fixture";
+            item->base_permissions = item->current_permissions = 0x8e000u;
+            std::vector<std::shared_ptr<TaskInventoryItem>> contents{item};
+            if (physical && part == child.id) {
+                auto note = std::make_shared<TaskInventoryItem>(*item);
+                note->item_id = Uuid::random();
+                note->asset_id = Uuid::random();
+                note->name = "Fixture notecard";
+                note->type = 7;
+                note->inventory_type = 7;
+                note->script_running = false;
+                contents.push_back(std::move(note));
+            }
+            runtime.restore_task_inventory(part, contents);
+        }
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        bool verified = false;
+        do {
+            runtime.poll();
+            const auto current_root = runtime.world().object(root.id);
+            const auto current_child = runtime.world().object(child.id);
+            verified = current_root && current_child && current_root->description == "Mass and inertia verified" &&
+                       current_child->description == "Mass and inertia verified" &&
+                       (!physical || (std::abs(current_root->rotation.x) < .001f &&
+                                      std::abs(current_child->rotation.y - .707107f) < .001f));
+            if (verified && physical) {
+                const auto contents = runtime.snapshot_task_inventory(child.id);
+                verified = contents && contents->empty();
+            }
+            if (verified)
+                break;
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        } while (std::chrono::steady_clock::now() < deadline);
+        if (!verified) {
+            const auto current_root = runtime.world().object(root.id);
+            const auto current_child = runtime.world().object(child.id);
+            throw std::runtime_error(std::string(physical ? "Physical" : "Static") +
+                " linkset mass and rotation checks failed. Root: " +
+                (current_root ? current_root->description : "missing") + ", child: " +
+                (current_child ? current_child->description : "missing"));
+        }
+        runtime.world().remove(root.id);
+    }
+}
+
+void verify_script_ground_repel(RegionRuntime& runtime, Uuid script_asset) {
+    const auto owner = Uuid::random();
+    const float ground = runtime.world().terrain().height_at(210, 220);
+    const auto handshake = runtime.viewers().region_handshake();
+    const float water = static_cast<float>(std::get<double>(handshake.block("RegionInfo").at("WaterHeight")));
+    if (water <= ground + 5.f)
+        throw std::runtime_error("Ground repel fixture requires water above the terrain");
+
+    for (const bool use_water : {false, true}) {
+        auto prim = SceneObject::primitive(owner, {210, 220, ground + 5.f});
+        prim.flags = 1u;
+        prim.name = use_water ? "Water repel fixture" : "Ground repel fixture";
+        if (!runtime.world().add(prim))
+            throw std::runtime_error("Could not rez the ground repel fixture");
+        auto item = std::make_shared<TaskInventoryItem>();
+        item->item_id = Uuid::random();
+        item->parent_id = item->parent_part_id = prim.id;
+        item->asset_id = script_asset;
+        item->owner_id = item->creator_id = owner;
+        item->type = item->inventory_type = 10;
+        item->script_running = true;
+        item->name = "Ground repel";
+        runtime.restore_task_inventory(prim.id, {item});
+
+        // Keep the water case within the playable height range despite the high fixture water level.
+        const float target = use_water ? 30.f : ground * 2.f + 3.f;
+        const float offset = target - (use_water ? water : ground);
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        bool settled = false;
+        do {
+            runtime.poll();
+            const auto current = runtime.world().object(prim.id);
+            settled = current && current->hover.above_water == use_water &&
+                std::abs(current->hover.height - offset) < .001f &&
+                std::abs(current->position.z - target) < .05f && std::abs(current->velocity.z) < .15f;
+            if (settled)
+                break;
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        } while (std::chrono::steady_clock::now() < deadline);
+        runtime.world().remove(prim.id);
+        if (!settled)
+            throw std::runtime_error(use_water ? "llGroundRepel did not use the water surface"
+                                               : "llGroundRepel did not use the terrain surface");
+    }
+}
+
+void verify_script_deletes_linkset(RegionRuntime& runtime, Uuid script_asset) {
+    const auto owner = Uuid::random();
+    const auto root = runtime.world().add(SceneObject::primitive(owner, {216, 218, 32}));
+    if (!root)
+        throw std::runtime_error("Could not rez the llDie fixture root");
+    auto child = SceneObject::primitive(owner, {2, 0, 0});
+    child.parent_id = root->local_id;
+    child.name = "llDie fixture";
+    if (!runtime.world().add(child))
+        throw std::runtime_error("Could not rez the llDie fixture child");
+
+    auto item = std::make_shared<TaskInventoryItem>();
+    item->item_id = Uuid::random();
+    item->parent_id = child.id;
+    item->parent_part_id = child.id;
+    item->asset_id = script_asset;
+    item->owner_id = owner;
+    item->creator_id = owner;
+    item->type = item->inventory_type = 10;
+    item->script_running = true;
+    item->name = "Linkset deletion fixture";
+    runtime.restore_task_inventory(child.id, {item});
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    do {
+        runtime.poll();
+        if (!runtime.world().object(root->id) && !runtime.world().object(child.id))
+            return;
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    } while (std::chrono::steady_clock::now() < deadline);
+    throw std::runtime_error("llDie from a linked child did not remove its whole linkset");
+}
+
+void verify_land_collision_scripts(RegionRuntime& runtime, Uuid script_asset) {
+    const auto owner = Uuid::random();
+    auto root = SceneObject::primitive(owner, {212, 213, 26});
+    root.flags = 1u;
+    const auto root_part = runtime.world().add(root);
+    if (!root_part)
+        throw std::runtime_error("Could not rez the land collision linkset");
+    auto child = SceneObject::primitive(owner, {0, 0, -1});
+    child.parent_id = root_part->local_id;
+    if (!runtime.world().add(child))
+        throw std::runtime_error("Could not rez the land collision child");
+    for (const auto part : {root.id, child.id}) {
+        auto item = std::make_shared<TaskInventoryItem>();
+        item->item_id = Uuid::random();
+        item->parent_id = item->parent_part_id = part;
+        item->asset_id = script_asset;
+        item->owner_id = item->creator_id = owner;
+        item->type = item->inventory_type = 10;
+        item->script_running = true;
+        item->name = "Land collision fixture";
+        runtime.restore_task_inventory(part, {item});
+    }
+    const auto wait_description = [&](std::string_view expected) {
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        do {
+            runtime.poll();
+            const auto current_root = runtime.world().object(root.id);
+            const auto current_child = runtime.world().object(child.id);
+            if (current_root && current_child && current_root->description == expected &&
+                current_child->description == expected)
+                return;
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        } while (std::chrono::steady_clock::now() < deadline);
+        throw std::runtime_error("Root and child did not receive land collision phase " + std::string(expected));
+    };
+    wait_description("Land contact active");
+    runtime.world().set_prim_buoyancy(root.id, 1.f);
+    if (!runtime.world().patch_transform(root.id, Vector3{212, 213, 26}, {}, {}) ||
+        !runtime.world().update_motion(root.id, {}, {}, {}))
+        throw std::runtime_error("Could not lift the land collision fixture");
+    wait_description("Land contact ended");
+    runtime.world().remove(root.id);
+}
+
+void verify_object_collision_scripts(RegionRuntime& runtime, Uuid script_asset) {
+    const auto owner = Uuid::random();
+    auto platform = SceneObject::primitive(owner, {212, 216, 25});
+    platform.name = "Collision platform";
+    platform.scale = {4, 4, 1};
+    if (!runtime.world().add(platform))
+        throw std::runtime_error("Could not rez the collision platform");
+
+    const Vector3 start_position{212, 216, 28};
+    auto falling = SceneObject::primitive(owner, start_position);
+    falling.flags = 1u;
+    if (!runtime.world().add(falling))
+        throw std::runtime_error("Could not rez the falling collision prim");
+
+    auto item = std::make_shared<TaskInventoryItem>();
+    item->item_id = Uuid::random();
+    item->parent_id = falling.id;
+    item->parent_part_id = falling.id;
+    item->asset_id = script_asset;
+    item->owner_id = owner;
+    item->creator_id = owner;
+    item->type = 10;
+    item->inventory_type = 10;
+    item->script_running = true;
+    item->name = "Object collision fixture";
+    runtime.restore_task_inventory(falling.id, {item});
+
+    auto platform_item = std::make_shared<TaskInventoryItem>(*item);
+    platform_item->item_id = Uuid::random();
+    platform_item->parent_id = platform.id;
+    platform_item->parent_part_id = platform.id;
+    runtime.restore_task_inventory(platform.id, {platform_item});
+
+    const auto wait_description = [&](std::string_view expected) {
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        do {
+            runtime.poll();
+            const auto current = runtime.world().object(falling.id);
+            if (current && current->description == expected)
+                return;
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        } while (std::chrono::steady_clock::now() < deadline);
+        throw std::runtime_error("Falling prim did not receive object collision phase " + std::string(expected));
+    };
+
+    wait_description("Object contact active");
+    runtime.world().set_prim_buoyancy(falling.id, 1.f);
+    if (!runtime.world().patch_transform(falling.id, start_position, {}, {}) ||
+        !runtime.world().update_motion(falling.id, {}, {}, {}))
+        throw std::runtime_error("Could not lift the object collision fixture");
+    wait_description("Object contact ended");
+    const auto stationary = runtime.world().object(platform.id);
+    if (!stationary || stationary->description != "Platform filter installed")
+        throw std::runtime_error("The platform's deny-all collision filter leaked an event");
+    runtime.world().remove(falling.id);
+    runtime.world().remove(platform.id);
+}
+
+void verify_volume_detect(RegionRuntime& runtime, Uuid script_asset) {
+    const auto owner = Uuid::random();
+    auto sensor = SceneObject::primitive(owner, {216, 216, 28});
+    sensor.scale = {4, 4, 1};
+    const auto root = runtime.world().add(sensor);
+    if (!root)
+        throw std::runtime_error("Could not rez the volume detector");
+
+    auto child = SceneObject::primitive(owner, {5, 0, 0});
+    child.parent_id = root->local_id;
+    if (!runtime.world().add(child))
+        throw std::runtime_error("Could not rez the volume detector child");
+
+    auto item = std::make_shared<TaskInventoryItem>();
+    item->item_id = Uuid::random();
+    item->parent_id = sensor.id;
+    item->parent_part_id = sensor.id;
+    item->asset_id = script_asset;
+    item->owner_id = owner;
+    item->creator_id = owner;
+    item->type = 10;
+    item->inventory_type = 10;
+    item->script_running = true;
+    item->name = "Volume detector fixture";
+    runtime.restore_task_inventory(sensor.id, {item});
+
+    const auto poll_until = [&](auto ready, const char* failure) {
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        do {
+            runtime.poll();
+            if (ready())
+                return;
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        } while (std::chrono::steady_clock::now() < deadline);
+        throw std::runtime_error(failure);
+    };
+
+    constexpr auto detector_flags = prim_flag_volume_detect | 0x400u;
+    const auto both_parts_have_flags = [&](std::uint32_t expected) {
+        const auto current_root = runtime.world().object(sensor.id);
+        const auto current_child = runtime.world().object(child.id);
+        return current_root && current_child && (current_root->flags & detector_flags) == expected &&
+               (current_child->flags & detector_flags) == expected;
+    };
+    poll_until([&] { return both_parts_have_flags(detector_flags); },
+               "llVolumeDetect did not enable the detector and phantom flags across the linkset");
+
+    const Vector3 drop_position{216, 216, 31};
+    auto falling = SceneObject::primitive(owner, drop_position);
+    falling.name = "Falling through";
+    falling.flags = 1u;
+    if (!runtime.world().add(falling))
+        throw std::runtime_error("Could not rez the volume detection projectile");
+
+    poll_until([&] {
+        const auto current = runtime.world().object(sensor.id);
+        const auto projectile = runtime.world().object(falling.id);
+        return current && projectile && current->description == "Volume contact ended" &&
+               projectile->position.z < 27.f && both_parts_have_flags(0);
+    }, "Volume detector did not deliver start and end while allowing passage, then clear its flags");
+
+    if (!runtime.world().patch_transform(falling.id, drop_position, {}, {}) ||
+        !runtime.world().update_motion(falling.id, {}, {}, {}))
+        throw std::runtime_error("Could not reset the volume detection projectile");
+    poll_until([&] {
+        const auto current = runtime.world().object(falling.id);
+        return current && current->position.z > 28.6f && current->position.z < 29.f &&
+               std::abs(current->velocity.z) < .15f;
+    }, "The prim did not become solid after llVolumeDetect(0)");
+
+    auto child_script = std::make_shared<TaskInventoryItem>(*item);
+    child_script->item_id = Uuid::random();
+    child_script->parent_id = child.id;
+    child_script->parent_part_id = child.id;
+    runtime.restore_task_inventory(child.id, {child_script});
+    poll_until([&] {
+        const auto current_root = runtime.world().object(sensor.id);
+        const auto current_child = runtime.world().object(child.id);
+        return current_root && current_child && !(current_root->flags & detector_flags) &&
+               (current_child->flags & detector_flags) == detector_flags;
+    }, "osVolumeDetect on a child did not leave the root solid");
+
+    runtime.world().remove(falling.id);
+    runtime.world().remove(sensor.id);
+}
+
+void verify_attachment_physics(RegionRuntime& runtime, GridRegion& region, IPresenceService& presence,
+                               const network::UdpEndpoint& endpoint, Uuid script_asset, Uuid collision_asset) {
+    namespace udp = network::lludp;
+    auto circuit = std::make_shared<AgentCircuitData>();
+    circuit->agent_id = Uuid("c37a78be-6c52-4f63-a84c-f4bbd8567b05");
+    circuit->session_id = Uuid::random();
+    circuit->secure_session_id = Uuid::random();
+    circuit->circuit_code = 46;
+    circuit->caps_path = "attachment-physics";
+    circuit->first_name = "Collision";
+    circuit->last_name = "Walker";
+    circuit->start_position = {150, 150, 40};
+    presence.login(circuit->agent_id.str(), circuit->session_id, circuit->secure_session_id);
+
+    LoginTransferContext context;
+    std::string reason;
+    if (!runtime.create_agent(nullptr, region, circuit, 128, context, reason))
+        throw std::runtime_error("Could not reserve the attachment physics circuit: " + reason);
+    std::mutex sound_mutex;
+    std::vector<udp::Packet> collision_sounds;
+    std::vector<udp::Packet> map_requests;
+    std::vector<udp::Packet> url_requests;
+    std::vector<udp::Packet> dialogs;
+    std::vector<double> health_updates;
+    bool received_death_alert = false;
+    bool received_eject_alert = false;
+    std::atomic<std::uint32_t> ack_sequence = 0;
+    network::UdpSocket viewer({"127.0.0.1", 0}, [&](const auto& from, auto bytes) {
+        auto packet = udp::decode_datagram(bytes);
+        if (packet.reliable) {
+            auto ack = udp::make_packet("PacketAck");
+            ack.sequence = ++ack_sequence;
+            auto row = udp::make_block(ack.spec->blocks.front());
+            row["ID"] = std::uint64_t(packet.sequence);
+            ack.blocks["Packets"].push_back(std::move(row));
+            viewer.send_to(from, udp::encode_datagram(ack));
+        }
+        if (packet.spec->name == "SoundTrigger") {
+            std::lock_guard lock(sound_mutex);
+            collision_sounds.push_back(std::move(packet));
+        } else if (packet.spec->name == "ScriptTeleportRequest") {
+            std::lock_guard lock(sound_mutex);
+            map_requests.push_back(std::move(packet));
+        } else if (packet.spec->name == "LoadURL") {
+            std::lock_guard lock(sound_mutex);
+            url_requests.push_back(std::move(packet));
+        } else if (packet.spec->name == "ScriptDialog") {
+            std::lock_guard lock(sound_mutex);
+            dialogs.push_back(std::move(packet));
+        } else if (packet.spec->name == "HealthMessage") {
+            std::lock_guard lock(sound_mutex);
+            health_updates.push_back(std::get<double>(packet.block("HealthData").at("Health")));
+        } else if (packet.spec->name == "AgentAlertMessage") {
+            const auto& alert = packet.block("AlertData");
+            const auto message = framework::sdk_bytes_to_string(
+                std::get<std::vector<std::uint8_t>>(alert.at("Message")));
+            std::lock_guard lock(sound_mutex);
+            received_death_alert |= std::get<bool>(alert.at("Modal")) && message == u"You died!";
+        } else if (packet.spec->name == "AlertMessage") {
+            const auto& alert = packet.block("AlertData");
+            const auto message = framework::sdk_bytes_to_string(
+                std::get<std::vector<std::uint8_t>>(alert.at("Message")));
+            std::lock_guard lock(sound_mutex);
+            received_eject_alert |= message == u"You have been ejected from this land";
+        }
+    });
+    viewer.start();
+    auto connect = udp::make_packet("UseCircuitCode");
+    connect.sequence = 1;
+    auto& credentials = connect.block("CircuitCode");
+    credentials["Code"] = std::uint64_t{circuit->circuit_code};
+    credentials["ID"] = circuit->agent_id;
+    credentials["SessionID"] = circuit->session_id;
+    if (!viewer.send_to(endpoint, udp::encode_datagram(connect)))
+        throw std::runtime_error("Could not connect the attachment physics viewer");
+
+    const auto poll_until = [&](auto ready, const char* failure) {
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        do {
+            runtime.poll();
+            if (ready())
+                return;
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        } while (std::chrono::steady_clock::now() < deadline);
+        throw std::runtime_error(failure);
+    };
+    poll_until([&] { return runtime.viewers().agent(circuit->agent_id).has_value(); },
+               "Attachment physics viewer did not connect");
+    auto movement = udp::make_packet("CompleteAgentMovement");
+    movement.sequence = 2;
+    auto& identity = movement.block("AgentData");
+    identity["AgentID"] = circuit->agent_id;
+    identity["SessionID"] = circuit->session_id;
+    identity["CircuitCode"] = std::uint64_t{circuit->circuit_code};
+    if (!viewer.send_to(endpoint, udp::encode_datagram(movement)))
+        throw std::runtime_error("Could not enter the region for attachment physics");
+
+    std::optional<ViewerAgent> before;
+    poll_until([&] {
+        before = runtime.viewers().agent(circuit->agent_id);
+        return before && before->root && before->position.z > 30.f && before->velocity.z < -.2f;
+    }, "Attachment physics wearer did not enter free fall");
+
+    auto attachment = SceneObject::primitive(circuit->agent_id, {});
+    attachment.is_attachment = true;
+    attachment.parent_id = before->local_id;
+    attachment.shape.state = 5;
+    attachment.name = "Wearer collision attachment";
+    const auto root = runtime.world().add(attachment, false);
+    if (!root)
+        throw std::runtime_error("Could not add the physics attachment");
+    auto child = SceneObject::primitive(circuit->agent_id, {0.25f, 0, 0});
+    child.parent_id = root->local_id;
+    PrimitiveBaseShapeCore material_shape([](const std::string&) {});
+    material_shape.render_materials = std::make_shared<ShapeRenderMaterials>();
+    material_shape.render_materials->entries = std::make_shared<ShapeArray<ShapeMaterialEntry>>(
+        std::vector<ShapeMaterialEntry>{{0, Uuid("7d55d860-e588-45d5-9631-7633cde238ce")},
+                                        {2, Uuid("e23a5bcd-283b-44b2-aa4c-97ca53b88410")}});
+    child.extra_params = material_shape.extra_params();
+    if (!runtime.world().add(child, false))
+        throw std::runtime_error("Could not add the physics attachment child");
+    auto item = std::make_shared<TaskInventoryItem>();
+    item->item_id = Uuid::random();
+    item->parent_id = item->parent_part_id = child.id;
+    item->asset_id = script_asset;
+    item->owner_id = item->creator_id = circuit->agent_id;
+    item->type = item->inventory_type = 10;
+    item->script_running = true;
+    item->name = "Attachment physics";
+    item->current_permissions = child.owner_mask;
+    auto material_item = std::make_shared<TaskInventoryItem>(*item);
+    material_item->item_id = Uuid::random();
+    material_item->asset_id = Uuid("e23a5bcd-283b-44b2-aa4c-97ca53b88410");
+    material_item->name = "Named glTF material";
+    material_item->type = material_item->inventory_type = 57;
+    material_item->script_running = false;
+    runtime.restore_task_inventory(child.id, {item, material_item});
+
+    poll_until([&] {
+        const auto wearer = runtime.viewers().agent(circuit->agent_id);
+        return wearer && wearer->position.x > before->position.x + .2f &&
+               wearer->velocity.x > .5f && wearer->velocity.z > .3f;
+    }, "Attachment script did not push and lift its wearer");
+    poll_until([&] {
+        std::lock_guard lock(sound_mutex);
+        return map_requests.size() >= 2 && !url_requests.empty();
+    }, "Attachment map or URL requests did not reach the wearer's UDP session");
+    {
+        std::lock_guard lock(sound_mutex);
+        const auto check_map = [&](const udp::Packet& packet, std::string_view region_name,
+                                   const std::vector<double>& position, std::optional<std::uint64_t> flags) {
+            const auto& data = packet.block("Data");
+            const auto field_text = [&](const char* field) {
+                const auto& bytes = std::get<std::vector<std::uint8_t>>(data.at(field));
+                return std::string(bytes.begin(), std::ranges::find(bytes, std::uint8_t{0}));
+            };
+            const auto& options = packet.blocks.at("Options");
+            if (!packet.reliable || !packet.zerocoded || field_text("SimName") != region_name ||
+                field_text("ObjectName") != child.name ||
+                std::get<std::vector<double>>(data.at("SimPosition")) != position ||
+                std::get<std::vector<double>>(data.at("LookAt")) != std::vector<double>{0, 0, 0} ||
+                options.size() != static_cast<std::size_t>(flags.has_value()) ||
+                (flags && std::get<std::uint64_t>(options.front().at("Flags")) != *flags))
+                throw std::runtime_error("Incorrect script map packet fields");
+        };
+        check_map(map_requests[0], "Destination fixture", {64, 65, 30}, {});
+        check_map(map_requests[1], "Beacon fixture", {96, 97, 40}, 1);
+        const auto& data = url_requests.front().block("Data");
+        const auto text = [&](const char* field) {
+            const auto& bytes = std::get<std::vector<std::uint8_t>>(data.at(field));
+            return std::string(bytes.begin(), std::ranges::find(bytes, std::uint8_t{0}));
+        };
+        if (std::get<Uuid>(data.at("ObjectID")) != child.id ||
+            std::get<Uuid>(data.at("OwnerID")) != circuit->agent_id ||
+            std::get<bool>(data.at("OwnerIsGroup")) || text("ObjectName") != child.name ||
+            text("Message") != "Fixture URL" || text("URL") != "https://example.invalid/fixture")
+            throw std::runtime_error("Incorrect llLoadURL packet fields");
+    }
+    const auto damage_root = runtime.world().object(root->id);
+    const auto damage_child = runtime.world().object(child.id);
+    if (!damage_root || !damage_child || damage_root->damage != 12.5f || damage_child->damage != -1.f)
+        throw std::runtime_error("llSetDamage did not set damage on the attachment root");
+    std::uint32_t chat_sequence = 2;
+    const auto send_physics_command = [&](std::string_view text) {
+        auto chat = udp::make_packet("ChatFromViewer");
+        chat.sequence = ++chat_sequence;
+        chat.block("AgentData")["AgentID"] = circuit->agent_id;
+        chat.block("AgentData")["SessionID"] = circuit->session_id;
+        auto& data = chat.block("ChatData");
+        data["Channel"] = std::int64_t{7196};
+        data["Type"] = std::uint64_t{1};
+        data["Message"] = std::vector<std::uint8_t>(text.begin(), text.end());
+        if (!viewer.send_to(endpoint, udp::encode_datagram(chat)))
+            throw std::runtime_error("Could not send the attachment physics command");
+    };
+    const auto target_height = [&](const ViewerAgent& wearer) {
+        return runtime.world().terrain().height_at(wearer.position.x, wearer.position.y) + 12.f;
+    };
+    send_physics_command("hover");
+    poll_until([&] {
+        const auto wearer = runtime.viewers().agent(circuit->agent_id);
+        return wearer && std::abs(wearer->position.z - target_height(*wearer)) < .2f &&
+               std::abs(wearer->velocity.z) < .25f;
+    }, "Attachment did not hold its wearer at the terrain-relative hover height");
+    poll_until([&] {
+        std::lock_guard lock(sound_mutex);
+        return !dialogs.empty();
+    }, "The viewer did not receive the scripted dialog");
+    const auto dialog_text = [](const auto& block, const char* field) {
+        return framework::sdk_bytes_to_string(std::get<std::vector<std::uint8_t>>(block.at(field)));
+    };
+    {
+        std::lock_guard lock(sound_mutex);
+        const auto& dialog = dialogs.front();
+        const auto& data = dialog.block("Data");
+        const auto& buttons = dialog.blocks.at("Buttons");
+        const Uuid image("00000000-0000-2222-3333-100000001000");
+        if (std::get<Uuid>(data.at("ObjectID")) != child.id ||
+            std::get<Uuid>(dialog.block("OwnerData").at("OwnerID")) != circuit->agent_id ||
+            dialog_text(data, "ObjectName") != framework::utf16_replacing(child.name) ||
+            dialog_text(data, "Message") != u"Stop hovering?" ||
+            dialog_text(data, "FirstName") != framework::utf16_replacing(circuit->first_name.value_or("")) ||
+            dialog_text(data, "LastName") != framework::utf16_replacing(circuit->last_name.value_or("")) ||
+            std::get<std::int64_t>(data.at("ChatChannel")) != 7196 || std::get<Uuid>(data.at("ImageID")) != image ||
+            buttons.size() != 2 || dialog_text(buttons[0], "ButtonLabel") != u"stop" ||
+            dialog_text(buttons[1], "ButtonLabel") != u"42")
+            throw std::runtime_error("Incorrect llDialog packet fields");
+    }
+    auto dialog_reply = udp::make_packet("ScriptDialogReply");
+    dialog_reply.sequence = ++chat_sequence;
+    auto& reply_identity = dialog_reply.block("AgentData");
+    reply_identity["AgentID"] = circuit->agent_id;
+    reply_identity["SessionID"] = circuit->session_id;
+    auto& reply_data = dialog_reply.block("Data");
+    reply_data["ObjectID"] = child.id;
+    reply_data["ChatChannel"] = std::int64_t{7196};
+    reply_data["ButtonIndex"] = std::int64_t{0};
+    reply_data["ButtonLabel"] = std::vector<std::uint8_t>{'s', 't', 'o', 'p', 0};
+    if (!viewer.send_to(endpoint, udp::encode_datagram(dialog_reply)))
+        throw std::runtime_error("Could not send the script dialog reply");
+    poll_until([&] {
+        const auto wearer = runtime.viewers().agent(circuit->agent_id);
+        return wearer && wearer->position.z < target_height(*wearer) - .5f &&
+               wearer->velocity.z < -1.f;
+    }, "The script did not stop attachment hover after receiving the dialog reply");
+    poll_until([&] {
+        std::lock_guard lock(sound_mutex);
+        return dialogs.size() >= 2;
+    }, "The viewer did not receive the scripted text box");
+    {
+        std::lock_guard lock(sound_mutex);
+        const auto& text_box = dialogs[1];
+        const auto& data = text_box.block("Data");
+        const auto& buttons = text_box.blocks.at("Buttons");
+        if (std::get<Uuid>(data.at("ObjectID")) != child.id ||
+            !std::get<Uuid>(data.at("ImageID")).is_zero() ||
+            std::get<std::int64_t>(data.at("ChatChannel")) != 7196 ||
+            dialog_text(data, "Message") != u"Enter a movement command" ||
+            buttons.size() != 1 || dialog_text(buttons.front(), "ButtonLabel") != u"!!llTextBox!!")
+            throw std::runtime_error("Incorrect llTextBox packet fields");
+    }
+    dialog_reply.sequence = ++chat_sequence;
+    reply_data["ButtonLabel"] = std::vector<std::uint8_t>{'m', 'o', 'v', 'e', 0};
+    if (!viewer.send_to(endpoint, udp::encode_datagram(dialog_reply)))
+        throw std::runtime_error("Could not submit the script text box reply");
+    poll_until([&] {
+        const auto wearer = runtime.viewers().agent(circuit->agent_id);
+        return wearer && wearer->flying && std::abs(wearer->position.x - 150.f) < .1f &&
+               std::abs(wearer->position.y - 155.f) < .1f && std::abs(wearer->position.z - 36.f) < .1f &&
+               wearer->rotation.z > .5f;
+    }, "Attachment move-to-target did not bring its wearer to the destination");
+    send_physics_command("continue");
+    poll_until([&] {
+        const auto wearer = runtime.viewers().agent(circuit->agent_id);
+        return wearer && wearer->position.x > 150.4f && wearer->velocity.x > .5f;
+    }, "Attachment did not start the second move-to-target");
+    send_physics_command("cancel");
+    poll_until([&] {
+        const auto script_host = runtime.world().object(child.id);
+        return script_host && script_host->description == "Movement cancelled";
+    }, "Attachment did not cancel its target movement");
+    auto idle = udp::make_packet("AgentUpdate");
+    idle.sequence = ++chat_sequence;
+    auto& idle_agent = idle.block("AgentData");
+    idle_agent["AgentID"] = circuit->agent_id;
+    idle_agent["SessionID"] = circuit->session_id;
+    idle_agent["ControlFlags"] = std::uint64_t{0x2000u};
+    if (!viewer.send_to(endpoint, udp::encode_datagram(idle)))
+        throw std::runtime_error("Could not send neutral controls after cancelling attachment movement");
+    poll_until([&] {
+        const auto wearer = runtime.viewers().agent(circuit->agent_id);
+        return wearer && wearer->position.x < 160.f && std::abs(wearer->velocity.x) < .25f;
+    }, "Stopping attachment move-to-target did not halt movement before the destination");
+    const auto send_controls = [&](std::uint32_t flags) {
+        auto update = udp::make_packet("AgentUpdate");
+        update.sequence = ++chat_sequence;
+        auto& agent = update.block("AgentData");
+        agent["AgentID"] = circuit->agent_id;
+        agent["SessionID"] = circuit->session_id;
+        agent["ControlFlags"] = std::uint64_t{flags};
+        if (!viewer.send_to(endpoint, udp::encode_datagram(update)))
+            throw std::runtime_error("Could not send controls for attachment ground movement");
+    };
+    send_controls(0);
+    poll_until([&] {
+        const auto wearer = runtime.viewers().agent(circuit->agent_id);
+        return wearer && !wearer->flying && wearer->position.z < target_height(*wearer) - 9.f &&
+               std::abs(wearer->velocity.z) < .25f;
+    }, "Attachment wearer did not land before the ground movement test");
+    send_controls(0x20000u);
+    poll_until([&] {
+        const auto wearer = runtime.viewers().agent(circuit->agent_id);
+        return wearer && wearer->ground_sitting;
+    }, "Attachment wearer did not sit on the ground");
+    send_physics_command("walk");
+    poll_until([&] {
+        const auto wearer = runtime.viewers().agent(circuit->agent_id);
+        return wearer && !wearer->ground_sitting && !wearer->flying &&
+               std::abs(wearer->position.x - 156.f) < .1f && std::abs(wearer->position.y - 157.f) < .1f;
+    }, "Attachment did not stand its wearer up and walk to the ground destination");
+    const float seat_height = runtime.world().terrain().height_at(156, 157) + .5f;
+    const auto seat = runtime.world().add(SceneObject::primitive(circuit->agent_id, {156, 157, seat_height}));
+    if (!seat)
+        throw std::runtime_error("Could not set up the attachment wearer's seat");
+    auto collision_script = std::make_shared<TaskInventoryItem>(*item);
+    collision_script->item_id = Uuid::random();
+    collision_script->parent_id = seat->id;
+    collision_script->parent_part_id = seat->id;
+    collision_script->asset_id = collision_asset;
+    collision_script->name = "Avatar collision fixture";
+    runtime.restore_task_inventory(seat->id, {collision_script});
+    poll_until([&] {
+        const auto platform = runtime.world().object(seat->id);
+        return platform && (platform->description == "Avatar contact active" ||
+                            platform->description == "Avatar contact ended");
+    }, "The seat's script did not detect the avatar's collision");
+
+    runtime.world().set_sit_target(seat->id, {0, 0, 1}, {0, 0, 0, 1});
+    auto sit = udp::make_packet("AgentRequestSit");
+    sit.sequence = ++chat_sequence;
+    sit.block("AgentData")["AgentID"] = circuit->agent_id;
+    sit.block("AgentData")["SessionID"] = circuit->session_id;
+    sit.block("TargetObject")["TargetID"] = seat->id;
+    if (!viewer.send_to(endpoint, udp::encode_datagram(sit)))
+        throw std::runtime_error("Could not send the attachment wearer's sit request");
+    poll_until([&] {
+        const auto wearer = runtime.viewers().agent(circuit->agent_id);
+        return wearer && wearer->seat && wearer->seat->part == seat->id;
+    }, "Attachment wearer did not sit on the object");
+    poll_until([&] {
+        const auto platform = runtime.world().object(seat->id);
+        return platform && platform->description == "Avatar contact ended";
+    }, "The seat's script did not detect the end of the avatar's collision");
+    send_physics_command("seated move");
+    poll_until([&] {
+        const auto script_host = runtime.world().object(child.id);
+        return script_host && script_host->description == "Seated movement attempted";
+    }, "Attachment script did not attempt movement while seated");
+    const auto seated_wearer = runtime.viewers().agent(circuit->agent_id);
+    if (!seated_wearer || !seated_wearer->seat || seated_wearer->seat->part != seat->id)
+        throw std::runtime_error("Attachment movement displaced its wearer from an object seat");
+    send_physics_command("rotate attachment");
+    poll_until([&] {
+        const auto script_host = runtime.world().object(child.id);
+        return script_host && script_host->description == "Attachment rotated" &&
+               script_host->rotation == Quaternion{0, 0, 1, 0};
+    }, "Nonphysical look-at did not update the attachment child's local rotation");
+
+    const float ground = runtime.world().terrain().height_at(162, 157);
+    const Uuid terrain_sound("be7295c0-a158-11e1-b3dd-0807200c9a66");
+    const Uuid custom_sound("be7295c0-a158-11e1-b3dd-0803203c9a66");
+    const auto drop = [&](std::string name) {
+        auto falling = SceneObject::primitive(circuit->agent_id, {162, 157, ground + 4.f});
+        falling.name = std::move(name);
+        falling.flags = 1u;
+        if (!runtime.world().add(falling))
+            throw std::runtime_error("Could not rez the collision sound projectile");
+        auto sound_script = std::make_shared<TaskInventoryItem>(*collision_script);
+        sound_script->item_id = Uuid::random();
+        sound_script->parent_id = falling.id;
+        sound_script->parent_part_id = falling.id;
+        runtime.restore_task_inventory(falling.id, {sound_script});
+        return falling.id;
+    };
+    struct SoundCase {
+        const char* name;
+        Uuid asset;
+        double gain;
+    };
+    const SoundCase cases[] = {
+        {"Default impact", terrain_sound, 1.},
+        {"Custom impact", custom_sound, .45},
+        {"OSSL custom impact", custom_sound, .55},
+        {"Scaled impact", terrain_sound, .35},
+        {"Restored default impact", terrain_sound, 1.},
+    };
+    const auto expect_sound = [&](Uuid falling, const SoundCase& expected, float contact_height) {
+        poll_until([&] {
+            std::lock_guard lock(sound_mutex);
+            return std::ranges::any_of(collision_sounds, [&](const auto& packet) {
+                const auto& data = packet.block("SoundData");
+                if (std::get<Uuid>(data.at("ObjectID")) != falling)
+                    return false;
+                const auto& position = std::get<std::vector<double>>(data.at("Position"));
+                const auto gain = std::get<double>(data.at("Gain"));
+                return std::get<Uuid>(data.at("ParentID")) == falling &&
+                       std::get<Uuid>(data.at("OwnerID")) == circuit->agent_id &&
+                       std::get<Uuid>(data.at("SoundID")) == expected.asset &&
+                       std::abs(position.at(2) - contact_height) < .25f && std::abs(gain - expected.gain) < .01;
+            });
+        }, expected.name);
+    };
+    for (const auto& expected : cases) {
+        const auto falling = drop(expected.name);
+        expect_sound(falling, expected, ground);
+        runtime.world().remove(falling);
+    }
+
+    auto platform = SceneObject::primitive(circuit->agent_id, {162, 157, ground + 1.5f});
+    platform.name = "Scaled impact";
+    platform.scale = {3, 3, 1};
+    if (!runtime.world().add(platform))
+        throw std::runtime_error("Could not rez the collision sound platform");
+    auto platform_script = std::make_shared<TaskInventoryItem>(*collision_script);
+    platform_script->item_id = Uuid::random();
+    platform_script->parent_id = platform.id;
+    platform_script->parent_part_id = platform.id;
+    runtime.restore_task_inventory(platform.id, {platform_script});
+    poll_until([&] {
+        const auto part = runtime.world().object(platform.id);
+        return part && part->collision_sound_volume_override;
+    }, "The collision sound platform did not install its volume override");
+    const auto falling_on_platform = drop("Default impact");
+    expect_sound(falling_on_platform, {"Scaled wood-on-wood impact", custom_sound, .35}, ground + 2.f);
+    runtime.world().remove(falling_on_platform);
+    runtime.world().remove(platform.id);
+
+    const auto disabled = drop("Disabled impact");
+    poll_until([&] {
+        const auto landed = runtime.world().object(disabled);
+        return landed && landed->position.z < ground + .5f && std::abs(landed->velocity.z) < .15f;
+    }, "The disabled collision sound projectile did not land");
+    {
+        std::lock_guard lock(sound_mutex);
+        if (std::ranges::any_of(collision_sounds, [&](const auto& packet) {
+                return std::get<Uuid>(packet.block("SoundData").at("ObjectID")) == disabled;
+            }))
+            throw std::runtime_error("A projectile with collision sounds disabled sent an impact sound");
+    }
+    runtime.world().remove(disabled);
+
+    auto wearer_collision_script = std::make_shared<TaskInventoryItem>(*collision_script);
+    wearer_collision_script->item_id = Uuid::random();
+    wearer_collision_script->parent_id = root->id;
+    wearer_collision_script->parent_part_id = root->id;
+    runtime.restore_task_inventory(root->id, {wearer_collision_script});
+    const auto expect_attachment_description = [&](std::string_view expected, const char* failure) {
+        poll_until([&] {
+            const auto worn = runtime.world().object(root->id);
+            return worn && worn->description == expected;
+        }, failure);
+    };
+    const auto teleport_above = [&](float x, float z) {
+        auto teleport = udp::make_packet("TeleportLocationRequest");
+        teleport.sequence = ++chat_sequence;
+        teleport.block("AgentData")["AgentID"] = circuit->agent_id;
+        teleport.block("AgentData")["SessionID"] = circuit->session_id;
+        auto& destination = teleport.block("Info");
+        destination["RegionHandle"] = runtime.descriptor().handle();
+        destination["Position"] = std::vector<double>{x, 157, z};
+        destination["LookAt"] = std::vector<double>{1, 0, 0};
+        if (!viewer.send_to(endpoint, udp::encode_datagram(teleport)))
+            throw std::runtime_error("Could not teleport the avatar above the impact location");
+    };
+
+    const Uuid flesh_wood_sound("be7295c0-a158-11e1-b3dd-0803204c9a66");
+    const Uuid disabled_sound("ffffffff-ffff-ffff-ffff-ffffffffffff");
+    Uuid restricted_platform;
+    struct AvatarImpactCase {
+        float x;
+        const char* name;
+        Uuid sound;
+        float volume;
+        double expected_gain;
+    };
+    const AvatarImpactCase avatar_cases[] = {
+        {168, "Parcel-restricted avatar impact", custom_sound, .45f, 0.},
+        {172, "Scaled avatar impact", flesh_wood_sound, .35f, .07},
+        {176, "Custom avatar impact", custom_sound, .45f, .45},
+    };
+    for (const auto& expected : avatar_cases) {
+        const float floor = runtime.world().terrain().height_at(expected.x, 157);
+        auto landing = SceneObject::primitive(circuit->agent_id, {expected.x, 157, floor + 1.5f});
+        landing.scale = {3, 3, 1};
+        if (expected.expected_gain == 0.)
+            landing.name = "Wearer collision platform";
+        if (!runtime.world().add(landing))
+            throw std::runtime_error("Could not rez the avatar impact platform");
+        const bool scaled = expected.sound == flesh_wood_sound;
+        runtime.world().set_collision_sound(landing.id, scaled ? disabled_sound : expected.sound,
+                                            expected.volume, scaled);
+
+        teleport_above(expected.x, floor + 8.f);
+        poll_until([&] {
+            const auto avatar = runtime.viewers().agent(circuit->agent_id);
+            return avatar && !avatar->seat && std::abs(avatar->position.x - expected.x) < .2f &&
+                   avatar->position.z > floor + 2.5f && avatar->position.z < floor + 3.5f &&
+                   std::abs(avatar->velocity.z) < .2f;
+        }, "The avatar did not land on the impact platform");
+        if (expected.expected_gain == 0.) {
+            restricted_platform = landing.id;
+            expect_attachment_description("Wearer contact active",
+                                          "The attachment did not receive start and ongoing wearer contacts");
+        } else {
+            expect_sound(landing.id, {expected.name, expected.sound, expected.expected_gain}, floor + 2.f);
+            runtime.world().remove(landing.id);
+        }
+    }
+    expect_attachment_description("Wearer contact ended",
+                                  "The attachment did not receive the end of the wearer contact");
+    runtime.world().remove(restricted_platform);
+
+    const float landing_ground = runtime.world().terrain().height_at(180, 157);
+    teleport_above(180, landing_ground + 8.f);
+    expect_attachment_description("Wearer land contact active",
+                                  "The attachment did not receive start and ongoing wearer land contacts");
+    teleport_above(180, landing_ground + 8.f);
+    expect_attachment_description("Wearer land contact ended",
+                                  "The attachment did not receive the end of the wearer land contact");
+    const float damage_ground = runtime.world().terrain().height_at(184, 157);
+    auto damaging_platform = SceneObject::primitive(circuit->agent_id, {184, 157, damage_ground + 1.5f});
+    damaging_platform.scale = {3, 3, 1};
+    damaging_platform.damage = 12.5f;
+    if (!runtime.world().add(damaging_platform))
+        throw std::runtime_error("Could not rez the scripted damage platform");
+    teleport_above(184, damage_ground + 8.f);
+    poll_until([&] {
+        const auto avatar = runtime.viewers().agent(circuit->agent_id);
+        std::lock_guard lock(sound_mutex);
+        return avatar && avatar->health >= 87.5f && avatar->health < 90.f &&
+               !runtime.world().object(damaging_platform.id) &&
+               std::ranges::find(health_updates, 87.5) != health_updates.end();
+    }, "Scripted collision did not reduce health, notify the viewer and remove the damaging object");
+    poll_until([&] {
+        std::lock_guard lock(sound_mutex);
+        return std::ranges::any_of(health_updates, [](double health) { return health > 87.5 && health < 100.; });
+    }, "Passive recovery did not send a viewer health update");
+    auto ordinary_platform = SceneObject::primitive(circuit->agent_id, {184, 157, damage_ground + 1.5f});
+    ordinary_platform.scale = {3, 3, 1};
+    if (!runtime.world().add(ordinary_platform))
+        throw std::runtime_error("Could not rez the ordinary impact platform");
+    teleport_above(184, damage_ground + 15.f);
+    const auto observe_fall_start = [&] {
+        float health = 0.f;
+        poll_until([&] {
+            const auto avatar = runtime.viewers().agent(circuit->agent_id);
+            if (!avatar || avatar->position.z <= damage_ground + 8.f)
+                return false;
+            health = avatar->health;
+            return true;
+        }, "The avatar did not teleport above the impact site");
+        return health;
+    };
+    auto health_before_impact = observe_fall_start();
+    poll_until([&] {
+        const auto avatar = runtime.viewers().agent(circuit->agent_id);
+        if (!avatar)
+            return false;
+        health_before_impact = std::max(health_before_impact, avatar->health);
+        return avatar->health < health_before_impact && runtime.world().object(ordinary_platform.id).has_value();
+    }, "A hard impact against an ordinary prim did not reduce avatar health");
+    runtime.world().remove(ordinary_platform.id);
+    teleport_above(184, damage_ground + 15.f);
+    health_before_impact = observe_fall_start();
+    poll_until([&] {
+        const auto avatar = runtime.viewers().agent(circuit->agent_id);
+        if (!avatar)
+            return false;
+        health_before_impact = std::max(health_before_impact, avatar->health);
+        return avatar->health < health_before_impact;
+    }, "A hard terrain impact on a damage-enabled parcel did not reduce avatar health");
+    {
+        std::lock_guard lock(sound_mutex);
+        if (std::ranges::any_of(collision_sounds, [&](const auto& packet) {
+                return std::get<Uuid>(packet.block("SoundData").at("ObjectID")) == restricted_platform;
+            }))
+            throw std::runtime_error("An avatar impact sound played on a parcel that disallows avatar sounds");
+    }
+
+    auto mute = udp::make_packet("AgentUpdate");
+    mute.sequence = ++chat_sequence;
+    auto& mute_data = mute.block("AgentData");
+    mute_data["AgentID"] = circuit->agent_id;
+    mute_data["SessionID"] = circuit->session_id;
+    mute_data["Flags"] = std::uint64_t{0x80};
+    if (!viewer.send_to(endpoint, udp::encode_datagram(mute)))
+        throw std::runtime_error("Could not set the viewer collision mute flag");
+    poll_until([&] {
+        const auto wearer = runtime.viewers().agent(circuit->agent_id);
+        return wearer && wearer->mute_collisions;
+    }, "The region did not apply the viewer collision mute flag");
+
+    auto muted = SceneObject::primitive(circuit->agent_id, {162, 157, ground + 4.f});
+    muted.flags = 1u;
+    muted.name = "Collider report fixture";
+    if (!runtime.world().add(muted))
+        throw std::runtime_error("Could not rez the muted collision sound projectile");
+    poll_until([&] {
+        const auto landed = runtime.world().object(muted.id);
+        return landed && landed->position.z < ground + .5f && std::abs(landed->velocity.z) < .15f;
+    }, "The muted projectile did not land");
+    {
+        std::lock_guard lock(sound_mutex);
+        if (std::ranges::any_of(collision_sounds, [&](const auto& packet) {
+                return std::get<Uuid>(packet.block("SoundData").at("ObjectID")) == muted.id;
+            }))
+            throw std::runtime_error("A collision sound reached a muted viewer");
+    }
+    auto request = udp::make_packet("LandStatRequest");
+    request.sequence = ++chat_sequence;
+    request.block("AgentData")["AgentID"] = circuit->agent_id;
+    request.block("AgentData")["SessionID"] = circuit->session_id;
+    auto& fields = request.block("RequestData");
+    fields["ReportType"] = std::uint64_t{1};
+    fields["RequestFlags"] = std::uint64_t{4};
+    const std::string filter = "COLLIDER REPORT";
+    fields["Filter"] = std::vector<std::uint8_t>(filter.begin(), filter.end());
+    if (!viewer.send_to(endpoint, udp::encode_datagram(request)))
+        throw std::runtime_error("Could not request top colliders");
+
+    const auto caps = std::dynamic_pointer_cast<Caps>(
+        runtime.capabilities()->capabilities().get_caps_for_user(circuit->circuit_code));
+    std::shared_ptr<CapabilityPollHandler> event_queue;
+    if (!caps || !caps->try_get_poll("EventQueueGet", event_queue))
+        throw std::runtime_error("The collider report viewer has no event queue");
+    const auto poll_id = Uuid::random();
+    poll_until([&] {
+        if (!event_queue->has_events(poll_id, circuit->agent_id))
+            return false;
+        const auto reply = event_queue->get_events(poll_id, circuit->agent_id);
+        if (!reply || !reply->contains("bin_response_data"))
+            return false;
+        const auto bytes = std::any_cast<server::PollBytes>(reply->get("bin_response_data"));
+        const auto events = network::parse_llsd_xml(std::string(bytes->begin(), bytes->end()));
+        for (const auto& event : events.get("events").array) {
+            if (event.get("message").as_string() != "LandStatReply")
+                continue;
+            const auto body = event.get("body");
+            const auto header = body.get("RequestData").array.at(0);
+            const auto rows = body.get("ReportData").array;
+            if (network::osd_unsigned(header.get("ReportType")) != 1 ||
+                network::osd_unsigned(header.get("TotalObjectCount")) != 1 || rows.size() != 1)
+                continue;
+            const auto& row = rows.front();
+            if (row.get("TaskID").as_string() == muted.id.str() && row.get("TaskName").as_string() == muted.name &&
+                row.get("Score").real == 1. && network::osd_unsigned(header.get("RequestFlags")) == 4)
+                return true;
+        }
+        return false;
+    }, "The viewer did not receive the filtered top collider and its score");
+    runtime.world().remove(muted.id);
+    auto lethal_platform = SceneObject::primitive(circuit->agent_id, {184, 157, damage_ground + 1.5f});
+    lethal_platform.scale = {3, 3, 1};
+    lethal_platform.damage = 110.f;
+    if (!runtime.world().add(lethal_platform))
+        throw std::runtime_error("Could not rez the lethal collision platform");
+    teleport_above(184, damage_ground + 8.f);
+    poll_until([&] {
+        const auto avatar = runtime.viewers().agent(circuit->agent_id);
+        std::lock_guard lock(sound_mutex);
+        return avatar && std::abs(avatar->position.x - 188.f) < .2f && avatar->health == 100.f &&
+               received_death_alert && std::ranges::any_of(health_updates, [](double health) { return health <= 0.; }) &&
+               std::ranges::find(health_updates, 100.) != health_updates.end() &&
+               !runtime.world().object(lethal_platform.id);
+    }, "Lethal collision did not notify the viewer, restore health and teleport the avatar home");
+    teleport_above(184, damage_ground + 8.f);
+    poll_until([&] {
+        const auto avatar = runtime.viewers().agent(circuit->agent_id);
+        return avatar && std::abs(avatar->position.x - 184.f) < .2f;
+    }, "The avatar did not enter the script owner's parcel");
+    send_physics_command("eject");
+    poll_until([&] {
+        const auto avatar = runtime.viewers().agent(circuit->agent_id);
+        std::lock_guard lock(sound_mutex);
+        return avatar && received_eject_alert &&
+               (avatar->position.x < 183.f || avatar->position.x >= 185.f ||
+                avatar->position.y < 156.f || avatar->position.y >= 158.f);
+    }, "llEjectFromLand did not relocate the avatar outside the owner's parcel and send an alert");
+    teleport_above(184, damage_ground + 8.f);
+    poll_until([&] {
+        const auto avatar = runtime.viewers().agent(circuit->agent_id);
+        return avatar && std::abs(avatar->position.x - 184.f) < .2f &&
+               std::abs(avatar->position.y - 157.f) < .2f;
+    }, "The ejected avatar did not return to the script owner's parcel");
+    send_physics_command("home");
+    poll_until([&] {
+        const auto avatar = runtime.viewers().agent(circuit->agent_id);
+        return avatar && std::abs(avatar->position.x - 188.f) < .2f;
+    }, "llTeleportAgentHome did not return the avatar to its home");
+    runtime.close_agent_session(circuit->agent_id, circuit->session_id.str());
+    runtime.world().remove(seat->id);
 }
 
 void verify_transferred_seat(RegionRuntime& runtime, GridRegion& region, IPresenceService& presence,
@@ -1190,6 +2389,111 @@ Uuid verify_viewer_packets(RegionRuntime& runtime, const server::RegistryCapabil
     if (!landed_viewer || landed_viewer->camera_position != landed_viewer->position ||
         landed_viewer->camera_rotation != Quaternion{0, 0, 1, 0})
         throw std::runtime_error("Teleport landing did not reset the camera center and retain its rotation");
+    wait([&](const auto& packets) {
+        return std::ranges::any_of(packets, [&](const auto& packet) {
+            if (packet.spec->name != "ImprovedTerseObjectUpdate")
+                return false;
+            return std::ranges::any_of(packet.blocks.at("ObjectData"), [&](const auto& row) {
+                const auto& data = std::get<std::vector<std::uint8_t>>(row.at("Data"));
+                if (data.size() != 60 || data[5] != 1)
+                    return false;
+                const auto read_u32 = [&](std::size_t offset) {
+                    return std::uint32_t(data[offset]) | (std::uint32_t(data[offset + 1]) << 8) |
+                           (std::uint32_t(data[offset + 2]) << 16) | (std::uint32_t(data[offset + 3]) << 24);
+                };
+                return read_u32(0) == landed_viewer->local_id &&
+                       std::bit_cast<float>(read_u32(14)) > .9f &&
+                       std::bit_cast<float>(read_u32(18)) > 1.f;
+            });
+        });
+    }, "Viewer did not receive its avatar's ground collision plane in a terse block");
+    const auto scheduled = runtime.world().add(SceneObject::primitive(circuit.agent_id, {160, 100, 25}));
+    if (!scheduled ||
+        !runtime.world().patch_transform(scheduled->id, {}, {}, Vector3{1, 1, 1}) ||
+        !runtime.world().patch_transform(scheduled->id, {}, {}, Vector3{2, 2, 2}))
+        throw std::runtime_error("Could not stage two changes to the scheduled object");
+    wait([&](const auto& packets) {
+        bool saw_final = false;
+        for (const auto& packet : packets) {
+            if (packet.spec->name != "ObjectUpdate")
+                continue;
+            for (const auto& row : packet.blocks.at("ObjectData")) {
+                if (std::get<Uuid>(row.at("FullID")) != scheduled->id)
+                    continue;
+                const auto& scale = std::get<std::vector<double>>(row.at("Scale"));
+                if (scale != std::vector<double>{2, 2, 2})
+                    throw std::runtime_error("Scheduled creation published a stale scale");
+                saw_final |= scale == std::vector<double>{2, 2, 2};
+            }
+        }
+        return saw_final;
+    }, "Scheduled object updates did not publish the final scale");
+    const auto marker = runtime.world().add(SceneObject::primitive(circuit.agent_id, {161, 100, 25}));
+    if (!marker)
+        throw std::runtime_error("Could not create the terse update tick marker");
+    const auto terse_payload = [&](SceneObject part, Vector3 angular_velocity) {
+        part.angular_velocity = angular_velocity;
+        const auto packet = object_terse_update(part, runtime.descriptor().handle());
+        return std::get<std::vector<std::uint8_t>>(packet.block("ObjectData").at("Data"));
+    };
+    const auto contains_terse = [](const auto& packets, const auto& payload) {
+        return std::ranges::any_of(packets, [&](const auto& packet) {
+            return packet.spec->name == "ImprovedTerseObjectUpdate" &&
+                   std::ranges::any_of(packet.blocks.at("ObjectData"), [&](const auto& row) {
+                       return std::get<std::vector<std::uint8_t>>(row.at("Data")) == payload;
+                   });
+        });
+    };
+    const Vector3 baseline{.1f, 0, 0};
+    const Vector3 small_change{.1019f, 0, 0};
+    const Vector3 large_change{.5f, 0, 0};
+    const auto baseline_payload = terse_payload(*scheduled, baseline);
+    const auto small_payload = terse_payload(*scheduled, small_change);
+    if (baseline_payload == small_payload)
+        throw std::runtime_error("The terse filter fixture quantized both velocities to the same payload");
+    if (!runtime.world().update_angular_velocity(scheduled->id, baseline))
+        throw std::runtime_error("Could not set the initial terse angular velocity");
+    wait([&](const auto& packets) { return contains_terse(packets, baseline_payload); },
+         "Viewer did not receive the terse motion baseline");
+    if (!runtime.world().update_angular_velocity(scheduled->id, small_change) ||
+        !runtime.world().update_angular_velocity(marker->id, large_change))
+        throw std::runtime_error("Could not queue the small angular change and tick marker");
+    const auto marker_payload = terse_payload(*marker, large_change);
+    wait([&](const auto& packets) { return contains_terse(packets, marker_payload); },
+         "Viewer did not receive the scheduled terse tick marker");
+    const Vector3 marker_second_change{.9f, 0, 0};
+    if (!runtime.world().update_angular_velocity(scheduled->id, large_change) ||
+        !runtime.world().update_angular_velocity(marker->id, marker_second_change))
+        throw std::runtime_error("Could not queue two angular changes for the same tick");
+    const auto large_payload = terse_payload(*scheduled, large_change);
+    const auto marker_second_payload = terse_payload(*marker, marker_second_change);
+    wait([&](const auto& packets) {
+        if (contains_terse(packets, small_payload))
+            throw std::runtime_error("Viewer received a terse packet for the sub-threshold angular change");
+        return std::ranges::any_of(packets, [&](const auto& packet) {
+            const auto single_packet = std::span{&packet, 1};
+            return contains_terse(single_packet, large_payload) &&
+                   contains_terse(single_packet, marker_second_payload);
+        });
+    }, "Viewer did not receive both angular changes in one terse packet");
+    runtime.world().remove(marker->id);
+    runtime.world().remove(scheduled->id);
+    const auto removed = runtime.world().add(SceneObject::primitive(circuit.agent_id, {160, 100, 25}));
+    if (!removed || !runtime.world().remove(removed->id))
+        throw std::runtime_error("Could not remove the object before its scheduled creation update");
+    wait([&](const auto& packets) {
+        bool saw_kill = false;
+        for (const auto& packet : packets) {
+            if (packet.spec->name == "ObjectUpdate")
+                for (const auto& row : packet.blocks.at("ObjectData"))
+                    if (std::get<Uuid>(row.at("FullID")) == removed->id)
+                        throw std::runtime_error("A removed object was published from the creation queue");
+            if (packet.spec->name == "KillObject")
+                for (const auto& row : packet.blocks.at("ObjectData"))
+                    saw_kill |= std::get<std::uint64_t>(row.at("ID")) == removed->local_id;
+        }
+        return saw_kill;
+    }, "Removing a queued object did not send KillObject");
     auto own_object = SceneObject::primitive(circuit.agent_id, {160, 100, 25});
     own_object.name = "Manually returned fixture";
     const std::string face_media =
@@ -2911,6 +4215,11 @@ int main(int argc, char** argv) {
         region.internal_endpoint = RegionEndpoint{"127.0.0.1", 0};
         RegionPolicies policies;
         policies.environment_enabled = true;
+        policies.allow_god_functions = true;
+        policies.grid_region_at = [&](std::int32_t x, std::int32_t y) {
+            return x == region.x + region.size_x + 1 &&
+                   (y == region.y + 128 || y == region.y + region.size_y + 1);
+        };
         policies.estate_menu_flags |= 0x200u;
         std::vector<std::pair<std::optional<Uuid>, std::string>> environment_writes;
         policies.persist_environment = [&](auto parcel, auto settings) {
@@ -2925,6 +4234,8 @@ int main(int argc, char** argv) {
         std::atomic<unsigned> parcel_refreshes = 0;
         policies.parcel_prim_count_tainted = [&] { ++parcel_refreshes; };
         policies.physics_library = argv[1];
+        policies.scene_frame_time = .08f;
+        policies.update_objects_every_n_frames = 2;
         policies.animations = std::make_shared<DefaultAnimations>(argv[2]);
         if (argc == 4)
             policies.spawn_point_routing = argv[3];
@@ -3058,8 +4369,28 @@ int main(int argc, char** argv) {
             return account;
         };
         const auto hub = SceneObject::primitive(Uuid::random(), {96, 64, 25});
+        auto silent_parcel = std::make_shared<ScriptParcel>(*current_other_parcel.load());
+        silent_parcel->any_avatar_sounds = false;
+        silent_parcel->group_avatar_sounds = false;
+        auto combat_parcel = std::make_shared<ScriptParcel>(*current_other_parcel.load());
+        combat_parcel->flags |= 0x20u;
+        combat_parcel->owner = Uuid("c37a78be-6c52-4f63-a84c-f4bbd8567b05");
+        policies.resolve_landmark = [handle = region.handle()](const ViewerAgent& avatar, Uuid landmark,
+                                                              network::lludp::Packet& request) -> std::string {
+            if (!landmark.is_zero() || avatar.circuit->caps_path != "attachment-physics")
+                return "Your home region not found";
+            auto& info = request.block("Info");
+            info["RegionHandle"] = handle;
+            info["Position"] = std::vector<double>{188, 157, 30};
+            info["LookAt"] = std::vector<double>{1, 0, 0};
+            return {};
+        };
         policies.script_parcel_at = [=, &current_other_parcel, &current_sale_parcel](Vector3 position)
             -> std::shared_ptr<const ScriptParcel> {
+            if (position.x >= 167 && position.x < 169 && position.y >= 156 && position.y < 158)
+                return silent_parcel;
+            if (position.x >= 183 && position.x < 185 && position.y >= 156 && position.y < 158)
+                return combat_parcel;
             if (position.x < 64)
                 return group_parcel;
             if (position.x < 128)
@@ -3148,6 +4479,7 @@ int main(int argc, char** argv) {
         policies.script_ossl_rules["osAvatarPlayAnimation"].owners = "true";
         policies.script_ossl_rules["osAvatarStopAnimation"].owners = "true";
         policies.script_ossl_rules["osSetRegionWaterHeight"].owners = "true";
+        policies.script_ossl_rules["osSetHealRate"].owners = "true";
         policies.script_ossl_rules["osSetRegionSunSettings"].owners = "true";
         policies.script_ossl_rules["osReplaceAgentEnvironment"].owners = blocked_visitor.str();
         const auto duplicate_script_asset = std::make_shared<AssetBase>(
@@ -3265,10 +4597,434 @@ int main(int argc, char** argv) {
         )LSL";
         attachment_script->data = std::make_shared<std::vector<std::uint8_t>>(
             attachment_script_source.begin(), attachment_script_source.end());
+        const auto attachment_physics_script = std::make_shared<AssetBase>(
+            Uuid::random(), "Attachment physics", static_cast<std::int8_t>(AssetType::LSLText), "");
+        const std::string attachment_physics_source = R"LSL(
+            default {
+                state_entry() {
+                    llApplyImpulse(<35, 0, 0>, FALSE);
+                    llSetBuoyancy(2);
+                    llListen(7196, "", llGetOwner(), "");
+                    key wearer = llGetOwner();
+                    if (osGetHealRate(wearer) != 0.5)
+                        return;
+                    osSetHealRate(wearer, -5);
+                    if (osGetHealRate(wearer) != 0.0)
+                        return;
+                    osSetHealRate(wearer, 101);
+                    if (osGetHealRate(wearer) != 100.0)
+                        return;
+                    osSetHealRate(wearer, 0.5);
+                    if (!llIsLinkGLTFMaterial(LINK_THIS, 0) || llIsLinkGLTFMaterial(LINK_ROOT, 0) ||
+                        llIsLinkGLTFMaterial(LINK_THIS, ALL_SIDES) || llIsLinkGLTFMaterial(LINK_THIS, 1))
+                        return;
+                    if (llGetRenderMaterial(ALL_SIDES) != "7d55d860-e588-45d5-9631-7633cde238ce" ||
+                        llGetRenderMaterial(2) != "Named glTF material" || llGetRenderMaterial(1) != NULL_KEY)
+                        return;
+                    llSetDamage(12.5);
+                    llLoadURL(llGetOwner(), "Fixture URL", "https://example.invalid/fixture");
+                    llMapDestination("Destination fixture", <64, 65, 30>, <1, 2, 3>);
+                    llMapBeacon("Beacon fixture", <96, 97, 40>, [BEACON_MAP, 1, 0]);
+                }
+                listen(integer channel, string name, key id, string message) {
+                    if (message == "hover") {
+                        llSetBuoyancy(0);
+                        llSetHoverHeight(12, FALSE, 0.25);
+                        llDialog(llGetOwner(), "Stop hovering?", ["stop", 42], channel);
+                    } else if (message == "stop") {
+                        llStopHover();
+                        if (llGetHealth(llGetOwner()) == 100.0)
+                            llTextBox(llGetOwner(), "Enter a movement command", channel);
+                    } else if (message == "move") {
+                        llMoveToTarget(<150, 155, 36>, 0.5);
+                    } else if (message == "continue") {
+                        llMoveToTarget(<166, 155, 36>, 2);
+                    } else if (message == "cancel") {
+                        llStopMoveToTarget();
+                        llSetObjectDesc("Movement cancelled");
+                    } else if (message == "walk") {
+                        llMoveToTarget(<156, 157, 0>, 0.5);
+                    } else if (message == "seated move") {
+                        llMoveToTarget(<160, 157, 0>, 0.5);
+                        llSetObjectDesc("Seated movement attempted");
+                    } else if (message == "rotate attachment") {
+                        llRotLookAt(<0, 0, 1, 0>, 1, 1);
+                        llSetObjectDesc("Attachment rotated");
+                    } else if (message == "home") {
+                        llTeleportAgentHome(id);
+                    } else if (message == "eject") {
+                        llEjectFromLand(id);
+                    }
+                }
+            }
+        )LSL";
+        attachment_physics_script->data = std::make_shared<std::vector<std::uint8_t>>(
+            attachment_physics_source.begin(), attachment_physics_source.end());
+        const auto land_collision_script = std::make_shared<AssetBase>(
+            Uuid::random(), "Land collision", static_cast<std::int8_t>(AssetType::LSLText), "");
+        const std::string land_collision_source = R"LSL(
+            default {
+                state_entry() { llPassCollisions(1); }
+                land_collision_start(vector position) {
+                    if (llFabs(position.x - 212) < 0.1 && llFabs(position.y - 213) < 0.1 && position.z > 22)
+                        llSetObjectDesc("Land contact started");
+                }
+                land_collision(vector position) {
+                    if (llGetObjectDesc() == "Land contact started")
+                        llSetObjectDesc("Land contact active");
+                }
+                land_collision_end(vector position) {
+                    if (llGetObjectDesc() == "Land contact active" && position.z > 25)
+                        llSetObjectDesc("Land contact ended");
+                }
+            }
+        )LSL";
+        land_collision_script->data = std::make_shared<std::vector<std::uint8_t>>(
+            land_collision_source.begin(), land_collision_source.end());
+        const auto object_collision_script = std::make_shared<AssetBase>(
+            Uuid::random(), "Object collision", static_cast<std::int8_t>(AssetType::LSLText), "");
+        const std::string object_collision_source = R"LSL(
+            default {
+                state_entry() {
+                    if (llGetObjectName() == "Collision platform") {
+                        llCollisionFilter("", NULL_KEY, 0);
+                        llSetObjectDesc("Platform filter installed");
+                    } else {
+                        llCollisionFilter("cOlLiSiOn pLaTfOrM", "invalid key", -1);
+                    }
+                }
+
+                collision_start(integer count) {
+                    if (llGetObjectName() == "Collision platform")
+                        llSetObjectDesc("Unexpected platform collision");
+                    else if (count == 1 && llDetectedName(0) == "Collision platform" && llDetectedType(0) == 12)
+                        llSetObjectDesc("Object contact started");
+                }
+
+                collision(integer count) {
+                    if (count == 1 && llGetObjectDesc() == "Object contact started") {
+                        llCollisionFilter("COLLISION PLATFORM", llDetectedKey(0), 1);
+                        llSetObjectDesc("Object contact active");
+                    }
+                }
+
+                collision_end(integer count) {
+                    if (count == 1 && llDetectedName(0) == "Collision platform" &&
+                        llGetObjectDesc() == "Object contact active")
+                        llSetObjectDesc("Object contact ended");
+                }
+            }
+        )LSL";
+        object_collision_script->data = std::make_shared<std::vector<std::uint8_t>>(
+            object_collision_source.begin(), object_collision_source.end());
+        const auto avatar_collision_script = std::make_shared<AssetBase>(
+            Uuid::random(), "Avatar collision", static_cast<std::int8_t>(AssetType::LSLText), "");
+        const std::string avatar_collision_source = R"LSL(
+            default {
+                state_entry() {
+                    string name = llGetObjectName();
+                    if (name == "Wearer collision attachment")
+                        llCollisionFilter("wearer collision platform", NULL_KEY, 1);
+                    else if (name == "Custom impact")
+                        llCollisionSound("be7295c0-a158-11e1-b3dd-0803203c9a66", 0.45);
+                    else if (name == "OSSL custom impact")
+                        osCollisionSound("be7295c0-a158-11e1-b3dd-0803203c9a66", 0.55);
+                    else if (name == "Scaled impact")
+                        osCollisionSound("", 0.35);
+                    else if (name == "Restored default impact") {
+                        osCollisionSound("", 0.35);
+                        osCollisionSound("", 1.0);
+                    } else if (name == "Disabled impact")
+                        osCollisionSound("", 0.0);
+                    else
+                        llCollisionFilter("collision walker", llGetOwner(), 1);
+                }
+
+                collision_start(integer count) {
+                    if (count == 1 && llDetectedName(0) == "Wearer collision platform" &&
+                        llDetectedLinkNumber(0) == 0)
+                        llSetObjectDesc("Wearer contact started");
+                    else if (count == 1 && llDetectedName(0) == "Collision Walker" &&
+                        llDetectedKey(0) == llGetOwner() && llDetectedOwner(0) == llGetOwner() &&
+                        (llDetectedType(0) & 1))
+                        llSetObjectDesc("Avatar contact started");
+                }
+
+                collision(integer count) {
+                    if (count == 1 && llGetObjectDesc() == "Wearer contact started")
+                        llSetObjectDesc("Wearer contact active");
+                    else if (count == 1 && llGetObjectDesc() == "Avatar contact started")
+                        llSetObjectDesc("Avatar contact active");
+                }
+
+                collision_end(integer count) {
+                    if (count == 1 && llGetObjectDesc() == "Wearer contact active")
+                        llSetObjectDesc("Wearer contact ended");
+                    else if (count == 1 && llDetectedKey(0) == llGetOwner() &&
+                             llGetObjectDesc() == "Avatar contact active")
+                        llSetObjectDesc("Avatar contact ended");
+                }
+
+                land_collision_start(vector position) {
+                    if (llGetObjectName() == "Wearer collision attachment" &&
+                        llFabs(position.x - 180.0) < 0.2)
+                        llSetObjectDesc("Wearer land contact started");
+                }
+
+                land_collision(vector position) {
+                    if (llGetObjectDesc() == "Wearer land contact started")
+                        llSetObjectDesc("Wearer land contact active");
+                }
+
+                land_collision_end(vector position) {
+                    if (llGetObjectDesc() == "Wearer land contact active")
+                        llSetObjectDesc("Wearer land contact ended");
+                }
+            }
+        )LSL";
+        avatar_collision_script->data = std::make_shared<std::vector<std::uint8_t>>(
+            avatar_collision_source.begin(), avatar_collision_source.end());
+        const auto volume_detect_script = std::make_shared<AssetBase>(
+            Uuid::random(), "Volume detect", static_cast<std::int8_t>(AssetType::LSLText), "");
+        const std::string volume_detect_source = R"LSL(
+            default {
+                state_entry() {
+                    if (llGetLinkNumber() > 1)
+                        osVolumeDetect(-1);
+                    else
+                        llVolumeDetect(-1);
+                }
+
+                collision_start(integer count) {
+                    if (count == 1 && llDetectedName(0) == "Falling through" && llGetObjectDesc() == "")
+                        llSetObjectDesc("Volume contact started");
+                }
+
+                collision(integer count) {
+                    if (llGetObjectDesc() == "Volume contact started")
+                        llSetObjectDesc("Unexpected ongoing volume collision");
+                }
+
+                collision_end(integer count) {
+                    if (count == 1 && llDetectedName(0) == "Falling through" &&
+                        llGetObjectDesc() == "Volume contact started") {
+                        llSetObjectDesc("Volume contact ended");
+                        llVolumeDetect(0);
+                    }
+                }
+            }
+        )LSL";
+        volume_detect_script->data = std::make_shared<std::vector<std::uint8_t>>(
+            volume_detect_source.begin(), volume_detect_source.end());
+        const auto mass_query_script = std::make_shared<AssetBase>(
+            Uuid::random(), "Prim mass", static_cast<std::int8_t>(AssetType::LSLText), "");
+        const std::string mass_query_source = R"LSL(
+            integer override_phase;
+
+            default {
+                state_entry() {
+                    if (llGetObjectName() == "llDie fixture")
+                        llDie();
+                    llSetTimerEvent(0.1);
+                }
+
+                timer() {
+                    if (llGetObjectName() == "Water repel fixture") {
+                        llGroundRepel(30.0 - 2.0 * llWater(ZERO_VECTOR), TRUE, 0.2);
+                        llSetTimerEvent(0.0);
+                        return;
+                    }
+                    if (llGetObjectName() == "Ground repel fixture") {
+                        llGroundRepel(3.0, FALSE, 0.2);
+                        llSetTimerEvent(0.0);
+                        return;
+                    }
+                    if (override_phase != 0) {
+                        rotation current_rotation = llGetLocalRot();
+                        list custom = osGetInertiaData();
+                        float mass = llList2Float(custom, 0);
+                        vector center_local = llList2Vector(custom, 1);
+                        vector axes = llList2Vector(custom, 2);
+                        if (override_phase == 1 && llFabs(mass - 12.0) < 0.01 &&
+                            llVecDist(center_local, <0.5, 0.0, 0.0>) < 0.01 &&
+                            llVecDist(axes, <0.4, 0.4, 0.4>) < 0.01) {
+                            osSetInertiaAsBox(15.0, <2.0, 3.0, 4.0>, ZERO_VECTOR,
+                                              <0.0, 0.0, 0.382683432, 0.923879533>);
+                            list immediate = osGetInertiaData();
+                            if (llFabs(llList2Float(immediate, 0) - 15.0) > 0.01 ||
+                                llVecDist(llList2Vector(immediate, 3), <0.208333, 0.0, 0.0>) > 0.01) {
+                                llSetObjectDesc("Immediate rotated inertia readback failed");
+                                llSetTimerEvent(0.0);
+                                return;
+                            }
+                            override_phase = 2;
+                        } else if (override_phase == 2 && llFabs(mass - 15.0) < 0.01 &&
+                                   llVecDist(axes, <1.875, 1.875, 1.083333>) < 0.01) {
+                            osSetInertiaAsCylinder(18.0, 1.0, 2.0, ZERO_VECTOR, ZERO_ROTATION);
+                            override_phase = 3;
+                        } else if (override_phase == 3 && llFabs(mass - 18.0) < 0.01 &&
+                                   llVecDist(axes, <0.583333, 0.583333, 0.5>) < 0.01) {
+                            osSetInertia(20.0, ZERO_VECTOR, <0.5, 0.6, 0.7>, ZERO_ROTATION);
+                            override_phase = 4;
+                        } else if (override_phase == 4 && llFabs(mass - 20.0) < 0.01 &&
+                                   llVecDist(axes, <0.5, 0.6, 0.7>) < 0.01) {
+                            osClearInertia();
+                            override_phase = 5;
+                        } else if (override_phase == 5 && llFabs(mass - 30.0) < 0.01 &&
+                                   llVecDist(axes, <0.388889, 1.055556, 1.277778>) < 0.01) {
+                            llSetPhysicsMaterial(DENSITY, 0.0, 0.0, 0.0, 4000.0);
+                            override_phase = 6;
+                        } else if (override_phase == 6) {
+                            if (llFabs(llList2Float(llGetPhysicsMaterial(), 3) - 4000.0) > 0.01 ||
+                                llFabs(mass - 30.0) > 0.01) {
+                                llSetObjectDesc("Density edit changed live mass or failed to update density");
+                                llSetTimerEvent(0.0);
+                                return;
+                            }
+                            llSetScale(<2.0, 1.0, 1.0>);
+                            override_phase = 7;
+                        } else if (override_phase == 7 && llFabs(mass - 90.0) < 0.01) {
+                            llSetLocalRot(<0.0, 0.0, 1.0, 1.0>);
+                            llSetObjectDesc("Waiting for local rotation");
+                            override_phase = 8;
+                        } else if (override_phase == 8 && llFabs(current_rotation.z - 0.707107) < 0.001) {
+                            llSetRot(<0.0, 0.707107, 0.0, 0.707107>);
+                            rotation applied = llGetLocalRot();
+                            if (llFabs(applied.y - 0.707107) > 0.001) {
+                                llSetObjectDesc("Script rotation readback failed");
+                                llSetTimerEvent(0.0);
+                                return;
+                            }
+                            llSetObjectPermMask(MASK_NEXT, 0);
+                            if (llGetObjectPermMask(MASK_NEXT) != PERM_TRANSFER) {
+                                llSetObjectDesc("Administrator object permission edit failed");
+                                llSetTimerEvent(0.0);
+                                return;
+                            }
+                            llSetObjectPermMask(MASK_BASE, PERM_COPY);
+                            llSetObjectPermMask(MASK_GROUP, PERM_MOVE);
+                            if (llGetObjectPermMask(MASK_BASE) != (PERM_MOVE | PERM_TRANSFER)) {
+                                llSetObjectDesc("Object permission selector masking failed");
+                                llSetTimerEvent(0.0);
+                                return;
+                            }
+                            llSetInventoryPermMask("Fixture notecard", MASK_NEXT, 0);
+                            if (llGetInventoryPermMask("Fixture notecard", MASK_NEXT) != PERM_TRANSFER) {
+                                llSetObjectDesc("Administrator inventory permission edit failed");
+                                llSetTimerEvent(0.0);
+                                return;
+                            }
+                            llSetInventoryPermMask("Fixture notecard", MASK_BASE, PERM_COPY);
+                            llSetInventoryPermMask("Fixture notecard", MASK_GROUP, PERM_MOVE);
+                            if (llGetInventoryPermMask("Fixture notecard", MASK_BASE) != (PERM_MOVE | PERM_TRANSFER)) {
+                                llSetObjectDesc("Inventory permission selector masking failed");
+                                llSetTimerEvent(0.0);
+                                return;
+                            }
+                            llRemoveInventory("fixture notecard");
+                            if (llGetInventoryType("Fixture notecard") != INVENTORY_NOTECARD) {
+                                llSetObjectDesc("Inventory name matching failed");
+                                llSetTimerEvent(0.0);
+                                return;
+                            }
+                            llRemoveInventory("Fixture notecard");
+                            if (llGetInventoryType("Fixture notecard") != -1) {
+                                llSetObjectDesc("Inventory removal was not immediately visible");
+                                llSetTimerEvent(0.0);
+                                return;
+                            }
+                            llSetObjectDesc("Mass and inertia verified");
+                            llRemoveInventory(llGetScriptName());
+                            llSetObjectDesc("Self-removal allowed the script to continue");
+                            llSetTimerEvent(0.0);
+                        }
+                        return;
+                    }
+                    if (llEdgeOfWorld(<128, 128, 0>, <1, 0, 0>) != 0 ||
+                        llEdgeOfWorld(<128, 128, 0>, <1, 1, 0>) != 0 ||
+                        llEdgeOfWorld(<128, 128, 0>, <-1, 0, 0>) != 1 ||
+                        llEdgeOfWorld(<128, 128, 0>, <0, 0, 1>) != 1) {
+                        llSetObjectDesc("Grid edge query failed");
+                        llSetTimerEvent(0.0);
+                        return;
+                    }
+                    if (llGetMinScaleFactor() <= 0.0 || llGetMinScaleFactor() >= 1.0 ||
+                        llGetMaxScaleFactor() <= 1.0 || llScaleByFactor(1000000) != 0 ||
+                        llScaleByFactor(1) != !llGetStatus(STATUS_PHYSICS)) {
+                        llSetObjectDesc("Linkset scale limits failed");
+                        llSetTimerEvent(0.0);
+                        return;
+                    }
+                    if (!llGetStatus(STATUS_PHYSICS)) {
+                        llSetObjectPermMask(MASK_BASE, PERM_COPY);
+                        if (llGetObjectPermMask(MASK_BASE) != PERM_ALL) {
+                            llSetObjectDesc("Non-administrator object permission edit was accepted");
+                            llSetTimerEvent(0.0);
+                            return;
+                        }
+                        llSetInventoryPermMask(llGetScriptName(), MASK_BASE, PERM_COPY);
+                        if (llGetInventoryPermMask(llGetScriptName(), MASK_BASE) != PERM_ALL) {
+                            llSetObjectDesc("Non-administrator inventory permission edit was accepted");
+                            llSetTimerEvent(0.0);
+                            return;
+                        }
+                    }
+                    vector center = llGetCenterOfMass();
+                    vector expected_center = <218.0, 219.0, 32.0>;
+                    if (llGetLinkNumber() == 1)
+                        expected_center = <217.333333, 218.666667, 32.0>;
+                    list inertia = osGetInertiaData();
+                    vector local_center = llList2Vector(inertia, 1);
+                    vector diagonal = llList2Vector(inertia, 2);
+                    vector products = llList2Vector(inertia, 3);
+                    vector expected_diagonal = ZERO_VECTOR;
+                    vector expected_products = ZERO_VECTOR;
+                    if (llGetStatus(STATUS_PHYSICS)) {
+                        expected_diagonal = <0.388889, 1.055556, 1.277778>;
+                        expected_products = <-0.444444, 0.0, 0.0>;
+                    }
+                    if (llFabs(llGetMass() - 30.0) < 0.01 &&
+                        llFabs(llGetMassMKS() - 3000.0) < 0.1 &&
+                        llFabs(llGetObjectMass(llGetLinkKey(2)) - 30.0) < 0.01 &&
+                        llVecDist(center, expected_center) < 0.02 &&
+                        llGetListLength(inertia) == 4 && llFabs(llList2Float(inertia, 0) - 30.0) < 0.01 &&
+                        llVecDist(local_center, <1.333333, 0.666667, 0.0>) < 0.01 &&
+                        llVecDist(diagonal, expected_diagonal) < 0.01 &&
+                        llVecDist(products, expected_products) < 0.01) {
+                        if (llGetStatus(STATUS_PHYSICS) && llGetLinkNumber() == 2) {
+                            llSetStatus(STATUS_ROTATE_X | STATUS_ROTATE_Z, FALSE);
+                            if (llGetStatus(STATUS_ROTATE_X) || !llGetStatus(STATUS_ROTATE_Y) ||
+                                llGetStatus(STATUS_ROTATE_Z))
+                                return;
+                            llSetStatus(STATUS_ROTATE_X | STATUS_ROTATE_Z, TRUE);
+                            if (!llGetStatus(STATUS_ROTATE_X) || !llGetStatus(STATUS_ROTATE_Z))
+                                return;
+                            osSetInertiaAsSphere(12.0, 1.0, <0.5, 0.0, 0.0>);
+                            list immediate = osGetInertiaData();
+                            if (llFabs(llList2Float(immediate, 0) - 12.0) > 0.01 ||
+                                llVecDist(llList2Vector(immediate, 1), <0.5, 0.0, 0.0>) > 0.01) {
+                                llSetObjectDesc("Immediate sphere inertia readback failed");
+                                llSetTimerEvent(0.0);
+                                return;
+                            }
+                            override_phase = 1;
+                        } else {
+                            if (llGetStatus(STATUS_PHYSICS))
+                                llSetRot(<0.707107, 0.0, 0.0, 0.707107>);
+                            llSetObjectDesc("Mass and inertia verified");
+                            llSetTimerEvent(0.0);
+                        }
+                    }
+                }
+            }
+        )LSL";
+        mass_query_script->data = std::make_shared<std::vector<std::uint8_t>>(
+            mass_query_source.begin(), mass_query_source.end());
         const auto physics_mesh_asset = make_physics_mesh_asset();
         const auto convex_mesh_asset = make_physics_mesh_asset(true);
         policies.load_asset = [covenant, unsit_script, force_sit_script, script_day_cycle, duplicate_script_asset,
-                               attachment_script,
+                               attachment_script, attachment_physics_script, land_collision_script,
+                               object_collision_script, avatar_collision_script, volume_detect_script, mass_query_script,
                                empty_legacy_material, mesh_script, physics_mesh_asset, convex_mesh_asset,
                                &uploaded_asset](Uuid id)
                 -> std::shared_ptr<AssetBase> {
@@ -3278,6 +5034,18 @@ int main(int argc, char** argv) {
                 return convex_mesh_asset;
             if (id == attachment_script->full_id())
                 return attachment_script;
+            if (id == attachment_physics_script->full_id())
+                return attachment_physics_script;
+            if (id == land_collision_script->full_id())
+                return land_collision_script;
+            if (id == object_collision_script->full_id())
+                return object_collision_script;
+            if (id == avatar_collision_script->full_id())
+                return avatar_collision_script;
+            if (id == volume_detect_script->full_id())
+                return volume_detect_script;
+            if (id == mass_query_script->full_id())
+                return mass_query_script;
             if (id == empty_legacy_material->full_id())
                 return empty_legacy_material;
             if (id == mesh_script->full_id())
@@ -3330,6 +5098,12 @@ int main(int argc, char** argv) {
                 throw std::runtime_error("Startup did not distinguish empty from missing legacy materials");
             runtime.world().remove(stored_prim.id);
             verify_unattended_object_physics(runtime);
+            verify_prim_mass_queries(runtime, mass_query_script->full_id(), blocked_visitor);
+            verify_script_deletes_linkset(runtime, mass_query_script->full_id());
+            verify_script_ground_repel(runtime, mass_query_script->full_id());
+            verify_land_collision_scripts(runtime, land_collision_script->full_id());
+            verify_object_collision_scripts(runtime, object_collision_script->full_id());
+            verify_volume_detect(runtime, volume_detect_script->full_id());
             auto circuit = std::make_shared<AgentCircuitData>();
             circuit->agent_id = region.estate_owner;
             circuit->first_name = "Native";
@@ -3461,6 +5235,8 @@ int main(int argc, char** argv) {
             presence.login(abandoned->agent_id.str(), abandoned->session_id, abandoned->secure_session_id);
             if (!runtime.create_agent(nullptr, region, abandoned, 128, context, reason))
                 throw std::runtime_error("Unconnected login reservation blocked subsequent admission");
+            verify_attachment_physics(runtime, region, presence, bound, attachment_physics_script->full_id(),
+                                      avatar_collision_script->full_id());
             verify_transferred_seat(runtime, region, presence, bound, attachment_script->full_id(),
                                     0, "Attachment changed 256");
             constexpr std::uint32_t via_location = 1u << 4;
