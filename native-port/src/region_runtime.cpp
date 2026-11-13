@@ -8021,7 +8021,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             RezIntersection closest;
             auto distance = 280.f * 280.f;
             for (const auto& part : world.objects()) {
-                if (part.shape.pcode != 9)
+                if (part.shape.pcode != 9 && !is_vegetation(part.shape.pcode))
                     continue;
                 const auto hit = intersect(part, origin, direction, front, center);
                 if (!hit.hit)
@@ -8135,7 +8135,9 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             auto& root = parts.front().object;
             for (const auto& part : parts) {
                 const auto& object = part.object;
-                if (object.shape.pcode != 9 || !finite(object.position) || !finite(object.scale) ||
+                const bool standalone_plant = parts.size() == 1 && is_vegetation(object.shape.pcode);
+                if ((!standalone_plant && object.shape.pcode != 9) ||
+                    !finite(object.position) || !finite(object.scale) ||
                     object.scale.x <= 0 || object.scale.y <= 0 || object.scale.z <= 0)
                     return;
             }
@@ -8244,7 +8246,8 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 object.local_id = 0;
                 object.parent_id = root_local;
                 object.is_attachment = false;
-                object.shape.state = 0;
+                if (!is_vegetation(object.shape.pcode))
+                    object.shape.state = 0;
                 const bool owner_changes = object.owner != agent;
                 if (owner_changes && object.owner != object.group)
                     object.last_owner = object.owner;
@@ -15072,7 +15075,19 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         if (!asset || !asset->data)
             return;
         auto object_asset = read_object_asset_xml(*asset->data);
-        if (!object_asset || object_asset->coalesced || object_asset->linksets.size() != 1)
+        if (!object_asset)
+            return;
+        const bool contains_vegetation = std::ranges::any_of(object_asset->linksets, [](const auto& linkset) {
+            return is_vegetation(linkset.parts.front().object.shape.pcode);
+        });
+        if (contains_vegetation) {
+            viewers->transport().enqueue_if_session(
+                agent, session,
+                agent_alert(agent, "You cannot wear system plants. They could grow roots inside your avatar", false),
+                ThrottleOutPacketType::Task);
+            return;
+        }
+        if (object_asset->coalesced || object_asset->linksets.size() != 1)
             return;
         auto& parts = object_asset->linksets.front().parts;
         auto& root = parts.front();
@@ -25742,6 +25757,8 @@ std::shared_ptr<CrossingObject> RegionRuntime::State::snapshot_crossing_object(c
         if (!part.is_attachment && part.parent_id == root.local_id)
             parts.push_back({part});
     std::ranges::sort(std::span(parts).subspan(1), {}, [](const auto& part) { return part.object.link_order; });
+    for (auto& part : parts)
+        part.last_attachment_point = part.object.last_attachment_point;
     {
         std::lock_guard lock(task_data_mutex);
         for (auto& part : parts) {
@@ -25788,7 +25805,7 @@ bool RegionRuntime::create_object(GridRegion* destination, const Vector3& positi
         destination->id != state.descriptor.id || !state.running)
         return false;
     auto& root = transfer->linkset.parts.front().object;
-    if (root.owner.is_zero() || root.shape.state != 0)
+    if (root.owner.is_zero() || (root.shape.state != 0 && !is_vegetation(root.shape.pcode)))
         return false;
     const bool administrator = state.god_rights_level(root.owner) >= 200;
     std::string reason;

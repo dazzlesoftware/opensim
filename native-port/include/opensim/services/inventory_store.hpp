@@ -59,7 +59,7 @@ class InventoryFolderStore {
     InventoryFolderStore(const InventoryFolderStore&) = delete;
     InventoryFolderStore& operator=(const InventoryFolderStore&) = delete;
     std::vector<InventoryFolder> folders(const Filter& filter);
-    bool store(InventoryFolder& folder);
+    bool store(InventoryFolder& folder, bool replace = true);
     bool move(const framework::Uuid& id, const framework::Uuid& parent);
     bool erase(const Filter& filter);
     std::vector<InventoryItem> items(const Filter& filter);

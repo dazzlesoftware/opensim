@@ -362,6 +362,28 @@ int main(int argc, char**) {
             if (!threw)
                 throw std::runtime_error("unsupported object profile");
         }
+        for (const auto pcode : {95, 111, 255}) {
+            auto plant = object(1, 0);
+            plant.shape.pcode = static_cast<std::uint8_t>(pcode);
+            plant.shape.state = 7;
+            plant.rotation = {0, 0, 0.6f, 0.8f};
+            plant.flags = 0x400;
+            const auto decoded = network::lludp::decode_datagram(
+                network::lludp::encode_datagram(object_update(plant, 123, 1)));
+            const auto& row = decoded.block("ObjectData");
+            const auto& motion = std::get<std::vector<std::uint8_t>>(row.at("ObjectData"));
+            const auto rotation_bytes = std::span(motion).subspan(36, 12);
+            const bool has_rotation = std::ranges::any_of(rotation_bytes, [](auto byte) { return byte != 0; });
+            if (motion.size() != 60 || has_rotation != (pcode != 95) ||
+                std::get<std::uint64_t>(row.at("PCode")) != static_cast<std::uint64_t>(pcode) ||
+                std::get<std::uint64_t>(row.at("State")) != 7 ||
+                std::get<std::uint64_t>(row.at("UpdateFlags")) != 0x400 ||
+                std::get<std::uint64_t>(row.at("Material")) != 0 ||
+                std::get<std::uint64_t>(row.at("ClickAction")) != 0 ||
+                std::get<std::vector<std::uint8_t>>(row.at("Data")) != std::vector<std::uint8_t>{7} ||
+                !std::get<std::vector<std::uint8_t>>(row.at("TextureEntry")).empty())
+                throw std::runtime_error("vegetation fields on the wire");
+        }
         o = object(1, 0);
         o.parent_id = 42;
         o.texture_animation = {3, 255, 4, 8, 0, 0, 160, 63, 0, 0, 32, 64, 0, 0, 64, 192};

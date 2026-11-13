@@ -1717,9 +1717,100 @@ default
             });
         });
     });
-    check(rezzed_tree->scale == framework::Vector3{4, 4, 10} && (rezzed_tree->flags & 0x400u),
-          "Cypress rez uses the managed scale and phantom flag");
+    check(rezzed_tree->scale == framework::Vector3{4, 4, 10} && (rezzed_tree->flags & 0x400u) &&
+              rezzed_tree->last_attachment_point == 7,
+          "Cypress rez preserves the managed scale, phantom flag, and last attachment point");
+    auto rez_above_tree = add;
+    rez_above_tree.sequence = ++sequence;
+    auto& ray = rez_above_tree.block("ObjectData");
+    ray["RayTargetID"] = Uuid::random(); // An unavailable target triggers the scene-wide fallback.
+    ray["RayEndIsIntersection"] = std::uint64_t{0};
+    ray["RayStart"] = std::vector<double>{170, 170, 48};
+    ray["RayEnd"] = std::vector<double>{170, 170, 26};
+    const auto before_tree_ray = runtime.world().objects();
+    send(rez_above_tree);
+    Uuid ray_prim;
+    pump([&] {
+        const auto objects = runtime.world().objects();
+        for (const auto& object : objects) {
+            if (std::ranges::find(before_tree_ray, object.id, &SceneObject::id) != before_tree_ray.end())
+                continue;
+            check(object.position.z == rezzed_tree->position.z + 5.f,
+                  "scene-wide rez ray intersects the top of the phantom Cypress");
+            ray_prim = object.id;
+            return true;
+        }
+        return false;
+    });
+    runtime.world().remove(ray_prim);
     runtime.world().remove(rezzed_tree->id);
+    ObjectAssetPart plant_asset_part;
+    plant_asset_part.object = *rezzed_tree;
+    const auto plant_asset = std::make_shared<framework::AssetBase>(
+        Uuid::random(), "Cypress", 6, circuit->agent_id.str());
+    plant_asset->data = std::make_shared<std::vector<std::uint8_t>>(serialize_object_asset(plant_asset_part));
+    const auto stored_plant = assets.store(plant_asset);
+    check(stored_plant.has_value(), "store Cypress asset");
+    const auto parsed_plant = read_object_asset_xml(*plant_asset->data);
+    check(parsed_plant && parsed_plant->linksets.front().parts.front().object.shape.pcode == 111 &&
+              parsed_plant->linksets.front().parts.front().object.scale == framework::Vector3{4, 4, 10},
+          "serialized Cypress preserves vegetation pcode and scale");
+    auto plant_item = wear_item;
+    plant_item.id = Uuid::random();
+    plant_item.asset_id = Uuid(*stored_plant);
+    plant_item.parent = inventory.root(circuit->agent_id)->id;
+    plant_item.name = "Cypress";
+    plant_item.current_permissions |= 1u << 15;
+    check(inventory.add_item(plant_item), "store Cypress inventory item");
+    const auto loaded_plant = inventory.item(circuit->agent_id, plant_item.id);
+    check(loaded_plant && loaded_plant->asset_type == 6 &&
+              assets.get_asset(loaded_plant->asset_id.str()),
+          "Cypress inventory item resolves to a stored object asset");
+    auto rez_plant = make("RezObject");
+    rez_plant.block("InventoryData")["ItemID"] = plant_item.id;
+    rez_plant.block("RezData")["RayStart"] = std::vector<double>{128, 128, 70};
+    rez_plant.block("RezData")["RayEnd"] = std::vector<double>{128, 128, 21};
+    rez_plant.block("RezData")["RayEndIsIntersection"] = true;
+    {
+        std::lock_guard lock(received_mutex);
+        received.clear();
+    }
+    send(rez_plant);
+    await_ack(rez_plant.sequence);
+    Uuid inventory_plant_id;
+    pump([&] {
+        {
+            std::lock_guard lock(received_mutex);
+            for (const auto& packet : received) {
+                if (packet.spec->name != "AlertMessage")
+                    continue;
+                const auto& bytes = std::get<std::vector<std::uint8_t>>(packet.block("AlertData").at("Message"));
+                throw std::runtime_error("Cypress inventory rez: " + std::string(bytes.begin(), bytes.end()));
+            }
+        }
+        const auto objects = runtime.world().objects();
+        const auto found = std::ranges::find_if(objects, [&](const auto& object) {
+            return object.shape.pcode == 111 && object.id != rezzed_tree->id;
+        });
+        if (found == objects.end())
+            return false;
+        check(found->shape.state == 7 && found->scale == framework::Vector3{4, 4, 10},
+              "inventory rez preserves Cypress species and stored scale");
+        inventory_plant_id = found->id;
+        return true;
+    });
+    runtime.world().remove(inventory_plant_id);
+    auto wear_plant = make("RezSingleAttachmentFromInv");
+    wear_plant.block("ObjectData")["ItemID"] = plant_item.id;
+    send(wear_plant);
+    pump([&] {
+        return packet_seen("AgentAlertMessage",
+                           "/You cannot wear system plants. They could grow roots inside your avatar");
+    });
+    const auto plant_wearer = runtime.viewers().agent(circuit->agent_id);
+    check(plant_wearer && !plant_wearer->appearance()->attachment_for_item(plant_item.id) &&
+              inventory.item(circuit->agent_id, plant_item.id).has_value(),
+          "wear denial preserves the plant inventory item and leaves it unworn");
     drop_parcel_mode = 1;
     add.sequence = ++sequence;
     expect_rez_denial(add, "restricted parcel rejects creation", "You cannot create objects here.");
@@ -1824,6 +1915,20 @@ default
           "accepted transfer preserves the linkset in the destination parcel");
     split_parcel = false;
     drop_parcel_capacity = 15000;
+    ObjectAssetPart crossing_plant;
+    crossing_plant.object = *rezzed_tree;
+    const auto crossing_plant_bytes = serialize_object_asset(crossing_plant);
+    const std::string crossing_plant_xml(crossing_plant_bytes.begin(), crossing_plant_bytes.end());
+    const auto plant_transfer = std::dynamic_pointer_cast<SimulationObject>(
+        transfer_scene->deserialize_object(crossing_plant_xml));
+    check(plant_transfer && runtime.create_object(&descriptor, arrival, plant_transfer, true),
+          "destination accepts a standalone Cypress transfer");
+    const auto arrived_plant = runtime.world().object(rezzed_tree->id);
+    check(arrived_plant && arrived_plant->shape.pcode == 111 && arrived_plant->shape.state == 7 &&
+              arrived_plant->scale == rezzed_tree->scale && arrived_plant->position == arrival &&
+              (arrived_plant->flags & 0x400u),
+          "incoming vegetation preserves species, scale, position and phantom status");
+    runtime.world().remove(rezzed_tree->id);
     const auto store_script = [&](const std::string& name, std::string_view source) {
         auto asset = std::make_shared<framework::AssetBase>(Uuid::random(), name, 10, circuit->agent_id.str());
         asset->data = std::make_shared<std::vector<std::uint8_t>>(source.begin(), source.end());

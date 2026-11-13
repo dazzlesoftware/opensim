@@ -119,8 +119,10 @@ bool World::add_crossing_linkset(std::vector<SceneObject> parts, std::uint32_t w
         return false;
     std::lock_guard lock(mutex_);
     std::set<framework::Uuid> ids;
+    const bool standalone_plant =
+        !wearer_local_id && parts.size() == 1 && is_vegetation(parts.front().shape.pcode);
     for (const auto& part : parts)
-        if (part.id.is_zero() || part.shape.pcode != 9 ||
+        if (part.id.is_zero() || (!standalone_plant && part.shape.pcode != 9) ||
             (part.is_attachment && (!wearer_local_id || &part != &parts.front())) ||
             objects_.contains(part.id) || !ids.insert(part.id).second)
             return false;

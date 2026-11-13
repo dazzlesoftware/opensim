@@ -48,6 +48,7 @@ ObjectAddRequest object_add_request(const network::lludp::Packet& p) {
                            static_cast<float>(q.at(2)), static_cast<float>(q.at(3))};
     out.object.shape.pcode = static_cast<std::uint8_t>(std::get<std::uint64_t>(d.at("PCode")));
     out.object.shape.state = static_cast<std::uint8_t>(std::get<std::uint64_t>(d.at("State")));
+    out.object.last_attachment_point = out.object.shape.state;
     read_prim_shape_fields(out.object.shape, d);
     const auto number = [&](const char* key) { return std::get<std::uint64_t>(d.at(key)); };
     out.ray_start = vector(d.at("RayStart"));

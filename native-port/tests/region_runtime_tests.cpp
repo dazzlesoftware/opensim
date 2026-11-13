@@ -4884,6 +4884,17 @@ Uuid verify_viewer_packets(RegionRuntime& runtime, const server::RegistryCapabil
         throw std::runtime_error("Rejected outgoing crossing changed the source object");
     runtime.world().remove(rejected_root.id);
 
+    auto crossing_plant = SceneObject::primitive(circuit.agent_id, {250, 120, 26}, {4, 4, 10});
+    crossing_plant.shape.pcode = 111;
+    crossing_plant.shape.state = 7;
+    crossing_plant.flags = 0x400;
+    const auto plant = runtime.world().add(crossing_plant);
+    if (!plant)
+        throw std::runtime_error("Could not create outgoing Cypress");
+    move_across_border(plant->local_id);
+    wait([&](const auto&) { return !runtime.world().object(plant->id); },
+         "Accepted Cypress crossing did not remove the source object");
+
     const auto incoming_id = Uuid::random();
     const auto incoming_item = Uuid::random();
     const auto incoming_xml = "<SceneObjectGroup><SceneObjectPart><UUID><UUID>" + incoming_id.str() +
@@ -5285,6 +5296,11 @@ int main(int argc, char** argv) {
                 return false;
             const auto& parts = asset->linksets.front().parts;
             const auto state = transfer->state_snapshot();
+            const auto& root = parts.front().object;
+            if (root.shape.pcode == 111)
+                return parts.size() == 1 && position == Vector3{4, 120, 26} &&
+                       root.shape.state == 7 && root.scale == Vector3{4, 4, 10} &&
+                       (root.flags & 0x400u) != 0;
             if (parts.size() == 1 && parts.front().object.name == "Crossing script")
                 return position == Vector3{5, 120, 26} && parts.front().object.position == Vector3{251, 120, 26} &&
                        state && state->find("<NativeCheckpoint>") != std::string::npos;

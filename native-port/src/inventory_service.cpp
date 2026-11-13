@@ -110,7 +110,7 @@ bool InventoryService::add_folder(InventoryFolder value) {
         if (value.parent == root_folder->id && for_type(value.owner, value.type))
             return false;
     }
-    return store_.store(value);
+    return store_.store(value, false);
 }
 bool InventoryService::update_folder(InventoryFolder value) {
     value = framework_folder(std::move(value));

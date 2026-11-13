@@ -213,12 +213,14 @@ std::vector<InventoryFolder> InventoryFolderStore::folders(const Filter &filter)
                           Uuid(statement.text(3)), Uuid(statement.text(4)), Uuid(statement.text(5))});
     return result;
 }
-bool InventoryFolderStore::store(InventoryFolder &folder) {
+bool InventoryFolderStore::store(InventoryFolder &folder, bool replace) {
     std::lock_guard lock(impl_->mutex);
     folder.name = truncate_name(folder.name);
     Statement statement(
         impl_->db,
-        "REPLACE INTO inventoryfolders(folderName,type,version,folderID,agentID,parentFolderID) VALUES(?,?,?,?,?,?)");
+        replace
+            ? "REPLACE INTO inventoryfolders(folderName,type,version,folderID,agentID,parentFolderID) VALUES(?,?,?,?,?,?)"
+            : "INSERT OR IGNORE INTO inventoryfolders(folderName,type,version,folderID,agentID,parentFolderID) VALUES(?,?,?,?,?,?)");
     statement.bind(1, folder.name);
     statement.bind(2, folder.type);
     statement.bind(3, folder.version);

@@ -672,11 +672,14 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                 settings.write('\n[ClientStack.LindenCaps]\nCap_EstateChangeInfo=localhost\n')
         if a.assets or a.raw_fps:
             source = Path(__file__).resolve().parents[2]
+            original_control = source / 'bin/assets/AssetSets.xml'
+            staged_control = Path(a.native).resolve().parent / 'share/opensim-native/assets/AssetSets.xml'
+            asset_control = staged_control if staged_control.is_file() else original_control
             asset_config = (
                 '\n[Modules]\nAssetServices=LocalAssetServicesConnector\n[AssetService]\nLocalServiceModule=OpenSim.Services.AssetService.dll:AssetService\nStorageProvider=OpenSim.Data.SQLite.dll\nConnectionString=URI=file:'
                 + str(root / 'assets.db')
                 + ';version=3;Pooling=false\nDefaultAssetLoader=OpenSim.Framework.AssetLoader.Filesystem.dll\nAssetLoaderArgs='
-                + str(source / 'bin/assets/AssetSets.xml')
+                + str(asset_control)
                 + '\n[ClientStack.LindenCaps]\nCap_GetTexture=localhost\nCap_GetMesh=localhost\nCap_GetMesh2=localhost\nCap_GetAsset=localhost\n'
             )
             if a.os_landing:
@@ -743,7 +746,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
             )
             config.write_text(
                 config.read_text(encoding='utf-8').replace(
-                    'AssetLoaderArgs=' + str(original_control),
+                    'AssetLoaderArgs=' + str(asset_control),
                     'AssetLoaderArgs=' + str(root / 'cache-default-control.xml'),
                 ),
                 encoding='utf-8',
@@ -13891,6 +13894,11 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                     )
 
             tree_id = fresh_viewer('--rez-tree')
+            with contextlib.closing(sqlite3.connect(root / 'fresh-region.db')) as database:
+                tree_shape = database.execute(
+                    'SELECT PCode,State,LastAttachPoint FROM primshapes WHERE UUID=?', (tree_id,)
+                ).fetchone()
+                check(tree_shape == (111, 7, 7), 'SQLite saves Cypress species and last attachment point')
             check(
                 fresh_viewer('--restore-tree', tree_id) == tree_id,
                 'Region restart preserves the viewer-rezzed Cypress UUID, species, scale, and phantom flag',

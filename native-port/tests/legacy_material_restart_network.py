@@ -28,6 +28,7 @@ OWNER = "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
 MATERIAL = "12345678-1234-1234-1234-123456789abc"
 CROSSING_ROOT = "c7cb523a-f9ab-4a56-9f8d-44f239b8b00e"
 CROSSING_CHILD = "82ad9a50-b8b4-460a-aa2b-bec87f1d45b2"
+CROSSING_CYPRESS = "c7cb523a-f9ab-4a56-9f8d-44f239b8b00f"
 CROSSING_SCRIPT_ASSET = "7b1a5a42-fc36-4936-aa3a-a13535841e59"
 CROSSING_SCRIPT_ITEM = "bc9108f0-5f03-462f-82a9-ad21af9df594"
 CHILD_SCRIPT_ASSET = "50d03426-b0be-4d7c-aaf3-90d789a5c9dd"
@@ -474,14 +475,20 @@ def move_linkset_as_viewer(url, endpoint, destination_endpoint):
         passenger, passenger_agent, passenger_session, passenger_code = login_rider("Passenger", send_passenger)
         _, rejected_agent, rejected_session, _ = login_rider("Rejected", send_rejected)
         target = UUID(CROSSING_ROOT).bytes
+        tree_target = UUID(CROSSING_CYPRESS).bytes
+        local_id = tree_local_id = None
         deadline = time.monotonic() + 10
         while time.monotonic() < deadline:
             update = receive()
             if update[:1] == b"\x0c" and update[17:33] == target:
                 local_id = struct.unpack_from("<I", update, 12)[0]
+            if update[:1] == b"\x0c" and update[17:33] == tree_target:
+                tree_local_id = struct.unpack_from("<I", update, 12)[0]
+            if local_id is not None and tree_local_id is not None:
                 break
         else:
-            raise AssertionError("Viewer did not receive the source linkset")
+            raise AssertionError("Viewer did not receive the source linkset and Cypress")
+        send("ff04", agent + session_id + struct.pack("<BI3f", 1, tree_local_id, 261, 125, 31))
         def post_capability(url, payload):
             request = Request(url, payload, {"Content-Type": "application/llsd+xml"})
             with urlopen(request, timeout=15) as response:
@@ -712,6 +719,17 @@ def cross_between_regions(executable, root, config, source_db):
     with closing(sqlite3.connect(source_db)) as database, database:
         database.execute("UPDATE prims SET OwnerID=?, OwnerMask=?, BaseMask=? WHERE SceneGroupID=?",
                          (owner, 0x9E000, 0x9E000, CROSSING_ROOT))
+        database.row_factory = sqlite3.Row
+        tree = dict(database.execute("SELECT * FROM prims WHERE UUID=?", (CROSSING_ROOT,)).fetchone())
+        tree.update(UUID=CROSSING_CYPRESS, SceneGroupID=CROSSING_CYPRESS, Name="Crossing Cypress",
+                    ObjectFlags=0x400, GroupPositionX=119, GroupPositionY=125, GroupPositionZ=31)
+        database.execute("INSERT INTO prims (" + ", ".join(tree) + ") VALUES (" +
+                         ", ".join("?" for _ in tree) + ")", tuple(tree.values()))
+        shape = dict(database.execute("SELECT * FROM primshapes WHERE UUID=?", (CROSSING_ROOT,)).fetchone())
+        shape.update(UUID=CROSSING_CYPRESS, PCode=111, State=7, LastAttachPoint=7,
+                     ScaleX=4, ScaleY=4, ScaleZ=10)
+        database.execute("INSERT INTO primshapes (" + ", ".join(shape) + ") VALUES (" +
+                         ", ".join("?" for _ in shape) + ")", tuple(shape.values()))
         database.executemany(
             "INSERT INTO primitems VALUES (?, ?, ?, ?, 10, 10, 'Crossing script', '', 1700000000, ?, ?, ?, "
             "'00000000-0000-0000-0000-000000000000', 647168, 647168, 647168, 0, 0, 0)",
@@ -775,6 +793,14 @@ def cross_between_regions(executable, root, config, source_db):
 
 
 def run_crossing_pair(executable, config, source_db, destination_config, destination_db):
+    def cypress_row(path):
+        with closing(sqlite3.connect(path)) as database:
+            return database.execute(
+                "SELECT s.PCode,s.State,s.LastAttachPoint,s.ScaleX,s.ScaleY,s.ScaleZ,"
+                "p.GroupPositionX,p.GroupPositionY,p.GroupPositionZ,p.ObjectFlags "
+                "FROM prims p JOIN primshapes s ON p.UUID=s.UUID WHERE p.UUID=?", (CROSSING_CYPRESS,),
+            ).fetchone()
+
     with running_server(executable, destination_config, region=True) as (destination_url, destination_udp):
         with config.open("a", encoding="utf-8") as source:
             source.write(f"\n[GridService]\nGridServerURI={destination_url}\n"
@@ -783,6 +809,8 @@ def run_crossing_pair(executable, config, source_db, destination_config, destina
             wait_until(lambda: (crossing_rows(source_db)[0] or ("", "", ""))[2] == "122",
                        "Source script did not reach its sleep checkpoint")
             move_linkset_as_viewer(source_url, source_udp, destination_udp)
+            wait_until(lambda: cypress_row(destination_db) is not None,
+                       "Destination did not persist the crossed Cypress")
             wait_until(lambda: crossing_rows(destination_db)[1] is not None,
                        "Destination did not persist the crossed linkset")
             check_crossing(destination_db, ("4", "121", "30"))
@@ -797,9 +825,13 @@ def run_crossing_pair(executable, config, source_db, destination_config, destina
             check_crossing(destination_db, ("5", "121", "31"), "")
         assert crossing_rows(source_db) == (None, None)
         with closing(sqlite3.connect(source_db)) as database:
+            assert database.execute("SELECT UUID FROM prims WHERE UUID=?", (CROSSING_CYPRESS,)).fetchone() is None
             assert database.execute("SELECT itemID FROM primitems WHERE itemID IN (?, ?)",
                                     (CROSSING_SCRIPT_ITEM, CHILD_SCRIPT_ITEM)).fetchone() is None
     check_crossing(destination_db, ("5", "121", "31"), "")
+    tree = cypress_row(destination_db)
+    assert tree and tuple(map(float, tree[:-1])) == (111, 7, 7, 4, 4, 10, 5, 125, 31), tree
+    assert int(tree[-1]) & 0x400, tree
 
 
 def main():

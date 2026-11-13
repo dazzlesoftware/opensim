@@ -147,6 +147,64 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 #endif
 namespace {
+class CreateInventoryCategory final : public opensim::server::CapabilitySimpleHandler {
+  public:
+    CreateInventoryCategory(opensim::framework::Uuid agent,
+                            opensim::services::InventoryService& inventory,
+                            std::weak_ptr<opensim::scene::RegionRuntime> region)
+        : agent_(agent), inventory_(inventory), region_(std::move(region)) {}
+
+    std::optional<std::string> path() const override { return path_; }
+
+    opensim::network::HttpResponse handle(const opensim::network::HttpRequest& request) override {
+        using namespace opensim;
+        using network::Value;
+        if (request.method != "POST")
+            return {404};
+        const auto region = region_.lock();
+        if (!region || !region->viewers().agent(agent_))
+            return {503, "text/plain", {}, {{"Retry-After", "60"}}};
+        try {
+            const auto body = network::deserialize_sdk_llsd_xml(request.body);
+            const auto& id = body.get("folder_id");
+            const auto& parent = body.get("parent_id");
+            const auto& name = body.get("name");
+            const auto& type = body.get("type");
+            if (id.kind != Value::Kind::Uuid || parent.kind != Value::Kind::Uuid ||
+                name.kind != Value::Kind::String || name.text.empty() || type.kind != Value::Kind::Integer)
+                return {400};
+            const auto folder_id = framework::Uuid(id.text);
+            const auto parent_id = framework::Uuid(parent.text);
+            const auto parent_folder = inventory_.folder(agent_, parent_id);
+            if (folder_id.is_zero() || !parent_folder || parent_folder->owner != agent_)
+                return {400};
+            const auto folder_type = std::bit_cast<std::int16_t>(static_cast<std::uint16_t>(type.integer));
+            const auto folder_name = framework::truncate_utf16(name.text, 63);
+            if (!inventory_.add_folder({folder_name, folder_type, 1, folder_id, agent_, parent_id}))
+                return {400};
+            const auto saved = inventory_.folder(agent_, folder_id);
+            if (!saved)
+                return {400};
+            auto result = Value::object({});
+            result.set("folder_id", Value(saved->id.str()));
+            result.set("name", Value(saved->name));
+            result.set("parent_id", Value(saved->parent.str()));
+            result.set("type", Value(saved->type));
+            result.map.at("folder_id").kind = Value::Kind::Uuid;
+            result.map.at("parent_id").kind = Value::Kind::Uuid;
+            return {200, "application/llsd+xml", network::llsd_xml(result)};
+        } catch (const std::exception&) {
+            return {400};
+        }
+    }
+
+  private:
+    const std::string path_ = "/" + opensim::framework::Uuid::random().str();
+    opensim::framework::Uuid agent_;
+    opensim::services::InventoryService& inventory_;
+    std::weak_ptr<opensim::scene::RegionRuntime> region_;
+};
+
 std::int32_t remote_data_integer(const opensim::network::Value& value) {
     using Kind = opensim::network::Value::Kind;
     switch (value.kind) {
@@ -9800,6 +9858,13 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
             auto udp = region_runtime->start(capability_listener, script_https_listener, script_http_listener);
             ports.udp = udp.port;
             region.internal_endpoint = services::RegionEndpoint{udp.address, udp.port};
+            if (inventory)
+                region_runtime->capabilities()->shared_events()->on_register_caps.add(
+                    {{inventory.get(), "CreateInventoryCategory.RegisterCaps"},
+                     [service = inventory.get(), runtime = std::weak_ptr(region_runtime)](auto agent, auto caps) {
+                         caps->register_simple("CreateInventoryCategory",
+                             std::make_shared<CreateInventoryCategory>(agent, *service, runtime));
+                     }});
             region_runtime->capabilities()->shared_events()->on_register_caps.add(
                 {{simulator_features.get(), "SimulatorFeatures.RegisterCaps"},
                  [features = std::weak_ptr(simulator_features)](auto agent, auto caps) {
