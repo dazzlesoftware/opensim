@@ -229,7 +229,7 @@ jobs:
         run: |
           architecture="$(uname -m)"
           for library in bin/lib64/libubode.dylib bin/lib64/libopenjpeg-dotnet.dylib; do
-            if ! lipo -verify_arch "$architecture" "$library"; then
+            if ! lipo "$library" -verify_arch "$architecture"; then
               echo "::error file=$library::Missing macOS architecture $architecture"
               exit 1
             fi

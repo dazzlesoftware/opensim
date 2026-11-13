@@ -1,0 +1,48 @@
+--- a/httplib.h
++++ b/httplib.h
+@@ -2356,6 +2356,7 @@
+   Server &set_idle_interval(const std::chrono::duration<Rep, Period> &duration);
+ 
+   Server &set_payload_max_length(size_t length);
++  Server &set_request_decompression(bool enabled);
+ 
+   Server &set_static_file_compression(bool on);
+   Server &set_static_file_compression_min_length(size_t length);
+@@ -2431,6 +2432,7 @@
+   time_t idle_interval_sec_ = CPPHTTPLIB_IDLE_INTERVAL_SECOND;
+   time_t idle_interval_usec_ = CPPHTTPLIB_IDLE_INTERVAL_USECOND;
+   size_t payload_max_length_ = CPPHTTPLIB_PAYLOAD_MAX_LENGTH;
++  bool request_decompression_ = true;
+   bool static_file_compression_ = false;
+   size_t static_file_compression_min_length_ =
+       CPPHTTPLIB_STATIC_FILE_COMPRESSION_MIN_LENGTH;
+@@ -13843,6 +13845,11 @@
+   return *this;
+ }
+ 
++inline Server &Server::set_request_decompression(bool enabled) {
++  request_decompression_ = enabled;
++  return *this;
++}
++
+ inline Server &Server::set_payload_max_length(size_t length) {
+   payload_max_length_ = length;
+   return *this;
+@@ -14279,7 +14286,7 @@
+         // enforced on the decompressed size here too instead of only on the
+         // compressed wire bytes.
+         return detail::read_content(strm, req, payload_max_length_, res.status,
+-                                    nullptr, out, true);
++                                    nullptr, out, request_decompression_);
+       }
+     }
+     return true;
+@@ -14306,7 +14313,7 @@
+   req.body_read_started_ = true;
+ 
+   if (!detail::read_content(strm, req, payload_max_length_, res.status, nullptr,
+-                            out, true)) {
++                            out, request_decompression_)) {
+     return false;
+   }
+ 

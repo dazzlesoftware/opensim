@@ -1,0 +1,63 @@
+--- a/httplib.h
++++ b/httplib.h
+@@ -1819,6 +1819,9 @@
+   std::unordered_map<std::string, std::string> path_params;
+   std::function<bool()> is_connection_closed = []() { return true; };
+ 
++  // Native server context; unused by normal cpp-httplib dispatch.
++  std::weak_ptr<void> opensim_async_context;
++
+   // for client
+   std::vector<std::string> accept_content_types;
+   ResponseHandler response_handler;
+@@ -1873,6 +1876,8 @@
+ } // namespace detail
+ 
+ struct Response {
++  // Native opt-in deferral; normal synchronous responses are unchanged.
++  bool opensim_deferred = false;
+   std::string version;
+   int status = -1;
+   std::string reason;
+@@ -2388,7 +2393,12 @@
+                        int local_port, bool close_connection,
+                        bool &connection_closed,
+                        const std::function<void(Request &)> &setup_request,
+-                       bool *websocket_upgraded = nullptr);
++                       bool *websocket_upgraded = nullptr,
++                       const std::function<void(Request &&, Response &&)> &deferred = {});
++
++  bool opensim_write_deferred(Stream &stream, bool close, const Request &request, Response &response) {
++    return write_response_with_content(stream, close, request, response);
++  }
+ 
+   // Runs the per-connection serving loop and stops an exception thrown by a
+   // user callback from escaping the worker thread.
+@@ -15003,7 +15013,8 @@
+                         int local_port, bool close_connection,
+                         bool &connection_closed,
+                         const std::function<void(Request &)> &setup_request,
+-                        bool *websocket_upgraded) {
++                        bool *websocket_upgraded,
++                        const std::function<void(Request &&, Response &&)> &deferred) {
+   std::array<char, 2048> buf{};
+ 
+   detail::stream_line_reader line_reader(strm, buf.data(), buf.size());
+@@ -15331,6 +15342,17 @@
+     }
+   }
+ #endif
++  if (res.opensim_deferred) {
++    // Deferral is allowed only after the framed request body has been consumed.
++    // The native transport retains the connection stream and its read buffer.
++    if (!deferred || (!req.body_consumed_ && detail::has_framed_body(req))) {
++      connection_closed = true;
++      return false;
++    }
++    deferred(std::move(req), std::move(res));
++    connection_closed = true;
++    return true;
++  }
+   auto ret = false;
+   if (routed) {
+     if (res.status == -1) {

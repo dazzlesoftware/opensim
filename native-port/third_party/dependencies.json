@@ -8,7 +8,7 @@
       "files": [
         {
           "path": "httplib/httplib.h",
-          "sha256": "ac3284d8b7b21277cf8bc0636f1847d4e6c60ba74e1b0088cf0dc040067f3bbe",
+          "sha256": "b68cc7877fb130b3e2ee4bca9ef35846780af72e6103dad7d25e25f6d94bf95c",
           "url": "https://raw.githubusercontent.com/yhirose/cpp-httplib/5bcfea7b90575c80a3e54a6967b11b39afa60d5c/httplib.h",
           "upstreamSha256": "9021001a719768893a8a6e4051c56107690e8b8e49b41e5f903534fa19ae9afb"
         },
@@ -41,7 +41,7 @@
         },
         {
           "path": "httplib/opensim-config-http.patch",
-          "sha256": "1a6770126a31998851bb2f7c783297aeedd95383d24350f0ec9c2b076a5427e1",
+          "sha256": "133ce973d91f425b7b8ab1c446589d11e06364aba23051bb7b8bdcc3c127fb97",
           "scope": "Opt-in raw XML configuration HTTP head/entity framing, per-request header deadlines and per-stream native connection/DNS/read/write error diagnostics. Adds a Request streaming overload; default client/server framing and policies remain unchanged."
         }
       ]

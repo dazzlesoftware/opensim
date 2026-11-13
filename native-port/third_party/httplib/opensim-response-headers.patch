@@ -1,0 +1,143 @@
+--- a/httplib.h
++++ b/httplib.h
+@@ -1825,6 +1825,11 @@
+   // for client
+   std::vector<std::string> accept_content_types;
+   ResponseHandler response_handler;
++  // Opt-in callers supply the exact application request headers.
++  bool opensim_no_default_accept_headers = false;
++  bool opensim_source_redirects = false;
++  // Opt-in client header policy, before response framing/body processing.
++  std::function<void(Response &)> opensim_response_headers_read;
+   ContentReceiverWithProgress content_receiver;
+   DownloadProgress download_progress;
+   UploadProgress upload_progress;
+@@ -8430,7 +8435,8 @@
+   if (fields::is_field_valid(key, val)) { headers.emplace(key, val); }
+ }
+ 
+-inline bool read_headers(Stream &strm, Headers &headers) {
++inline bool read_headers(Stream &strm, Headers &headers,
++                         bool caller_header_policy = false) {
+   const auto bufsiz = 2048;
+   char buf[bufsiz];
+   stream_line_reader line_reader(strm, buf, bufsiz);
+@@ -8476,7 +8482,7 @@
+   // RFC 9110 Section 8.6: Reject requests with multiple Content-Length
+   // headers that have different values to prevent request smuggling.
+   auto cl_range = headers.equal_range("Content-Length");
+-  if (cl_range.first != cl_range.second) {
++  if (!caller_header_policy && cl_range.first != cl_range.second) {
+     const auto &first_val = cl_range.first->second;
+     for (auto it = std::next(cl_range.first); it != cl_range.second; ++it) {
+       if (it->second != first_val) { return false; }
+@@ -9264,16 +9270,28 @@
+   new_req.path = path;
+   new_req.redirect_count_ -= 1;
+ 
+-  if (res.status == StatusCode::SeeOther_303 &&
+-      (req.method != "GET" && req.method != "HEAD")) {
++  if ((res.status == StatusCode::SeeOther_303 &&
++       (req.method != "GET" && req.method != "HEAD")) ||
++      (req.opensim_source_redirects && req.method == "POST" &&
++       (res.status == 300 || res.status == StatusCode::MovedPermanently_301 ||
++        res.status == StatusCode::Found_302))) {
+     new_req.method = "GET";
+     new_req.body.clear();
+-    new_req.headers.clear();
++    if (req.opensim_source_redirects) {
++      new_req.headers.erase("Content-Type");
++      new_req.headers.erase("Content-Length");
++      new_req.headers.erase("Content-Encoding");
++    } else {
++      new_req.headers.clear();
++    }
+     new_req.content_length_ = 0;
+     new_req.content_provider_ = nullptr;
+     new_req.is_chunked_content_provider_ = false;
+   }
+ 
++  if (req.opensim_source_redirects) {
++    new_req.headers.erase("Authorization");
++  }
+   Response new_res;
+ 
+   auto ret = cli.send(new_req, new_res, error);
+@@ -15796,9 +15814,11 @@
+                                                        address_family_));
+   }
+ 
+-  if (!r.has_header("Accept")) { r.headers.emplace("Accept", "*/*"); }
+-
+-  if (!r.content_receiver) {
++  if (!r.opensim_no_default_accept_headers && !r.has_header("Accept")) {
++    r.headers.emplace("Accept", "*/*");
++  }
++
++  if (!r.opensim_no_default_accept_headers && !r.content_receiver) {
+     if (!r.has_header("Accept-Encoding")) {
+       std::string accept_encoding;
+ #ifdef CPPHTTPLIB_BROTLI_SUPPORT
+@@ -16183,7 +16203,12 @@
+ }
+ 
+ // A 3xx without a Location, such as a 304, is a final response
+-inline bool is_redirect(const Response &res) {
++inline bool is_redirect(const Response &res, bool source = false) {
++  if (source) {
++    return (res.status == 300 || res.status == 301 || res.status == 302 ||
++            res.status == 303 || res.status == 307 || res.status == 308) &&
++           !res.get_header_value("Location").empty();
++  }
+   return 300 < res.status && res.status < 400 &&
+          !res.get_header_value("Location").empty();
+ }
+@@ -16249,7 +16274,7 @@
+     }
+   }
+ 
+-  if (follow_location_ && detail::is_redirect(res)) {
++  if (follow_location_ && detail::is_redirect(res, req.opensim_source_redirects)) {
+     req = std::move(req_save);
+     // The client that followed the redirect has answered any challenge it
+     // could. Retrying below would sign another host's challenge and send it
+@@ -16939,7 +16964,8 @@
+   // When using Expect: 100-continue, don't auto-skip `100 Continue` response
+   if ((!status_line_read &&
+        !read_response_line(strm, req, res, !expect_100_continue)) ||
+-      !detail::read_headers(strm, res.headers)) {
++      !detail::read_headers(strm, res.headers,
++                                static_cast<bool>(req.opensim_response_headers_read))) {
+     if (write_request_success) { error = Error::Read; }
+     return false;
+   }
+@@ -16956,7 +16982,8 @@
+       res.headers.clear();
+       res.body.clear();
+       if (!read_response_line(strm, req, res) ||
+-          !detail::read_headers(strm, res.headers)) {
++          !detail::read_headers(strm, res.headers,
++                                static_cast<bool>(req.opensim_response_headers_read))) {
+         error = Error::Read;
+         return false;
+       }
+@@ -16967,6 +16994,10 @@
+       std::lock_guard<std::mutex> guard(socket_mutex_);
+       socket_should_be_closed_when_request_is_done_ = true;
+     }
++  }
++
++  if (req.opensim_response_headers_read) {
++    req.opensim_response_headers_read(res);
+   }
+ 
+   // Body
+@@ -16987,7 +17018,7 @@
+       }
+     }
+ 
+-    auto redirect = follow_location_ && detail::is_redirect(res) &&
++    auto redirect = follow_location_ && detail::is_redirect(res, req.opensim_source_redirects) &&
+                     res.status != StatusCode::NotModified_304;
+ 
+     if (req.response_handler && !redirect) {

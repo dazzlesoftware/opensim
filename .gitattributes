@@ -21,3 +21,7 @@
 *.so  binary
 *.dylib binary
 *.anim binary
+
+# These vendored files are verified against byte-for-byte checksums.
+/native-port/third_party/** -text
+/ThirdPartyLicenses/ODE.txt -text
