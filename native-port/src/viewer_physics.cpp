@@ -27,7 +27,10 @@ std::int32_t tick_count() {
 }
 }
 struct ViewerPhysics::Impl {
-    enum class Kind { Enter, Input, Running, Leave, Teleport, Appearance, Buoyancy, Push, Hover, MoveToTarget };
+    enum class Kind {
+        Enter, Input, Running, Leave, Teleport, TeleportRefused, ScriptTeleport, Appearance, Buoyancy, Push,
+        Hover, MoveToTarget
+    };
     struct Command {
         Kind kind;
         ViewerAgent agent;
@@ -38,6 +41,7 @@ struct ViewerPhysics::Impl {
         Vector3 impulse{};
         framework::PrimHover hover{};
         framework::PrimMoveTarget move_target{};
+        bool apply_momentum = false;
     };
     ViewerRegion& viewers;
     std::shared_ptr<const DefaultAnimations> catalog;
@@ -393,6 +397,22 @@ struct ViewerPhysics::Impl {
         if (existing == avatars.end() || a.circuit->session_id != existing->second->owner_session)
             return;
         auto& avatar = *existing->second;
+        if (command.kind == Kind::TeleportRefused) {
+            avatar.world.set_orientation(a.rotation);
+            avatar.world.set_target_velocity({});
+            avatar.movement.rotation = a.rotation;
+            avatar.movement.target_velocity = {};
+            return;
+        }
+        if (command.kind == Kind::ScriptTeleport) {
+            avatar.stop_move_to_target();
+            avatar.pending_rotation.reset();
+            avatar.world.set_flying(a.flying);
+            avatar.world.move_avatar_position(a.position);
+            if (command.apply_momentum)
+                avatar.world.set_momentum(a.velocity);
+            return;
+        }
         if (command.kind == Kind::Teleport) {
             avatar.world.remove_avatar();
             try {
@@ -780,8 +800,9 @@ struct ViewerPhysics::Impl {
         }
         accumulated += static_cast<float>((now - last_clock) * .001);
         last_clock = now;
-        // Source solver uses a20ms quantum,10ms half-step gate,1.2-frame work
-        // budget and400ms lag drop. Other scene scheduling/mesh work is not modeled.
+        // The source solver uses a 20 ms step, a 10 ms half-step threshold,
+        // a 1.2-frame work budget, and a 400 ms lag cutoff.
+        // This budget excludes other scene scheduling and mesh work.
         const double deadline = now + timing.frame_time * 1200.;
         std::vector<Avatar*> ordered;
         for (auto& [owner, avatar] : avatars)
@@ -864,6 +885,15 @@ std::optional<ViewerPhysics::MovementAnimation> ViewerPhysics::movement_animatio
 }
 void ViewerPhysics::teleported(const ViewerAgent& a) {
     impl_->post(Impl::Kind::Teleport, a);
+}
+void ViewerPhysics::teleport_refused(const ViewerAgent& a) {
+    impl_->post(Impl::Kind::TeleportRefused, a);
+}
+void ViewerPhysics::script_teleported(const ViewerAgent& a, bool apply_momentum) {
+    std::lock_guard lock(impl_->queue_mutex);
+    Impl::Command command{Impl::Kind::ScriptTeleport, a, {}, {}, {}};
+    command.apply_momentum = apply_momentum;
+    impl_->queue.push_back(std::move(command));
 }
 void ViewerPhysics::input(const ViewerAgent& a) {
     impl_->post(Impl::Kind::Input, a);

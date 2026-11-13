@@ -38,8 +38,7 @@
 #include <stdexcept>
 #include <bit>
 namespace opensim::framework {
-namespace {
-std::string number(float value) {
+std::string invariant_float_string(float value) {
     if (std::isnan(value))
         return "NaN";
     if (std::isinf(value))
@@ -72,6 +71,7 @@ std::string number(float value) {
     scientific[separator] = 'E';
     return scientific;
 }
+namespace {
 bool floating(std::u16string_view input, float& value, bool allow_grouping = false) {
     const auto nul = input.find(char16_t{});
     const bool has_nul = nul != std::u16string_view::npos;
@@ -186,7 +186,8 @@ bool parse_invariant_float_with_grouping(std::string_view text, float& value) {
     return floating(utf16(text), value, true);
 }
 std::string vector3_string(const Vector3& value) {
-    return "<" + number(value.x) + ", " + number(value.y) + ", " + number(value.z) + ">";
+    return "<" + invariant_float_string(value.x) + ", " + invariant_float_string(value.y) + ", " +
+           invariant_float_string(value.z) + ">";
 }
 Vector3 parse_sdk_vector3(std::string_view text) {
     const auto storage = utf16_replacing(text);
@@ -321,7 +322,8 @@ bool try_parse_sdk_vector3(std::u16string_view input, Vector3& value) {
     return true;
 }
 std::string quaternion_string(const Quaternion& value) {
-    return "<" + number(value.x) + ", " + number(value.y) + ", " + number(value.z) + ", " + number(value.w) +
+    return "<" + invariant_float_string(value.x) + ", " + invariant_float_string(value.y) + ", " +
+           invariant_float_string(value.z) + ", " + invariant_float_string(value.w) +
            ">";
 }
 bool parse_quaternion(std::string_view text, Quaternion& value) {

@@ -26,6 +26,7 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "opensim/services/inventory_store.hpp"
+#include "opensim/framework/text.hpp"
 #include <algorithm>
 #include <stdexcept>
 #include <unordered_set>
@@ -51,6 +52,8 @@ InventoryItem framework_item(InventoryItem value) {
     value.sale_type = static_cast<std::uint8_t>(value.sale_type);
     value.group_owned = value.group_owned != 0 ? 1 : 0;
     value.creator_id = creator(value.creator_id);
+    if (framework::trim_utf8(value.description).empty())
+        value.description.clear();
     return value;
 }
 }
@@ -143,7 +146,15 @@ bool InventoryService::update_item(InventoryItem &value) {
         value.inventory_type = existing->inventory_type;
         value.asset_type = existing->asset_type;
         value.parent = existing->parent;
-        value.creator_id = existing->creator_id;
+        // CreatorIdentification's setter preserves the current creator ID
+        // for an empty assignment and preserves creator data for a plain ID.
+        const auto caller_data = value.creator_id.find(';');
+        if (existing->creator_id.empty())
+            value.creator_id = value.creator_id.substr(0, caller_data);
+        else if (existing->creator_id.find(';') == std::string::npos && caller_data != std::string::npos)
+            value.creator_id = existing->creator_id + value.creator_id.substr(caller_data);
+        else
+            value.creator_id = existing->creator_id;
         value.owner = existing->owner;
     }
     auto copy = framework_item(value);

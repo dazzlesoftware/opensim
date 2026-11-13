@@ -1,6 +1,7 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #pragma once
+#include "opensim/framework/atomic_shared_ptr.hpp"
 #include "opensim/server/poll_request.hpp"
 #include <atomic>
 #include <deque>
@@ -59,7 +60,7 @@ class PollServiceRequestManager {
     PollManagerBackend& backend_;
     const std::int32_t worker_count_;
     std::atomic<bool> running_{false};
-    std::atomic<std::shared_ptr<PollJobEngine>> worker_pool_;
+    opensim::framework::AtomicSharedPtr<PollJobEngine> worker_pool_;
     std::vector<std::shared_ptr<PollWatcher>> watchers_;
     std::vector<std::shared_ptr<PollJobEngine>> retired_pools_;
     mutable std::mutex retry_mutex_;

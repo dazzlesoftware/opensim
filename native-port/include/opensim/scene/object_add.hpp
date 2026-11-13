@@ -8,7 +8,7 @@ struct ObjectAddRequest {
  SceneObject object;
  framework::Vector3 ray_start,ray_end;
  framework::Uuid ray_target;
- std::uint8_t bypass_raycast=0,ray_end_is_intersection=0;
+ std::uint8_t bypass_raycast = 0, ray_end_is_intersection = 0;
  std::uint32_t add_flags=0;
 };
 // LLClientView.GetShapeFromAddPacket and HandleObjectAdd projection.

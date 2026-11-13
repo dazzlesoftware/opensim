@@ -2,12 +2,15 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/services/filesystem_asset_loader.hpp"
 #include "opensim/framework/filesystem.hpp"
-#include "opensim/services/user_account.hpp"
-#include <pugixml.hpp>
+#include "opensim/framework/invariant_number_parse.hpp"
+#include "opensim/framework/sdk_uuid.hpp"
+#include "opensim/framework/text.hpp"
+#include "opensim/framework/nini_config_invariant.hpp"
+#include "opensim/framework/nini_xml_document_save.hpp"
+#include "opensim/framework/nini_xml_reader.hpp"
 #include <bit>
 #include <filesystem>
 #include <fstream>
-#include <unordered_set>
 namespace opensim::services {
 namespace {
 template <class T> T &required(const std::shared_ptr<T> &value) {
@@ -37,36 +40,33 @@ std::vector<AssetXmlConfig> AssetLoaderFiles::configurations(const std::string &
     std::string bytes((std::istreambuf_iterator<char>(file)), {});
     if (file.bad())
         throw std::runtime_error("Cannot read asset XML file");
-    pugi::xml_document doc;
-    auto parsed = doc.load_buffer(bytes.data(), bytes.size());
-    if (!parsed)
-        throw AssetXmlError(parsed.description());
-    int roots = 0;
-    for (auto node : doc.children())
-        if (node.type() == pugi::node_element)
-            ++roots;
-    if (roots != 1)
-        throw AssetXmlError("Multiple XML root elements");
-    auto root = doc.document_element();
-    if (std::string_view(root.name()) != "Nini")
-        throw std::invalid_argument("Did not find Nini XML root node");
+    const auto arena = std::make_shared<framework::NiniConfigArena>(
+        framework::native_nini_invariant_config_backend());
+    const auto uri_reader = std::make_shared<framework::NiniXmlUriReaderBackend>();
+    uri_reader->get_temp_resolver = []() -> std::shared_ptr<framework::NiniXmlUriReaderResolver> {
+        throw std::logic_error("Asset manifest XML is loaded from an open local file");
+    };
+    const auto backend = framework::native_nini_xml_config_backend(
+        framework::native_xml_document_io(uri_reader));
+    std::shared_ptr<framework::NiniXmlConfigSource> source;
+    try {
+        const auto data = std::span(reinterpret_cast<const std::uint8_t*>(bytes.data()), bytes.size());
+        auto reader = framework::NativeNiniXmlReader::from_bytes(
+            data, framework::NiniXmlReaderSettings::legacy_document());
+        source = framework::NiniXmlConfigSource::create(arena, backend, std::move(reader));
+    } catch (const framework::NiniXmlProviderError& error) {
+        if (error.source_type != "System.Xml.XmlException")
+            throw;
+        throw AssetXmlError(error.what());
+    }
     std::vector<AssetXmlConfig> result;
-    std::unordered_set<std::string> sections;
-    for (auto section : root.children("Section")) {
-        auto name = section.attribute("Name");
-        if (!name)
-            throw std::invalid_argument("Missing asset XML section name");
-        bool first = sections.insert(name.value()).second;
+    const auto configs = source->configs();
+    for (std::int32_t index = 0; index < configs->count(); ++index) {
+        const auto section = configs->at(index);
         AssetXmlConfig config;
-        for (auto key : section.children("Key")) {
-            auto key_name = key.attribute("Name"), value = key.attribute("Value");
-            if (!key_name || !value)
-                throw std::invalid_argument("Missing asset XML key attribute");
-            if (!config.emplace(key_name.value(), value.value()).second)
-                throw std::invalid_argument("Duplicate asset XML key");
-        }
-        if (first)
-            result.push_back(std::move(config));
+        for (const auto& key : section->get_keys())
+            config.emplace(framework::utf8(*key), framework::utf8(*section->get(key)));
+        result.push_back(std::move(config));
     }
     return result;
 }
@@ -112,7 +112,8 @@ FilesystemAssetLoader::FilesystemAssetLoader(std::shared_ptr<AssetLoaderFiles> f
 AssetService::Asset FilesystemAssetLoader::create_asset(const std::string &id, const std::string &name,
                                                         const std::optional<std::string> &path,
                                                         std::int8_t type) {
-    auto asset = std::make_shared<framework::AssetBase>(framework::parse_sdk_uuid(id), name, type,
+    const auto asset_id = framework::construct_sdk_uuid(framework::utf16_replacing(id));
+    auto asset = std::make_shared<framework::AssetBase>(asset_id, name, type,
                                                         std::string("11111111-1111-0000-0000-000100bba000"));
     if (path && !path->empty())
         load_asset(asset, *path);
@@ -142,8 +143,8 @@ void FilesystemAssetLoader::load_set(const std::string &path, std::vector<AssetS
                 auto name = get(config, "name", "");
                 int32_t number = 0;
                 auto found = config.find("assetType");
-                if (found != config.end() && !parse_account_integer(found->second, number))
-                    throw std::invalid_argument("Invalid asset type integer");
+                if (found != config.end())
+                    number = framework::invariant_convert_to_int32(framework::utf16_replacing(found->second));
                 auto type = std::bit_cast<int8_t>(static_cast<uint8_t>(number));
                 auto file = get(config, "fileName", "");
                 auto asset =

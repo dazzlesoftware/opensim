@@ -51,7 +51,7 @@ struct UuidHash { std::size_t operator()(const Uuid& id) const noexcept; };
 bool try_parse_sdk_uuid(std::string_view text,Uuid& result);
 Uuid parse_sdk_uuid(std::string_view text);
 struct Vector3 {
-    float x=0,y=0,z=0;
+    float x = 0, y = 0, z = 0;
     bool operator==(const Vector3&) const = default;
 };
 }

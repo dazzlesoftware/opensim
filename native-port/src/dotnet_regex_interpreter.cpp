@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation and Contributors.
 // .NET8.0.31 RegexInterpreter/RegexRunner/Match storage; MIT runtime license.
 #include "opensim/framework/dotnet_regex_interpreter.hpp"
+#include "opensim/framework/execution_stack.hpp"
 #include "opensim/framework/text.hpp"
 #include <algorithm>
 #include <bit>
@@ -125,7 +126,9 @@ DotnetRegexMatchTimeout::DotnetRegexMatchTimeout(DotnetRegexNodeText text, Dotne
                                                  int milliseconds)
     : DotnetRegexClassError(
           "System.Text.RegularExpressions.RegexMatchTimeoutException", 0x80131505u,
-          "The Regex engine has timed out while trying to match a pattern to an input string. This can occur for many reasons, including very large inputs or excessive backtracking caused by nested quantifiers, back-references and other factors."),
+          "The Regex engine has timed out while trying to match a pattern to an input string. This can occur "
+          "for many reasons, including very large inputs or excessive backtracking caused by nested "
+          "quantifiers, back-references and other factors."),
       input(std::move(text)), pattern(std::move(expression)),
       timeout_ticks(static_cast<std::int64_t>(milliseconds) * 10000) {
 }
@@ -867,5 +870,16 @@ DotnetRegexScanResult DotnetRegexInterpreter::scan(DotnetRegexNodeText input, in
         impl_->input.reset();
         throw;
     }
+}
+
+bool dotnet_regex_is_match(std::string_view text, std::string_view pattern, std::int64_t timeout_ticks) {
+    const auto expression = std::make_shared<const std::u16string>(utf16_replacing(pattern));
+    const auto input = std::make_shared<const std::u16string>(utf16_replacing(text));
+    const auto culture = [] { return std::u16string{}; };
+    DotnetRegexInterpreter regex(
+        dotnet_regex_parse(expression, 0, culture, sufficient_execution_stack),
+        expression, sufficient_execution_stack);
+    return regex.scan(input, 0, static_cast<std::int32_t>(input->size()), 0, -1,
+                      DotnetRegexRunnerMode::ExistenceRequired, timeout_ticks).success;
 }
 }

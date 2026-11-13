@@ -10,6 +10,8 @@
 #include <vector>
 #include <memory>
 namespace opensim::framework {
+std::vector<std::u16string> config_http_disable_chunked_request_encoding(
+    const std::vector<std::u16string>& values);
 class ConfigHttpHeaderError : public std::runtime_error {
 public:
     ConfigHttpHeaderError(std::string, std::u16string, std::uint32_t, int = -1,

@@ -1,6 +1,7 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #pragma once
+#include "opensim/framework/atomic_shared_ptr.hpp"
 #include "opensim/services/asset_store.hpp"
 #include "opensim/server/config.hpp"
 namespace opensim::services {
@@ -34,7 +35,7 @@ public:
     std::optional<std::string> config_name;
 };
 struct AssetStorageState {
-    std::atomic<std::shared_ptr<ConfiguredAssetService>> root;
+    opensim::framework::AtomicSharedPtr<ConfiguredAssetService> root;
 };
 class AssetStorageFactory {
 public:

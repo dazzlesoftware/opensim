@@ -17,6 +17,7 @@ import urllib.parse
 import urllib.request
 import uuid
 import xml.etree.ElementTree as ET
+import xmlrpc.client
 
 
 @contextmanager
@@ -103,16 +104,24 @@ def exercise_region(executable, root, private_url, seed, location, grid_user_url
     subprocess.run(command + ["--init-db"], check=True, timeout=20)
     subprocess.run(command + ["--create-user", "Remote", "Resident"], input="fixture-password\n",
                    text=True, check=True, timeout=20)
+    subprocess.run(command + ["--create-user", "Unlisted", "Resident"], input="fixture-password\n",
+                   text=True, check=True, timeout=20)
+    subprocess.run(command + ["--create-user", "Recorded", "Visitor"], input="fixture-password\n",
+                   text=True, check=True, timeout=20)
     with closing(sqlite3.connect(root / "users.db")) as connection:
         agent = uuid.UUID(connection.execute("SELECT PrincipalID FROM UserAccounts WHERE FirstName='Remote'")
                           .fetchone()[0])
+        unknown_agent = uuid.UUID(connection.execute("SELECT PrincipalID FROM UserAccounts WHERE FirstName='Unlisted'")
+                                  .fetchone()[0])
+        recorded_agent = uuid.UUID(connection.execute(
+            "SELECT PrincipalID FROM UserAccounts WHERE FirstName='Recorded'").fetchone()[0])
     if grid_user_url or local_grid_user:
         # The default parcel belongs to this region's estate owner.
         region_config.write_text(settings.replace("[NativeRegion]", f"[NativeRegion]\nOwnerID={agent}"),
                                  encoding="utf-8")
 
-    def grid_user_request(endpoint, method):
-        body = urllib.parse.urlencode({"METHOD": method, "UserID": str(agent)}).encode()
+    def grid_user_request(endpoint, method, user=agent):
+        body = urllib.parse.urlencode({"METHOD": method, "UserID": str(user)}).encode()
         auth = base64.b64encode(b"presence:fixture-password").decode()
         request = urllib.request.Request(endpoint + "/griduser", body, {"Authorization": f"Basic {auth}"})
         with urllib.request.urlopen(request, timeout=5) as response:
@@ -143,7 +152,7 @@ def exercise_region(executable, root, private_url, seed, location, grid_user_url
                    "caps_path": "presence-fixture", "start_pos": "<128,128,45>", "teleport_flags": 128}
 
         def admit(fields):
-            request = urllib.request.Request(region_url + f"/agent/{agent}/", json.dumps(fields).encode(),
+            request = urllib.request.Request(region_url + f"/agent/{fields['agent_id']}/", json.dumps(fields).encode(),
                                              {"Content-Type": "application/json"})
             with urllib.request.urlopen(request, timeout=5) as response:
                 return json.load(response)
@@ -176,6 +185,44 @@ def exercise_region(executable, root, private_url, seed, location, grid_user_url
             else:
                 raise AssertionError("Viewer did not enter with both remote friends online")
             wait_until(lambda: location(session) == str(region), "Root presence was not reported")
+            with xmlrpc.client.ServerProxy(region_url + "/") as proxy:
+                message = {
+                    "from_agent_id": str(friends[0]),
+                    "to_agent_id": str(agent),
+                    "im_session_id": str(uuid.uuid4()),
+                    "region_id": str(region),
+                    "timestamp": " -1 ",
+                    "from_agent_name": "Remote Friend",
+                    "message": "Grid message with the default configuration",
+                    "dialog": "AA==",
+                    "from_group": "FALSE",
+                    "offline": "AA==",
+                    "parent_estate_id": "+42",
+                    "position_x": "12.5",
+                    "position_y": "-1",
+                    "position_z": "2147483648",
+                    "binary_bucket": "",
+                }
+                assert proxy.grid_instant_message(message)["success"] == "TRUE"
+            for _ in range(128):
+                data = viewer.recv(4096)
+                if message["message"].encode() in data:
+                    break
+            else:
+                raise AssertionError("Viewer did not receive the grid message without a configured key")
+            if data[0] & 0x80:
+                decoded = bytearray(data[:6])
+                encoded = iter(data[6:])
+                for byte in encoded:
+                    if byte == 0:
+                        decoded.extend(bytes(next(encoded)))
+                    else:
+                        decoded.append(byte)
+                data = decoded
+            assert data[6:10] == bytes.fromhex("ffff00fe")
+            assert struct.unpack_from("<I", data, 59)[0] == 42
+            assert struct.unpack_from("<3f", data, 79) == (0, 4294967296, 0)
+            assert struct.unpack_from("<I", data, 109)[0] == 0xFFFFFFFF
             sequence = 3
             if home_service:
                 wait_until(lambda: grid_user_request(home_service, "getgriduserinfo")
@@ -216,6 +263,73 @@ def exercise_region(executable, root, private_url, seed, location, grid_user_url
                 wait_until(lambda: grid_user_request(home_service, "getgriduserinfo")
                            .findtext("result/Online") == "False",
                            "Viewer logout retained GridUser online status")
+        if home_service:
+            before = grid_user_request(home_service, "loggedin").find("result")
+            child_session = uuid.uuid4()
+            child_code = code + 1
+            seed(child_session, agent, uuid.UUID(int=0))
+            child = admit(circuit | {
+                "session_id": str(child_session), "secure_session_id": str(uuid.uuid4()),
+                "circuit_code": str(child_code), "caps_path": "child-presence-fixture", "child": True,
+            })
+            assert child["success"], child
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as viewer:
+                viewer.settimeout(8)
+                packet(1, "ffff0003", struct.pack("<I", child_code) + child_session.bytes + agent.bytes)
+                packet(2, "ffff00fc", agent.bytes + child_session.bytes)
+                wait_until(lambda: location(child_session) is None, "Child logout retained remote presence")
+            after = grid_user_request(home_service, "getgriduserinfo").find("result")
+            assert after.findtext("Online") == "True", "Child logout marked the grid user offline"
+            assert after.findtext("LastPosition") == before.findtext("LastPosition"), "Child logout overwrote the last position"
+            unknown_session = uuid.uuid4()
+            unknown_code = code + 2
+            seed(unknown_session, unknown_agent, uuid.UUID(int=0))
+            unknown = admit(circuit | {
+                "agent_id": str(unknown_agent), "session_id": str(unknown_session),
+                "secure_session_id": str(uuid.uuid4()), "circuit_code": str(unknown_code),
+                "caps_path": "unknown-presence-fixture",
+            })
+            assert unknown.get("success"), unknown
+            with closing(sqlite3.connect(root / "users.db")) as connection, connection:
+                connection.execute("DELETE FROM UserAccounts WHERE PrincipalID=?", (str(unknown_agent),))
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as viewer:
+                viewer.settimeout(8)
+                unknown_identity = unknown_agent.bytes + unknown_session.bytes
+                circuit_bytes = struct.pack("<I", unknown_code)
+                packet(1, "ffff0003", circuit_bytes + unknown_session.bytes + unknown_agent.bytes)
+                packet(2, "ffff00f9", unknown_identity + circuit_bytes)
+                wait_until(lambda: location(unknown_session) == str(region), "Unknown viewer did not become root")
+                packet(3, "ffff00fc", unknown_identity)
+                wait_until(lambda: location(unknown_session) is None, "Unknown viewer did not log out")
+            assert grid_user_request(home_service, "getgriduserinfo", unknown_agent).findtext("result") == "Failure", (
+                "An unknown viewer's region activity created a GridUser record"
+            )
+            recorded_session = uuid.uuid4()
+            recorded_code = unknown_code + 1
+            seed(recorded_session, recorded_agent, uuid.UUID(int=0))
+            stored_id = f"{recorded_agent};  HTTP://example.test/  ;Recorded  Visitor;secret"
+            assert grid_user_request(home_service, "loggedin", stored_id).findtext("result/Online") == "True"
+            recorded = admit(circuit | {
+                "agent_id": str(recorded_agent), "session_id": str(recorded_session),
+                "secure_session_id": str(uuid.uuid4()), "circuit_code": str(recorded_code),
+                "caps_path": "recorded-presence-fixture",
+            })
+            assert recorded.get("success"), recorded
+            with closing(sqlite3.connect(root / "users.db")) as connection, connection:
+                connection.execute("DELETE FROM UserAccounts WHERE PrincipalID=?", (str(recorded_agent),))
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as viewer:
+                viewer.settimeout(8)
+                viewer_identity = recorded_agent.bytes + recorded_session.bytes
+                circuit_bytes = struct.pack("<I", recorded_code)
+                packet(1, "ffff0003", circuit_bytes + recorded_session.bytes + recorded_agent.bytes)
+                packet(2, "ffff00f9", viewer_identity + circuit_bytes)
+                wait_until(lambda: grid_user_request(home_service, "getgriduserinfo", recorded_agent)
+                           .findtext("result/LastRegionID") == str(region),
+                           "Stored visitor identity did not receive a GridUser position update")
+                packet(3, "ffff00fc", viewer_identity)
+                wait_until(lambda: grid_user_request(home_service, "getgriduserinfo", recorded_agent)
+                           .findtext("result/Online") == "False",
+                           "Stored visitor identity did not receive a GridUser logout")
         seed(shutdown_session, agent, region)
     assert location(shutdown_session) is None, "Region shutdown retained remote presence"
     return agent

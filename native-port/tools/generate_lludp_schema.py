@@ -81,12 +81,22 @@ def generate(directory):
                 raise ValueError(f"Template fields differ: {packet['name']}.{block['name']}: {expected} != {actual}")
             if reflected["type"].endswith("[]") != (block["mode"] != "Single"):
                 raise ValueError(f"Template block multiplicity differs: {packet['name']}.{block['name']}")
-            fields = ",".join('{"%s",FieldType::%s,%s}' % (field["name"], field["type"], field["size"]) for field in block["fields"])
-            blocks.append('{"%s",%d,%s,{%s}}' % (block["name"], block["count"], str(block["mode"] == "Variable").lower(), fields))
-        lines.append('{"%s",%d,Frequency::%s,%d,%s,%s,%s,{%s}},' %
-                     (packet["name"], packet["enumValue"], packet["frequency"], packet["id"],
-                      str(packet["reliable"]).lower(), str(packet["zerocoded"]).lower(),
-                      str(packet["validateIds"]).lower(), ",".join(blocks)))
+            variable = str(block["mode"] == "Variable").lower()
+            blocks.append(f'        {{"{block["name"]}", {block["count"]}, {variable}, {{')
+            for field in block["fields"]:
+                blocks.append(
+                    f'            {{"{field["name"]}", FieldType::{field["type"]}, {field["size"]}}},'
+                )
+            blocks.append("        }},")
+        reliable = str(packet["reliable"]).lower()
+        zerocoded = str(packet["zerocoded"]).lower()
+        validate_ids = str(packet["validateIds"]).lower()
+        lines.append(
+            f'    {{"{packet["name"]}", {packet["enumValue"]}, Frequency::{packet["frequency"]}, '
+            f'{packet["id"]}, {reliable}, {zerocoded}, {validate_ids}, {{'
+        )
+        lines.extend(blocks)
+        lines.append("    }},")
     lines.append("};")
     return "\n".join(lines) + "\n"
 

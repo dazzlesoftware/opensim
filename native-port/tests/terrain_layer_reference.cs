@@ -55,6 +55,22 @@ class TerrainLayerReference
             int k = 0;
             int w = int.Parse(a[k++]), h = int.Parse(a[k++]), mode = int.Parse(a[k++]),
                 seed = int.Parse(a[k++]), n = int.Parse(a[k++]);
+            if (mode >= 4)
+            {
+                var wind = new TerrainPatch[] {
+                    new TerrainPatch { Data = new float[256] },
+                    new TerrainPatch { Data = new float[256] }
+                };
+                for (int i = 0; i < 256; ++i)
+                {
+                    wind[0].Data[i] = mode == 4 ? seed : (i % 16 - 8) * .125f + seed;
+                    wind[1].Data[i] = mode == 4 ? 0 : (i / 16 - 8) * .25f;
+                }
+                byte windType = (byte)TerrainPatch.LayerType.Wind;
+                var packet = OpenSimTerrainCompressor.CreateLayerDataPacketStandardSize(wind, windType);
+                Console.WriteLine(windType + ":" + Convert.ToHexString(packet.LayerData.Data).ToLowerInvariant() + ";");
+                continue;
+            }
             var t = new TerrainData(w, h, 0);
             for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++)

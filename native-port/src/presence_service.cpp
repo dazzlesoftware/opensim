@@ -70,29 +70,56 @@ bool presence_field(const std::string& field) {
 }
 }
 
-SqliteTravelStore::SqliteTravelStore(const std::string& path)
+SqliteTravelStore::SqliteTravelStore(const std::string& path, std::string_view realm)
     : database_(std::make_shared<SqliteDatabase>()) {
+    if (realm.empty() || realm.find('\0') != realm.npos)
+        throw std::invalid_argument("Invalid Hypergrid travel realm");
+    table_ = '"';
+    for (const auto character : realm) {
+        if (character == '"')
+            table_ += '"';
+        table_ += character;
+    }
+    table_ += '"';
     database_->open_path(path, true);
-    sqlite3_busy_timeout(database_->handle(), 5000);
-    PresenceStatement(
-        database_->handle(),
-        "CREATE TABLE IF NOT EXISTS hg_traveling_data ("
-        "SessionID VARCHAR(36) NOT NULL PRIMARY KEY, UserID VARCHAR(36) NOT NULL UNIQUE, "
-        "GridExternalName VARCHAR(255) NOT NULL DEFAULT '', ServiceToken VARCHAR(255) NOT NULL DEFAULT '', "
-        "ClientIPAddress VARCHAR(16) NOT NULL DEFAULT '', MyIPAddress VARCHAR(16) NOT NULL DEFAULT '', "
-        "TMStamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
-        {})
-        .next();
-    PresenceStatement(database_->handle(),
-                      "DELETE FROM hg_traveling_data WHERE TMStamp < datetime('now', '-2 day')", {})
-        .next();
+    auto* const db = database_->handle();
+    sqlite3_busy_timeout(db, 5000);
+    const auto execute = [db](const std::string& statement) {
+        PresenceStatement(db, statement, {}).next();
+    };
+    const auto create = [&](const std::string& table) {
+        execute("CREATE TABLE IF NOT EXISTS " + table + " ("
+                "SessionID VARCHAR(36) NOT NULL PRIMARY KEY, UserID VARCHAR(36) NOT NULL UNIQUE, "
+                "GridExternalName VARCHAR(255) NOT NULL DEFAULT '', ServiceToken VARCHAR(255) NOT NULL DEFAULT '', "
+                "ClientIPAddress VARCHAR(16) NOT NULL DEFAULT '', MyIPAddress VARCHAR(16) NOT NULL DEFAULT '', "
+                "TMStamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+    };
+
+    execute("BEGIN IMMEDIATE");
+    try {
+        const std::string default_table = "\"hg_traveling_data\"";
+        create(default_table);
+        if (table_ != default_table)
+            create(table_);
+        execute("CREATE TABLE IF NOT EXISTS migrations(name varchar(100), version int)");
+        execute("INSERT INTO migrations(name, version) SELECT 'migrations', 1 "
+                "WHERE NOT EXISTS (SELECT 1 FROM migrations WHERE name = 'migrations')");
+        execute("INSERT INTO migrations(name, version) SELECT 'HGTravelStore', 2 "
+                "WHERE NOT EXISTS (SELECT 1 FROM migrations WHERE name = 'HGTravelStore')");
+        execute("UPDATE migrations SET version = 2 WHERE name = 'HGTravelStore' AND version < 2");
+        execute("DELETE FROM " + table_ + " WHERE TMStamp < datetime('now', '-2 day')");
+        execute("COMMIT");
+    } catch (...) {
+        sqlite3_exec(db, "ROLLBACK", nullptr, nullptr, nullptr);
+        throw;
+    }
 }
 
 std::optional<TravelRecord> SqliteTravelStore::get(const framework::Uuid& session) {
     std::lock_guard lock(database_->mutex());
     PresenceStatement row(database_->handle(),
                           "SELECT UserID, GridExternalName, ServiceToken, ClientIPAddress, MyIPAddress "
-                          "FROM hg_traveling_data WHERE SessionID = ?",
+                          "FROM " + table_ + " WHERE SessionID = ?",
                           {session.str()});
     if (!row.next())
         return std::nullopt;
@@ -104,7 +131,7 @@ std::optional<TravelRecord> SqliteTravelStore::get_by_user(const framework::Uuid
     std::lock_guard lock(database_->mutex());
     PresenceStatement row(database_->handle(),
                           "SELECT SessionID, GridExternalName, ServiceToken, ClientIPAddress, MyIPAddress "
-                          "FROM hg_traveling_data WHERE UserID = ?",
+                          "FROM " + table_ + " WHERE UserID = ?",
                           {user.str()});
     if (!row.next())
         return std::nullopt;
@@ -112,11 +139,23 @@ std::optional<TravelRecord> SqliteTravelStore::get_by_user(const framework::Uuid
         framework::Uuid(row.column(0)), user, row.column(1), row.column(2), row.column(3), row.column(4)};
 }
 
+std::optional<TravelRecord> SqliteTravelStore::replaced_by(const framework::Uuid& session,
+                                                          const framework::Uuid& user) {
+    if (auto current = get(session))
+        return current;
+    return get_by_user(user);
+}
+
+std::optional<TravelRecord> SqliteTravelStore::locate(const framework::Uuid& user, std::string_view home) {
+    auto record = get_by_user(user);
+    return record && !record->grid.empty() && record->grid != home ? record : std::nullopt;
+}
+
 void SqliteTravelStore::store(const TravelRecord& record) {
     std::lock_guard lock(database_->mutex());
     PresenceStatement(database_->handle(),
-                      "INSERT OR REPLACE INTO hg_traveling_data "
-                      "(SessionID, UserID, GridExternalName, ServiceToken, ClientIPAddress, MyIPAddress) "
+                      "INSERT OR REPLACE INTO " + table_ +
+                      " (SessionID, UserID, GridExternalName, ServiceToken, ClientIPAddress, MyIPAddress) "
                       "VALUES (?, ?, ?, ?, ?, ?)",
                       {record.session_id.str(), record.user_id.str(), record.grid, record.service_token,
                        record.client_ip, record.external_ip})
@@ -125,7 +164,7 @@ void SqliteTravelStore::store(const TravelRecord& record) {
 
 void SqliteTravelStore::erase(const framework::Uuid& session) {
     std::lock_guard lock(database_->mutex());
-    PresenceStatement(database_->handle(), "DELETE FROM hg_traveling_data WHERE SessionID = ?",
+    PresenceStatement(database_->handle(), "DELETE FROM " + table_ + " WHERE SessionID = ?",
                       {session.str()})
         .next();
 }

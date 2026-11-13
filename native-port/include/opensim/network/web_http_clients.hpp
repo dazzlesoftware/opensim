@@ -1,6 +1,7 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #pragma once
+#include "opensim/framework/atomic_shared_ptr.hpp"
 #include "opensim/framework/config_uri_object.hpp"
 #include "opensim/framework/config_xml_transport_http.hpp"
 #include <atomic>
@@ -66,7 +67,7 @@ public:
 class WebHttpClients {
 public:
     using HandlerFactory = std::function<std::shared_ptr<WebHttpHandler>(const WebHttpHandlerSettings&)>;
-    std::atomic<std::shared_ptr<WebHttpHandler>> shared_handler, shared_no_redirect_handler;
+    opensim::framework::AtomicSharedPtr<WebHttpHandler> shared_handler, shared_no_redirect_handler;
     explicit WebHttpClients(HandlerFactory);
     void setup(bool no_verify_cert_chain, bool no_verify_cert_hostname, std::shared_ptr<framework::ConfigXmlProxy>,
                std::int32_t maximum_connections);

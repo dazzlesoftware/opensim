@@ -28,6 +28,7 @@ class DotnetRegexMatchTimeout : public DotnetRegexClassError {
     DotnetRegexMatchTimeout(DotnetRegexNodeText, DotnetRegexNodeText, std::int32_t timeout_milliseconds);
 };
 void dotnet_regex_validate_timeout(std::int64_t ticks);
+bool dotnet_regex_is_match(std::string_view input, std::string_view pattern, std::int64_t timeout_ticks);
 // This is the original backtracking interpreter, not a replacement for the
 // separate symbolic NonBacktracking engine or the higher-level Regex API.
 // One instance is one runner; independent instances may share immutable input.

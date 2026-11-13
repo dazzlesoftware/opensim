@@ -1,6 +1,9 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
+#include "opensim/framework/atomic_shared_ptr.hpp"
 #include "opensim/scene/region_runtime.hpp"
+#include "opensim/scene/remote_data_channels.hpp"
+#include "opensim/scene/terrain_layer.hpp"
 #include "opensim/scene/movement.hpp"
 #include "opensim/framework/filesystem.hpp"
 #include "opensim/server/poll_http_service.hpp"
@@ -9,6 +12,7 @@
 #include "opensim/framework/animation_set.hpp"
 #include "opensim/services/user_account.hpp"
 #include "opensim/scene/object_asset_xml.hpp"
+#include "opensim/scene/live_asset_gather.hpp"
 #include "opensim/framework/permissions.hpp"
 #include "opensim/framework/primitive_base_shape.hpp"
 #include "opensim/network/osd_json.hpp"
@@ -17,6 +21,8 @@
 #include "opensim/framework/ordered_dictionary.hpp"
 #include "opensim/framework/culture_sort.hpp"
 #include "opensim/framework/sdk_quaternion.hpp"
+#include "dotnet_regex_sort.hpp"
+#include "opensim/framework/dotnet_regex_interpreter.hpp"
 #include "opensim/framework/integer_text.hpp"
 #include "opensim/framework/fake_parcel.hpp"
 #include "opensim/framework/expiring_cache.hpp"
@@ -254,6 +260,8 @@ Value environment_real(double number) {
 float environment_day_fraction(const EnvironmentDay& day, double unix_seconds) {
     return static_cast<float>(std::clamp(std::fmod(unix_seconds + day.offset, day.length) / day.length, 0., 1.));
 }
+Value environment_vector(const Value& input, std::span<const float> defaults, bool present, bool quaternion);
+
 std::optional<script::LslRotation> sample_environment_rotation(const Value& cycle, const Value* settings,
                                                                float altitude, float fraction, bool moon) {
     const auto& tracks = cycle.get("tracks").array;
@@ -272,6 +280,9 @@ std::optional<script::LslRotation> sample_environment_rotation(const Value& cycl
                     std::swap(altitude_tracks[i], altitude_tracks[j]);
                 }
     }
+    const auto is_key = [](const Value& key) {
+        return key.contains("key_keyframe") && key.contains("key_name");
+    };
     std::size_t track_index = 1;
     if (!(altitude < altitudes.front())) {
         std::size_t index = 1;
@@ -279,7 +290,8 @@ std::optional<script::LslRotation> sample_environment_rotation(const Value& cycl
             ++index;
         do {
             track_index = altitude_tracks[--index];
-        } while (index > 0 && (track_index >= tracks.size() || tracks[track_index].array.empty()));
+        } while (index > 0 && (track_index >= tracks.size() ||
+                               !std::ranges::any_of(tracks[track_index].array, is_key)));
     }
     if (track_index >= tracks.size())
         return std::nullopt;
@@ -289,21 +301,28 @@ std::optional<script::LslRotation> sample_environment_rotation(const Value& cycl
     };
     std::vector<Key> keys;
     for (const auto& key : tracks[track_index].array)
-        if (key.contains("key_keyframe") && key.contains("key_name"))
+        if (is_key(key))
             keys.push_back({static_cast<float>(osd_real(key.get("key_keyframe"))), &key.get("key_name")});
     if (keys.empty())
         return std::nullopt;
-    std::stable_sort(keys.begin(), keys.end(), [](const Key& left, const Key& right) {
-        return std::isnan(left.time) ? !std::isnan(right.time) : left.time < right.time;
+    framework::regex_detail::sort(keys, [](const Key& left, const Key& right) {
+        if (left.time < right.time)
+            return -1;
+        if (left.time > right.time)
+            return 1;
+        // Single.CompareTo places NaN before numeric times.
+        return int(std::isnan(right.time)) - int(std::isnan(left.time));
     });
     using Rotation = std::array<float, 4>;
     const auto rotation = [&](const Key& key) -> std::optional<Rotation> {
         const auto& frame = cycle.get("frames").get(osd_string(*key.name));
         if (osd_string(frame.get("type")) != "sky")
             return {};
-        const auto& values = frame.get(moon ? "moon_rotation" : "sun_rotation").array;
-        if (values.size() != 4)
-            return Rotation{0, 0, 0, 1};
+        const auto field = moon ? "moon_rotation" : "sun_rotation";
+        const auto defaults = moon ? Rotation{0.f, 0.9239557f, 0.f, 0.3824995f}
+                                   : Rotation{0.f, -0.3824995f, 0.f, 0.9239557f};
+        const auto value = environment_vector(frame.get(field), defaults, frame.contains(field), true);
+        const auto& values = value.array;
         return Rotation{static_cast<float>(osd_real(values[0])), static_cast<float>(osd_real(values[1])),
                         static_cast<float>(osd_real(values[2])), static_cast<float>(osd_real(values[3]))};
     };
@@ -326,25 +345,9 @@ std::optional<script::LslRotation> sample_environment_rotation(const Value& cycl
     if (!b || right_time < 0 || right_time == left.time)
         return result(a);
     const auto amount = std::clamp((fraction - left.time) / (right_time - left.time), 0.f, 1.f);
-    float dot = 0;
-    for (std::size_t i = 0; i < a->size(); ++i)
-        dot += (*a)[i] * (*b)[i];
-    if (dot < 0) {
-        dot = -dot;
-        for (auto& component : *a)
-            component = -component;
-    }
-    auto weight_a = 1.f - amount;
-    auto weight_b = amount;
-    if (1.f - dot >= .0005f) {
-        const auto theta = std::acos(dot);
-        const auto inverse = 1.f / std::sin(theta);
-        weight_a = std::sin(theta * weight_a) * inverse;
-        weight_b = std::sin(theta * amount) * inverse;
-    }
-    for (std::size_t i = 0; i < a->size(); ++i)
-        (*a)[i] = (*a)[i] * weight_a + (*b)[i] * weight_b;
-    return result(a);
+    const auto blended = framework::sdk_slerp_quaternion(
+        {(*a)[0], (*a)[1], (*a)[2], (*a)[3]}, {(*b)[0], (*b)[1], (*b)[2], (*b)[3]}, amount);
+    return script::LslRotation{blended.x, blended.y, blended.z, blended.w};
 }
 Value environment_vector(const Value& input, std::span<const float> defaults, bool present, bool quaternion = false) {
     Value value;
@@ -966,7 +969,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
     std::chrono::steady_clock::time_point last_map_generation = std::chrono::steady_clock::time_point::min();
     IPresenceService& sessions;
     RegionPolicies policies;
-    std::atomic<std::shared_ptr<const EstateSettings>> estate_settings;
+    opensim::framework::AtomicSharedPtr<const EstateSettings> estate_settings;
     AccessRegion access_region;
     World world;
     mutable AgentCircuitManager circuits;
@@ -983,6 +986,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
     std::atomic<std::int32_t> region_maturity{descriptor.maturity};
     std::atomic<std::uint8_t> region_access{descriptor.access};
     std::mutex estate_region_settings_mutex;
+    std::atomic<bool> estate_script_removal_pending{false};
     Uuid estate_covenant;
     std::uint32_t estate_covenant_timestamp = 0;
     std::mutex estate_covenant_mutex;
@@ -1243,7 +1247,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
     }
     std::unique_ptr<ViewerRegion> viewers;
     std::unique_ptr<SceneCapabilities> capability_runtime;
-    std::atomic<std::shared_ptr<ViewerPhysics>> viewer_physics;
+    opensim::framework::AtomicSharedPtr<ViewerPhysics> viewer_physics;
     bool physics_activation_attempted = false;
     std::unique_ptr<BasicProfileRuntime> basic_profiles;
     std::unique_ptr<LegacyInventoryRequests> legacy_inventory;
@@ -1351,7 +1355,6 @@ struct RegionRuntime::State : SceneAdmissionBackend,
     std::map<Uuid, PendingAttachmentDetach> pending_attachment_detaches;
     struct PermissionQuestion {
         Uuid agent, session;
-        std::int32_t mask;
     };
     struct RunningScript {
         services::InventoryItem item;
@@ -1361,6 +1364,12 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         std::optional<PermissionQuestion> question;
         double cpu_ms = 0.;
         std::int32_t start_parameter = 0;
+
+        void post_rez(std::int32_t parameter) {
+            start_parameter = parameter;
+            if (instance->running())
+                instance->post_event({"on_rez", {parameter}, {}});
+        }
     };
     struct LandStatsRequest {
         Uuid agent, session;
@@ -1373,6 +1382,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         std::int32_t changed = 0;
         Uuid attached_avatar;
     };
+    static constexpr std::int32_t changed_region_start = 1024;
     std::vector<RestoredScript> restored_scripts;
     struct CapturedControls {
         Uuid avatar, session;
@@ -1383,6 +1393,8 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         std::uint32_t previous = 0;
         std::uint32_t ignored = 0;
         std::optional<std::uint32_t> movement;
+        std::uint32_t last_revoke_sequence = 0;
+        std::chrono::steady_clock::time_point next_revoke = std::chrono::steady_clock::time_point::min();
     };
     std::map<Uuid, ViewerScriptControls> viewer_script_controls;
     struct IncomingControls {
@@ -1391,6 +1403,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
     };
     std::vector<IncomingControls> incoming_controls;
     std::map<std::pair<Uuid, Uuid>, script::LslCheckpoint> incoming_script_checkpoints;
+    std::map<std::pair<Uuid, Uuid>, ManagedScriptState> incoming_managed_script_states;
     std::mutex commands_mutex;
     std::vector<ScriptCommand> script_commands;
     std::map<Uuid, std::chrono::steady_clock::time_point> recent_grab_touches;
@@ -1500,10 +1513,24 @@ struct RegionRuntime::State : SceneAdmissionBackend,
     struct ScriptListener : script::LslListenerCheckpoint {
         Uuid item, part;
 
+        static bool matches_filter(std::string_view filter, std::string_view text, bool use_regex) {
+            if (filter.empty())
+                return true;
+            if (!use_regex)
+                return framework::invariant_compare(filter, text) == 0;
+
+            using namespace framework;
+            try {
+                return dotnet_regex_is_match(text, filter, 100000);
+            } catch (const DotnetRegexClassError&) {
+                return false;
+            }
+        }
+
         bool matches(std::string_view source_name, Uuid source, std::string_view text) const {
             return active && (sender.is_zero() || sender == source) &&
-                   (name.empty() || framework::invariant_compare(name, source_name) == 0) &&
-                   (message.empty() || framework::invariant_compare(message, text) == 0);
+                   matches_filter(name, source_name, (regex_flags & script::listen_regex_name) != 0) &&
+                   matches_filter(message, text, (regex_flags & script::listen_regex_message) != 0);
         }
     };
     std::vector<ScriptListener> script_listeners;
@@ -1551,6 +1578,14 @@ struct RegionRuntime::State : SceneAdmissionBackend,
 
     void revoke_script_urls(Uuid item, std::optional<std::string_view> address = {},
                             bool discard_pending_events = true) {
+        if (!address && discard_pending_events && policies.script_outbound_http) {
+            std::lock_guard task_lock(task_data_mutex);
+            const auto script = scripts.find(item);
+            if (script != scripts.end()) {
+                const auto part = world.object(script->second.item.parent);
+                policies.script_outbound_http->stop(part ? part->local_id : 0, item);
+            }
+        }
         if (address)
             while (address->ends_with('/'))
                 address->remove_suffix(1);
@@ -1817,10 +1852,40 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             events.swap(script_http_events);
         }
         std::lock_guard lock(task_data_mutex);
+        if (policies.script_remote_data_channels) {
+            for (auto& completion : policies.script_remote_data_channels->take_completed(descriptor.id)) {
+                const auto script = scripts.find(completion.item);
+                if (script != scripts.end() && script->second.instance)
+                    script->second.instance->post_event({"remote_data",
+                        {std::int32_t{3}, std::move(completion.channel), completion.message.str(), std::string{},
+                         completion.data.integer, std::move(completion.data.text)}, {}});
+            }
+            for (auto& request : policies.script_remote_data_channels->take_requests(descriptor.id)) {
+                const auto script = scripts.find(request.receiver.item);
+                if (script == scripts.end() || !script->second.instance)
+                    continue;
+                script->second.instance->post_event({"remote_data",
+                    {std::int32_t{2}, request.channel.str(), request.message.str(), std::string{},
+                     request.data.integer, std::move(request.data.text)}, {}});
+            }
+        }
         for (auto& [item, event] : events) {
             const auto script = scripts.find(item);
             if (script != scripts.end() && script->second.instance)
                 script->second.instance->post_event(std::move(event));
+        }
+        if (policies.script_outbound_http) {
+            const auto metadata = std::make_shared<const script::LslList>();
+            for (auto& completion : policies.script_outbound_http->take_completed()) {
+                const auto part = world.object(completion.part);
+                if (!part || part->local_id != completion.local_id)
+                    continue;
+                for (auto& [item, entry] : scripts)
+                    if (entry.item.parent == completion.part && entry.instance)
+                        entry.instance->post_event({"http_response",
+                            {completion.request.str(), std::int32_t(completion.reply.status), metadata,
+                             completion.reply.body}, {}});
+            }
         }
     }
 
@@ -1845,12 +1910,17 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             if (function == "osForceOtherSit" || function == "osAvatarPlayAnimation" ||
                 function == "osAvatarStopAnimation")
                 function_level = "VeryHigh";
-            else if (function == "osGetAgents" || function == "osSunGetParam" || function == "osGetHealRate")
+            else if (function == "osGetAgents" || function == "osSunGetParam" || function == "osGetHealRate" ||
+                     function == "osTeleportOwner")
                 function_level = "None";
-            else if (function == "osGetAgentIP")
+            else if (function == "osListenRegex" || function == "osRegexIsMatch")
+                function_level = "Low";
+            else if (function == "osMatchString" || function == "osReplaceString")
+                function_level = "VeryLow";
+            else if (function == "osGetAgentIP" || function == "osTeleportAgent")
                 function_level = "Severe";
             else if (function == "osSetRegionWaterHeight" || function == "osSetRegionSunSettings" ||
-                     function == "osSetHealRate")
+                     function == "osSetHealRate" || function == "osGetScriptEngineName")
                 function_level = "High";
             const auto required = std::find(levels.begin(), levels.end(), function_level);
             if (maximum >= required)
@@ -1940,11 +2010,15 @@ struct RegionRuntime::State : SceneAdmissionBackend,
 
     void replace_script_instance(RunningScript& entry, std::unique_ptr<script::LslInstance> instance = {}) {
         clear_script_listeners(entry.item.id);
+        clear_script_targets(entry.item.id);
+        clear_script_sensors(entry.item.id);
         unregister_controls(entry.item.id);
         entry.question.reset();
         entry.cpu_ms = 0.;
         cancel_dataserver_requests(entry.item.id);
         revoke_script_urls(entry.item.id);
+        if (policies.script_remote_data_channels)
+            policies.script_remote_data_channels->cancel_script(entry.item.id, descriptor.id);
         const auto delta = static_cast<int>(bool(instance)) - static_cast<int>(bool(entry.instance));
         entry.instance = std::move(instance);
         if (delta)
@@ -1991,6 +2065,159 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 if (item->name == name && (!type || item->type == *type))
                     return item;
         return {};
+    }
+
+    std::uint32_t effective_linkset_owner_permissions(const SceneObject& root) const {
+        using framework::PermissionMask;
+        std::lock_guard lock(task_data_mutex);
+        auto effective = root.owner_mask;
+        for (const auto& [part_id, task] : task_parts) {
+            if (!task.inventory)
+                continue;
+            const auto part = world.object(part_id);
+            if (!part || (part_id != root.id && (part->is_attachment || part->parent_id != root.local_id)))
+                continue;
+            for (const auto& item : task.inventory->items())
+                if (item->inventory_type != 3)
+                    effective &= item->current_permissions;
+        }
+        constexpr auto move_modify = bits(PermissionMask::Move) | bits(PermissionMask::Modify);
+        constexpr auto copy_transfer = bits(PermissionMask::Copy) | bits(PermissionMask::Transfer);
+        effective |= root.owner_mask & move_modify;
+        if (!(effective & copy_transfer))
+            effective |= bits(PermissionMask::Transfer);
+        return effective & (root.base_mask | bits(PermissionMask::Move)) & bits(PermissionMask::AllEffective);
+    }
+
+    static TaskInventoryRegistry::Item copy_task_item(const SceneObject& target,
+                                                       const TaskInventoryRegistry::Item& item) {
+        auto received = std::make_shared<TaskInventoryItem>();
+        received->item_id = Uuid::random();
+        received->creator_id = item->creator_id;
+        received->creator_data = item->creator_data;
+        received->asset_id = item->asset_id;
+        received->group_id = target.group;
+        received->owner_id = target.owner;
+        received->parent_id = received->parent_part_id = target.id;
+        received->name = item->name;
+        received->description = item->description;
+        received->type = item->type;
+        received->inventory_type = item->inventory_type;
+        received->base_permissions = item->base_permissions;
+        received->current_permissions = item->current_permissions;
+        received->group_permissions = item->group_permissions;
+        received->everyone_permissions = item->everyone_permissions;
+        received->next_permissions = item->next_permissions;
+        received->flags = item->flags;
+        return received;
+    }
+
+    bool give_task_item_to_object(const SceneObject& source, const SceneObject& target,
+                                  const TaskInventoryRegistry::Item& item) {
+        using framework::PermissionMask;
+        const auto source_root = inventory_drop_root(source);
+        const auto target_root = inventory_drop_root(target);
+        const auto target_permissions = effective_linkset_owner_permissions(target_root);
+        const bool copy = (item->current_permissions & bits(PermissionMask::Copy)) != 0;
+        const bool different_owner = source_root.owner != target_root.owner;
+        const bool allow_drop = (target_root.flags & 0x10000u) != 0;
+        const bool modify_target = (target_permissions & bits(PermissionMask::Modify)) != 0;
+        if (!policies.bypass_inventory_permissions) {
+            if (!(target_permissions & bits(PermissionMask::Move)) ||
+                (!copy && (source_root.is_attachment || target_root.is_attachment ||
+                           !(effective_linkset_owner_permissions(source_root) & bits(PermissionMask::Modify)))))
+                return false;
+            if (different_owner) {
+                if (!(item->current_permissions & bits(PermissionMask::Transfer)) ||
+                    (target_root.is_attachment && !allow_drop) || !modify_target)
+                    return false;
+            } else if (!modify_target && !allow_drop) {
+                return false;
+            }
+        }
+        auto received = copy_task_item(target, item);
+        if (different_owner && policies.propagate_permissions) {
+            const auto mask = item->next_permissions | bits(PermissionMask::Move);
+            received->base_permissions &= mask;
+            received->current_permissions &= mask;
+            received->group_permissions &= mask;
+            received->everyone_permissions &= mask;
+            received->flags |= 0x100u;
+        }
+        if (task_inventory(target.id).add(received, source.owner != target.owner)) {
+            if (!copy)
+                task_inventory(source.id).remove(item->item_id);
+            send_part_properties(target.id, item->owner_id);
+        }
+        return true;
+    }
+
+    script::LslRemoteScriptLoad remote_load_script(Uuid source_id, Uuid target_id, const std::string& name,
+                                                    std::int32_t pin, bool start_running, std::int32_t start_parameter) {
+        using Result = script::LslRemoteScriptLoad;
+        using framework::PermissionMask;
+        std::lock_guard lock(task_data_mutex);
+        const auto item = script_inventory_item(source_id, name);
+        if (!item || item->type != static_cast<int>(AssetType::LSLText))
+            return Result::MissingScript;
+        if (!(item->base_permissions & bits(PermissionMask::Copy)))
+            return Result::NoCopy;
+
+        const auto source = world.object(source_id);
+        const auto target = world.object(target_id);
+        if (!source || !target)
+            return Result::Attempted;
+        const bool different_owner = source->owner != target->owner;
+        if (different_owner) {
+            if (target->group.is_zero() || source->group != target->group ||
+                !(target->group_mask & bits(PermissionMask::Modify)) ||
+                !(source->owner_mask & bits(PermissionMask::Transfer)))
+                return Result::Attempted;
+        } else if (!(target->owner_mask & bits(PermissionMask::Modify))) {
+            return Result::Attempted;
+        }
+        if (target->script_access_pin == 0 || target->script_access_pin != pin) {
+            error("[PRIM INVENTORY]: Remote script load with invalid PIN from " + source_id.str() +
+                  " to " + target_id.str());
+            return Result::Attempted;
+        }
+
+        auto received = copy_task_item(*target, item);
+        if (different_owner && policies.propagate_permissions) {
+            const auto mask = item->next_permissions;
+            received->base_permissions &= mask;
+            received->current_permissions &= mask;
+            received->group_permissions &= mask;
+            received->everyone_permissions &= mask;
+            received->flags |= 0x100u;
+        }
+        received->script_running = start_running;
+        auto& inventory = task_inventory(target_id);
+        if (const auto existing = script_inventory_item(target_id, name))
+            inventory.remove(existing->item_id);
+        if (inventory.add(received)) {
+            const auto diagnostics = compile_task_item(target_id, received, {}, 1, start_parameter);
+            for (const auto& diagnostic : diagnostics)
+                error("Remote native script " + received->item_id.str() + ": " + diagnostic);
+            send_part_properties(target_id, item->owner_id);
+        }
+        return Result::Attempted;
+    }
+
+    RegionInstantMessage task_inventory_offer(const SceneObject& source, Uuid recipient, Uuid inventory_id,
+                                               std::uint8_t asset_type) {
+        RegionInstantMessage offer;
+        offer.sender = source.owner;
+        offer.recipient = recipient;
+        offer.session = inventory_id;
+        offer.region = descriptor.id;
+        offer.position = script_world_position(source);
+        offer.estate = estate_settings.load()->parent_estate_id;
+        offer.dialog = 9; // TaskInventoryOffered
+        offer.from_group = source.owner == source.group;
+        offer.sender_name = framework::utf16_replacing(source.name);
+        offer.bucket = {asset_type};
+        return offer;
     }
 
     void process_dataserver_requests() {
@@ -2097,6 +2324,10 @@ struct RegionRuntime::State : SceneAdmissionBackend,
     State(GridRegion r, IPresenceService& s, RegionPolicies p)
         : descriptor(std::move(r)), sessions(s), policies(std::move(p)),
           world(descriptor.id, descriptor.size_x, descriptor.size_y), admission(*this), verification(*this) {
+        if (policies.clamp_prim_size)
+            world.clamp_inserted_prim_sizes(policies.nonphysical_prim_min, policies.nonphysical_prim_max);
+        policies.default_landing = clamp_default_landing(
+            policies.default_landing, descriptor.size_x, descriptor.size_y);
         auto settings = std::make_shared<EstateSettings>(policies);
         settings->owner = descriptor.estate_owner;
         estate_settings.store(std::move(settings));
@@ -2323,14 +2554,15 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             const auto contains = [&](const auto& list) {
                 return std::find(list.begin(), list.end(), id) != list.end();
             };
+            if (id == settings->owner || contains(settings->estate_managers))
+                return true;
             if (contains(settings->estate_bans)) {
                 reason = "Denied access to region " + descriptor.name.value_or("") +
                          ": You have been banned from that region.";
                 return false;
             }
             constexpr std::uint32_t public_access = 0x8000;
-            if (id == settings->owner ||
-                contains(settings->estate_managers) || contains(settings->estate_users))
+            if (contains(settings->estate_users))
                 return true;
             public_estate = (settings->estate_handshake_only_flags & public_access) != 0;
             if (!public_estate)
@@ -2543,6 +2775,254 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         return std::find(settings->estate_managers.begin(), settings->estate_managers.end(), id) !=
                settings->estate_managers.end();
     }
+    enum class TerrainAction : std::uint8_t { Flatten, Raise, Lower, Smooth, Noise, Revert };
+
+    struct TerrainEdit {
+        float west;
+        float south;
+        double east;
+        double north;
+        float brush_size;
+        int parcel_id;
+    };
+
+    void modify_terrain(Uuid agent, bool administrator, TerrainAction action, float strength, float target,
+                        const TerrainEdit& edit) {
+        std::unique_lock lock(terrain_edit_mutex, std::try_to_lock);
+        if (!lock || std::chrono::steady_clock::now() < next_terrain_edit)
+            return;
+        struct Cooldown {
+            std::chrono::steady_clock::time_point& next;
+            ~Cooldown() {
+                next = std::chrono::steady_clock::now() + std::chrono::milliseconds(20);
+            }
+        } cooldown{next_terrain_edit};
+
+        if (action > TerrainAction::Revert || !std::isfinite(strength) ||
+            (action == TerrainAction::Flatten && !std::isfinite(target)) ||
+            (action == TerrainAction::Revert && !terrain_baseline))
+            return;
+        auto& active_terrain = world.terrain();
+        Terrain terrain(active_terrain);
+        const bool estate_override = policies.bypass_object_permissions || is_estate_manager(agent) ||
+                                     administrator;
+        std::map<Uuid, bool> parcel_permissions;
+        const auto can_edit = [&](const std::shared_ptr<const ScriptParcel>& parcel) {
+            if (estate_override)
+                return true;
+            if (!parcel)
+                return false;
+            if (const auto cached = parcel_permissions.find(parcel->id); cached != parcel_permissions.end())
+                return cached->second;
+            constexpr std::uint32_t allow_terraform = 1u << 4;
+            constexpr std::uint64_t allow_edit_land = 1ull << 23;
+            const bool allowed = (parcel->flags & allow_terraform) || parcel->owner == agent ||
+                (parcel->group_owned && !parcel->group.is_zero() && policies.inventory_group_powers &&
+                 (policies.inventory_group_powers(agent, parcel->group) & allow_edit_land));
+            parcel_permissions.emplace(parcel->id, allowed);
+            return allowed;
+        };
+        const auto [x, y, east, north, size, parcel_id] = edit;
+        const bool area = x != east || y != north;
+        if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(east) || !std::isfinite(north) ||
+            (!area && (!std::isfinite(size) || size <= 0)))
+            return;
+        const bool parcel_area = area && parcel_id != -1;
+        const auto selected_parcel = parcel_area ? parcel_by_local_id(parcel_id) : nullptr;
+        if (parcel_area && (!selected_parcel || !can_edit(selected_parcel)))
+            return;
+        const auto bound = [](double value, int max) {
+            return static_cast<int>(std::clamp(value, 0.0, double(max)));
+        };
+        const auto max_x = static_cast<int>(active_terrain.width()) - 1,
+                   max_y = static_cast<int>(active_terrain.height()) - 1;
+        if (!area && (std::trunc(double(x) + size + .5) < 0 || std::trunc(double(y) + size + .5) < 0 ||
+                      std::trunc(double(x) - size + .5) > max_x ||
+                      std::trunc(double(y) - size + .5) > max_y))
+            return;
+        const int start_x = bound(area ? x : double(x) - size + .5, max_x),
+                  end_x = bound(area ? east : double(x) + size + .5, max_x);
+        const int start_y = bound(area ? y : double(y) - size + .5, max_y),
+                  end_y = bound(area ? north : double(y) + size + .5, max_y);
+        const float scale = area ? 0.f : .5f * std::numbers::pi_v<float> / size;
+        const int sample_radius = area ? 0 : static_cast<int>(std::min(4.0, double(size) + .5));
+        const auto neighborhood = [&](int px, int py, int radius_x, int radius_y) {
+            float sum = 0;
+            int samples = 0;
+            for (int sx = std::max(0, px - radius_x); sx <= std::min(max_x, px + radius_x); ++sx)
+                for (int sy = std::max(0, py - radius_y); sy <= std::min(max_y, py + radius_y);
+                     ++sy) {
+                    sum += terrain.get(sx, sy);
+                    ++samples;
+                }
+            return std::pair{sum, samples};
+        };
+        const auto terrain_parcel_at = [&](int px, int py) {
+            return policies.script_parcel_at
+                ? policies.script_parcel_at({static_cast<float>(px), static_cast<float>(py), 0})
+                : nullptr;
+        };
+        const auto selected_bitmap = selected_parcel ? parcel_bitmap(*selected_parcel)
+                                                     : std::vector<std::uint8_t>{};
+        const auto in_selected_parcel = [&](int px, int py) {
+            // OpenSimulator expands each bitmap sample across four rows starting at South.
+            const int sample_y = py - (py - start_y) % 4;
+            if (selected_bitmap.empty()) {
+                const auto parcel = terrain_parcel_at(px, sample_y);
+                return parcel && parcel->local_id == parcel_id;
+            }
+            const auto cell = static_cast<std::size_t>(sample_y / 4) * (descriptor.size_x / 4) + px / 4;
+            return cell / 8 < selected_bitmap.size() && (selected_bitmap[cell / 8] & (1u << (cell % 8)));
+        };
+        std::vector<std::tuple<int, int, float>> smoothed;
+        bool allowed = false;
+        for (int px = start_x; px <= end_x; ++px)
+            for (int py = start_y; py <= end_y; ++py) {
+                if (parcel_area ? !in_selected_parcel(px, py)
+                                : !estate_override && !can_edit(terrain_parcel_at(px, py)))
+                    continue;
+                allowed = true;
+                const float dx = px - x, dy = py - y;
+                const float squared = dx * dx + dy * dy;
+                const auto old = terrain.get(px, py);
+                float height;
+                if (area) {
+                    switch (action) {
+                    case TerrainAction::Flatten: {
+                        const auto blend = strength * .04f;
+                        if (blend < .001f)
+                            continue;
+                        const auto flood_height = std::clamp(target, 0.f, 4000.f);
+                        height = blend >= .999f ? flood_height : old * (1.f - blend) + flood_height * blend;
+                        break;
+                    }
+                    case TerrainAction::Raise:
+                        height = old + strength;
+                        break;
+                    case TerrainAction::Lower:
+                        height = std::max(0.f, old - strength);
+                        break;
+                    case TerrainAction::Smooth: {
+                        const auto blend = std::min(strength * .002f, 1.f);
+                        if (blend < .0001f)
+                            continue;
+                        const auto [sum, samples] =
+                            neighborhood(px, py, std::min(4, (end_x - start_x + 1) / 2),
+                                         std::min(4, (end_y - start_y + 1) / 2));
+                        height = (1.f - blend) * old + blend * sum / samples;
+                        break;
+                    }
+                    case TerrainAction::Noise: {
+                        const auto blend = strength * .08f;
+                        if (blend < .0001f)
+                            continue;
+                        height = std::max(
+                            0.f,
+                            old + terrain_noise(px, py, terrain.width(), terrain.height()) * blend);
+                        break;
+                    }
+                    case TerrainAction::Revert: {
+                        const auto blend = strength * 2.f;
+                        if (blend < .0001f)
+                            continue;
+                        const auto baseline = terrain_baseline->get(px, py);
+                        height = blend >= .999f ? baseline : old * (1.f - blend) + baseline * blend;
+                        break;
+                    }
+                    default:
+                        continue;
+                    }
+                } else if (action == TerrainAction::Smooth) {
+                    const float distance = squared / (size * size);
+                    if (!(distance <= 1.f))
+                        continue;
+                    const auto [sum, samples] = neighborhood(px, py, sample_radius, sample_radius);
+                    const float blend = std::min(strength, 1.f) * (1.f - distance);
+                    height = old - blend * (old - sum / samples);
+                    if (height > 0.f && std::isfinite(height) && height != old)
+                        smoothed.emplace_back(px, py, height);
+                    continue;
+                } else if (action == TerrainAction::Revert) {
+                    if (strength < 0.f)
+                        continue;
+                    const float distance = squared / size;
+                    if (distance > 1.f)
+                        continue;
+                    const float blend = std::min(strength, 1.f) * (1.f - distance);
+                    height = old * (1.f - blend) + terrain_baseline->get(px, py) * blend;
+                } else if (action == TerrainAction::Noise) {
+                    const float distance = squared / (size * size);
+                    if (!(distance <= 1.f))
+                        continue;
+                    const float blend = strength * (1.f - distance);
+                    height = old + terrain_noise(px, py, terrain.width(), terrain.height()) * blend;
+                } else if (action == TerrainAction::Flatten) {
+                    const float distance = squared / (2.f * size * size);
+                    if (distance > 1.f)
+                        continue;
+                    const float blend = strength * (1.f - distance);
+                    height = blend >= 1.f ? target : old + (target - old) * blend;
+                } else {
+                    const float factor =
+                        static_cast<float>(std::cos(std::sqrt(double(squared)) * scale));
+                    if (factor <= 0)
+                        continue;
+                    height = action == TerrainAction::Raise ? old + factor * strength
+                                         : std::max(0.f, old - factor * strength);
+                }
+                if (!std::isfinite(height))
+                    continue;
+                terrain.set(px, py, height);
+            }
+        for (const auto& [px, py, height] : smoothed)
+            terrain.set(px, py, height);
+        if (allowed && terrain_baseline && !administrator) {
+            constexpr int patch = Terrain::patch_size;
+            for (int patch_x = start_x; patch_x <= end_x; patch_x += patch)
+                for (int patch_y = start_y; patch_y <= end_y; patch_y += patch) {
+                    if (!terrain.tainted_at(patch_x, patch_y))
+                        continue;
+                    for (int px = patch_x; px <= std::min(max_x, patch_x + patch - 1); ++px)
+                        for (int py = patch_y; py <= std::min(max_y, patch_y + patch - 1); ++py) {
+                            const float baked = terrain_baseline->get(px, py);
+                            const float current = terrain.get(px, py);
+                            const float delta = current - baked;
+                            if (delta > terrain_raise_limit)
+                                terrain.set(px, py, baked + terrain_raise_limit);
+                            else if (delta < terrain_lower_limit)
+                                terrain.set(px, py, baked + terrain_lower_limit);
+                        }
+                }
+        }
+        active_terrain.replace_heights(terrain);
+    }
+
+    void modify_script_terrain(Uuid object, TerrainAction action, std::uint8_t brush) {
+        const auto part = world.object(object);
+        if (!part)
+            return;
+        const auto position = script_world_position(*part);
+        const int size = std::min(int(brush) + 1, 3);
+        const float brush_size = brush > 2 ? 4.f : static_cast<float>(size);
+        float duration = .25f;
+        switch (action) {
+        case TerrainAction::Flatten:
+            duration = 7.29f * size * size;
+            break;
+        case TerrainAction::Smooth:
+        case TerrainAction::Revert:
+            duration = .06f * size * size;
+            break;
+        case TerrainAction::Noise:
+            duration = .46f * size * size;
+            break;
+        default:
+            break;
+        }
+        const TerrainEdit edit{position.x, position.y, position.x, position.y, brush_size, -1};
+        modify_terrain(part->owner, god_rights_level(part->owner) >= 200, action, duration, position.z, edit);
+    }
+
     int god_rights_level(Uuid id) const {
         auto level = policies.god_rights_level ? policies.god_rights_level(id) : 0;
         if (!id.is_zero() && policies.estate_owner_is_god && id == estate_settings.load()->owner)
@@ -2852,6 +3332,269 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                     send_avatar(*corrected, recipient);
         }
         return corrected;
+    }
+    bool script_teleport_granted(Uuid part, Uuid item, Uuid agent) {
+        std::lock_guard lock(task_data_mutex);
+        const auto task = task_parts.find(part);
+        if (task == task_parts.end() || !task->second.inventory)
+            return false;
+        const auto script_item = task->second.inventory->find(item);
+        return script_item && script_item->permissions_granter == agent && (script_item->permissions_mask & 0x1000);
+    }
+
+    bool script_can_teleport(Uuid part, Uuid item, const ViewerAgent& viewer) {
+        const auto agent = viewer.circuit->agent_id;
+        const auto object = world.object(part);
+        if (!object)
+            return false;
+        if (object->owner == agent || script_teleport_granted(part, item, agent))
+            return true;
+        const auto parcel = policies.script_parcel_at ? policies.script_parcel_at(viewer.position) : nullptr;
+        return !parcel || parcel->owner == object->owner || is_estate_manager(object->owner) ||
+               (parcel->group_owned && !parcel->group.is_zero() && parcel->group == object->group);
+    }
+
+    void script_local_teleport(Uuid part, Uuid item, Uuid agent, const script::LslLocalTeleport& request) {
+        const auto viewer = viewers->agent(agent);
+        if (!viewer || !viewer->root || viewer->logout_requested ||
+            agent_transfer_pending(viewer->circuit->session_id) || !script_can_teleport(part, item, *viewer))
+            return;
+
+        const auto to_vector = [](const Vector3d& value) {
+            return Vector3{float(value.x), float(value.y), float(value.z)};
+        };
+        auto position = to_vector(request.position);
+        auto velocity = to_vector(request.velocity);
+        auto look_at = to_vector(request.look_at);
+        if (!std::isfinite(position.x) || !std::isfinite(position.y) || !std::isfinite(position.z))
+            return;
+        const auto clamp_axis = [](float& coordinate, float& speed, float extent) {
+            if (coordinate <= 0) {
+                coordinate = .1f;
+                if (speed < 0)
+                    speed = 0;
+            } else if (coordinate >= extent) {
+                coordinate = extent - .1f;
+                if (speed > 0)
+                    speed = 0;
+            }
+        };
+        clamp_axis(position.x, velocity.x, static_cast<float>(descriptor.size_x));
+        clamp_axis(position.y, velocity.y, static_cast<float>(descriptor.size_y));
+        if (!adjust_parcel_access(agent, viewer->circuit->verified_foreign_login, position))
+            return;
+
+        const auto appearance = viewer->appearance();
+        const float half_height = appearance ? appearance->avatar_height * .5f : .8f;
+        const float floor = world.terrain().height_at(position.x, position.y) + half_height + .1f;
+        if (position.z < floor)
+            position.z = floor;
+
+        const auto session = viewer->circuit->session_id;
+        const bool seated = viewer->seat || viewer->ground_sitting;
+        if (seated) {
+            auto rotation = viewer->rotation;
+            if (viewer->seat) {
+                if (const auto root = world.object(viewer->seat->parent_local))
+                    rotation = framework::sdk_multiply_quaternion(root->rotation, viewer->seat->rotation);
+            }
+            if (!viewers->update_seat(agent, session, std::nullopt, position, rotation))
+                return;
+        }
+        const bool apply_momentum = (request.flags & 1) != 0 && std::isfinite(velocity.x) &&
+                                    std::isfinite(velocity.y) && std::isfinite(velocity.z);
+        const auto momentum = apply_momentum ? velocity : seated ? Vector3{} : viewer->velocity;
+        const auto physics = viewer_physics.load();
+        bool flying = !seated && viewer->flying;
+        if (physics && (request.flags & 8))
+            flying = true;
+        else if (request.flags & 16)
+            flying = false;
+        const auto updated = viewers->update_physics(agent, session, position, momentum, {}, flying);
+        if (!updated)
+            return;
+        if (seated)
+            finish_local_seat_exit(*viewer, *updated);
+        if (physics)
+            physics->script_teleported(*updated, apply_momentum);
+
+        if (request.flags & 0x1e) {
+            const auto horizontal_direction = [](Vector3 value) {
+                const float length = std::sqrt(value.x * value.x + value.y * value.y);
+                if (!std::isfinite(length) || length == 0.f)
+                    return Vector3{};
+                return Vector3{value.x / length, value.y / length, 0};
+            };
+            auto direction = horizontal_direction(viewer->camera_at_axis);
+            if (request.flags & 6) {
+                if (!(request.flags & 2))
+                    look_at = (request.flags & 1) ? velocity : viewer->velocity;
+                const auto horizontal = horizontal_direction(look_at);
+                if (std::abs(horizontal.x) > .001f || std::abs(horizontal.y) > .001f)
+                    direction = horizontal;
+            }
+            auto reply = lludp::make_packet("TeleportLocal");
+            auto& info = reply.block("Info");
+            info["AgentID"] = agent;
+            info["LocationID"] = std::uint64_t{2};
+            info["Position"] = std::vector<double>{position.x, position.y, position.z};
+            info["LookAt"] = std::vector<double>{direction.x, direction.y, direction.z};
+            info["TeleportFlags"] = std::uint64_t{16} | (flying ? 8192u : 0u);
+            viewers->transport().enqueue_if_session(agent, session, std::move(reply), ThrottleOutPacketType::Unknown);
+        }
+        pending_avatar_motion.insert_or_assign(agent, *updated);
+    }
+    std::int32_t script_teleport(Uuid part, Uuid item, Uuid agent, const script::LslTeleport& request) {
+        const auto viewer = viewers->agent(agent);
+        if (!viewer || !viewer->root || viewer->logout_requested ||
+            agent_transfer_pending(viewer->circuit->session_id))
+            return 0;
+        if (!script_can_teleport(part, item, *viewer))
+            return 500;
+
+        auto position = request.position;
+        auto handle = descriptor.handle();
+        std::optional<std::string> remote_name;
+        bool asynchronous = false;
+        const auto grid_handle = [](std::int32_t x, std::int32_t y) {
+            return (std::uint64_t(static_cast<std::uint32_t>(x)) << 40) |
+                   (static_cast<std::uint32_t>(y) << 8);
+        };
+        if (const auto name = std::get_if<std::string>(&request.destination)) {
+            if (!name->empty() && !framework::invariant_equals_ignore_case(*name, descriptor.name.value_or(""))) {
+                remote_name = *name;
+                asynchronous = true;
+            }
+        } else if (const auto grid = std::get_if<std::array<std::int32_t, 2>>(&request.destination)) {
+            handle = grid_handle((*grid)[0], (*grid)[1]);
+            asynchronous = true;
+        } else if (!(position.x >= 0 && position.x < descriptor.size_x &&
+                     position.y >= 0 && position.y < descriptor.size_y)) {
+            const double world_x = position.x + descriptor.x;
+            const double world_y = position.y + descriptor.y;
+            const auto fits = [](double coordinate) {
+                return coordinate >= std::numeric_limits<std::int32_t>::min() &&
+                       coordinate <= std::numeric_limits<std::int32_t>::max();
+            };
+            if (!fits(world_x) || !fits(world_y))
+                return 5000;
+            const auto grid_x = static_cast<std::int32_t>(world_x) / 256;
+            const auto grid_y = static_cast<std::int32_t>(world_y) / 256;
+            handle = grid_handle(grid_x, grid_y);
+            position.x = world_x - 256.0 * grid_x;
+            position.y = world_y - 256.0 * grid_y;
+            asynchronous = true;
+        }
+
+        const auto dispatch = [weak = weak_from_this(), agent, session = viewer->circuit->session_id,
+                               handle, remote_name = std::move(remote_name), position, look = request.look_at] {
+            const auto state = weak.lock();
+            const auto current = state ? state->viewers->agent(agent) : std::nullopt;
+            if (!current || !current->root || current->logout_requested || current->circuit->session_id != session ||
+                state->agent_transfer_pending(session))
+                return;
+            auto destination_handle = handle;
+            if (remote_name) {
+                const auto destination = state->policies.teleport_destination_by_name
+                    ? state->policies.teleport_destination_by_name(*remote_name) : std::nullopt;
+                if (!destination || destination->handle() == 0) {
+                    state->send_teleport_failure(*current, "The region '" + *remote_name + "' could not be found.");
+                    return;
+                }
+                destination_handle = destination->handle();
+            }
+            state->request_script_teleport(*current, destination_handle, position, look);
+        };
+        if (asynchronous && policies.schedule_region_lookup)
+            policies.schedule_region_lookup(dispatch);
+        else
+            dispatch();
+        return asynchronous ? 5000 : 500;
+    }
+    void request_script_teleport(const ViewerAgent& viewer, std::uint64_t handle, Vector3d position,
+                                 Vector3d look_at) {
+        auto packet = lludp::make_packet("TeleportLocationRequest");
+        auto& info = packet.block("Info");
+        info["RegionHandle"] = handle;
+        info["Position"] = std::vector<double>{position.x, position.y, position.z};
+        info["LookAt"] = std::vector<double>{look_at.x, look_at.y, look_at.z};
+        info["RequestedFlags"] = std::uint64_t{16};
+        viewers->request_teleport(viewer.circuit->agent_id, viewer.circuit->session_id, packet);
+    }
+
+    void script_teleport_viewer(Uuid part, Uuid item, Uuid agent, const script::LslViewerTeleport& request) {
+        const auto object = world.object(part);
+        const auto root = world.object(world.link_key(part, 1));
+        if (!object || !root || (root->is_attachment && root->from_inventory_item.is_zero()))
+            return;
+        const auto viewer = viewers->agent(agent);
+        if (!viewer || !viewer->root || viewer->seat || viewer->logout_requested ||
+            agent_transfer_pending(viewer->circuit->session_id))
+            return;
+        const bool granted = script_teleport_granted(part, item, agent);
+        if (const auto global = std::get_if<Vector3d>(&request.destination)) {
+            if (object->owner != agent || !granted)
+                return;
+            const auto grid_corner = [](double coordinate) -> std::optional<std::uint32_t> {
+                const auto integral = std::trunc(coordinate);
+                if (!(integral >= std::numeric_limits<std::int32_t>::min() &&
+                      integral <= std::numeric_limits<std::uint32_t>::max()))
+                    return std::nullopt;
+                return static_cast<std::uint32_t>(static_cast<std::int64_t>(integral)) & 0xffffff00u;
+            };
+            const auto x = grid_corner(global->x);
+            const auto y = grid_corner(global->y);
+            if (x && y)
+                request_script_teleport(*viewer, (std::uint64_t(*x) << 32) | *y, request.position, request.look_at);
+            return;
+        }
+
+        if (!granted && !(root->is_attachment && object->owner == agent)) {
+            if (viewer_is_god(agent, viewer->circuit->session_id) || !policies.script_parcel_at)
+                return;
+            const auto target_parcel = policies.script_parcel_at(viewer->position);
+            const auto object_parcel = policies.script_parcel_at(script_world_position(*object));
+            if (!target_parcel || !object_parcel || target_parcel->owner != object->owner ||
+                object_parcel->owner != object->owner)
+                return;
+        }
+
+        const auto& destination = std::get<std::string>(request.destination);
+        Uuid asset_id;
+        if (!destination.empty() && !framework::try_parse_sdk_uuid(destination, asset_id)) {
+            if (const auto landmark = script_inventory_item(part, destination, std::nullopt))
+                asset_id = landmark->asset_id;
+        }
+        if (!asset_id.is_zero()) {
+            const auto asset = policies.load_asset ? policies.load_asset(asset_id) : nullptr;
+            if (!asset || asset->type() != static_cast<std::int8_t>(AssetType::Landmark) ||
+                !asset->data || asset->data->empty() || !policies.resolve_landmark)
+                return;
+            auto packet = lludp::make_packet("TeleportLocationRequest");
+            auto& info = packet.block("Info");
+            info["RequestedFlags"] = std::uint64_t{10};
+            const auto reason = policies.resolve_landmark(*viewer, asset_id, packet);
+            if (reason.empty()) {
+                const auto look = request.look_at;
+                info["LookAt"] = std::vector<double>{look.x, look.y, look.z};
+                viewers->request_teleport(agent, viewer->circuit->session_id, packet);
+            } else if (reason == "Landmark region not found") {
+                send_teleport_failure(*viewer, reason);
+            }
+            return;
+        }
+
+        auto handle = descriptor.handle();
+        if (!destination.empty() && destination != descriptor.name.value_or("")) {
+            const auto region = policies.teleport_destination_by_name
+                ? policies.teleport_destination_by_name(destination) : std::nullopt;
+            if (!region || region->handle() == 0) {
+                send_teleport_failure(*viewer, "The region '" + destination + "' could not be found.");
+                return;
+            }
+            handle = region->handle();
+        }
+        request_script_teleport(*viewer, handle, request.position, request.look_at);
     }
     void send_nearby_parcel_barrier(const ViewerAgent& viewer) {
         constexpr std::uint32_t allow_parcel_access_override = 0x20u;
@@ -4447,7 +5190,10 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             send();
     }
     EnvironmentDay environment_at(Vector3 position, bool region) const {
-        const auto parcel = !region && policies.script_parcel_at ? policies.script_parcel_at(position) : nullptr;
+        // GetLandObject(float, float) truncates before checking region bounds.
+        const Vector3 parcel_position{std::trunc(position.x), std::trunc(position.y), position.z};
+        const auto parcel = !region && policies.script_parcel_at
+            ? policies.script_parcel_at(parcel_position) : nullptr;
         std::lock_guard lock(environment_mutex);
         if (parcel)
             if (const auto day = parcel_environment(*parcel))
@@ -5592,9 +6338,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
     }
     void alert(Uuid a, const std::string& text) {
         auto p = lludp::make_packet("AlertMessage");
-        std::vector<std::uint8_t> bytes(text.begin(), text.end());
-        bytes.push_back(0);
-        p.block("AlertData")["Message"] = std::move(bytes);
+        p.block("AlertData")["Message"] = profile_string_bytes(framework::utf16_replacing(text), 255);
         viewers->transport().send(a, std::move(p));
     }
     void send_region_notice(const std::string& message) {
@@ -7458,12 +8202,22 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         const bool bypass = script_source.is_zero() ? policies.bypass_inventory_permissions
                                                     : policies.bypass_object_permissions;
         const bool consume = !(current & copy) && !bypass;
+        auto rezzer = script_source.is_zero() ? agent : script_source;
+        if (!script_source.is_zero()) {
+            const auto host = world.object(script_source);
+            if (host && host->parent_id && !host->is_attachment)
+                if (const auto root = world.object(host->parent_id))
+                    rezzer = root->id;
+        }
         std::vector<Uuid> created_roots;
         const auto rollback = [&] {
             for (const auto id : created_roots)
                 world.remove(id, false);
         };
         std::vector<std::pair<Uuid, Uuid>> scripts_to_start;
+        decltype(incoming_managed_script_states) managed_script_states;
+        decltype(incoming_script_checkpoints) native_script_checkpoints;
+        const bool start_scripts = scripts_enabled();
         for (auto& linkset : linksets) {
             auto& root = linkset.parts.front().object;
             const bool slam = root.owner != agent || (current & 0x10u) || (flags & slam_permissions);
@@ -7495,7 +8249,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 if (owner_changes && object.owner != object.group)
                     object.last_owner = object.owner;
                 object.owner = agent;
-                object.rezzer = script_source.is_zero() ? agent : script_source;
+                object.rezzer = rezzer;
                 object.group = group;
                 const auto next = static_cast<std::uint32_t>(item.next_permissions);
                 const auto everyone = static_cast<std::uint32_t>(item.everyone_permissions);
@@ -7545,7 +8299,11 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 if (!part.inventory.empty()) {
                     std::vector<TaskInventoryRegistry::Item> inventory;
                     for (auto& entry : part.inventory) {
+                        const auto plugins = part.managed_script_states.find(entry.item_id);
+                        const auto checkpoint = part.native_script_checkpoints.find(entry.item_id);
                         entry.reset_ids(object.id);
+                        if (plugins != part.managed_script_states.end())
+                            managed_script_states.emplace(std::pair{object.id, entry.item_id}, std::move(plugins->second));
                         const bool change_inventory_owner = source_inventory ? owner_changes : propagate_slam;
                         if (change_inventory_owner) {
                             if (entry.owner_id != agent)
@@ -7561,6 +8319,11 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                             entry.permissions_granter = {};
                             entry.permissions_mask = 0;
                             entry.owner_changed = true;
+                        }
+                        if (checkpoint != part.native_script_checkpoints.end()) {
+                            checkpoint->second.start_parameter = start_scripts ? start_parameter : 0;
+                            native_script_checkpoints.emplace(std::pair{object.id, entry.item_id},
+                                                              std::move(checkpoint->second));
                         }
                         inventory.push_back(std::make_shared<framework::TaskInventoryItem>(std::move(entry)));
                     }
@@ -7603,16 +8366,19 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 world.set_selected(id, true);
             world.publish_added_linkset(id);
         }
+        incoming_managed_script_states.merge(managed_script_states);
+        incoming_script_checkpoints.merge(native_script_checkpoints);
         for (const auto& [object, script] : scripts_to_start) {
+            if (!start_scripts) {
+                restored_scripts.push_back({object, script, changed_region_start, {}});
+                continue;
+            }
             const auto diagnostics = compile_task(object, script, {}, script_source.is_zero() ? 1 : 3);
             for (const auto& diagnostic : diagnostics)
                 error("Native script " + script.str() + ": " + diagnostic);
             const auto started = scripts.find(script);
-            if (diagnostics.empty() && started != scripts.end() && started->second.instance &&
-                started->second.instance->running()) {
-                started->second.start_parameter = start_parameter;
-                started->second.instance->post_event({"on_rez", {start_parameter}, {}});
-            }
+            if (diagnostics.empty() && started != scripts.end() && started->second.instance)
+                started->second.post_rez(start_parameter);
         }
         return created_roots;
     }
@@ -8004,6 +8770,11 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 part.inventory_serial = inventory.serial();
                 for (const auto& entry : inventory.items()) {
                     part.inventory.push_back(entry->clone());
+                    if (!attachment_item && entry->inventory_type == 10) {
+                        if (auto checkpoint = snapshot_script_checkpoint(part.object.id, entry->item_id)) {
+                            part.native_script_checkpoints.emplace(entry->item_id, std::move(*checkpoint));
+                        }
+                    }
                     if (entry->inventory_type == 3)
                         continue;
                     constexpr auto restricted = copy | transfer | export_bit;
@@ -8189,6 +8960,10 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 part.inventory_serial = inventory.serial();
                 for (const auto& item : inventory.items()) {
                     part.inventory.push_back(item->clone());
+                    if (item->inventory_type == 10) {
+                        if (auto checkpoint = snapshot_script_checkpoint(part.object.id, item->item_id))
+                            part.native_script_checkpoints.emplace(item->item_id, std::move(*checkpoint));
+                    }
                     if (item->inventory_type == 3)
                         continue;
                     effective &= item->current_permissions;
@@ -9260,12 +10035,12 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         std::lock_guard lock(task_data_mutex);
         const auto found = scripts.find(script_id);
         const auto part = world.object(part_id);
-        if (found == scripts.end() || !part || !found->second.instance || !found->second.task)
+        if (found == scripts.end() || !part || found->second.item.parent != part_id ||
+            !found->second.instance || !found->second.task)
             return;
         auto& script = found->second;
-        script.question.reset();
         if (script.task->permissions_granter != agent || !(mask & permission_take_controls))
-            unregister_controls(script_id);
+            release_script_controls(script_id);
         if (!mask) {
             script.task->permissions_granter = {};
             script.task->permissions_mask = 0;
@@ -9282,8 +10057,14 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             seated_permissions | permission_attach | permission_override_animations;
         const bool attached = root->is_attachment && recipient && recipient->local_id == root->parent_id;
         const bool seated = recipient && recipient->seat && recipient->seat->parent_local == root->local_id;
-        if ((attached && (mask & ~attachment_permissions) == 0) ||
-            (seated && (mask & ~seated_permissions) == 0)) {
+        auto implicit_permissions = seated ? seated_permissions : 0;
+        if (attached)
+            implicit_permissions = attachment_permissions;
+        else if (policies.auto_grant_all_script_permissions)
+            implicit_permissions = mask;
+        else if (!seated && policies.auto_grant_attach_permissions)
+            implicit_permissions = permission_attach;
+        if ((mask & ~implicit_permissions) == 0) {
             script.task->permissions_granter = agent;
             script.task->permissions_mask = mask;
             script.instance->post_event({"run_time_permissions", {mask}, {}});
@@ -9294,18 +10075,25 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             return;
         }
         std::u16string owner_name;
-        const auto owner_account = policies.basic_profile_accounts
-                                       ? policies.basic_profile_accounts->get(descriptor.scope, root->owner)
-                                       : nullptr;
+        const auto owner_account = policies.script_account
+                                       ? policies.script_account(root->owner)
+                                       : std::nullopt;
+        const auto profile_account = !policies.script_account && policies.basic_profile_accounts
+                                         ? policies.basic_profile_accounts->get(descriptor.scope, root->owner)
+                                         : nullptr;
         if (owner_account) {
-            owner_name = owner_account->first.value_or(u"") + u" " + owner_account->last.value_or(u"");
+            owner_name = framework::utf16_replacing(owner_account->name());
+        } else if (profile_account) {
+            owner_name = profile_account->first.value_or(u"") + u" " + profile_account->last.value_or(u"");
         } else if (const auto owner_object = world.object(root->owner)) {
             owner_name = framework::utf16(owner_object->name);
         } else if (const auto owner = viewers->agent(root->owner)) {
-            owner_name = framework::utf16(owner->circuit->first_name.value_or("") + " " +
-                                          owner->circuit->last_name.value_or(""));
+            owner_name = framework::utf16(owner->circuit->name());
+        } else if (policies.group_record_name) {
+            if (const auto group_name = policies.group_record_name(root->owner))
+                owner_name = framework::utf16(*group_name);
         }
-        if (owner_name.empty() || owner_name == u" ")
+        if (owner_name.empty())
             owner_name = u"(hippos)";
         auto packet = lludp::make_packet("ScriptQuestion");
         auto& data = packet.block("Data");
@@ -9315,29 +10103,72 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         data["ObjectOwner"] = profile_string_bytes(owner_name, 255);
         data["Questions"] = std::int64_t(mask);
         const auto session = recipient->circuit->session_id;
-        script.task->permissions_granter = agent;
-        script.task->permissions_mask = 0;
-        script.question = PermissionQuestion{agent, session, mask};
+        if (!script.question) {
+            script.task->permissions_granter = agent;
+            script.task->permissions_mask = 0;
+            script.question = PermissionQuestion{agent, session};
+        }
         viewers->transport().enqueue_if_session(agent, session, std::move(packet),
                                                 ThrottleOutPacketType::Task);
+    }
+    void revoke_script_permissions(const ViewerAgent& viewer, const lludp::Packet& packet) {
+        const auto session = viewer.circuit->session_id;
+        const bool can_revoke = !viewer.logout_requested && !agent_transfer_pending(session);
+        std::lock_guard lock(task_data_mutex);
+        auto& controls = viewer_script_controls[session];
+        if (controls.last_revoke_sequence == packet.sequence)
+            return;
+        controls.last_revoke_sequence = packet.sequence;
+        if (!can_revoke)
+            return;
+
+        const auto& data = packet.block("Data");
+        const auto object_id = std::get<Uuid>(data.at("ObjectID"));
+        const auto now = std::chrono::steady_clock::now();
+        if (now < controls.next_revoke)
+            return;
+        const bool region_wide = object_id == descriptor.id;
+        controls.next_revoke = now + std::chrono::milliseconds(region_wide ? 2000 : 50);
+
+        const auto permissions = std::bit_cast<std::int32_t>(
+            static_cast<std::uint32_t>(std::get<std::uint64_t>(data.at("ObjectPermissions"))));
+        constexpr auto animation_permissions = permission_trigger_animation | permission_override_animations;
+        if (!region_wide || !(permissions & animation_permissions))
+            return;
+
+        for (const auto& [part_id, part] : task_parts) {
+            if (!part.inventory || !world.object(part_id))
+                continue;
+            for (const auto& item : part.inventory->items()) {
+                if (item->inventory_type != 10 || item->permissions_granter != viewer.circuit->agent_id)
+                    continue;
+                if (item->permissions_mask & permissions & permission_take_controls)
+                    unregister_controls(item->item_id);
+                item->permissions_mask &= ~permissions;
+                if (item->permissions_mask == 0)
+                    item->permissions_granter = {};
+            }
+        }
     }
     void answer_script_permissions(const ViewerAgent& actor, const lludp::Packet& packet) {
         std::lock_guard lock(task_data_mutex);
         const auto& data = packet.block("Data");
-        const auto found = scripts.find(std::get<Uuid>(data.at("ItemID")));
-        if (found == scripts.end())
-            return;
-        auto& script = found->second;
-        if (!script.question || !script.instance || !script.instance->running() || !script.task ||
-            script.item.parent != std::get<Uuid>(data.at("TaskID")) ||
-            script.question->agent != actor.circuit->agent_id ||
-            script.question->session != actor.circuit->session_id)
-            return;
-        const auto answer =
-            static_cast<std::int32_t>(std::get<std::int64_t>(data.at("Questions"))) & script.question->mask;
-        script.question.reset();
-        script.task->permissions_mask = answer;
-        script.instance->post_event({"run_time_permissions", {answer}, {}});
+        const auto& replying_task = std::get<Uuid>(data.at("TaskID"));
+        const auto submitted_permissions =
+            static_cast<std::int32_t>(std::get<std::int64_t>(data.at("Questions")));
+        // The managed client broadcasts this reply to every waiting script on the prim.
+        for (auto& [script_id, script] : scripts) {
+            if (script.item.parent != replying_task || !script.question ||
+                script.question->agent != actor.circuit->agent_id ||
+                script.question->session != actor.circuit->session_id ||
+                !script.instance || !script.instance->running() || !script.task)
+                continue;
+            script.question.reset();
+            if (!(submitted_permissions & permission_take_controls))
+                unregister_controls(script_id);
+            script.task->permissions_mask = submitted_permissions;
+            script.instance->post_event({"run_time_permissions", {submitted_permissions}, {}});
+        }
     }
     void set_viewer_appearance(const ViewerAgent& actor, const lludp::Packet& packet) {
         const auto agent = actor.circuit->agent_id;
@@ -9984,9 +10815,10 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 return part && (part->flags & 0x10000u) != 0;
             };
             backend.remove_targets = [this](Uuid item) {
-                if (!policies.remove_script_targets)
-                    throw std::runtime_error("Script target registry is not connected");
-                policies.remove_script_targets(item);
+                clear_script_targets(item);
+                clear_script_sensors(item);
+                if (policies.remove_script_targets)
+                    policies.remove_script_targets(item);
             };
             backend.email = [this]() -> std::optional<PartEmailEvents> {
                 return policies.script_email_events ? policies.script_email_events() : std::nullopt;
@@ -10190,6 +11022,77 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         const auto offset = framework::sdk_rotate_vector(child.position, root.rotation);
         return {root.position.x + offset.x, root.position.y + offset.y, root.position.z + offset.z};
     }
+    void push_script_object(Uuid source_id, Uuid target_id, Vector3 impulse, bool local) {
+        constexpr std::uint32_t region_restrict_pushing = 0x400000u;
+        constexpr std::uint32_t parcel_restrict_pushing = 0x200000u;
+        const auto physics = viewer_physics.load();
+        const auto source = physics ? world.object(source_id) : std::nullopt;
+        if (!source || !std::isfinite(impulse.x) || !std::isfinite(impulse.y) || !std::isfinite(impulse.z))
+            return;
+
+        const auto source_root = source->parent_id && !source->is_attachment
+            ? world.object(source->parent_id) : std::nullopt;
+        const auto& source_root_part = source_root ? *source_root : *source;
+        auto source_position = source_root ? linked_world_position(*source, *source_root) : source->position;
+        if (const auto wearer = attachment_wearer(source_root_part)) {
+            const auto offset = framework::sdk_rotate_vector(source->position, source_root_part.rotation);
+            source_position = {wearer->position.x + offset.x, wearer->position.y + offset.y,
+                               wearer->position.z + offset.z};
+        }
+        const auto attenuate = [&](Vector3 target_position) {
+            const float dx = target_position.x - source_position.x;
+            const float dy = target_position.y - source_position.y;
+            const float dz = target_position.z - source_position.z;
+            const float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
+            constexpr float full_strength_distance = 17.f;
+            constexpr float falloff_distance = 5.f;
+            if (distance > full_strength_distance) {
+                const float scale = 1.f / (1.f + (distance - full_strength_distance) / falloff_distance);
+                impulse = {impulse.x * scale, impulse.y * scale, impulse.z * scale};
+            }
+        };
+
+        if (const auto avatar = viewers->agent(target_id)) {
+            if (!avatar->root || avatar->seat || avatar->ground_sitting || avatar->logout_requested)
+                return;
+            if (source->owner != target_id && viewer_is_god(target_id, avatar->circuit->session_id))
+                return;
+            const auto parcel = parcel_at_truncated_position(avatar->position);
+            const bool region_restricted = (region_flags() & region_restrict_pushing) != 0;
+            if (region_restricted && !parcel)
+                return;
+            if (parcel && (region_restricted || (parcel->flags & parcel_restrict_pushing)) &&
+                !parcel->group_owned && source->owner != parcel->owner && source->owner != target_id)
+                return;
+
+            attenuate(avatar->position);
+            if (local)
+                impulse = framework::sdk_rotate_vector(impulse, avatar->rotation);
+            physics->push_avatar(*avatar, impulse);
+            return;
+        }
+
+        constexpr std::uint8_t no_physics_shape = 1;
+        constexpr std::uint8_t flexible_path = 128;
+        constexpr std::uint32_t physical_prim = 1u;
+        const auto part = world.object(target_id);
+        if (!part || part->is_attachment || part->physics.shape == no_physics_shape ||
+            part->shape.path_curve == flexible_path)
+            return;
+        const auto root = part->parent_id ? world.object(part->parent_id) : part;
+        if (!root || root->is_attachment || !(root->flags & physical_prim))
+            return;
+
+        attenuate(script_world_position(*part));
+        if (local) {
+            const auto rotation = part->parent_id
+                ? framework::sdk_multiply_quaternion(root->rotation, part->rotation) : part->rotation;
+            impulse = framework::sdk_rotate_vector(impulse, rotation);
+        }
+        std::lock_guard lock(object_crossings_mutex);
+        if (!object_crossings.contains(root->id))
+            physics->apply_prim_impulse(root->id, impulse, false);
+    }
     struct LinksetDataSnapshot {
         framework::OrderedDictionary<std::string, std::pair<std::string, std::string>> entries;
         std::int32_t free = 0;
@@ -10303,14 +11206,93 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                                       snapshot.entries.empty() ? std::optional(snapshot.limit)
                                                                : std::nullopt);
     }
-    bool link_prim_with_data(Uuid child, Uuid root) {
+    script::LslLinkResult script_link_permission(Uuid part, Uuid item, std::optional<Uuid> owner = {}) {
+        using Result = script::LslLinkResult;
+        if (policies.automatic_link_permission)
+            return Result::Completed;
+        const auto found = task_parts.find(part);
+        const auto task = found != task_parts.end() && found->second.inventory
+            ? found->second.inventory->find(item) : nullptr;
+        constexpr std::int32_t permission_change_links = 0x80;
+        if (!task || !(task->permissions_mask & permission_change_links))
+            return Result::MissingPermission;
+        if (owner && task->permissions_granter != *owner)
+            return Result::WrongGranter;
+        return Result::Completed;
+    }
+
+    script::LslLinkResult create_script_link(Uuid part, Uuid item, std::string_view target_text, bool host_is_parent) {
+        using Result = script::LslLinkResult;
+        std::lock_guard lock(task_data_mutex);
+        const auto host = world.object(world.link_key(part, 1));
+        if (!host)
+            return Result::Ignored;
+        const auto permission = script_link_permission(part, item, host->owner);
+        if (permission != Result::Completed)
+            return permission;
+        Uuid target_id;
+        if (!framework::try_parse_sdk_uuid(target_text, target_id) || target_id.is_zero())
+            return Result::Ignored;
+        const auto target = world.object(world.link_key(target_id, 1));
+        constexpr auto modify = bits(framework::PermissionMask::Modify);
+        if (!target || target->owner != host->owner || target->is_attachment || host->is_attachment ||
+            !(target->owner_mask & modify) || !(host->owner_mask & modify))
+            return Result::Ignored;
+        const auto& parent = host_is_parent ? *host : *target;
+        const auto& child = host_is_parent ? *target : *host;
+        constexpr std::int32_t changed_link = 32;
+        if (!link_prim_with_data(child.id, parent.id, true))
+            world.schedule_linkset_update(parent.id, changed_link);
+        world.set_selected(parent.id, false);
+        send_part_properties(parent.id, parent.owner);
+        return Result::Completed;
+    }
+
+    script::LslLinkResult break_script_link(Uuid part, Uuid item, std::optional<std::int32_t> link) {
+        using Result = script::LslLinkResult;
+        std::lock_guard lock(task_data_mutex);
+        const auto permission = script_link_permission(part, item);
+        if (permission != Result::Completed)
+            return permission;
+        const auto root = world.object(world.link_key(part, 1));
+        if (!root || root->is_attachment)
+            return Result::Ignored;
+        if (!link) {
+            for (const auto& child : world.link_children_in_membership_order(root->id))
+                world.delink_child(child, root->id);
+            world.schedule_linkset_update(root->id, 0);
+            return Result::Completed;
+        }
+
+        constexpr auto modify = bits(framework::PermissionMask::Modify);
+        if (!(root->owner_mask & modify) || (*link <= 0 && *link != -4))
+            return Result::Ignored;
+        const auto child = *link == -4 ? part : world.link_key(root->id, *link);
+        if (child.is_zero() || (*link != 1 && child == root->id))
+            return Result::Ignored;
+        for (const auto& avatar : linkset_sitters(root->id))
+            stand_from_seat(avatar);
+        if (*link == 1) {
+            constexpr std::int32_t changed_link = 32;
+            if (!world.delink_root(root->id, true))
+                world.schedule_linkset_update(root->id, changed_link);
+        } else {
+            world.delink_child(child, root->id, false);
+        }
+        return Result::Completed;
+    }
+
+    bool link_prim_with_data(Uuid child, Uuid root, bool insert = false) {
         std::lock_guard lock(task_data_mutex);
         const auto source = world.object(child);
         if (!source || child == root || source->parent_id || source->is_attachment)
             return false;
         const bool has_data = !source->linkset_data.empty() || source->empty_linkset_data_limit.has_value();
         auto incoming = has_data ? linkset_data_snapshot(child) : LinksetDataSnapshot{};
-        if (!world.link_prim(child, root, policies.physical_linkset_capacity))
+        if (policies.linkset_capacity > 0 &&
+            world.prim_count(child, false) + world.prim_count(root, false) > policies.linkset_capacity)
+            return false;
+        if (!world.link_prim(child, root, policies.physical_linkset_capacity, insert))
             return false;
         if (!has_data)
             return true;
@@ -10480,7 +11462,8 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 root_position,
                 root_part.rez_start_string.value_or(""),
                 0,
-                world_rotation};
+                world_rotation,
+                {double(descriptor.size_x), double(descriptor.size_y), 0.}};
     }
     std::unique_ptr<script::LslInstance>
     create_script_instance(std::shared_ptr<const script::LslProgram> program, const InventoryItem& item,
@@ -10559,6 +11542,9 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             }
         };
         host.ossl_permission_error_to_owner = policies.script_ossl_permission_error_to_owner;
+        host.grid_name = policies.script_grid_name;
+        host.grid_nick = policies.script_grid_nick;
+        host.grid_info = policies.script_grid_info;
         host.ossl_permission_error = [weak](Uuid part, Uuid item, std::string_view function) {
             if (const auto state = weak.lock())
                 return state->script_ossl_permission(part, item, function);
@@ -10633,6 +11619,64 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             }
             return std::string{};
         };
+        host.open_remote_data_channel = [weak](Uuid part, Uuid item) -> std::optional<Uuid> {
+            const auto state = weak.lock();
+            if (!state || !state->policies.script_remote_data_channels)
+                return std::nullopt;
+            const auto object = state->world.object(part);
+            if (!object)
+                return std::nullopt;
+            return state->policies.script_remote_data_channels->open(object->local_id, item, {}, state->descriptor.id);
+        };
+        host.close_remote_data_channel = [weak](Uuid, std::string_view channel) {
+            const auto state = weak.lock();
+            if (!state || !state->policies.script_remote_data_channels)
+                return;
+            Uuid id;
+            if (framework::try_parse_sdk_uuid(channel, id))
+                state->policies.script_remote_data_channels->close(id);
+        };
+        host.reply_remote_data = [weak](std::string_view channel, std::string_view message,
+                                        std::string text, std::int32_t integer) {
+            const auto state = weak.lock();
+            if (!state || !state->policies.script_remote_data_channels)
+                return;
+            Uuid channel_id, message_id;
+            if (framework::try_parse_sdk_uuid(channel, channel_id) &&
+                framework::try_parse_sdk_uuid(message, message_id))
+                state->policies.script_remote_data_channels->reply(channel_id, message_id, {integer, std::move(text)});
+        };
+        if (policies.script_remote_data_channels) {
+            host.send_remote_data = [channels = policies.script_remote_data_channels, region = descriptor.id](
+                Uuid item, std::string channel, std::string destination, std::int32_t integer, std::string text) {
+                return channels->send(item, std::move(channel), std::move(destination), {integer, std::move(text)}, region);
+            };
+        }
+        host.http_request = [weak](Uuid part, Uuid item, std::string url,
+                                   const std::vector<network::ScriptHttpOption>& options, std::string body) {
+            const auto state = weak.lock();
+            if (!state || !state->policies.script_outbound_http)
+                return network::ScriptHttpSubmission{};
+            const auto object = state->world.object(part);
+            if (!object)
+                return network::ScriptHttpSubmission{};
+            return state->policies.script_outbound_http->submit(part, object->local_id, object->owner, item,
+                std::move(url), options, std::move(body), [&](network::ScriptHttpRequest& request) {
+                    const auto headers = state->script_http_response_headers(part, false);
+                    headers->for_each_key([&](const std::any& key) {
+                        const auto& name = std::any_cast<const std::string&>(key);
+                        request.headers.emplace_back(name, std::any_cast<std::string>(headers->get(name)));
+                    });
+                    std::string owner_name;
+                    if (const auto viewer = state->viewers->agent(object->owner))
+                        owner_name = viewer->circuit->first_name.value_or("") + " " +
+                                     viewer->circuit->last_name.value_or("");
+                    else if (state->policies.script_account)
+                        if (const auto account = state->policies.script_account(object->owner))
+                            owner_name = account->name();
+                    request.headers.emplace_back("X-SecondLife-Owner-Name", std::move(owner_name));
+                });
+        };
         host.http_response = [weak](Uuid, Uuid id, std::int32_t status, std::string response) {
             if (const auto state = weak.lock()) {
                 std::lock_guard lock(state->script_http_mutex);
@@ -10696,10 +11740,10 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 state->deliver_direct_script_chat(source, target, channel, text);
         };
         host.add_listener = [weak](Uuid item, Uuid part, int channel, std::string name, Uuid sender,
-                                   std::string message) {
+                                   std::string message, std::int32_t regex_flags) {
             const auto state = weak.lock();
             return state ? state->add_script_listener(item, part, channel, std::move(name), sender,
-                                                       std::move(message)) : -1;
+                                                       std::move(message), regex_flags) : -1;
         };
         host.change_listener = [weak](Uuid item, int handle, std::optional<bool> active) {
             if (const auto state = weak.lock()) {
@@ -10718,6 +11762,46 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         host.clear_listeners = [weak](Uuid item) {
             if (const auto state = weak.lock())
                 state->clear_script_listeners(item);
+        };
+        host.register_position_target = [weak](Uuid object, Uuid item, Vector3 target, float tolerance) {
+            const auto state = weak.lock();
+            return state ? state->register_script_target(object, item, target, tolerance * tolerance) : 0;
+        };
+        host.remove_position_target = [weak](Uuid object, std::int32_t handle) {
+            if (const auto state = weak.lock())
+                state->remove_script_target(object, handle, false);
+        };
+        host.register_rotation_target = [weak](Uuid object, Uuid item, script::LslRotation target, float tolerance) {
+            const auto state = weak.lock();
+            const framework::Quaternion rotation{static_cast<float>(target.x), static_cast<float>(target.y),
+                static_cast<float>(target.z), static_cast<float>(target.w)};
+            return state ? state->register_script_target(object, item, rotation, tolerance) : 0;
+        };
+        host.remove_rotation_target = [weak](Uuid object, std::int32_t handle) {
+            if (const auto state = weak.lock())
+                state->remove_script_target(object, handle, true);
+        };
+        host.sensor = [weak](Uuid part, Uuid item, script::LslSensorQuery query) {
+            if (const auto state = weak.lock())
+                state->schedule_script_sensor(part, item, std::move(query));
+        };
+        host.clear_sensors = [weak](Uuid item) {
+            if (const auto state = weak.lock())
+                state->clear_script_sensors(item);
+        };
+        host.clear_targets = [weak](Uuid item) {
+            if (const auto state = weak.lock())
+                state->clear_script_targets(item);
+        };
+        host.wind = [weak](std::int32_t x, std::int32_t y) {
+            const auto state = weak.lock();
+            if (!state)
+                return Vector3{};
+            return state->wind_cells[std::clamp(y / 16, 0, 15) * 16 + std::clamp(x / 16, 0, 15)];
+        };
+        host.modify_land = [weak](Uuid object, std::uint8_t action, std::uint8_t brush) {
+            if (const auto state = weak.lock())
+                state->modify_script_terrain(object, static_cast<TerrainAction>(action), brush);
         };
         host.ground_height = [weak](float x, float y) {
             if (auto state = weak.lock())
@@ -10993,6 +12077,82 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             shape.read_extra_params(std::make_shared<framework::ShapeByteArray>(part.extra_params));
             return shape.render_materials ? shape.render_materials->entries : nullptr;
         };
+        host.set_render_material = [weak](Uuid id, const std::string& name, std::int32_t face) {
+            const auto state = weak.lock();
+            if (!state || !state->policies.materials_enabled)
+                return true;
+            if (name.empty())
+                return false;
+            const bool clear = name == Uuid{}.str();
+            Uuid asset;
+            if (!clear) {
+                std::lock_guard lock(state->task_data_mutex);
+                if (const auto item = state->script_inventory_item(id, name, static_cast<int>(AssetType::Material)))
+                    asset = item->asset_id;
+                if (asset.is_zero() && (!framework::try_parse_sdk_uuid(name, asset) || asset.is_zero()))
+                    return false;
+            }
+            while (const auto part = state->world.object(id)) {
+                const auto sides = part->shape.face_count();
+                if (!clear && face >= sides)
+                    break;
+                PrimitiveBaseShapeCore shape([](const std::string&) {});
+                shape.read_extra_params(std::make_shared<ShapeByteArray>(part->extra_params));
+                shape.render_overrides_from_raw(std::make_shared<ShapeByteArray>(part->material_overrides),
+                    [](std::u16string_view text, std::u16string_view prefix) { return text.starts_with(prefix); });
+                if (clear && (!shape.render_materials || !shape.render_materials->entries ||
+                              shape.render_materials->entries->empty()))
+                    break;
+                if (!shape.render_materials)
+                    shape.render_materials = std::make_shared<ShapeRenderMaterials>();
+                auto& materials = *shape.render_materials;
+                std::vector<ShapeMaterialEntry> entries;
+                if (materials.entries)
+                    entries.assign(materials.entries->begin(), materials.entries->end());
+                const bool all_sides = face == -1;
+                if (clear) {
+                    if (all_sides)
+                        entries.clear();
+                    else
+                        std::erase_if(entries, [&](const auto& entry) { return entry.te_index == face; });
+                } else if (all_sides) {
+                    if (std::ssize(entries) != sides) {
+                        entries.clear();
+                        for (int side = 0; side < sides; ++side)
+                            entries.push_back({static_cast<std::uint8_t>(side), asset});
+                    } else {
+                        for (auto& entry : entries)
+                            entry.id = asset;
+                    }
+                } else {
+                    if (!materials.entries)
+                        entries.emplace_back();
+                    const auto entry = std::ranges::find(entries, face, &ShapeMaterialEntry::te_index);
+                    if (entry == entries.end())
+                        entries.push_back({static_cast<std::uint8_t>(face), asset});
+                    else
+                        entry->id = asset;
+                }
+                materials.entries = entries.empty() ? nullptr
+                    : std::make_shared<ShapeArray<ShapeMaterialEntry>>(std::move(entries));
+                auto overrides = part->material_overrides;
+                if (materials.overrides) {
+                    std::vector<ShapeMaterialOverride> kept(materials.overrides->begin(), materials.overrides->end());
+                    if (std::erase_if(kept, [&](const auto& entry) { return all_sides || entry.te_index == face; })) {
+                        materials.overrides = kept.empty() ? nullptr
+                            : std::make_shared<ShapeArray<ShapeMaterialOverride>>(std::move(kept));
+                        const auto encoded = shape.render_overrides_to_raw();
+                        overrides.assign(encoded->begin(), encoded->end());
+                    }
+                }
+                auto extra = shape.extra_params();
+                if (extra == part->extra_params && overrides == part->material_overrides)
+                    break;
+                if (state->world.set_render_materials(*part, std::move(extra), std::move(overrides), 0x1000))
+                    break;
+            }
+            return true;
+        };
         host.has_render_material = [weak, read_material_entries](Uuid id, std::int32_t face) {
             const auto state = weak.lock();
             const auto part = state ? state->world.object(id) : std::nullopt;
@@ -11035,24 +12195,8 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             const auto root = part->parent_id && !part->is_attachment ? state->world.object(part->parent_id) : part;
             if (!root)
                 return null_key;
-            auto effective = root->owner_mask;
-            for (const auto& [part_id, child_task] : state->task_parts) {
-                if (!child_task.inventory)
-                    continue;
-                const auto child = state->world.object(part_id);
-                if (!child || (part_id != root->id && (child->is_attachment || child->parent_id != root->local_id)))
-                    continue;
-                for (const auto& item : child_task.inventory->items())
-                    if (item->inventory_type != 3)
-                        effective &= item->current_permissions;
-            }
-            constexpr auto move_modify = bits(PermissionMask::Move) | bits(PermissionMask::Modify);
-            constexpr auto copy_transfer = bits(PermissionMask::Copy) | bits(PermissionMask::Transfer);
             constexpr auto all = bits(PermissionMask::All);
-            effective |= root->owner_mask & move_modify;
-            if (!(effective & copy_transfer))
-                effective |= bits(PermissionMask::Transfer);
-            effective &= root->base_mask | bits(PermissionMask::Move);
+            const auto effective = state->effective_linkset_owner_permissions(*root);
             return (effective & all) == all ? material->id.str() : null_key;
         };
         host.texture_property = [weak](Uuid id, std::int32_t face,
@@ -11305,9 +12449,17 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             if ((root->flags & 1u) && !state->object_crossings.contains(root->id))
                 physics->apply_prim_impulse(root->id, impulse, angular);
         };
+        host.push_object = [weak](Uuid source, Uuid target, Vector3 impulse, bool local) {
+            if (const auto state = weak.lock())
+                state->push_script_object(source, target, impulse, local);
+        };
         host.set_texture_animation = [weak](Uuid id, const std::vector<std::uint8_t>& bytes) {
             if (const auto state = weak.lock())
                 state->world.set_texture_animation(id, bytes);
+        };
+        host.set_particle_system = [weak](Uuid id, std::vector<std::uint8_t> bytes, std::optional<float> timed_age) {
+            if (const auto state = weak.lock())
+                state->world.set_particle_system(id, std::move(bytes), timed_age);
         };
         host.linked_prim_parts = [weak](Uuid id, std::int32_t link) {
             std::vector<Uuid> parts;
@@ -11738,6 +12890,24 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 return properties->center;
             return id == root ? Vector3{} : state->script_world_position(*part);
         };
+        host.attachment_point = [weak](Uuid id) -> std::int32_t {
+            if (const auto state = weak.lock()) {
+                const auto root = state->world.object(state->world.link_key(id, 1));
+                if (root && root->is_attachment)
+                    return root->shape.state;
+            }
+            return 0;
+        };
+        host.create_link = [weak](Uuid part, Uuid item, std::string_view target, bool host_is_parent) {
+            if (const auto state = weak.lock())
+                return state->create_script_link(part, item, target, host_is_parent);
+            return script::LslLinkResult::Ignored;
+        };
+        host.break_link = [weak](Uuid part, Uuid item, std::optional<std::int32_t> link) {
+            if (const auto state = weak.lock())
+                return state->break_script_link(part, item, link);
+            return script::LslLinkResult::Ignored;
+        };
         host.link_number = [weak](Uuid id) {
             if (const auto state = weak.lock())
                 return state->world.link_number(id);
@@ -11770,6 +12940,11 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             if (const auto state = weak.lock())
                 return std::bit_cast<std::int32_t>(state->region_flags());
             return std::int32_t{67108864};
+        };
+        host.manage_estate_access = [weak](Uuid source, std::int32_t action, Uuid target) {
+            if (const auto state = weak.lock())
+                return state->manage_script_estate_access(source, action, target);
+            return false;
         };
         host.parcel_flags = [weak](Vector3 position) {
             const auto state = weak.lock();
@@ -11865,6 +13040,131 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             state->viewers->transport().enqueue_if_session(target, avatar->circuit->session_id, std::move(packet),
                                                            ThrottleOutPacketType::Task);
         };
+        host.give_inventory_list = [weak](Uuid part, Uuid recipient, const std::string& category,
+                                          const std::vector<std::string>& names) {
+            using Status = script::LslInventoryGiveStatus;
+            using framework::PermissionMask;
+            const auto state = weak.lock();
+            const auto source = state ? state->world.object(part) : std::nullopt;
+            if (!source)
+                return Status::Done;
+            const auto target = state->world.object(recipient);
+            const auto viewer = !target && state->viewers ? state->viewers->agent(recipient) : std::nullopt;
+            if (!target && !viewer)
+                return Status::MissingRecipient;
+
+            std::lock_guard lock(state->task_data_mutex);
+            std::vector<TaskInventoryRegistry::Item> items;
+            for (const auto& name : names) {
+                Uuid id;
+                auto item = framework::try_parse_sdk_uuid(name, id) ? state->task_inventory(part).find(id)
+                                                                   : state->script_inventory_item(part, name);
+                if (!item || !(item->current_permissions & bits(PermissionMask::Copy)))
+                    continue;
+                if (!target && recipient != source->owner && !(item->current_permissions & bits(PermissionMask::Transfer)))
+                    continue;
+                items.push_back(std::move(item));
+            }
+            if (items.empty())
+                return Status::MissingItem;
+            if (target) {
+                bool permitted = false;
+                for (const auto& item : items)
+                    permitted |= state->give_task_item_to_object(*source, *target, item);
+                return permitted ? Status::ObjectList : Status::MissingItem;
+            }
+            if (!state->policies.inventory_service)
+                return Status::TransferFailed;
+            const auto client = state->inventory_client(recipient);
+            auto& service = *state->policies.inventory_service;
+            const auto root = service.root(recipient);
+            if (!client || !root)
+                return Status::TransferFailed;
+            const InventoryFolder folder{category, -1, root->version, Uuid::random(), recipient, root->id};
+            if (!service.add_folder(folder))
+                return Status::TransferFailed;
+            auto mover = state->task_inventory_move();
+            auto add = state->agent_inventory_add();
+            const TaskInventoryMovePart source_part{source->id, source->owner, source->local_id};
+            for (const auto& item : items) {
+                auto result = mover.create_agent_item(recipient, source_part, item->item_id);
+                if (!result.item) {
+                    client->alert(result.message.value_or(""), false);
+                    continue;
+                }
+                result.item->item.parent = folder.id;
+                add.add(std::move(result.item));
+            }
+            auto offer = state->task_inventory_offer(*source, recipient, folder.id,
+                                                      static_cast<std::uint8_t>(AssetType::Folder));
+            offer.message = framework::utf16_replacing("'" + category + "'");
+            state->deliver_instant_message(offer, viewer->circuit->session_id);
+            return Status::AvatarOffer;
+        };
+        host.give_inventory = [weak](Uuid part, Uuid recipient, const std::string& name)
+            -> script::LslInventoryGiveResult {
+            using Status = script::LslInventoryGiveStatus;
+            const auto state = weak.lock();
+            const auto source = state ? state->world.object(part) : std::nullopt;
+            if (!source)
+                return {Status::Done, {}};
+            std::lock_guard lock(state->task_data_mutex);
+            const auto item = state->script_inventory_item(part, name);
+            if (!item)
+                return {Status::MissingItem, {}};
+            if (const auto target = state->world.object(recipient)) {
+                state->give_task_item_to_object(*source, *target, item);
+                return {Status::Done, {}};
+            }
+            const auto viewer = state->viewers ? state->viewers->agent(recipient) : std::nullopt;
+            if (!viewer && !(state->policies.script_account && state->policies.script_account(recipient)) &&
+                !(state->policies.script_grid_user_online && state->policies.script_grid_user_online(recipient)))
+                return {Status::MissingRecipient, {}};
+            if (!state->policies.inventory_service)
+                return {Status::TransferFailed, "Inventory service unavailable"};
+            auto moved = state->task_inventory_move().move(recipient, {},
+                {source->id, source->owner, source->local_id}, item->item_id);
+            if (!moved.item)
+                return {Status::TransferFailed, moved.message.value_or("")};
+            auto offer = state->task_inventory_offer(*source, recipient, moved.item->item.id,
+                                                      static_cast<std::uint8_t>(item->type));
+            offer.timestamp = static_cast<std::uint32_t>(user_inventory_unix_time());
+            offer.offline = 1;
+            offer.message = framework::utf16_replacing("'" + name + "'. (" + source->name + " is located at " +
+                state->descriptor.name.value_or("") + " " + framework::vector3_string(offer.position) + ")");
+            if (viewer)
+                state->deliver_instant_message(offer, viewer->circuit->session_id, false);
+            else if (state->policies.forward_instant_message)
+                state->policies.forward_instant_message(offer);
+            return {Status::AvatarOffer, {}};
+        };
+        host.instant_message = [weak](Uuid part, Uuid target, const std::string& text) {
+            const auto state = weak.lock();
+            const auto object = state ? state->world.object(part) : std::nullopt;
+            if (!object || !state->viewers)
+                return;
+            RegionInstantMessage message;
+            message.sender = object->owner;
+            message.recipient = target;
+            message.session = object->id;
+            message.region = state->descriptor.id;
+            message.position = state->script_world_position(*object);
+            message.estate = state->estate_settings.load()->estate_id;
+            message.timestamp = static_cast<std::uint32_t>(user_inventory_unix_time());
+            message.dialog = 19; // MessageFromObject
+            message.sender_name = framework::utf16_replacing(object->name);
+            message.message = framework::utf16_replacing(text).substr(0, 1024);
+            const auto& pos = message.position;
+            const auto location = state->descriptor.name.value_or("") + "/" +
+                std::to_string(static_cast<int>(pos.x)) + "/" + std::to_string(static_cast<int>(pos.y)) + "/" +
+                std::to_string(static_cast<int>(pos.z));
+            message.bucket = profile_string_bytes(framework::utf16_replacing(location), 255);
+            const auto viewer = state->viewers->agent(target);
+            if (viewer && viewer->root)
+                state->deliver_instant_message(message, viewer->circuit->session_id);
+            else if (state->policies.forward_instant_message)
+                state->policies.forward_instant_message(message);
+        };
         host.load_url = [weak](Uuid part, Uuid target, const std::string& message, const std::string& url) {
             const auto state = weak.lock();
             if (!state || !state->viewers)
@@ -11921,6 +13221,10 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                                  script::LslRotation rotation, std::int32_t parameter, bool at_root) {
             const auto state = weak.lock();
             return state && state->rez_script_object(id, name, position, velocity, rotation, parameter, at_root);
+        };
+        host.derez_object = [weak](Uuid source, Uuid target, bool temporary) {
+            const auto state = weak.lock();
+            return state && state->world.derez_script_object(source, target, temporary);
         };
         host.object_position = [weak](Uuid id, bool local, bool root) -> std::optional<Vector3> {
             const auto state = weak.lock();
@@ -12163,6 +13467,73 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             }
             return names;
         };
+        if (policies.send_script_email) {
+            host.email_delay_ms = policies.script_email_delay_ms;
+            host.send_email = [weak](Uuid part, Uuid item, std::variant<std::string, std::int32_t> recipient,
+                                     std::string subject,
+                                     std::string message) {
+                const auto state = weak.lock();
+                if (!state)
+                    return;
+                const auto root = state->script_target_root(part);
+                const auto object = state->world.object(part);
+                if (!root || !object)
+                    return;
+                ScriptEmailOrigin origin{part, root->owner, object->owner, object->name,
+                                         state->descriptor.name.value_or(""),
+                                         state->script_world_position(*object)};
+                Uuid account_id;
+                if (const auto* target = std::get_if<std::int32_t>(&recipient)) {
+                    origin.targeted = true;
+                    if (*target == 2 && root->owner != root->group) {
+                        account_id = root->owner;
+                    } else if (*target == 1) {
+                        const auto entry = state->scripts.find(item);
+                        if (entry != state->scripts.end() && entry->second.task &&
+                            entry->second.task->creator_id == root->creator)
+                            account_id = root->creator;
+                    }
+                    if (account_id.is_zero() || !state->policies.script_account)
+                        return;
+                }
+                DataserverRequest request;
+                request.part = part;
+                request.item = item;
+                request.deferred_lookup = [send = state->policies.send_script_email,
+                    lookup = state->policies.script_account, origin = std::move(origin), account_id,
+                    recipient = std::move(recipient), subject = std::move(subject), message = std::move(message)]()
+                        mutable -> std::optional<std::string> {
+                    std::string address;
+                    if (origin.targeted) {
+                        const auto account = lookup(account_id);
+                        if (!account || !account->email || account->email->empty())
+                            return std::nullopt;
+                        address = *account->email;
+                    } else {
+                        address = std::get<std::string>(std::move(recipient));
+                    }
+                    send(std::move(origin), std::move(address), std::move(subject), std::move(message));
+                    return std::nullopt;
+                };
+                state->dataserver_requests.push_back(std::move(request));
+            };
+        }
+        if (policies.next_script_email) {
+            host.request_email = [weak](Uuid part, std::string address, std::string subject) {
+                const auto state = weak.lock();
+                if (!state)
+                    return;
+                auto message = state->policies.next_script_email(part, address, subject);
+                if (!message)
+                    return;
+                const script::LslEvent event{"email", {std::move(message->time), std::move(message->sender),
+                    std::move(message->subject), std::move(message->message), message->remaining}, {}};
+                std::lock_guard lock(state->task_data_mutex);
+                for (auto& [item, entry] : state->scripts)
+                    if (entry.instance && entry.item.parent == part)
+                        entry.instance->post_event(event);
+            };
+        }
         host.request_inventory_data = [weak](Uuid part, Uuid item, std::string name) {
             if (const auto state = weak.lock()) {
                 const auto query = Uuid::random();
@@ -12408,11 +13779,37 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             if (const auto state = weak.lock())
                 state->release_script_controls(item);
         };
+        host.attach_to_avatar = [weak](Uuid part, Uuid item, std::int32_t point, bool temporary) {
+            if (const auto state = weak.lock())
+                state->attach_script_object(part, item, static_cast<std::uint8_t>(point & 127), temporary);
+        };
+        host.detach_from_avatar = [weak](Uuid part_id, Uuid item_id) {
+            const auto state = weak.lock();
+            if (!state || !state->policies.attachments_enabled || !state->viewers)
+                return;
+            std::lock_guard lock(state->task_data_mutex);
+            const auto part = state->world.object(part_id);
+            const auto entry = state->scripts.find(item_id);
+            if (!part || entry == state->scripts.end() || entry->second.item.parent != part_id ||
+                !entry->second.task)
+                return;
+            const auto& task = *entry->second.task;
+            if (task.permissions_granter != part->owner || !(task.permissions_mask & permission_attach))
+                return;
+            const auto root = state->world.object(state->world.link_key(part_id, 1));
+            if (!root || !root->is_attachment || !root->shape.state)
+                return;
+            const auto wearer = state->viewers->agent(part->owner);
+            if (wearer && root->parent_id == wearer->local_id && state->inventory_active(*wearer))
+                state->queue_attachment_detach(*wearer, root->id);
+        };
         host.clear_script_permissions = [weak](Uuid item) {
             if (const auto state = weak.lock()) {
                 std::lock_guard lock(state->task_data_mutex);
                 state->cancel_dataserver_requests(item);
                 state->revoke_script_urls(item);
+                if (state->policies.script_remote_data_channels)
+                    state->policies.script_remote_data_channels->cancel_script(item, state->descriptor.id);
                 state->unregister_controls(item);
                 const auto found = state->scripts.find(item);
                 if (found == state->scripts.end() || !found->second.task)
@@ -12426,6 +13823,11 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         host.release_script_urls = [weak](Uuid item) {
             if (const auto state = weak.lock())
                 state->revoke_script_urls(item, std::nullopt, false);
+        };
+        host.cancel_remote_data = [weak](Uuid item) {
+            const auto state = weak.lock();
+            if (state && state->policies.script_remote_data_channels)
+                state->policies.script_remote_data_channels->cancel_script(item, state->descriptor.id);
         };
         host.find_script = [inventory_item](Uuid part, const std::string& name) {
             const auto row = inventory_item(part, name);
@@ -12519,6 +13921,10 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                        ? item->asset_id
                        : Uuid{};
         };
+        host.particle_inventory_asset = [inventory_item](Uuid id, const std::string& name) {
+            const auto item = inventory_item(id, name);
+            return item ? item->asset_id : Uuid{};
+        };
         host.set_click_action = [weak](Uuid id, std::uint8_t action) {
             if (auto state = weak.lock())
                 state->world.update_click_action(id, action, true);
@@ -12570,6 +13976,18 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             if (object && parcel && parcel->owner == object->owner)
                 state->send_viewer_home(*viewer, false);
             return true;
+        };
+        host.local_teleport_agent = [weak](Uuid part, Uuid item, Uuid agent, const script::LslLocalTeleport& request) {
+            if (const auto state = weak.lock())
+                state->script_local_teleport(part, item, agent, request);
+        };
+        host.teleport_agent = [weak](Uuid part, Uuid item, Uuid agent, const script::LslTeleport& request) {
+            const auto state = weak.lock();
+            return state ? state->script_teleport(part, item, agent, request) : 0;
+        };
+        host.teleport_viewer = [weak](Uuid part, Uuid item, Uuid agent, const script::LslViewerTeleport& request) {
+            if (const auto state = weak.lock())
+                state->script_teleport_viewer(part, item, agent, request);
         };
         host.set_damage = [weak](Uuid id, float damage) {
             if (const auto state = weak.lock())
@@ -12688,6 +14106,16 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 if ((part.id == root->id || (!part.is_attachment && part.parent_id == root->local_id)) &&
                     (link != -2 || part.id != id) && (link != -3 || part.id != root->id))
                     state->world.set_sit_active_range(part.id, range);
+        };
+        host.set_remote_script_pin = [weak](Uuid id, std::int32_t pin) {
+            if (const auto state = weak.lock())
+                state->world.set_script_access_pin(id, pin);
+        };
+        host.remote_load_script = [weak](Uuid source, Uuid target, const std::string& name,
+                                         std::int32_t pin, bool running, std::int32_t start_parameter) {
+            if (const auto state = weak.lock())
+                return state->remote_load_script(source, target, name, pin, running, start_parameter);
+            return script::LslRemoteScriptLoad::Attempted;
         };
         host.allow_inventory_drop = [weak](Uuid id, bool allowed) {
             if (const auto state = weak.lock())
@@ -13146,7 +14574,9 @@ struct RegionRuntime::State : SceneAdmissionBackend,
     std::vector<std::string> compile_task_item(Uuid object,
                                                std::shared_ptr<framework::TaskInventoryItem> input,
                                                std::optional<std::string_view> fallback = {},
-                                               int state_source = 1) {
+                                               int state_source = 1, std::int32_t start_parameter = 0) {
+        auto managed = input ? incoming_managed_script_states.extract({object, input->item_id})
+                             : decltype(incoming_managed_script_states)::node_type{};
         auto part = world.object(object);
         if (!part)
             return {"Task part not found"};
@@ -13187,9 +14617,9 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         backend.local_id = [part] { return part->local_id; };
         const auto transferred_granter = input ? input->permissions_granter : Uuid{};
         const auto transferred_permissions = input ? input->permissions_mask : 0;
-        backend.trigger_rez = [this, object, &diagnostics, transferred_granter, transferred_permissions](
+        backend.trigger_rez = [this, object, &diagnostics, &managed, transferred_granter, transferred_permissions](
                                                            std::uint32_t, Uuid item,
-                                                           const std::string& source, int, bool,
+                                                           const std::string& source, int start, bool,
                                                            const std::string&, int) {
             auto part = world.object(object);
             auto task = task_inventory(object).find(item);
@@ -13198,6 +14628,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             auto& entry = scripts[item];
             entry.item = service_item(*task);
             entry.task = task;
+            entry.start_parameter = start;
             auto compiled = script::compile_lsl(source);
             diagnostics = std::vector<std::string>{};
             if (!compiled) {
@@ -13206,11 +14637,19 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                                            "): " + d.message);
                 replace_script_instance(entry);
             } else {
+                auto* managed_state = managed.empty() ? nullptr : &managed.mapped();
+                if (managed_state && !managed_state->source_hash.empty() &&
+                    !script::yengine_source_matches(source, managed_state->source_hash))
+                    managed_state = nullptr;
+                const bool managed_stopped = managed_state && managed_state->running == false;
                 replace_script_instance(
-                    entry, create_script_instance(compiled.program, entry.item, *part, task->script_running));
+                    entry, create_script_instance(compiled.program, entry.item, *part,
+                                                  task->script_running && !managed_stopped));
+                bool restored_native = false;
                 if (const auto saved = incoming_script_checkpoints.find({object, item});
                     saved != incoming_script_checkpoints.end()) {
                     if (entry.instance->restore_checkpoint(saved->second)) {
+                        restored_native = true;
                         const auto& checkpoint = saved->second;
                         entry.start_parameter = checkpoint.start_parameter;
                         const bool saved_grant = !checkpoint.permissions_granter.is_zero() ||
@@ -13219,8 +14658,33 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                         task->permissions_mask = saved_grant ? checkpoint.permissions_mask : transferred_permissions;
                         for (auto& listener : saved->second.listeners)
                             script_listeners.push_back({std::move(listener), item, object});
+                        const auto now = sensor_time();
+                        for (const auto& sensor : checkpoint.sensors)
+                            script_sensors.push_back({object, item, sensor, now + sensor.interval.value_or(0.)});
                     }
                     incoming_script_checkpoints.erase(saved);
+                }
+                if (!restored_native && managed_state) {
+                    auto& state = *managed_state;
+                    if (managed_stopped)
+                        task->script_running = false;
+                    if (state.snapshot &&
+                        entry.instance->restore_yengine_snapshot(*state.snapshot, state.source_hash, source) &&
+                        state.local_permission_grant) {
+                        task->permissions_granter = state.local_permission_grant->granter;
+                        task->permissions_mask = state.local_permission_grant->mask;
+                    }
+                    entry.instance->restore_script_clock(state.elapsed_ticks, state.minimum_event_delay);
+                    entry.instance->restore_queued_events(std::move(state.events));
+                    for (auto& listener : state.listeners)
+                        script_listeners.push_back({std::move(listener), item, object});
+                    if (const auto& timer = state.timer)
+                        entry.instance->restore_timer(timer->interval_ticks, timer->remaining_ticks);
+                    const auto now = sensor_time();
+                    for (auto& sensor : state.sensors) {
+                        const auto next = now + sensor.interval.value_or(0.);
+                        script_sensors.push_back({object, item, std::move(sensor), next});
+                    }
                 }
                 script_events(object).set(item, entry.instance->event_mask());
             }
@@ -13236,7 +14700,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         backend.schedule_full = [this, object] { refresh_script_flags(object); };
         backend.error = [this](const auto& text) { error(text); };
         ScriptInstanceCreateController controller(std::move(backend));
-        controller.create(std::move(input), 0, false, "NativeLSL", state_source);
+        controller.create(std::move(input), start_parameter, false, "NativeLSL", state_source);
         if (!diagnostics)
             return {"timedout waiting for errors"};
         return std::move(*diagnostics);
@@ -13376,8 +14840,76 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             job->result.set_exception(
                 std::make_exception_ptr(std::runtime_error("Region inventory asset updates stopped")));
     }
+    void respond_to_task_inventory_offer(const ViewerAgent& viewer, const lludp::Packet& packet, bool decline) {
+        if (!policies.inventory_service || !inventory_active(viewer))
+            return;
+        const auto& circuit = *viewer.circuit;
+        const auto& identity = packet.block("AgentData");
+        if (std::get<Uuid>(identity.at("AgentID")) != circuit.agent_id ||
+            std::get<Uuid>(identity.at("SessionID")) != circuit.session_id)
+            return;
+        const auto agent = circuit.agent_id;
+        const auto& data = packet.block("MessageBlock");
+        const auto alert_viewer = [&](const char* text) {
+            viewers->transport().enqueue_if_session(agent, circuit.session_id, agent_alert(agent, text, false),
+                                                     ThrottleOutPacketType::Task);
+        };
+        auto& inventory = *policies.inventory_service;
+        std::optional<InventoryFolder> destination;
+        if (decline) {
+            destination = inventory.for_type(agent, 14); // Trash
+            if (!destination) {
+                alert_viewer("Trash folder not found");
+                return;
+            }
+        } else {
+            const auto& bucket = std::get<std::vector<std::uint8_t>>(data.at("BinaryBucket"));
+            if (bucket.size() < 16)
+                return;
+            const auto id = Uuid::from_bytes(std::span(bucket).first(16));
+            if (id.is_zero())
+                return;
+            destination = inventory.folder(agent, id);
+            if (!destination)
+                return;
+        }
+        const auto id = std::get<Uuid>(data.at("ID"));
+        if (id.is_zero()) {
+            if (decline)
+                alert_viewer("Item or folder not found");
+            return;
+        }
+        if (auto item = inventory.item(agent, id)) {
+            if (item->parent == destination->id)
+                return;
+            item->parent = destination->id;
+            if (inventory.move_items(agent, {*item}))
+                viewers->transport().enqueue_if_session(agent, circuit.session_id,
+                    inventory_item_create(agent, *item, {}, 0), ThrottleOutPacketType::Asset);
+        } else if (auto folder = inventory.folder(agent, id)) {
+            if (folder->parent != destination->id) {
+                if (folder->parent.is_zero())
+                    return;
+                std::set<Uuid> visited;
+                for (auto ancestor = destination; ancestor;) {
+                    if (ancestor->id == folder->id || !visited.insert(ancestor->id).second)
+                        return;
+                    if (ancestor->parent.is_zero())
+                        break;
+                    ancestor = inventory.folder(agent, ancestor->parent);
+                }
+                folder->parent = destination->id;
+                if (!inventory.move_folder(*folder))
+                    return;
+            } else if (!decline) {
+                return;
+            }
+            inventory_bulk_folder(agent, *folder, [&](Uuid current) { return inventory.content(agent, current); },
+                                  inventory_sink(viewer), folder->id);
+        }
+    }
     bool deliver_instant_message(const RegionInstantMessage& message,
-                                 std::optional<Uuid> expected_session = {}) {
+                                 std::optional<Uuid> expected_session = {}, bool refresh_task_offer = true) {
         if (!running || !viewers)
             return false;
         const auto viewer = viewers->agent(message.recipient);
@@ -13387,6 +14919,23 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             return false;
         if (policies.can_instant_message && !policies.can_instant_message(message.sender, message.recipient))
             return false;
+        constexpr std::uint8_t task_inventory_offered = 9;
+        if (message.dialog == task_inventory_offered) {
+            if (message.bucket.empty())
+                return false;
+            const bool folder_offer = message.bucket.front() == static_cast<std::uint8_t>(AssetType::Folder);
+            if (refresh_task_offer && folder_offer && policies.inventory_service) {
+                const auto recipient = message.recipient;
+                if (const auto folder = policies.inventory_service->folder(recipient, message.session))
+                    inventory_bulk_folder(recipient, *folder, [&](Uuid id) {
+                        return policies.inventory_service->content(recipient, id);
+                    }, inventory_sink(*viewer));
+            } else if (refresh_task_offer && !folder_offer && policies.inventory_service &&
+                       capability_runtime && capability_runtime->event_queue()) {
+                if (const auto item = policies.inventory_service->item(message.recipient, message.session))
+                    capability_runtime->event_queue()->bulk_inventory(&*item, message.recipient);
+            }
+        }
         auto packet = lludp::make_packet("ImprovedInstantMessage");
         auto& sender = packet.block("AgentData");
         sender["AgentID"] = message.sender;
@@ -13410,7 +14959,8 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         data["Timestamp"] = std::uint64_t(message.timestamp);
         data["FromAgentName"] = profile_string_bytes(message.sender_name, 255);
         data["Message"] = profile_string_bytes(message.message, 1024);
-        data["BinaryBucket"] = message.bucket;
+        data["BinaryBucket"] = message.dialog == task_inventory_offered
+                                   ? std::vector<std::uint8_t>{message.bucket.front()} : message.bucket;
         return viewers->transport().enqueue_if_session(message.recipient, viewer->circuit->session_id,
                                                        std::move(packet), ThrottleOutPacketType::Task);
     }
@@ -13635,7 +15185,12 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 std::vector<TaskInventoryRegistry::Item> inventory;
                 for (auto& entry : part.inventory) {
                     const auto saved = saved_scripts.find(entry.item_id);
+                    const auto embedded = part.native_script_checkpoints.find(entry.item_id);
+                    const auto plugins = part.managed_script_states.find(entry.item_id);
                     entry.reset_ids(part.object.id);
+                    if (plugins != part.managed_script_states.end())
+                        incoming_managed_script_states.insert_or_assign(
+                            std::pair{part.object.id, entry.item_id}, std::move(plugins->second));
                     if (entry.owner_id != agent) {
                         entry.last_owner_id = entry.owner_id;
                         entry.owner_id = agent;
@@ -13647,9 +15202,14 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                     }
                     entry.permissions_granter = {};
                     entry.permissions_mask = 0;
-                    if (entry.inventory_type == 10 && saved != saved_scripts.end()) {
-                        if (auto checkpoint = script::decode_lsl_checkpoint(saved->second)) {
+                    if (entry.inventory_type == 10) {
+                        auto checkpoint = saved != saved_scripts.end()
+                            ? script::decode_lsl_checkpoint(saved->second) : std::nullopt;
+                        if (!checkpoint && embedded != part.native_script_checkpoints.end())
+                            checkpoint = std::move(embedded->second);
+                        if (checkpoint) {
                             entry.script_running = checkpoint->running;
+                            checkpoint->start_parameter = 0;
                             incoming_script_checkpoints.insert_or_assign(
                                 std::pair{part.object.id, entry.item_id}, std::move(*checkpoint));
                         }
@@ -13659,9 +15219,14 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 auto& registry = task_inventory(part.object.id);
                 registry.restore(inventory);
                 registry.serial(part.inventory_serial);
-                for (const auto& entry : inventory)
-                    if (entry->inventory_type == 10)
-                        restored_scripts.push_back({part.object.id, entry->item_id, 0, agent});
+                const bool start_scripts = scripts_enabled();
+                for (const auto& entry : inventory) {
+                    if (entry->inventory_type == 10) {
+                        restored_scripts.push_back({part.object.id, entry->item_id,
+                                                    start_scripts ? 0 : changed_region_start,
+                                                    start_scripts ? agent : Uuid{}});
+                    }
+                }
             }
         }
         world.publish_added_linkset(root.object.id);
@@ -13920,6 +15485,94 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         attachment_detach_requests.emplace_back(viewer, object);
     }
 
+    enum class GroundAttachment { Viewer, Script, Temporary };
+
+    void attach_script_object(Uuid part_id, Uuid item_id, std::uint8_t point, bool temporary) {
+        if (!policies.attachments_enabled || !viewers)
+            return;
+        const auto part = world.object(part_id);
+        const auto root = world.object(world.link_key(part_id, 1));
+        if (!part || !root || root->is_attachment)
+            return;
+        std::optional<ViewerAgent> wearer;
+        {
+            std::lock_guard lock(task_data_mutex);
+            const auto entry = scripts.find(item_id);
+            if (entry == scripts.end() || entry->second.item.parent != part_id || !entry->second.task)
+                return;
+            auto& task = *entry->second.task;
+            if (!(task.permissions_mask & permission_attach) || (!temporary && task.permissions_granter != part->owner))
+                return;
+            wearer = viewers->agent(task.permissions_granter);
+            if (!wearer || !inventory_active(*wearer))
+                return;
+            const auto owner = wearer->circuit->agent_id;
+            if (temporary && root->owner != owner) {
+                using framework::PermissionMask;
+                if (!(effective_linkset_owner_permissions(*root) & bits(PermissionMask::Transfer)))
+                    return;
+                const auto grant = task.permissions_mask;
+                const bool propagate = policies.propagate_permissions;
+                const bool apply_next_owner = propagate || !policies.bypass_object_permissions;
+                if (!world.transfer_temporary_attachment(*root, owner, wearer->active_group_id(),
+                                                        apply_next_owner))
+                    return;
+                if (apply_next_owner) {
+                    for (const auto& object : world.objects()) {
+                        if (object.id != root->id && (object.is_attachment || object.parent_id != root->local_id))
+                            continue;
+                        const auto found = task_parts.find(object.id);
+                        if (found == task_parts.end() || !found->second.inventory)
+                            continue;
+                        auto& inventory = *found->second.inventory;
+                        const auto items = inventory.items();
+                        if (items.empty())
+                            continue;
+                        for (const auto& item : items) {
+                            if (propagate && item->owner_id != owner) {
+                                item->last_owner_id = item->owner_id;
+                                item->owner_id = owner;
+                            }
+                            item->base_permissions &= item->next_permissions;
+                            item->current_permissions &= item->next_permissions;
+                            item->everyone_permissions &= item->next_permissions;
+                            item->permissions_mask = 0;
+                            item->permissions_granter = {};
+                            item->owner_changed = true;
+                            if (const auto script = scripts.find(item->item_id); script != scripts.end())
+                                script->second.item = service_item(*item);
+                            if (item->item_id != item_id)
+                                unregister_controls(item->item_id);
+                        }
+                        inventory.inventory_changed(true);
+                        if (propagate)
+                            inventory.serial(inventory.serial() + 1);
+                    }
+                }
+                task.permissions_mask = grant;
+                task.permissions_granter = owner;
+                if (propagate) {
+                    constexpr std::int32_t changed_owner = 128;
+                    for (auto& [script_id, script] : scripts) {
+                        if (script.instance && world.link_key(script.item.parent, 1) == root->id)
+                            script.instance->post_event({"changed", {changed_owner}, {}});
+                    }
+                }
+                send_part_properties(root->id, owner);
+            }
+        }
+        attach_ground_object(*wearer, root->id, point, true,
+                             temporary ? GroundAttachment::Temporary : GroundAttachment::Script);
+    }
+
+    void post_ground_attach_event(Uuid root, Uuid wearer) {
+        std::lock_guard lock(task_data_mutex);
+        for (auto& [script_id, script] : scripts) {
+            if (script.instance && world.link_key(script.item.parent, 1) == root)
+                script.instance->post_event({"attach", {wearer.str()}, {}});
+        }
+    }
+
     void attach_viewer_object(const ViewerAgent& actor, const lludp::Packet& packet) {
         const auto& identity = packet.block("AgentData");
         const auto agent = actor.circuit->agent_id;
@@ -13934,11 +15587,23 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         const auto part = world.object(local);
         if (!part)
             return;
-        const auto root = world.object(world.link_key(part->id, 1));
-        if (!root || root->is_attachment || root->parent_id || root->shape.pcode != 9)
+        const auto requested = static_cast<std::uint8_t>(std::get<std::uint64_t>(identity.at("AttachmentPoint")));
+        attach_ground_object(actor, world.link_key(part->id, 1), requested & 127, (requested & 128) != 0, GroundAttachment::Viewer);
+    }
+
+    void attach_ground_object(const ViewerAgent& actor, Uuid root_id, std::uint8_t point, bool append,
+                              GroundAttachment mode) {
+        const bool temporary = mode == GroundAttachment::Temporary;
+        if (!policies.attachments_enabled || (!temporary && !policies.inventory_service) || !inventory_active(actor))
+            return;
+        const auto agent = actor.circuit->agent_id;
+        const auto session = actor.circuit->session_id;
+        const auto root = world.object(root_id);
+        if (!root || root->is_attachment || root->parent_id || root->shape.pcode != 9 ||
+            (mode != GroundAttachment::Viewer && root->owner != agent))
             return;
         const bool god = policies.inventory_is_god && policies.inventory_is_god(agent);
-        if (!can_derez_object(*root, agent, god, DerezAction::Take)) {
+        if (mode == GroundAttachment::Viewer && !can_derez_object(*root, agent, god, DerezAction::Take)) {
             alert(agent, "You don't have sufficient permissions to attach this object");
             return;
         }
@@ -13946,9 +15611,6 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             if (viewer.seat && viewer.seat->parent_local == root->local_id)
                 return;
 
-        const auto requested = static_cast<std::uint8_t>(std::get<std::uint64_t>(identity.at("AttachmentPoint")));
-        const bool append = (requested & 128) != 0;
-        auto point = static_cast<std::uint8_t>(requested & 127);
         if (!point)
             point = root->last_attachment_point;
         const auto offset = point && point == root->last_attachment_point ? root->saved_attachment_position : Vector3{};
@@ -13961,6 +15623,17 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         const auto viewer = viewers->agent(agent);
         if (!viewer || !inventory_active(*viewer) || viewer->circuit->session_id != session)
             return;
+        if (temporary) {
+            if (!attachment_replacements(viewer->local_id, root->from_inventory_item, point, append))
+                return;
+            const bool attached = world.attach_from_ground(root->id, viewer->local_id, point, offset,
+                                                          root->from_inventory_item, root->from_inventory_folder,
+                                                          root->attachment_source_asset);
+            appearance_lock.unlock();
+            if (attached)
+                post_ground_attach_event(root->id, agent);
+            return;
+        }
         const auto appearance = viewer->appearance();
         if (!appearance)
             return;
@@ -14028,11 +15701,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             viewers->transport().enqueue_if_session(agent, session, inventory_item_create(agent, *item, {}),
                                                     ThrottleOutPacketType::Asset);
         }
-        std::lock_guard lock(task_data_mutex);
-        for (auto& [script_id, running_script] : scripts) {
-            if (running_script.instance && world.link_key(running_script.item.parent, 1) == root->id)
-                running_script.instance->post_event({"attach", {agent.str()}, {}});
-        }
+        post_ground_attach_event(root->id, agent);
     }
 
     void drop_viewer_attachments(const ViewerAgent& viewer, const lludp::Packet& packet) {
@@ -14238,6 +15907,76 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         if (lists & 4)
             send_list(4, settings->estate_bans);
     }
+    bool manage_script_estate_access(Uuid source, std::int32_t action, Uuid target) {
+        const auto part = world.object(source);
+        if (!part || part->owner != estate_settings.load()->owner)
+            return false;
+
+        const auto account = policies.script_account ? policies.script_account(target) : std::nullopt;
+        const bool group = !account && policies.group_record_name && policies.group_record_name(target).has_value();
+        if (action < 0 || action > 5 || ((action == 2 || action == 3) ? !group : !account))
+            return false;
+        if (action == 4 && (policies.bypass_estate_permissions || god_rights_level(target) >= 200))
+            return false;
+
+        std::lock_guard lock(estate_access_mutex);
+        const auto current = estate_settings.load();
+        if (part->owner != current->owner)
+            return false;
+        auto next = std::make_shared<EstateSettings>(*current);
+        const auto contains = [target](const auto& list) {
+            return std::ranges::find(list, target) != list.end();
+        };
+        const bool privileged = target == current->owner || contains(current->estate_managers);
+        const bool allowed = privileged || contains(current->estate_users);
+        const auto banned = [&](std::int32_t flags) {
+            if (privileged)
+                return false;
+            const auto restrictions = current->estate_handshake_only_flags;
+            return contains(current->estate_bans) ||
+                (!allowed && (((restrictions & estate_deny_minors) && !(flags & 32)) ||
+                              ((restrictions & estate_deny_anonymous) && !(flags & 4))));
+        };
+        switch (action) {
+        case 0: // Allow an account.
+            if (allowed)
+                return true;
+            if (banned(account->user_flags))
+                std::erase(next->estate_bans, target);
+            if (next->estate_users.size() < 500)
+                next->estate_users.push_back(target);
+            break;
+        case 1: // Remove account access.
+            if (!allowed)
+                return false;
+            std::erase(next->estate_users, target);
+            break;
+        case 2: // Allow a group.
+            if (contains(current->estate_groups))
+                return true;
+            if (next->estate_groups.size() < 63)
+                next->estate_groups.push_back(target);
+            break;
+        case 3: // Remove group access.
+            if (!std::erase(next->estate_groups, target))
+                return false;
+            break;
+        case 4: // Ban an account.
+            if (banned(account->user_flags))
+                return true;
+            if (!banned(32) && next->estate_bans.size() < 500)
+                next->estate_bans.push_back(target);
+            break;
+        case 5: // Remove an account ban.
+            if (!banned(account->user_flags))
+                return false;
+            std::erase(next->estate_bans, target);
+            break;
+        }
+        // The script API edits the live estate settings directly.
+        estate_settings.store(std::move(next));
+        return true;
+    }
     void edit_estate_access(const ViewerAgent& viewer, Uuid invoice, int flags, Uuid target) {
         if (target.is_zero())
             return;
@@ -14437,7 +16176,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 send_teleport_failure(viewer, "You have been banned from that region.");
                 return false;
             }
-            return viewers->teleport_local(viewer.circuit->agent_id, viewer.circuit->session_id, request);
+            return viewers->request_teleport(viewer.circuit->agent_id, viewer.circuit->session_id, request);
         }
         return begin_remote_teleport(viewer, request, banned);
     }
@@ -14620,18 +16359,38 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 : u"You were teleported home by the region owner, but the TP failed");
     }
     bool begin_remote_teleport(const ViewerAgent& a, const lludp::Packet& p, bool estate_ejection = false) {
-        const auto requested = std::get<std::uint64_t>(p.block("Info").at("RegionHandle"));
+        const auto& request = p.block("Info");
+        const auto requested = std::get<std::uint64_t>(request.at("RegionHandle"));
+        const auto& position = std::get<std::vector<double>>(request.at("Position"));
+        Vector3 target{float(position[0]), float(position[1]), float(position[2])};
         const bool pending = agent_transfer_pending(a.circuit->session_id);
-        auto destination = !pending && policies.teleport_destination
-                               ? policies.teleport_destination(requested)
-                               : std::nullopt;
+        std::optional<services::GridRegion> destination;
+        if (!pending && policies.teleport_destination) {
+            const auto origin_x = static_cast<std::uint32_t>(requested >> 32);
+            const auto origin_y = static_cast<std::uint32_t>(requested);
+            if (origin_y == 0) {
+                // Legacy Hypergrid links use the handle as an alias and keep their local coordinates.
+                destination = policies.teleport_destination(requested);
+            } else {
+                const double world_x = double(origin_x) + target.x;
+                const double world_y = double(origin_y) + target.y;
+                constexpr double coordinate_limit = double(std::numeric_limits<std::uint32_t>::max()) + 1;
+                if (world_x >= 0 && world_x < coordinate_limit && world_y >= 0 && world_y < coordinate_limit) {
+                    const auto tile_x = static_cast<std::uint32_t>(world_x) & 0xffffff00u;
+                    const auto tile_y = static_cast<std::uint32_t>(world_y) & 0xffffff00u;
+                    destination = policies.teleport_destination((std::uint64_t(tile_x) << 32) | tile_y);
+                    if (destination) {
+                        target.x = static_cast<float>(world_x - destination->x);
+                        target.y = static_cast<float>(world_y - destination->y);
+                    }
+                }
+            }
+        }
         std::string reason =
             destination ? "Region transfer unavailable" : "The region you tried to teleport to was not found";
         if (pending)
             reason = "Previous teleport process incomplete.  Please retry shortly.";
         else if (destination && policies.teleport_access) {
-            const auto& position = std::get<std::vector<double>>(p.block("Info").at("Position"));
-            const Vector3 target{float(position[0]), float(position[1]), float(position[2])};
             auto gatekeeper = *destination;
             LoginTransferContext context;
             auto denial = policies.teleport_access(*destination, a, target, true, context);
@@ -14639,11 +16398,10 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 reason = std::move(denial);
             else if (policies.teleport_create) {
                 const auto token = Uuid::random();
-                const auto& request_info = p.block("Info");
-                const auto& look = std::get<std::vector<double>>(request_info.at("LookAt"));
+                const auto& look = std::get<std::vector<double>>(request.at("LookAt"));
                 const Vector3 look_at{float(look[0]), float(look[1]), float(look[2])};
-                const auto flags = request_info.contains("RequestedFlags")
-                                       ? std::get<std::uint64_t>(request_info.at("RequestedFlags"))
+                const auto flags = request.contains("RequestedFlags")
+                                       ? std::get<std::uint64_t>(request.at("RequestedFlags"))
                                        : 16u;
                 auto finish =
                     policies.teleport_create(descriptor, gatekeeper, *destination, a, target, look_at,
@@ -14668,6 +16426,16 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             }
         }
         send_teleport_failure(a, std::move(reason));
+        if (!pending && !destination) {
+            constexpr std::uint8_t down = 254;
+            const EmptyMapBlock offline{
+                "",
+                static_cast<std::uint16_t>(requested >> 40),
+                static_cast<std::uint16_t>(static_cast<std::uint32_t>(requested) >> 8),
+                down,
+            };
+            send_map_blocks(a, 0, {}, &offline);
+        }
         return false;
     }
     void finish_failed_estate_ejection(const PendingTeleport& transfer) {
@@ -14688,7 +16456,6 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         };
         std::shared_ptr<AssetBase> asset;
         std::uint64_t xfer = 0;
-        std::uint32_t next = 0, size = 0;
         std::optional<std::uint64_t> final_packet;
         bool complete = false;
         bool success = false;
@@ -14792,7 +16559,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             animation_set_enforce_permissions(created.get(), true);
         if (!agent_inventory_add().add(created)) {
             alert(request.agent, "Unable to create inventory item");
-            return false;
+            return true;
         }
         viewers->transport().enqueue_if_session(
             request.agent, viewer.circuit->session_id,
@@ -14937,7 +16704,9 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 else if (upload.task_update)
                     success = update_task_from_asset_upload(viewer, upload);
                 else
-                    success = policies.store_inventory_asset(upload.asset).has_value();
+                    // StoreLocal acknowledges the completed transfer even when
+                    // the asset provider returns no ID.
+                    policies.store_inventory_asset(upload.asset);
             } catch (const std::exception& e) {
                 error("UDP asset upload: " + std::string(e.what()));
                 success = false;
@@ -14990,7 +16759,6 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             complete_asset_upload(viewer, transaction, upload, true);
             return;
         }
-        upload.asset->data->clear();
         upload.xfer = ++next_upload_xfer;
         auto request = lludp::make_packet("RequestXfer");
         auto& request_fields = request.block("XferID");
@@ -15018,36 +16786,28 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             return true;
         }
         const auto number = std::get<std::uint64_t>(fields.at("Packet"));
-        const auto index = number & 0x7fffffffu;
         if (upload.complete) {
             if (upload.final_packet == number)
                 confirm_upload_packet(viewer, id, number);
             return true;
         }
-        if (index < upload.next) {
-            confirm_upload_packet(viewer, id, number);
-            return true;
-        }
-        if (index != upload.next)
-            return true;
         const auto& bytes = std::get<std::vector<std::uint8_t>>(packet.block("DataPacket").at("Data"));
-        const std::size_t prefix = index == 0 ? 4 : 0;
         const bool final = (number & 0x80000000u) != 0;
-        if (bytes.size() < prefix) {
-            complete_asset_upload(viewer, entry->first, upload, false);
-            return true;
-        }
-        if (prefix)
-            for (unsigned i = 0; i < 4; ++i)
-                upload.size |= std::uint32_t{bytes[i]} << (8 * i);
         auto& data = *upload.asset->data;
-        const auto received = data.size() + bytes.size() - prefix;
-        if (upload.size > 64u * 1024 * 1024 || received > upload.size || (final && received != upload.size)) {
-            complete_asset_upload(viewer, entry->first, upload, false);
-            return true;
+        // AssetXferUploader decides whether to skip the length prefix from
+        // the bytes already buffered. The prefix value itself is ignored.
+        constexpr std::size_t asset_limit = 64u * 1024 * 1024;
+        constexpr std::size_t length_prefix = 4;
+        const auto prefix = data.size() > 1 ? std::size_t{0} : length_prefix;
+        if (prefix == 0 || bytes.size() > prefix) {
+            const auto buffered = prefix == 0 ? data.size() : std::size_t{0};
+            if (bytes.size() - prefix > asset_limit - buffered) {
+                complete_asset_upload(viewer, entry->first, upload, false);
+                return true;
+            }
+            data.resize(buffered);
+            data.insert(data.end(), bytes.begin() + prefix, bytes.end());
         }
-        data.insert(data.end(), bytes.begin() + prefix, bytes.end());
-        ++upload.next;
         confirm_upload_packet(viewer, id, number);
         if (final) {
             upload.final_packet = number;
@@ -15063,7 +16823,9 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         constexpr auto notecard = static_cast<int>(AssetType::Notecard);
         const auto agent = circuit.agent_id;
         if (object.is_zero()) {
-            auto item = policies.inventory ? policies.inventory->item(agent, item_id) : std::nullopt;
+            auto item = policies.inventory ? policies.inventory->item(agent, item_id)
+                       : policies.inventory_service ? policies.inventory_service->item(agent, item_id)
+                                                    : std::nullopt;
             const bool library_item = !item;
             if (!item && policies.library_inventory_item)
                 item = policies.library_inventory_item(item_id);
@@ -15567,11 +17329,13 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             return false;
         if (contains(static_cast<int>(x), static_cast<int>(y)))
             return true;
-        const auto distance = std::sqrt(dx * dx + dy * dy);
-        if (distance == 0)
+        const float distance_squared = dx * dx + dy * dy;
+        // OpenMetaverse.Vector2.Normalize multiplies by one reciprocal and zeros tiny vectors.
+        if (!(static_cast<double>(distance_squared) > 1.e-6) || !std::isfinite(distance_squared))
             return false;
-        dx /= distance;
-        dy /= distance;
+        const float inverse_distance = 1.f / std::sqrt(distance_squared);
+        dx *= inverse_distance;
+        dy *= inverse_distance;
 
         int min_x = width, min_y = height, max_x = 0, max_y = 0;
         for (int row = 0; row < height; ++row) {
@@ -15631,10 +17395,12 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         if (!access || *access || !policies.list_parcels)
             return access.value_or(false);
         std::shared_ptr<const ScriptParcel> nearest;
-        double best_distance = std::numeric_limits<float>::max();
+        float best_distance = std::numeric_limits<float>::max();
         for (const auto& parcel : policies.list_parcels()) {
-            const auto dx = parcel->center.x - position.x;
-            const auto dy = parcel->center.y - position.y;
+            if (!parcel)
+                continue;
+            const float dx = static_cast<float>(parcel->center.x) - position.x;
+            const float dy = static_cast<float>(parcel->center.y) - position.y;
             const auto distance = dx * dx + dy * dy;
             if (distance < best_distance && parcel_allows_arrival(*parcel, agent, foreign)) {
                 nearest = parcel;
@@ -15725,6 +17491,52 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             agent.position = closest.value_or(spawn_location(*hub, region_spawn_points.front()));
         return closest ? TelehubArrival::placed : TelehubArrival::skipped;
     }
+    std::optional<Vector3> route_local_teleport(const ViewerAgent& avatar, Vector3 target,
+                                                 std::uint64_t flags) {
+        constexpr std::uint64_t via_lure = 1u << 2;
+        const auto& circuit = *avatar.circuit;
+        const auto agent = circuit.agent_id;
+        if ((flags & via_lure) || allows_direct_teleport() || is_estate_manager(agent) ||
+            (!circuit.verified_foreign_login && god_rights_level(agent) >= 200))
+            return target;
+
+        const auto distance_squared = [target](Vector3 point) {
+            const float x = point.x - target.x;
+            const float y = point.y - target.y;
+            const float z = point.z - target.z;
+            return x * x + y * y + z * z;
+        };
+        const float current_distance = distance_squared(avatar.position);
+        {
+            std::lock_guard lock(telehub_mutex);
+            if (const auto hub = live_telehub()) {
+                Vector3 closest{128, 128, target.z};
+                if (!region_spawn_points.empty()) {
+                    closest = spawn_location(*hub, region_spawn_points.front());
+                    for (const auto& point : std::span(region_spawn_points).subspan(1)) {
+                        const auto position = spawn_location(*hub, point);
+                        if (distance_squared(position) < distance_squared(closest))
+                            closest = position;
+                    }
+                }
+                if (current_distance < distance_squared(closest))
+                    return std::nullopt;
+                return closest;
+            }
+        }
+
+        const auto parcel = policies.script_parcel_at ? policies.script_parcel_at(target) : nullptr;
+        constexpr int landing_point = 1;
+        if (!parcel || parcel->landing_type != landing_point || parcel->owner == agent ||
+            parcel->landing_point == Vector3d{})
+            return target;
+        const Vector3 position{float(parcel->landing_point.x), float(parcel->landing_point.y),
+                               float(parcel->landing_point.z)};
+        if (current_distance < distance_squared(position))
+            return std::nullopt;
+        return position;
+    }
+
     void route_root_arrival(ViewerAgent& agent) {
         const auto& circuit = *agent.circuit;
         if (policies.use_sl_landing_behavior &&
@@ -16289,7 +18101,66 @@ struct RegionRuntime::State : SceneAdmissionBackend,
     bool estate_restart_notice = false;
     unsigned estate_restart_delays = 0;
 
-    void send_estate_restart_notice(int seconds) {
+    static std::optional<std::string> format_restart_notice(std::string_view format, std::string_view time) {
+        std::string message;
+        while (!format.empty()) {
+            if (format.starts_with("{{") || format.starts_with("}}")) {
+                message += format.front();
+                format.remove_prefix(2);
+                continue;
+            }
+            if (format.front() == '}')
+                return std::nullopt;
+            if (format.front() != '{') {
+                message += format.front();
+                format.remove_prefix(1);
+                continue;
+            }
+
+            const auto end = format.find('}');
+            if (end == format.npos)
+                return std::nullopt;
+            const auto item = format.substr(1, end - 1);
+            if (item.find('{') != item.npos)
+                return std::nullopt;
+            // A format specifier has no effect on the string countdown argument.
+            auto fields = item.substr(0, item.find(':'));
+            unsigned argument;
+            const auto index = std::from_chars(fields.data(), fields.data() + fields.size(), argument);
+            if (index.ec != std::errc{} || argument != 0)
+                return std::nullopt;
+            fields.remove_prefix(index.ptr - fields.data());
+            const auto skip_spaces = [&] {
+                while (fields.starts_with(' '))
+                    fields.remove_prefix(1);
+            };
+            skip_spaces();
+            int alignment = 0;
+            if (fields.starts_with(',')) {
+                fields.remove_prefix(1);
+                skip_spaces();
+                const auto width = std::from_chars(fields.data(), fields.data() + fields.size(), alignment);
+                if (width.ec != std::errc{})
+                    return std::nullopt;
+                fields.remove_prefix(width.ptr - fields.data());
+                skip_spaces();
+            }
+            if (!fields.empty())
+                return std::nullopt;
+
+            const auto width = std::abs(static_cast<std::int64_t>(alignment));
+            const auto padding = std::clamp<std::int64_t>(width - static_cast<std::int64_t>(time.size()), 0, 255);
+            if (alignment > 0)
+                message.append(padding, ' ');
+            message += time;
+            if (alignment < 0)
+                message.append(padding, ' ');
+            format.remove_prefix(end + 1);
+        }
+        return message;
+    }
+
+    bool send_estate_restart_notice(int seconds) {
         const int minutes = seconds / 60;
         const int remainder = seconds % 60;
         std::string time;
@@ -16300,30 +18171,22 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 time += " and ";
             time += std::to_string(remainder) + (remainder == 1 ? " second" : " seconds");
         }
-        std::string message;
-        for (std::size_t index = 0; index < estate_restart_message.size();) {
-            const auto rest = std::string_view(estate_restart_message).substr(index);
-            if (rest.starts_with("{0}")) {
-                message += time;
-                index += 3;
-            } else if (rest.starts_with("{{") || rest.starts_with("}}")) {
-                message += rest.front();
-                index += 2;
-            } else {
-                message += rest.front();
-                ++index;
-            }
+        const auto message = format_restart_notice(estate_restart_message, time);
+        if (!message) {
+            error("Invalid restart notice format");
+            return false;
         }
-        if (message.empty())
-            return;
+        if (message->empty())
+            return true;
         if (!estate_restart_notice) {
-            send_region_notice(message);
-            return;
+            send_region_notice(*message);
+            return true;
         }
         for (const auto& viewer : viewers->agents()) {
             if (viewer.root)
-                alert(viewer.circuit->agent_id, message);
+                alert(viewer.circuit->agent_id, *message);
         }
+        return true;
     }
 
     void set_estate_restart_countdown(bool delayed) {
@@ -16343,9 +18206,9 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         const int current = estate_restart_alerts.back();
         estate_restart_alerts.pop_back();
         const int next = estate_restart_alerts.empty() ? 0 : estate_restart_alerts.back();
+        if (!delayed && !send_estate_restart_notice(current))
+            return;
         estate_restart_tick = std::chrono::steady_clock::now() + std::chrono::seconds(current - next);
-        if (!delayed)
-            send_estate_restart_notice(current);
     }
 
     void request_estate_restart(Uuid agent, int seconds) {
@@ -16383,9 +18246,17 @@ struct RegionRuntime::State : SceneAdmissionBackend,
 
     void abort_restart(const std::string& message) {
         std::lock_guard lock(estate_restart_mutex);
-        if (estate_restart_tick && !message.empty())
-            send_region_notice(message);
+        const bool notify = estate_restart_tick.has_value() && !message.empty();
         estate_restart_tick.reset();
+        if (policies.clear_restart_marker) {
+            try {
+                policies.clear_restart_marker();
+            } catch (const std::filesystem::filesystem_error& failure) {
+                error(std::string("Restart marker removal failed: ") + failure.what());
+            }
+        }
+        if (notify)
+            send_region_notice(message);
     }
 
     void poll_estate_restart() {
@@ -16399,7 +18270,10 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             if (!write_marker) {
                 const int current = estate_restart_alerts.back();
                 estate_restart_alerts.pop_back();
-                send_estate_restart_notice(current);
+                if (!send_estate_restart_notice(current)) {
+                    estate_restart_tick.reset();
+                    return;
+                }
                 if (!policies.skip_restart_delay_when_empty ||
                     std::ranges::any_of(viewers->agents(), [](const auto& viewer) { return viewer.root; })) {
                     const int next = estate_restart_alerts.empty() ? 0 : estate_restart_alerts.back();
@@ -16524,6 +18398,9 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         while (!region_setting_flags.compare_exchange_weak(
             previous, (previous & ~mask) | (settings.flags & mask & ~0x40u))) {
         }
+        constexpr std::uint32_t skip_scripts = 0x2000u;
+        if (!(previous & skip_scripts) && (settings.flags & skip_scripts))
+            estate_script_removal_pending = true;
         block_terraform = (settings.flags & 0x40u) != 0;
         region_agent_limit = settings.agent_limit;
         region_object_bonus = settings.object_bonus;
@@ -18154,14 +20031,15 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         const auto texture = render_warp_terrain_splat(heights, width, height, splat, std::move(textures));
         WarpMapRaster raster(width, height);
         raster.draw(mesh, texture);
-        if (policies.draw_map_object_volumes)
+        if (policies.draw_map_object_volumes) {
+            const decltype(policies.load_asset) no_mesh_loader;
             draw_warp_prims(raster, world.objects(), policies.load_map_asset, policies.texture_warp_prims,
-                                policies.warp_prim_min_height, policies.warp_prim_max_height);
+                            policies.warp_prim_min_height, policies.warp_prim_max_height,
+                            policies.render_warp_meshes ? policies.load_asset : no_mesh_loader);
+        }
         raster.draw_water(water_height);
         raster.finish_transparency();
         auto bitmap = std::move(raster).take_image();
-        if (!policies.map_tiles_directory.empty())
-            std::filesystem::create_directories(policies.map_tiles_directory);
         const auto filename = policies.map_tiles_directory / ("MAP-" + descriptor.id.str() + ".png");
         write_map_bitmap_png(bitmap, filename);
         return bitmap;
@@ -18246,12 +20124,35 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         }
     }
 
+    void regenerate_and_publish_map_tiles() {
+        std::optional<Uuid> previous_terrain;
+        std::optional<Uuid> previous_parcel;
+        {
+            std::lock_guard lock(region_map_image_mutex);
+            previous_terrain = generated_terrain_map;
+            previous_parcel = generated_parcel_map;
+        }
+        generate_map_tiles();
+        try {
+            policies.publish_map_tiles();
+        } catch (...) {
+            {
+                std::lock_guard lock(region_map_image_mutex);
+                generated_terrain_map = previous_terrain;
+                generated_parcel_map = previous_parcel;
+                region_map_jpeg.clear();
+            }
+            policies.save_map_tiles(previous_terrain.value_or(descriptor.terrain_image),
+                                    previous_parcel.value_or(descriptor.parcel_image));
+            throw;
+        }
+    }
+
     void generate_map_from_console() {
         if (!can_generate_map_tiles() || !policies.publish_map_tiles)
             throw std::runtime_error("No map image generator available for " + descriptor.name.value_or(""));
         std::lock_guard lock(map_generation_mutex);
-        generate_map_tiles();
-        policies.publish_map_tiles();
+        regenerate_and_publish_map_tiles();
         next_map_refresh = std::chrono::steady_clock::now() + policies.map_tile_refresh;
     }
 
@@ -18263,8 +20164,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         if (!lock || std::chrono::steady_clock::now() < next_map_refresh)
             return;
         try {
-            generate_map_tiles();
-            policies.publish_map_tiles();
+            regenerate_and_publish_map_tiles();
         } catch (const std::exception& failure) {
             error(std::string("Scheduled terrain map generation failed: ") + failure.what());
         }
@@ -18291,8 +20191,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             return;
         }
         try {
-            generate_map_tiles();
-            policies.publish_map_tiles();
+            regenerate_and_publish_map_tiles();
             last_map_generation = now;
             alert(agent, "Terrain map generated");
         } catch (const std::exception& failure) {
@@ -18319,27 +20218,34 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             packet.block("RequestData")["ItemType"] = type;
             return packet;
         };
-        const auto send = [&](lludp::Packet packet) {
-            viewers->transport().enqueue_if_session(circuit.agent_id, circuit.session_id, std::move(packet),
-                                                    ThrottleOutPacketType::Land, false);
+        const auto send_reply = [&](lludp::Packet packet) {
+            constexpr bool allow_splitting = false;
+            viewers->transport().enqueue_if_session(
+                circuit.agent_id, circuit.session_id, std::move(packet),
+                ThrottleOutPacketType::Land, allow_splitting);
         };
+        constexpr std::size_t data_start = 35;
+        constexpr std::size_t max_payload = 1200;
         auto reply = make_reply();
-        std::size_t size = 35;
+        std::size_t position = data_start;
+        std::size_t capacity = max_payload - position;
         for (const auto& item : items) {
             auto name = profile_string_bytes(framework::utf16_replacing(item.name), 255);
             const auto entry_size = 33 + name.size();
-            if (size + entry_size > 1200) {
-                send(std::move(reply));
+            position += entry_size;
+            // LLClientView carries the item that reached the limit into the next packet.
+            if (position >= capacity) {
+                send_reply(std::move(reply));
                 reply = make_reply();
-                size = 35;
+                position = data_start + entry_size;
+                capacity = max_payload - position;
             }
-            size += entry_size;
             reply.blocks["Data"].push_back({
                 {"X", std::uint64_t(item.x)}, {"Y", std::uint64_t(item.y)}, {"ID", item.id},
                 {"Extra", std::int64_t(item.extra)}, {"Extra2", std::int64_t(item.extra2)},
                 {"Name", std::move(name)}});
         }
-        send(std::move(reply));
+        send_reply(std::move(reply));
     }
 
     static constexpr std::uint32_t map_telehub = 1, map_agents = 6, map_sale = 7, map_adult_sale = 10;
@@ -18417,6 +20323,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         std::string label;
         std::uint16_t x = 0;
         std::uint16_t y = 0;
+        std::uint8_t access = 255;
     };
 
     void send_map_blocks(const ViewerAgent& viewer, std::uint64_t flags,
@@ -18427,36 +20334,47 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             return static_cast<std::uint16_t>(region.size_x) > 256 ||
                    static_cast<std::uint16_t>(region.size_y) > 256;
         });
-        const auto make_reply = [&] {
+        const auto make_map_block_reply = [&] {
             auto reply = lludp::make_packet("MapBlockReply");
             reply.block("AgentData")["AgentID"] = circuit.agent_id;
             reply.block("AgentData")["Flags"] = flags;
             return reply;
         };
-        auto reply = make_reply();
-        auto send = [&] {
-            viewers->transport().enqueue_if_session(circuit.agent_id, circuit.session_id, std::move(reply),
-                                                    ThrottleOutPacketType::Land, false);
-            reply = make_reply();
+        auto reply = make_map_block_reply();
+        const auto send_reply = [&] {
+            constexpr bool allow_splitting = false;
+            viewers->transport().enqueue_if_session(
+                circuit.agent_id, circuit.session_id, std::move(reply),
+                ThrottleOutPacketType::Land, allow_splitting);
+            reply = make_map_block_reply();
         };
-        // Header, agent block and the two variable block counts.
-        std::size_t packet_size = 32;
-        const auto add = [&](const std::string& label, const GridRegion* region,
-                             std::uint16_t empty_x = 0, std::uint16_t empty_y = 0) {
+        constexpr std::size_t data_start = 31;
+        constexpr std::size_t max_payload = 1200;
+        std::size_t position = data_start;
+        std::size_t capacity = max_payload - position;
+        const auto append_block = [&](const std::string& label, const GridRegion* region,
+                                      std::uint16_t empty_x = 0, std::uint16_t empty_y = 0) {
             auto bytes = profile_string_bytes(framework::utf16_replacing(label), 255);
-            const auto block_size = 28 + bytes.size() + (include_sizes ? 4 : 0);
-            if (packet_size + block_size > 1200) {
-                send();
-                packet_size = 32;
+            const auto block_size = 28 + bytes.size();
+            const std::size_t size_bytes = include_sizes ? 4 : 0;
+            position += block_size;
+            capacity -= size_bytes;
+            // LLClientView carries the block that reached the limit into the next packet.
+            if (position >= capacity) {
+                send_reply();
+                position = data_start + block_size;
+                capacity = max_payload - position - size_bytes;
             }
-            packet_size += block_size;
             const auto x = region ? static_cast<std::uint16_t>(region->x / 256) : empty_x;
             const auto y = region ? static_cast<std::uint16_t>(region->y / 256) : empty_y;
-            const auto image = region && flags == 0 ? region->terrain_image :
-                               region && flags == 2 ? region->parcel_image : Uuid{};
+            Uuid image;
+            if (region && flags == 0)
+                image = region->terrain_image;
+            else if (region && flags == 2)
+                image = region->parcel_image;
             reply.blocks["Data"].push_back({
                 {"X", std::uint64_t(x)}, {"Y", std::uint64_t(y)}, {"Name", std::move(bytes)},
-                {"Access", std::uint64_t(region ? region->access : 255)},
+                {"Access", std::uint64_t(region ? region->access : empty->access)},
                 {"RegionFlags", std::uint64_t{0}}, {"WaterHeight", std::uint64_t{0}},
                 {"Agents", std::uint64_t{0}}, {"MapImageID", image}});
             if (include_sizes) {
@@ -18466,11 +20384,11 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             }
         };
         for (const auto& region : regions)
-            add(original_name ? *original_name : region.name.value_or(""), &region);
+            append_block(original_name ? *original_name : region.name.value_or(""), &region);
         if (empty)
-            add(empty->label, nullptr, empty->x, empty->y);
+            append_block(empty->label, nullptr, empty->x, empty->y);
         if (!regions.empty() || empty)
-            send();
+            send_reply();
     }
 
     void search_viewer_map(const ViewerAgent& viewer, const lludp::Packet& request) {
@@ -18478,9 +20396,13 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             return;
         const auto& circuit = *viewer.circuit;
         const auto& name_bytes = std::get<std::vector<std::uint8_t>>(request.block("NameData").at("Name"));
-        const auto name = name_bytes.empty() ? descriptor.name.value_or("") :
-            framework::utf8(framework::utf16_replacing(
-                {reinterpret_cast<const char*>(name_bytes.data()), name_bytes.size() - 1}));
+        std::string name = descriptor.name.value_or("");
+        if (!name_bytes.empty()) {
+            // LLClientView decodes the field after dropping its final byte.
+            const std::string_view encoded_name{
+                reinterpret_cast<const char*>(name_bytes.data()), name_bytes.size() - 1};
+            name = framework::utf8(framework::utf16_replacing(encoded_name));
+        }
         const auto flags = std::get<std::uint64_t>(request.block("AgentData").at("Flags"));
         const auto name_length = framework::utf16_replacing(name).size();
         const bool too_short = name_length < 3 || (name_length < 4 && name.ends_with('#'));
@@ -18715,6 +20637,381 @@ struct RegionRuntime::State : SceneAdmissionBackend,
     }
 
     mutable std::uint64_t cached_snapshot_object_revision = 0;
+    void handle_estate_owner_message(const ViewerAgent& a, const lludp::Packet& p) {
+        const auto& identity = p.block("AgentData");
+        if (std::get<Uuid>(identity.at("AgentID")) != a.circuit->agent_id ||
+            std::get<Uuid>(identity.at("SessionID")) != a.circuit->session_id)
+            return;
+        const auto text = [](const auto& value) {
+            return framework::sdk_bytes_to_string(std::get<std::vector<std::uint8_t>>(value));
+        };
+        const auto parameters = p.blocks.find("ParamList");
+        const auto method = text(p.block("MethodData").at("Method"));
+        if (method == u"scripts" || method == u"colliders") {
+            std::lock_guard lock(commands_mutex);
+            land_stats_requests.push_back(
+                {a.circuit->agent_id, a.circuit->session_id, method == u"scripts" ? 0u : 1u, 0, 0, {}});
+            return;
+        }
+        if (method == u"refreshmapvisibility") {
+            refresh_viewer_map(a);
+            return;
+        }
+        if (method == u"restart") {
+            if (!can_edit_estate_region(a) || parameters == p.blocks.end())
+                return;
+            for (const auto& parameter : parameters->second) {
+                float seconds;
+                if (framework::parse_invariant_float(
+                        framework::utf8(text(parameter.at("Parameter"))), seconds) &&
+                    seconds >= static_cast<float>(INT32_MIN) &&
+                    static_cast<double>(seconds) <= INT32_MAX)
+                    request_estate_restart(a.circuit->agent_id, static_cast<int>(seconds));
+            }
+            return;
+        }
+        if (method == u"kickestate") {
+            if (!can_edit_estate_region(a) || parameters == p.blocks.end() || parameters->second.empty())
+                return;
+            Uuid target;
+            if (!framework::try_parse_sdk_uuid(
+                    framework::utf8(text(parameters->second.front().at("Parameter"))), target) ||
+                target.is_zero())
+                return;
+            const auto viewer = viewers->agent(target);
+            if (viewer && !viewer->logout_requested && (!policies.estate_communications || viewer->root) &&
+                !agent_transfer_pending(viewer->circuit->session_id)) {
+                queue_kick(*viewer, policies.estate_communications
+                    ? u"You have been kicked out" : u"You have been kicked");
+            } else if (policies.forward_estate_teleport_home) {
+                policies.forward_estate_teleport_home(estate_settings.load()->estate_id, target);
+            }
+            return;
+        }
+        if (method == u"teleporthomeuser" || method == u"teleporthomeallusers") {
+            if (!can_edit_estate_region(a))
+                return;
+            if (method == u"teleporthomeuser") {
+                Uuid target;
+                if (parameters == p.blocks.end() || parameters->second.size() < 2 ||
+                    !framework::try_parse_sdk_uuid(
+                        framework::utf8(text(parameters->second[1].at("Parameter"))), target) || target.is_zero())
+                    return;
+                const auto viewer = viewers->agent(target);
+                if (viewer && viewer->root)
+                    estate_send_home(*viewer, false, false);
+                else if (policies.forward_estate_teleport_home)
+                    policies.forward_estate_teleport_home(estate_settings.load()->estate_id, target);
+            } else {
+                for (const auto& viewer : viewers->agents())
+                    if (viewer.root && (policies.estate_communications ||
+                                        viewer.circuit->agent_id != a.circuit->agent_id))
+                        estate_send_home(viewer, false, true);
+                if (policies.forward_estate_teleport_home)
+                    policies.forward_estate_teleport_home(estate_settings.load()->estate_id, std::nullopt);
+            }
+            return;
+        }
+        if (method == u"simulatormessage" || method == u"instantmessage") {
+            const bool estate = method == u"instantmessage";
+            if (!can_edit_estate_region(a) || parameters == p.blocks.end() ||
+                parameters->second.size() < (estate ? 2u : 5u))
+                return;
+            const auto parameter = [&](std::size_t index) {
+                return framework::utf8(text(parameters->second[index].at("Parameter")));
+            };
+            const bool extended = parameters->second.size() >= 5;
+            auto sender = a.circuit->agent_id;
+            if (extended) {
+                try {
+                    sender = framework::parse_sdk_uuid(parameter(2));
+                } catch (const std::invalid_argument&) {
+                    return;
+                }
+            }
+            const auto name = parameter(extended ? 3 : 0);
+            const auto message = parameter(extended ? 4 : 1);
+            if (!estate || policies.estate_communications)
+                send_region_notice(message);
+            if (estate && policies.forward_estate_message)
+                policies.forward_estate_message(estate_settings.load()->estate_id, sender, name, message);
+            return;
+        }
+        if (method == u"getinfo" || method == u"estatechangecovenantid" || method == u"telehub" ||
+            method == u"estateaccessdelta" || method == u"estatechangeinfo") {
+            const auto id = a.circuit->agent_id;
+            if (!a.root || (!policies.bypass_estate_permissions && !is_estate_manager(id) &&
+                            moderation_level(id, &a) < 200))
+                return;
+            if (method == u"getinfo") {
+                send_estate_details(a, std::get<Uuid>(p.block("MethodData").at("Invoice")));
+                return;
+            }
+            if (parameters == p.blocks.end() || parameters->second.empty())
+                return;
+            if (method == u"telehub") {
+                const auto command = text(parameters->second.front().at("Parameter"));
+                std::uint32_t parameter = 0;
+                if (parameters->second.size() > 1)
+                    framework::try_parse_unsigned_integer(
+                        framework::utf8(text(parameters->second[1].at("Parameter"))), parameter);
+                try {
+                    estate_telehub(a, command, parameter);
+                } catch (const std::exception& failure) {
+                    error(std::string("Telehub update failed: ") + failure.what());
+                }
+                return;
+            }
+            if (method == u"estatechangeinfo") {
+                if (parameters->second.size() < 3)
+                    return;
+                std::uint32_t flags, sun;
+                if (!framework::try_parse_unsigned_integer(
+                        framework::utf8(text(parameters->second[1].at("Parameter"))), flags) ||
+                    !framework::try_parse_unsigned_integer(
+                        framework::utf8(text(parameters->second[2].at("Parameter"))), sun))
+                    return;
+                try {
+                    edit_estate_settings([flags](EstateSettings& settings) {
+                        set_estate_flags(settings, flags, true);
+                    });
+                    send_estate_details(a, std::get<Uuid>(p.block("MethodData").at("Invoice")));
+                } catch (const std::exception& failure) {
+                    error(std::string("Estate settings update failed: ") + failure.what());
+                }
+                return;
+            }
+            if (method == u"estateaccessdelta") {
+                if (parameters->second.size() < 3)
+                    return;
+                std::int32_t flags;
+                if (!services::parse_account_integer(
+                        framework::utf8(text(parameters->second[1].at("Parameter"))), flags) ||
+                    flags < INT16_MIN || flags > INT16_MAX)
+                    return;
+                Uuid target;
+                try {
+                    target = framework::parse_sdk_uuid(framework::utf8(text(parameters->second[2].at("Parameter"))));
+                } catch (const std::invalid_argument&) {
+                    return;
+                }
+                edit_estate_access(a, std::get<Uuid>(p.block("MethodData").at("Invoice")), flags, target);
+                return;
+            }
+            try {
+                for (const auto& parameter : parameters->second) {
+                    Uuid covenant;
+                    try {
+                        covenant = framework::parse_sdk_uuid(framework::utf8(text(parameter.at("Parameter"))));
+                    } catch (const std::invalid_argument&) {
+                        break;
+                    }
+                    const auto timestamp = static_cast<std::uint32_t>(
+                        std::chrono::duration_cast<std::chrono::seconds>(
+                            std::chrono::system_clock::now().time_since_epoch())
+                            .count());
+                    {
+                        std::lock_guard lock(estate_covenant_mutex);
+                        if (policies.persist_estate_covenant)
+                            policies.persist_estate_covenant(covenant, timestamp);
+                        estate_covenant = covenant;
+                        estate_covenant_timestamp = timestamp;
+                    }
+                    notify_estate_region_change();
+                }
+            } catch (const std::exception& e) {
+                error(std::string("Estate covenant update failed: ") + e.what());
+            }
+            return;
+        }
+        if ((method != u"terrain" && method != u"textureheights" && method != u"texturedetail" &&
+             method != u"setregionterrain" && method != u"setregioninfo" && method != u"setregiondebug") ||
+            parameters == p.blocks.end() || parameters->second.empty())
+            return;
+        const auto agent = a.circuit->agent_id;
+        const bool administrator = !a.circuit->verified_foreign_login && god_rights_level(agent) >= 200;
+        const bool bypass = policies.bypass_estate_permissions;
+        if (!bypass && !administrator && !is_estate_manager(agent))
+            return;
+        if (method == u"setregioninfo" || method == u"setregiondebug") {
+            const bool debug = method == u"setregiondebug";
+            if (parameters->second.size() < (debug ? 3u : 9u))
+                return;
+            const auto parameter = [&](std::size_t index) {
+                return text(parameters->second[index].at("Parameter"));
+            };
+            const auto enabled = [&](std::size_t index) {
+                const auto value = framework::invariant_lower_utf16(parameter(index));
+                return value == u"1" || value == u"y" || value == u"yes" || value == u"t" || value == u"true";
+            };
+            if (debug) {
+                try {
+                    edit_estate_region_settings([&](EstateRegionSettings& settings) {
+                        settings.flags = (settings.flags & ~0x7000u) |
+                            (enabled(0) ? 0x2000u : 0u) | (enabled(1) ? 0x1000u : 0u) |
+                            (enabled(2) ? 0x4000u : 0u);
+                    }, false);
+                } catch (const std::exception& failure) {
+                    error(std::string("Estate debug settings update failed: ") + failure.what());
+                }
+                return;
+            }
+            double agents = 0;
+            std::int32_t access = 0;
+            const auto decimal_parameter = [&](std::size_t index) {
+                const auto normalized = normalize_estate_decimal(framework::utf8(parameter(index)));
+                return normalized ? quantize_estate_decimal(*normalized) : std::nullopt;
+            };
+            const auto agent_limit_text = decimal_parameter(4);
+            const auto bonus_text = decimal_parameter(5);
+            // The managed UDP handler converts these fields as Decimal with NumberStyles.Number.
+            if (!agent_limit_text || !bonus_text ||
+                !network::try_parse_invariant_real(*agent_limit_text, agents) ||
+                !std::isfinite(agents) ||
+                !services::parse_account_integer(framework::utf8(parameter(6)), access) ||
+                access < -32768 || access > 32767)
+                return;
+            agents = round_estate_agent_limit(*agent_limit_text, agents);
+            if (agents < -32768 || agents > 32767)
+                return;
+            const auto bonus = estate_decimal_to_float(*bonus_text);
+            constexpr std::uint32_t edited = 0x40u | 0x80000u | 0x1u | 0x80u | 0x400000u | 0x4000000u;
+            const std::uint32_t flags = (enabled(0) ? 0x40u : 0u) | (enabled(1) ? 0x80000u : 0u) |
+                (enabled(2) ? 0x1u : 0u) | (enabled(3) ? 0u : 0x80u) |
+                (enabled(7) ? 0x400000u : 0u) | (enabled(8) ? 0x4000000u : 0u);
+            try {
+                edit_estate_region_settings([&](EstateRegionSettings& settings) {
+                    settings.flags = (settings.flags & ~edited) | flags;
+                    settings.agent_limit = estate_agent_limit(static_cast<std::int32_t>(agents));
+                    settings.maturity = access <= 13 ? 0 : access <= 21 ? 1 : 2;
+                    settings.object_bonus = bonus;
+                });
+            } catch (const std::exception& failure) {
+                error(std::string("Estate region settings update failed: ") + failure.what());
+                return;
+            }
+            return;
+        }
+        if (method == u"setregionterrain") {
+            if (parameters->second.size() != 9)
+                return;
+            const auto parse = [&](std::size_t index, float& value) {
+                return framework::parse_invariant_float_with_grouping(
+                    framework::utf8(text(parameters->second[index].at("Parameter"))), value) &&
+                    std::isfinite(value);
+            };
+            float water = 0, raise = 0, lower = 0, sun = 0, estate_sun = 0;
+            if (!parse(0, water) || !parse(1, raise) || !parse(2, lower) ||
+                !parse(5, sun) || !parse(8, estate_sun))
+                return;
+            water = clamp_region_water_height(water);
+            raise = std::clamp(raise, 0.f, 200.f);
+            lower = std::clamp(lower, -200.f, 0.f);
+            update_region_terrain_settings(water, TerrainLimits{raise, lower});
+            return;
+        }
+        if (method == u"textureheights" || method == u"texturedetail") {
+            const bool height_edit = method == u"textureheights";
+            const bool terrain_pbr = !height_edit && supports_terrain_pbr(a);
+            for (const auto& parameter : parameters->second) {
+                const auto value = framework::utf8(text(parameter.at("Parameter")));
+                const auto first = value.find(' ');
+                if (first == value.npos)
+                    continue;
+                const auto arguments = std::string_view(value).substr(first + 1);
+                const auto separator = arguments.find(' ');
+                if (height_edit && (separator == arguments.npos ||
+                                    arguments.find(' ', separator + 1) != arguments.npos))
+                    continue;
+                if (!height_edit && separator != arguments.npos)
+                    continue;
+                std::int32_t corner = 0;
+                if (!services::parse_account_integer(std::string_view(value).substr(0, first), corner) ||
+                    corner < -32768 || corner > 32767)
+                    return;
+                float low = 0, high = 0;
+                if (height_edit &&
+                    (!framework::parse_invariant_float_with_grouping(arguments.substr(0, separator), low) ||
+                     !framework::parse_invariant_float_with_grouping(arguments.substr(separator + 1), high)))
+                    return;
+                Uuid texture;
+                if (!height_edit) {
+                    try {
+                        texture = framework::parse_sdk_uuid(arguments);
+                    } catch (const std::invalid_argument&) {
+                        return;
+                    }
+                }
+                if (corner < 0 || corner >= 4 || (!height_edit && texture.is_zero()))
+                    continue;
+                try {
+                    std::lock_guard lock(terrain_texture_mutex);
+                    if (!height_edit) {
+                        if (policies.persist_terrain_texture_asset)
+                            policies.persist_terrain_texture_asset(terrain_pbr, corner, texture);
+                        auto& assets = terrain_pbr ? terrain_pbr_materials : terrain_texture_assets;
+                        assets[corner] = texture;
+                    } else {
+                        low = clamp_terrain_texture_height(low);
+                        high = clamp_terrain_texture_height(high);
+                        if (policies.persist_terrain_texture_heights)
+                            policies.persist_terrain_texture_heights(corner, low, high);
+                        terrain_texture_heights.low[corner] = low;
+                        terrain_texture_heights.high[corner] = high;
+                    }
+                } catch (const std::exception& failure) {
+                    error(std::string("Terrain texture update failed: ") + failure.what());
+                    continue;
+                }
+                notify_estate_region_change();
+                for (const auto& viewer : viewers->agents())
+                    send_terrain_handshake(*viewer.circuit, supports_terrain_pbr(viewer));
+            }
+            return;
+        }
+        const auto operation = text(parameters->second.front().at("Parameter"));
+        try {
+            if (operation == u"bake") {
+                if (bypass || administrator || agent == estate_settings.load()->owner)
+                    bake_terrain();
+            }
+            else if (operation == u"upload filename" && parameters->second.size() > 1)
+                start_terrain_upload(a, framework::utf8(text(parameters->second[1].at("Parameter"))));
+            else if (operation == u"download filename" && parameters->second.size() > 1) {
+                const Terrain snapshot(world.terrain());
+                const auto heights = snapshot.serialized_floats();
+                if (std::any_of(heights.begin(), heights.end(),
+                                [](float height) { return height >= 4095.f; })) {
+                    alert(a.circuit->agent_id, "Terrain error");
+                    return;
+                }
+                auto data = std::make_shared<const std::vector<std::uint8_t>>(snapshot.llraw());
+                const auto filename = Uuid::random().str();
+                if (!xfer->add(filename, data)) {
+                    alert(a.circuit->agent_id, "Terrain error");
+                    return;
+                }
+                alert(a.circuit->agent_id, "Terrain file written, starting download...");
+                auto reply = lludp::make_packet("InitiateDownload");
+                reply.block("AgentData")["AgentID"] = a.circuit->agent_id;
+                auto& files = reply.block("FileData");
+                std::vector<std::uint8_t> wire_name(filename.begin(), filename.end());
+                wire_name.push_back(0);
+                files["SimFilename"] = std::move(wire_name);
+                const auto viewer_name = framework::utf8(text(parameters->second[1].at("Parameter")));
+                std::vector<std::uint8_t> wire_viewer_name(viewer_name.begin(), viewer_name.end());
+                if (!wire_viewer_name.empty())
+                    wire_viewer_name.push_back(0);
+                files["ViewerFilename"] = std::move(wire_viewer_name);
+                viewers->transport().enqueue_if_session(a.circuit->agent_id, a.circuit->session_id,
+                                                        std::move(reply), ThrottleOutPacketType::Asset);
+            }
+        } catch (const std::exception& error) {
+            if (policies.log)
+                policies.log(error.what());
+        }
+    }
+
     void packet(const ViewerAgent& a, const lludp::Packet& p) {
         const auto& packet_name = p.spec->name;
         if (packet_name == "ScriptDialogReply") {
@@ -19351,6 +21648,10 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         if (p.spec->name == "ImprovedInstantMessage") {
             const auto& data = p.block("MessageBlock");
             const auto dialog = std::get<std::uint64_t>(data.at("Dialog"));
+            if (dialog == 10 || dialog == 11) {
+                respond_to_task_inventory_offer(a, p, dialog == 11);
+                return;
+            }
             if (dialog != 0 && (dialog != 38 || !policies.offer_friendship))
                 return;
             RegionInstantMessage message;
@@ -19568,6 +21869,10 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             send_control_change(a.circuit->agent_id, a.circuit->session_id, 0x7fffffffu, false, false);
             return;
         }
+        if (p.spec->name == "RevokePermissions") {
+            revoke_script_permissions(a, p);
+            return;
+        }
         if (p.spec->name == "AgentUpdate") {
             const auto controls = deliver_script_controls(a);
             constexpr std::uint32_t stand_up = 0x10000u;
@@ -19621,582 +21926,36 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             return;
         }
         if (p.spec->name == "EstateOwnerMessage") {
-            const auto& identity = p.block("AgentData");
-            if (std::get<Uuid>(identity.at("AgentID")) != a.circuit->agent_id ||
-                std::get<Uuid>(identity.at("SessionID")) != a.circuit->session_id)
-                return;
-            const auto text = [](const auto& value) {
-                return framework::sdk_bytes_to_string(std::get<std::vector<std::uint8_t>>(value));
-            };
-            const auto parameters = p.blocks.find("ParamList");
-            const auto method = text(p.block("MethodData").at("Method"));
-            if (method == u"scripts" || method == u"colliders") {
-                std::lock_guard lock(commands_mutex);
-                land_stats_requests.push_back(
-                    {a.circuit->agent_id, a.circuit->session_id, method == u"scripts" ? 0u : 1u, 0, 0, {}});
-                return;
-            }
-            if (method == u"refreshmapvisibility") {
-                refresh_viewer_map(a);
-                return;
-            }
-            if (method == u"restart") {
-                if (!can_edit_estate_region(a) || parameters == p.blocks.end())
-                    return;
-                for (const auto& parameter : parameters->second) {
-                    float seconds;
-                    if (framework::parse_invariant_float(
-                            framework::utf8(text(parameter.at("Parameter"))), seconds) &&
-                        seconds >= static_cast<float>(INT32_MIN) &&
-                        static_cast<double>(seconds) <= INT32_MAX)
-                        request_estate_restart(a.circuit->agent_id, static_cast<int>(seconds));
-                }
-                return;
-            }
-            if (method == u"kickestate") {
-                if (!can_edit_estate_region(a) || parameters == p.blocks.end() || parameters->second.empty())
-                    return;
-                Uuid target;
-                if (!framework::try_parse_sdk_uuid(
-                        framework::utf8(text(parameters->second.front().at("Parameter"))), target) ||
-                    target.is_zero())
-                    return;
-                const auto viewer = viewers->agent(target);
-                if (viewer && !viewer->logout_requested && (!policies.estate_communications || viewer->root) &&
-                    !agent_transfer_pending(viewer->circuit->session_id)) {
-                    queue_kick(*viewer, policies.estate_communications
-                        ? u"You have been kicked out" : u"You have been kicked");
-                } else if (policies.forward_estate_teleport_home) {
-                    policies.forward_estate_teleport_home(estate_settings.load()->estate_id, target);
-                }
-                return;
-            }
-            if (method == u"teleporthomeuser" || method == u"teleporthomeallusers") {
-                if (!can_edit_estate_region(a))
-                    return;
-                if (method == u"teleporthomeuser") {
-                    Uuid target;
-                    if (parameters == p.blocks.end() || parameters->second.size() < 2 ||
-                        !framework::try_parse_sdk_uuid(
-                            framework::utf8(text(parameters->second[1].at("Parameter"))), target) || target.is_zero())
-                        return;
-                    const auto viewer = viewers->agent(target);
-                    if (viewer && viewer->root)
-                        estate_send_home(*viewer, false, false);
-                    else if (policies.forward_estate_teleport_home)
-                        policies.forward_estate_teleport_home(estate_settings.load()->estate_id, target);
-                } else {
-                    for (const auto& viewer : viewers->agents())
-                        if (viewer.root && (policies.estate_communications ||
-                                            viewer.circuit->agent_id != a.circuit->agent_id))
-                            estate_send_home(viewer, false, true);
-                    if (policies.forward_estate_teleport_home)
-                        policies.forward_estate_teleport_home(estate_settings.load()->estate_id, std::nullopt);
-                }
-                return;
-            }
-            if (method == u"simulatormessage" || method == u"instantmessage") {
-                const bool estate = method == u"instantmessage";
-                if (!can_edit_estate_region(a) || parameters == p.blocks.end() ||
-                    parameters->second.size() < (estate ? 2u : 5u))
-                    return;
-                const auto parameter = [&](std::size_t index) {
-                    return framework::utf8(text(parameters->second[index].at("Parameter")));
-                };
-                const bool extended = parameters->second.size() >= 5;
-                auto sender = a.circuit->agent_id;
-                if (extended) {
-                    try {
-                        sender = framework::parse_sdk_uuid(parameter(2));
-                    } catch (const std::invalid_argument&) {
-                        return;
-                    }
-                }
-                const auto name = parameter(extended ? 3 : 0);
-                const auto message = parameter(extended ? 4 : 1);
-                if (!estate || policies.estate_communications)
-                    send_region_notice(message);
-                if (estate && policies.forward_estate_message)
-                    policies.forward_estate_message(estate_settings.load()->estate_id, sender, name, message);
-                return;
-            }
-            if (method == u"getinfo" || method == u"estatechangecovenantid" || method == u"telehub" ||
-                method == u"estateaccessdelta" || method == u"estatechangeinfo") {
-                const auto id = a.circuit->agent_id;
-                if (!a.root || (!policies.bypass_estate_permissions && !is_estate_manager(id) &&
-                                moderation_level(id, &a) < 200))
-                    return;
-                if (method == u"getinfo") {
-                    send_estate_details(a, std::get<Uuid>(p.block("MethodData").at("Invoice")));
-                    return;
-                }
-                if (parameters == p.blocks.end() || parameters->second.empty())
-                    return;
-                if (method == u"telehub") {
-                    const auto command = text(parameters->second.front().at("Parameter"));
-                    std::uint32_t parameter = 0;
-                    if (parameters->second.size() > 1)
-                        framework::try_parse_unsigned_integer(
-                            framework::utf8(text(parameters->second[1].at("Parameter"))), parameter);
-                    try {
-                        estate_telehub(a, command, parameter);
-                    } catch (const std::exception& failure) {
-                        error(std::string("Telehub update failed: ") + failure.what());
-                    }
-                    return;
-                }
-                if (method == u"estatechangeinfo") {
-                    if (parameters->second.size() < 3)
-                        return;
-                    std::uint32_t flags, sun;
-                    if (!framework::try_parse_unsigned_integer(
-                            framework::utf8(text(parameters->second[1].at("Parameter"))), flags) ||
-                        !framework::try_parse_unsigned_integer(
-                            framework::utf8(text(parameters->second[2].at("Parameter"))), sun))
-                        return;
-                    try {
-                        edit_estate_settings([flags](EstateSettings& settings) {
-                            set_estate_flags(settings, flags, true);
-                        });
-                        send_estate_details(a, std::get<Uuid>(p.block("MethodData").at("Invoice")));
-                    } catch (const std::exception& failure) {
-                        error(std::string("Estate settings update failed: ") + failure.what());
-                    }
-                    return;
-                }
-                if (method == u"estateaccessdelta") {
-                    if (parameters->second.size() < 3)
-                        return;
-                    std::int32_t flags;
-                    Uuid target;
-                    if (services::parse_account_integer(
-                            framework::utf8(text(parameters->second[1].at("Parameter"))), flags) &&
-                        flags >= INT16_MIN && flags <= INT16_MAX &&
-                        framework::try_parse_sdk_uuid(
-                            framework::utf8(text(parameters->second[2].at("Parameter"))), target))
-                        edit_estate_access(a, std::get<Uuid>(p.block("MethodData").at("Invoice")), flags,
-                                           target);
-                    return;
-                }
-                try {
-                    for (const auto& parameter : parameters->second) {
-                        Uuid covenant;
-                        if (!framework::try_parse_sdk_uuid(framework::utf8(text(parameter.at("Parameter"))),
-                                                           covenant))
-                            break;
-                        const auto timestamp = static_cast<std::uint32_t>(
-                            std::chrono::duration_cast<std::chrono::seconds>(
-                                std::chrono::system_clock::now().time_since_epoch())
-                                .count());
-                        {
-                            std::lock_guard lock(estate_covenant_mutex);
-                            if (policies.persist_estate_covenant)
-                                policies.persist_estate_covenant(covenant, timestamp);
-                            estate_covenant = covenant;
-                            estate_covenant_timestamp = timestamp;
-                        }
-                        notify_estate_region_change();
-                    }
-                } catch (const std::exception& e) {
-                    error(std::string("Estate covenant update failed: ") + e.what());
-                }
-                return;
-            }
-            if ((method != u"terrain" && method != u"textureheights" && method != u"texturedetail" &&
-                 method != u"setregionterrain" && method != u"setregioninfo" && method != u"setregiondebug") ||
-                parameters == p.blocks.end() || parameters->second.empty())
-                return;
-            const auto agent = a.circuit->agent_id;
-            const bool administrator = !a.circuit->verified_foreign_login && god_rights_level(agent) >= 200;
-            const bool bypass = policies.bypass_estate_permissions;
-            if (!bypass && !administrator && !is_estate_manager(agent))
-                return;
-            if (method == u"setregioninfo" || method == u"setregiondebug") {
-                const bool debug = method == u"setregiondebug";
-                if (parameters->second.size() < (debug ? 3u : 9u))
-                    return;
-                const auto parameter = [&](std::size_t index) {
-                    return text(parameters->second[index].at("Parameter"));
-                };
-                const auto enabled = [&](std::size_t index) {
-                    const auto value = framework::invariant_lower_utf16(parameter(index));
-                    return value == u"1" || value == u"y" || value == u"yes" || value == u"t" || value == u"true";
-                };
-                if (debug) {
-                    try {
-                        edit_estate_region_settings([&](EstateRegionSettings& settings) {
-                            settings.flags = (settings.flags & ~0x7000u) |
-                                (enabled(0) ? 0x2000u : 0u) | (enabled(1) ? 0x1000u : 0u) |
-                                (enabled(2) ? 0x4000u : 0u);
-                        }, false);
-                    } catch (const std::exception& failure) {
-                        error(std::string("Estate debug settings update failed: ") + failure.what());
-                    }
-                    return;
-                }
-                double agents = 0;
-                std::int32_t access = 0;
-                const auto decimal_parameter = [&](std::size_t index) {
-                    const auto normalized = normalize_estate_decimal(framework::utf8(parameter(index)));
-                    return normalized ? quantize_estate_decimal(*normalized) : std::nullopt;
-                };
-                const auto agent_limit_text = decimal_parameter(4);
-                const auto bonus_text = decimal_parameter(5);
-                // The managed UDP handler converts these fields as Decimal with NumberStyles.Number.
-                if (!agent_limit_text || !bonus_text ||
-                    !network::try_parse_invariant_real(*agent_limit_text, agents) ||
-                    !std::isfinite(agents) ||
-                    !services::parse_account_integer(framework::utf8(parameter(6)), access) ||
-                    access < -32768 || access > 32767)
-                    return;
-                agents = round_estate_agent_limit(*agent_limit_text, agents);
-                if (agents < -32768 || agents > 32767)
-                    return;
-                const auto bonus = estate_decimal_to_float(*bonus_text);
-                constexpr std::uint32_t edited = 0x40u | 0x80000u | 0x1u | 0x80u | 0x400000u | 0x4000000u;
-                const std::uint32_t flags = (enabled(0) ? 0x40u : 0u) | (enabled(1) ? 0x80000u : 0u) |
-                    (enabled(2) ? 0x1u : 0u) | (enabled(3) ? 0u : 0x80u) |
-                    (enabled(7) ? 0x400000u : 0u) | (enabled(8) ? 0x4000000u : 0u);
-                try {
-                    edit_estate_region_settings([&](EstateRegionSettings& settings) {
-                        settings.flags = (settings.flags & ~edited) | flags;
-                        settings.agent_limit = estate_agent_limit(static_cast<std::int32_t>(agents));
-                        settings.maturity = access <= 13 ? 0 : access <= 21 ? 1 : 2;
-                        settings.object_bonus = bonus;
-                    });
-                } catch (const std::exception& failure) {
-                    error(std::string("Estate region settings update failed: ") + failure.what());
-                    return;
-                }
-                return;
-            }
-            if (method == u"setregionterrain") {
-                if (parameters->second.size() != 9)
-                    return;
-                const auto parse = [&](std::size_t index, float& value) {
-                    return framework::parse_invariant_float_with_grouping(
-                        framework::utf8(text(parameters->second[index].at("Parameter"))), value) &&
-                        std::isfinite(value);
-                };
-                float water = 0, raise = 0, lower = 0, sun = 0, estate_sun = 0;
-                if (!parse(0, water) || !parse(1, raise) || !parse(2, lower) ||
-                    !parse(5, sun) || !parse(8, estate_sun))
-                    return;
-                water = clamp_region_water_height(water);
-                raise = std::clamp(raise, 0.f, 200.f);
-                lower = std::clamp(lower, -200.f, 0.f);
-                update_region_terrain_settings(water, TerrainLimits{raise, lower});
-                return;
-            }
-            if (method == u"textureheights" || method == u"texturedetail") {
-                const bool height_edit = method == u"textureheights";
-                const bool terrain_pbr = !height_edit && supports_terrain_pbr(a);
-                for (const auto& parameter : parameters->second) {
-                    const auto value = framework::utf8(text(parameter.at("Parameter")));
-                    const auto first = value.find(' ');
-                    if (first == value.npos)
-                        continue;
-                    const auto arguments = std::string_view(value).substr(first + 1);
-                    const auto separator = arguments.find(' ');
-                    if (height_edit && (separator == arguments.npos ||
-                                        arguments.find(' ', separator + 1) != arguments.npos))
-                        continue;
-                    if (!height_edit && separator != arguments.npos)
-                        continue;
-                    std::int32_t corner = 0;
-                    if (!services::parse_account_integer(std::string_view(value).substr(0, first), corner) ||
-                        corner < -32768 || corner > 32767)
-                        return;
-                    float low = 0, high = 0;
-                    if (height_edit &&
-                        (!framework::parse_invariant_float_with_grouping(arguments.substr(0, separator), low) ||
-                         !framework::parse_invariant_float_with_grouping(arguments.substr(separator + 1), high)))
-                        return;
-                    Uuid texture;
-                    if (!height_edit) {
-                        try {
-                            texture = framework::parse_sdk_uuid(arguments);
-                        } catch (const std::invalid_argument&) {
-                            return;
-                        }
-                    }
-                    if (corner < 0 || corner >= 4 || (!height_edit && texture.is_zero()))
-                        continue;
-                    try {
-                        std::lock_guard lock(terrain_texture_mutex);
-                        if (!height_edit) {
-                            if (policies.persist_terrain_texture_asset)
-                                policies.persist_terrain_texture_asset(terrain_pbr, corner, texture);
-                            auto& assets = terrain_pbr ? terrain_pbr_materials : terrain_texture_assets;
-                            assets[corner] = texture;
-                        } else {
-                            low = clamp_terrain_texture_height(low);
-                            high = clamp_terrain_texture_height(high);
-                            if (policies.persist_terrain_texture_heights)
-                                policies.persist_terrain_texture_heights(corner, low, high);
-                            terrain_texture_heights.low[corner] = low;
-                            terrain_texture_heights.high[corner] = high;
-                        }
-                    } catch (const std::exception& failure) {
-                        error(std::string("Terrain texture update failed: ") + failure.what());
-                        continue;
-                    }
-                    notify_estate_region_change();
-                    for (const auto& viewer : viewers->agents())
-                        send_terrain_handshake(*viewer.circuit, supports_terrain_pbr(viewer));
-                }
-                return;
-            }
-            const auto operation = text(parameters->second.front().at("Parameter"));
-            try {
-                if (operation == u"bake") {
-                    if (bypass || administrator || agent == estate_settings.load()->owner)
-                        bake_terrain();
-                }
-                else if (operation == u"upload filename" && parameters->second.size() > 1)
-                    start_terrain_upload(a, framework::utf8(text(parameters->second[1].at("Parameter"))));
-                else if (operation == u"download filename" && parameters->second.size() > 1) {
-                    const Terrain snapshot(world.terrain());
-                    const auto heights = snapshot.serialized_floats();
-                    if (std::any_of(heights.begin(), heights.end(),
-                                    [](float height) { return height >= 4095.f; })) {
-                        alert(a.circuit->agent_id, "Terrain error");
-                        return;
-                    }
-                    auto data = std::make_shared<const std::vector<std::uint8_t>>(snapshot.llraw());
-                    const auto filename = Uuid::random().str();
-                    if (!xfer->add(filename, data)) {
-                        alert(a.circuit->agent_id, "Terrain error");
-                        return;
-                    }
-                    alert(a.circuit->agent_id, "Terrain file written, starting download...");
-                    auto reply = lludp::make_packet("InitiateDownload");
-                    reply.block("AgentData")["AgentID"] = a.circuit->agent_id;
-                    auto& files = reply.block("FileData");
-                    std::vector<std::uint8_t> wire_name(filename.begin(), filename.end());
-                    wire_name.push_back(0);
-                    files["SimFilename"] = std::move(wire_name);
-                    const auto viewer_name = framework::utf8(text(parameters->second[1].at("Parameter")));
-                    std::vector<std::uint8_t> wire_viewer_name(viewer_name.begin(), viewer_name.end());
-                    if (!wire_viewer_name.empty())
-                        wire_viewer_name.push_back(0);
-                    files["ViewerFilename"] = std::move(wire_viewer_name);
-                    viewers->transport().enqueue_if_session(a.circuit->agent_id, a.circuit->session_id,
-                                                            std::move(reply), ThrottleOutPacketType::Asset);
-                }
-            } catch (const std::exception& error) {
-                if (policies.log)
-                    policies.log(error.what());
-            }
+            handle_estate_owner_message(a, p);
             return;
         }
         if (p.spec->name == "ModifyLand") {
             if (!a.root)
                 return;
-            std::lock_guard lock(terrain_edit_mutex);
-            const auto now = std::chrono::steady_clock::now();
-            if (now < next_terrain_edit)
-                return;
             const auto& modify = p.block("ModifyBlock");
             const auto action = std::get<std::uint64_t>(modify.at("Action"));
-            if (action > 5)
-                return;
             const auto strength = static_cast<float>(std::get<double>(modify.at("Seconds")));
             const auto target = static_cast<float>(std::get<double>(modify.at("Height")));
             const auto parcels = p.blocks.find("ParcelData"),
                        extensions = p.blocks.find("ModifyBlockExtended");
-            if (!std::isfinite(strength) || (action == 0 && !std::isfinite(target)) ||
-                (action == 5 && (strength < 0 || !terrain_baseline)) || parcels == p.blocks.end() ||
-                parcels->second.empty() || extensions == p.blocks.end() || extensions->second.empty())
+            if (parcels == p.blocks.end() || extensions == p.blocks.end())
                 return;
-            auto& active_terrain = world.terrain();
-            Terrain terrain(active_terrain);
+            const auto count = std::min(parcels->second.size(), extensions->second.size());
             const auto agent = a.circuit->agent_id;
             const bool administrator = !a.circuit->verified_foreign_login && god_rights_level(agent) >= 200;
-            const bool estate_override = policies.bypass_object_permissions || is_estate_manager(agent) ||
-                                         administrator;
-            std::map<Uuid, bool> parcel_permissions;
-            const auto can_edit = [&](const std::shared_ptr<const ScriptParcel>& parcel) {
-                if (estate_override)
-                    return true;
-                if (!parcel)
-                    return false;
-                if (const auto cached = parcel_permissions.find(parcel->id); cached != parcel_permissions.end())
-                    return cached->second;
-                constexpr std::uint32_t allow_terraform = 1u << 4;
-                constexpr std::uint64_t allow_edit_land = 1ull << 23;
-                const bool allowed = (parcel->flags & allow_terraform) || parcel->owner == agent ||
-                    (parcel->group_owned && !parcel->group.is_zero() && policies.inventory_group_powers &&
-                     (policies.inventory_group_powers(agent, parcel->group) & allow_edit_land));
-                parcel_permissions.emplace(parcel->id, allowed);
-                return allowed;
-            };
-            const auto blocks = std::min(parcels->second.size(), extensions->second.size());
-            for (std::size_t block = 0; block < blocks; ++block) {
-                const auto& parcel = parcels->second[block];
-                const auto x = static_cast<float>(std::get<double>(parcel.at("West")));
-                const auto y = static_cast<float>(std::get<double>(parcel.at("South")));
-                const auto east = std::get<double>(parcel.at("East")),
-                           north = std::get<double>(parcel.at("North"));
-                const bool area = x != east || y != north;
-                const auto size =
-                    static_cast<float>(std::get<double>(extensions->second[block].at("BrushSize")));
-                if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(east) || !std::isfinite(north) ||
-                    (!area && (!std::isfinite(size) || size <= 0)))
-                    continue;
-                const auto parcel_id = static_cast<int>(std::get<std::int64_t>(parcel.at("LocalID")));
-                const bool parcel_area = area && parcel_id != -1;
-                if (parcel_area && (!policies.script_parcel_at || !can_edit(parcel_by_local_id(parcel_id))))
-                    continue;
-                const auto bound = [](double value, int max) {
-                    return static_cast<int>(std::clamp(value, 0.0, double(max)));
+            for (std::size_t index = 0; index < count; ++index) {
+                const auto& parcel = parcels->second[index];
+                const auto& extension = extensions->second[index];
+                const TerrainEdit edit{
+                    static_cast<float>(std::get<double>(parcel.at("West"))),
+                    static_cast<float>(std::get<double>(parcel.at("South"))),
+                    std::get<double>(parcel.at("East")),
+                    std::get<double>(parcel.at("North")),
+                    static_cast<float>(std::get<double>(extension.at("BrushSize"))),
+                    static_cast<int>(std::get<std::int64_t>(parcel.at("LocalID"))),
                 };
-                const auto max_x = static_cast<int>(active_terrain.width()) - 1,
-                           max_y = static_cast<int>(active_terrain.height()) - 1;
-                if (!area && (double(x) + size + .5 < 0 || double(y) + size + .5 < 0 ||
-                              double(x) - size + .5 > max_x || double(y) - size + .5 > max_y))
-                    continue;
-                const int start_x = bound(area ? x : double(x) - size + .5, max_x),
-                          end_x = bound(area ? east : double(x) + size + .5, max_x);
-                const int start_y = bound(area ? y : double(y) - size + .5, max_y),
-                          end_y = bound(area ? north : double(y) + size + .5, max_y);
-                const float scale = area ? 0.f : .5f * std::numbers::pi_v<float> / size;
-                const int sample_radius = area ? 0 : static_cast<int>(std::min(4.0, double(size) + .5));
-                const auto neighborhood = [&](int px, int py, int radius_x, int radius_y) {
-                    float sum = 0;
-                    int samples = 0;
-                    for (int sx = std::max(0, px - radius_x); sx <= std::min(max_x, px + radius_x); ++sx)
-                        for (int sy = std::max(0, py - radius_y); sy <= std::min(max_y, py + radius_y);
-                             ++sy) {
-                            sum += terrain.get(sx, sy);
-                            ++samples;
-                        }
-                    return std::pair{sum, samples};
-                };
-                std::vector<std::tuple<int, int, float>> smoothed;
-                bool allowed = false;
-                for (int px = start_x; px <= end_x; ++px)
-                    for (int py = start_y; py <= end_y; ++py) {
-                        if (parcel_area || !estate_override) {
-                            const auto land = policies.script_parcel_at
-                                ? policies.script_parcel_at({static_cast<float>(px), static_cast<float>(py), 0})
-                                : nullptr;
-                            if (parcel_area ? !land || land->local_id != parcel_id : !can_edit(land))
-                                continue;
-                        }
-                        allowed = true;
-                        const float dx = px - x, dy = py - y;
-                        const float squared = dx * dx + dy * dy;
-                        const auto old = terrain.get(px, py);
-                        float height;
-                        if (area) {
-                            switch (action) {
-                            case 0: {
-                                const auto blend = strength * .04f;
-                                if (blend < .001f)
-                                    continue;
-                                height = blend >= .999f ? target : old * (1.f - blend) + target * blend;
-                                break;
-                            }
-                            case 1:
-                                height = old + strength;
-                                break;
-                            case 2:
-                                height = std::max(0.f, old - strength);
-                                break;
-                            case 3: {
-                                const auto blend = std::min(strength * .002f, 1.f);
-                                if (blend < .0001f)
-                                    continue;
-                                const auto [sum, samples] =
-                                    neighborhood(px, py, std::min(4, (end_x - start_x + 1) / 2),
-                                                 std::min(4, (end_y - start_y + 1) / 2));
-                                height = (1.f - blend) * old + blend * sum / samples;
-                                break;
-                            }
-                            case 4: {
-                                const auto blend = strength * .08f;
-                                if (blend < .0001f)
-                                    continue;
-                                height = std::max(
-                                    0.f,
-                                    old + terrain_noise(px, py, terrain.width(), terrain.height()) * blend);
-                                break;
-                            }
-                            case 5: {
-                                const auto blend = strength * 2.f;
-                                if (blend < .0001f)
-                                    continue;
-                                const auto baseline = terrain_baseline->get(px, py);
-                                height = blend >= .999f ? baseline : old * (1.f - blend) + baseline * blend;
-                                break;
-                            }
-                            default:
-                                continue;
-                            }
-                        } else if (action == 3) {
-                            const float distance = squared / (size * size);
-                            if (!(distance <= 1.f))
-                                continue;
-                            const auto [sum, samples] = neighborhood(px, py, sample_radius, sample_radius);
-                            const float blend = std::min(strength, 1.f) * (1.f - distance);
-                            height = old - blend * (old - sum / samples);
-                            if (height > 0.f && std::isfinite(height) && height != old)
-                                smoothed.emplace_back(px, py, std::clamp(height, -100.f, 4000.f));
-                            continue;
-                        } else if (action == 5) {
-                            const float distance = squared / size;
-                            if (distance > 1.f)
-                                continue;
-                            const float blend = std::min(strength, 1.f) * (1.f - distance);
-                            height = old * (1.f - blend) + terrain_baseline->get(px, py) * blend;
-                        } else if (action == 4) {
-                            const float distance = squared / (size * size);
-                            if (!(distance <= 1.f))
-                                continue;
-                            const float blend = strength * (1.f - distance);
-                            height = old + terrain_noise(px, py, terrain.width(), terrain.height()) * blend;
-                        } else if (action == 0) {
-                            const float distance = squared / (2.f * size * size);
-                            if (distance > 1.f)
-                                continue;
-                            const float blend = strength * (1.f - distance);
-                            height = blend >= 1.f ? target : old + (target - old) * blend;
-                        } else {
-                            const float factor =
-                                static_cast<float>(std::cos(std::sqrt(double(squared)) * scale));
-                            if (factor <= 0)
-                                continue;
-                            height = action == 1 ? old + factor * strength
-                                                 : std::max(0.f, old - factor * strength);
-                        }
-                        if (!std::isfinite(height))
-                            continue;
-                        terrain.set(px, py, std::clamp(height, -100.f, 4000.f));
-                    }
-                for (const auto& [px, py, height] : smoothed)
-                    terrain.set(px, py, height);
-                if (allowed && terrain_baseline && !administrator) {
-                    constexpr int patch = Terrain::patch_size;
-                    for (int patch_x = start_x; patch_x <= end_x; patch_x += patch)
-                        for (int patch_y = start_y; patch_y <= end_y; patch_y += patch) {
-                            if (!terrain.tainted_at(patch_x, patch_y))
-                                continue;
-                            for (int px = patch_x; px <= std::min(max_x, patch_x + patch - 1); ++px)
-                                for (int py = patch_y; py <= std::min(max_y, patch_y + patch - 1); ++py) {
-                                    const float baked = terrain_baseline->get(px, py);
-                                    const float current = terrain.get(px, py);
-                                    const float delta = current - baked;
-                                    if (delta > terrain_raise_limit)
-                                        terrain.set(px, py, baked + terrain_raise_limit);
-                                    else if (delta < terrain_lower_limit)
-                                        terrain.set(px, py, baked + terrain_lower_limit);
-                                }
-                        }
-                }
+                modify_terrain(agent, administrator, static_cast<TerrainAction>(action), strength, target, edit);
             }
-            active_terrain.replace_heights(terrain);
-            next_terrain_edit = std::chrono::steady_clock::now() + std::chrono::milliseconds(20);
             return;
         }
         if (p.spec->name == "TeleportCancel") {
@@ -20226,22 +21985,13 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             return;
         }
         if (p.spec->name == "TeleportLocationRequest") {
-            const auto local_handle = (std::uint64_t(descriptor.x) << 32) | std::uint32_t(descriptor.y);
-            const auto requested = std::get<std::uint64_t>(p.block("Info").at("RegionHandle"));
-            if (requested != local_handle) {
-                begin_remote_teleport(a, p);
-                return;
-            }
-            if (const auto physics = viewer_physics.load())
-                physics->teleported(physics_agent(a));
-            for (auto& other : viewers->agents())
-                if (other.root)
-                    send_avatar(a, other);
+            begin_remote_teleport(a, p);
             return;
         }
         if (p.spec->name == "ObjectAdd") {
             auto request = object_add_request(p);
-            if (request.object.shape.pcode != 9 || request.object.shape.state != 0) {
+            const bool vegetation = is_vegetation(request.object.shape.pcode);
+            if (!vegetation && (request.object.shape.pcode != 9 || request.object.shape.state != 0)) {
                 alert(a.circuit->agent_id, "This native region does not yet support this rez profile.");
                 return;
             }
@@ -20269,7 +22019,15 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             if (policies.prim_limits_enabled &&
                 !check_rez_prim_limit(a.circuit->agent_id, request.object.position, 1))
                 return;
-            if (policies.load_preferences) {
+            if (vegetation) {
+                request.object.flags |= 0x400u; // Phantom
+                if (request.object.shape.pcode != grass_pcode) {
+                    const auto species = request.object.shape.state;
+                    request.object.scale.x *= 8;
+                    request.object.scale.y *= 8;
+                    request.object.scale.z *= (species == 7 || species == 8) ? 20 : 8;
+                }
+            } else if (policies.load_preferences) {
                 const auto prefs = policies.load_preferences(a.circuit->agent_id);
                 if (prefs.next_owner != 0) {
                     request.object.group_mask = static_cast<std::uint32_t>(prefs.group);
@@ -20280,7 +22038,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             std::lock_guard lock(objects_mutex);
             auto created = world.add(request.object);
             if (created)
-                initialize_object_update(created->id, (request.add_flags & 2u) != 0);
+                initialize_object_update(created->id, !vegetation && (request.add_flags & 2u) != 0);
             return;
         }
         if (p.spec->name == "ObjectSelect" || p.spec->name == "ObjectDeselect") {
@@ -20607,7 +22365,7 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             }
     }
     int add_script_listener(Uuid item, Uuid part, int channel, std::string name, Uuid sender,
-                            std::string message) {
+                            std::string message, std::int32_t regex_flags) {
         std::lock_guard lock(task_data_mutex);
         std::set<int> handles;
         for (const auto& entry : script_listeners) {
@@ -20626,13 +22384,323 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         int handle = 1;
         while (handles.contains(handle))
             ++handle;
-        script_listeners.push_back({{sender, handle, channel, std::move(name), std::move(message)}, item, part});
+        script_listeners.push_back({
+            {sender, handle, channel, std::move(name), std::move(message), true, regex_flags}, item, part,
+        });
         return handle;
     }
 
     void clear_script_listeners(Uuid item) {
         std::lock_guard lock(task_data_mutex);
         std::erase_if(script_listeners, [item](const auto& entry) { return entry.item == item; });
+    }
+
+    using TargetValue = std::variant<Vector3, framework::Quaternion>;
+    struct ScriptTarget {
+        Uuid root;
+        Uuid item;
+        std::int32_t handle;
+        TargetValue value;
+        float tolerance;
+    };
+    std::vector<ScriptTarget> script_targets;
+
+    void clear_script_targets(Uuid item) {
+        std::lock_guard lock(task_data_mutex);
+        std::erase_if(script_targets, [item](const ScriptTarget& target) {
+            return target.item == item;
+        });
+    }
+
+    std::optional<SceneObject> script_target_root(Uuid object) const {
+        auto root = world.object(object);
+        if (root && !root->is_attachment && root->parent_id)
+            root = world.object(root->parent_id);
+        return root;
+    }
+
+    std::int32_t register_script_target(Uuid object, Uuid item, TargetValue target, float tolerance) {
+        const auto root = script_target_root(object);
+        if (!root)
+            return 0;
+        std::lock_guard lock(task_data_mutex);
+        const auto belongs_to_script = [&](const ScriptTarget& entry) {
+            return entry.root == root->id && entry.item == item;
+        };
+        if (std::ranges::count_if(script_targets, belongs_to_script) >= 8)
+            script_targets.erase(std::ranges::find_if(script_targets, belongs_to_script));
+        const auto handle = std::bit_cast<std::int32_t>(world.allocate_local_id());
+        script_targets.push_back({root->id, item, handle, target, tolerance});
+        return handle;
+    }
+
+    void remove_script_target(Uuid object, std::int32_t handle, bool rotation) {
+        const auto root = script_target_root(object);
+        if (!root)
+            return;
+        std::lock_guard lock(task_data_mutex);
+        std::erase_if(script_targets, [&](const ScriptTarget& entry) {
+            return entry.root == root->id && entry.handle == handle &&
+                   std::holds_alternative<framework::Quaternion>(entry.value) == rotation;
+        });
+    }
+
+    struct ScriptSensor {
+        Uuid part, item;
+        script::LslSensorQuery query;
+        double next;
+    };
+    std::vector<ScriptSensor> script_sensors;
+    double next_sensor_sweep = 0.;
+
+    static double sensor_time() {
+        return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
+    }
+
+    void clear_script_sensors(Uuid item) {
+        std::lock_guard lock(task_data_mutex);
+        std::erase_if(script_sensors, [item](const ScriptSensor& sensor) { return sensor.item == item; });
+    }
+
+    void schedule_script_sensor(Uuid part, Uuid item, script::LslSensorQuery query) {
+        std::lock_guard lock(task_data_mutex);
+        if (query.interval) {
+            clear_script_sensors(item);
+            if (*query.interval == 0. || !std::isfinite(*query.interval))
+                return;
+        }
+        query.range = std::min(static_cast<float>(query.range), policies.sensor_max_range);
+        const auto next = sensor_time() + query.interval.value_or(0.);
+        script_sensors.push_back({part, item, std::move(query), next});
+    }
+
+    bool part_has_sensor_scripts(Uuid part) const {
+        const auto task = task_parts.find(part);
+        return task != task_parts.end() && task->second.inventory &&
+               task->second.inventory->has_script_dictionary();
+    }
+
+    static script::LslDetector sensor_detector(Uuid key, Uuid owner, Uuid group, std::string name,
+                                               Vector3 position, Vector3 velocity, Quaternion rotation,
+                                               std::int32_t type) {
+        script::LslDetector detector;
+        detector.key = key;
+        detector.owner = owner;
+        detector.group = group;
+        detector.name = std::move(name);
+        detector.position = {position.x, position.y, position.z};
+        detector.velocity = {velocity.x, velocity.y, velocity.z};
+        detector.rotation = {rotation.x, rotation.y, rotation.z, rotation.w};
+        detector.type = type;
+        return detector;
+    }
+
+    script::LslEvent sweep_script_sensor(const SceneObject& part, const script::LslSensorQuery& query) {
+        constexpr std::int32_t agent = 1, active = 2, passive = 4, scripted = 8, username = 16;
+        const auto root = world.object(world.link_key(part.id, 1));
+        if (!root)
+            return {"no_sensor", {}, {}};
+        const auto wearer = attachment_wearer(*root);
+        if (root->is_attachment && !wearer)
+            return {"no_sensor", {}, {}};
+        const auto origin = wearer ? wearer->position : script_world_position(part);
+        const auto rotation = wearer ? wearer->rotation : root->id == part.id ? part.rotation
+            : framework::sdk_multiply_quaternion(root->rotation, part.rotation);
+        const auto forward = framework::sdk_rotate_vector({1, 0, 0}, rotation);
+        const auto dot = [](Vector3 left, Vector3 right) {
+            return left.x * right.x + left.y * right.y + left.z * right.z;
+        };
+        const auto delta = [origin](Vector3 position) {
+            return Vector3{position.x - origin.x, position.y - origin.y, position.z - origin.z};
+        };
+        const auto range = static_cast<float>(query.range);
+        const auto arc = static_cast<float>(query.arc);
+        const bool directional = arc < std::numbers::pi_v<float>;
+        const auto forward_length = dot(forward, forward);
+        std::vector<std::pair<float, script::LslDetector>> hits;
+
+        if ((query.type & agent) && !(query.type & scripted) && viewers) {
+            const auto avatars = viewers->agents();
+            const auto consider_avatar = [&](const ViewerAgent& avatar) {
+                const auto id = avatar.circuit->agent_id;
+                if (!avatar.root || avatar.logout_requested || viewer_is_god(id, avatar.circuit->session_id) ||
+                    (wearer && id == part.owner))
+                    return;
+                const auto diff = delta(avatar.position);
+                const auto squared = dot(diff, diff);
+                auto distance = std::sqrt(squared);
+                if (avatar.seat) {
+                    if (const auto seat = world.object(avatar.seat->parent_local)) {
+                        const auto seat_delta = delta(seat->position);
+                        distance = std::min(distance, std::sqrt(dot(seat_delta, seat_delta)));
+                    }
+                }
+                if (!(distance <= range) ||
+                    (directional && !(std::acos(dot(forward, diff) / std::sqrt(forward_length * squared)) <= arc)))
+                    return;
+                hits.emplace_back(distance, sensor_detector(id, id, avatar.active_group_id(), avatar.circuit->name(),
+                    avatar.position, avatar.velocity, avatar.rotation,
+                    avatar.velocity == Vector3{} ? agent : agent | active));
+            };
+            if (!query.key.is_zero()) {
+                if (const auto avatar = viewers->agent(query.key))
+                    consider_avatar(*avatar);
+            } else if (query.name.empty()) {
+                for (const auto& avatar : avatars)
+                    consider_avatar(avatar);
+            } else {
+                const auto lower = [](std::string_view name) {
+                    return framework::utf8(framework::invariant_lower_utf16(framework::utf16_replacing(name)));
+                };
+                const auto name = lower(query.name);
+                const auto named = std::ranges::find_if(avatars, [&](const auto& avatar) {
+                    return lower(avatar.circuit->name()) == name;
+                });
+                if (named != avatars.end())
+                    consider_avatar(*named);
+                if (query.type & username) {
+                    for (const auto& avatar : avatars) {
+                        auto user = avatar.circuit->last_name == "Resident"
+                            ? avatar.circuit->first_name.value_or("") : avatar.circuit->name();
+                        std::ranges::replace(user, ' ', '.');
+                        if (lower(user) == query.name)
+                            consider_avatar(avatar);
+                    }
+                }
+            }
+        }
+
+        if (query.type & (active | passive | scripted)) {
+            const auto consider_object = [&](const SceneObject& object) {
+                if (object.parent_id || object.is_attachment || object.id == part.id ||
+                    (!query.name.empty() && object.name != query.name))
+                    return;
+                const auto diff = delta(object.position);
+                const auto squared = dot(diff, diff);
+                if (squared > range * range)
+                    return;
+                const auto motion = object.velocity == Vector3{} ? passive : active;
+                const bool root_scripted = part_has_sensor_scripts(object.id);
+                if (!(query.type & (root_scripted ? active | scripted : motion)))
+                    return;
+                const auto magnitude = forward_length * squared;
+                if (directional && magnitude > 1e-6f) {
+                    const auto cosine = dot(forward, diff) / std::sqrt(magnitude);
+                    if (cosine < -1.f || cosine > 1.00001f || (cosine < 1.f && arc < std::acos(cosine)))
+                        return;
+                }
+                bool has_scripts = root_scripted;
+                if (!has_scripts) {
+                    for (const auto& child : world.link_children_in_membership_order(object.id)) {
+                        if (part_has_sensor_scripts(child)) {
+                            has_scripts = true;
+                            break;
+                        }
+                    }
+                }
+                hits.emplace_back(squared, sensor_detector(object.id, object.owner, object.group, object.name,
+                    object.position, object.velocity, object.rotation, motion | (has_scripts ? scripted : 0)));
+            };
+            if (!query.key.is_zero()) {
+                if (const auto object = world.object(query.key))
+                    consider_object(*object);
+            } else {
+                for (const auto& object : world.objects())
+                    consider_object(object);
+            }
+        }
+
+        if (hits.empty())
+            return {"no_sensor", {}, {}};
+        std::ranges::stable_sort(hits, {}, &decltype(hits)::value_type::first);
+        if (policies.sensor_max_results > 0 && hits.size() > static_cast<std::size_t>(policies.sensor_max_results))
+            hits.resize(static_cast<std::size_t>(policies.sensor_max_results));
+        script::LslEvent event{"sensor", {static_cast<std::int32_t>(hits.size())}, {}};
+        for (auto& [distance, detector] : hits)
+            event.detectors.push_back(std::move(detector));
+        return event;
+    }
+
+    void poll_script_sensors() {
+        std::lock_guard lock(task_data_mutex);
+        const auto now = sensor_time();
+        if (now < next_sensor_sweep)
+            return;
+        next_sensor_sweep = now + std::clamp(policies.async_command_loop_ms, 25, 250) / 1000.;
+        std::erase_if(script_sensors, [&](ScriptSensor& sensor) {
+            const auto part = world.object(sensor.part);
+            const auto script = scripts.find(sensor.item);
+            if (!part || script == scripts.end() || !script->second.instance)
+                return true;
+            if (sensor.query.interval && sensor.next >= now)
+                return false;
+            script->second.instance->post_event(sweep_script_sensor(*part, sensor.query));
+            if (!sensor.query.interval)
+                return true;
+            sensor.next = now + *sensor.query.interval;
+            return false;
+        });
+    }
+
+    void poll_script_targets() {
+        std::lock_guard lock(task_data_mutex);
+        framework::OrderedDictionary<Uuid, std::vector<const ScriptTarget*>, framework::UuidHash> by_linkset;
+        for (const auto& target : script_targets)
+            by_linkset[target.root].push_back(&target);
+
+        for (const auto& [root_id, targets] : by_linkset) {
+            const auto root = world.object(root_id);
+            if (!root)
+                continue;
+            const auto position = script_world_position(*root);
+            framework::OrderedDictionary<Uuid, bool, framework::UuidHash> missed;
+            framework::OrderedDictionary<Uuid, bool, framework::UuidHash> missed_rotations;
+            std::vector<std::pair<script::LslInstance*, script::LslEvent>> rotation_hits;
+            for (const auto* registered : targets) {
+                const auto& target = *registered;
+                const auto entry = scripts.find(target.item);
+                if (entry == scripts.end() || !entry->second.instance)
+                    continue;
+                if (const auto* desired = std::get_if<framework::Quaternion>(&target.value)) {
+                    const auto current = root->rotation;
+                    const float x = desired->x * current.x;
+                    const float y = desired->y * current.y;
+                    const float z = desired->z * current.z;
+                    const float w = desired->w * current.w;
+                    const float dot = framework::sdk_sse41_supported() ? (x + y) + (z + w) : ((x + y) + z) + w;
+                    auto angle = 2. * std::acos(static_cast<double>(dot));
+                    if (angle > std::numbers::pi)
+                        angle = 2. * std::numbers::pi - angle;
+                    if (angle <= target.tolerance) {
+                        missed_rotations.erase(target.item);
+                        rotation_hits.emplace_back(entry->second.instance.get(), script::LslEvent{"at_rot_target", {target.handle,
+                            script::LslRotation{desired->x, desired->y, desired->z, desired->w},
+                            script::LslRotation{current.x, current.y, current.z, current.w}}, {}});
+                    } else {
+                        missed_rotations[target.item] = true;
+                    }
+                    continue;
+                }
+                const auto desired = std::get<Vector3>(target.value);
+                const auto dx = desired.x - position.x;
+                const auto dy = desired.y - position.y;
+                const auto dz = desired.z - position.z;
+                if (dx * dx + dy * dy + dz * dz <= target.tolerance) {
+                    missed.erase(target.item);
+                    entry->second.instance->post_event({"at_target", {target.handle,
+                        framework::Vector3d{desired.x, desired.y, desired.z},
+                        framework::Vector3d{position.x, position.y, position.z}}, {}});
+                } else {
+                    missed[target.item] = true;
+                }
+            }
+            for (const auto& [item, _] : missed)
+                scripts.at(item).instance->post_event({"not_at_target", {}, {}});
+            for (auto& [instance, event] : rotation_hits)
+                instance->post_event(std::move(event));
+            for (const auto& [item, _] : missed_rotations)
+                scripts.at(item).instance->post_event({"not_at_rot_target", {}, {}});
+        }
     }
 
     std::optional<script::LslCheckpoint> snapshot_script_checkpoint(Uuid part, Uuid item) const {
@@ -20648,6 +22716,9 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             for (const auto& listener : script_listeners)
                 if (listener.item == item && listener.part == part)
                     checkpoint->listeners.push_back(listener);
+            for (const auto& sensor : script_sensors)
+                if (sensor.item == item && sensor.part == part)
+                    checkpoint->sensors.push_back(sensor.query);
         }
         return checkpoint;
     }
@@ -21280,6 +23351,20 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         }
     }
 
+    void notify_attachments_of_local_teleport(std::uint32_t avatar_local_id) {
+        if (!scripts_enabled())
+            return;
+
+        constexpr std::int32_t changed_teleport = 512;
+        std::lock_guard lock(task_data_mutex);
+        for (const auto& attachment : world.attachments(avatar_local_id)) {
+            for (auto& [id, script] : scripts) {
+                if (script.item.parent == attachment.id && script.instance)
+                    script.instance->post_event({"changed", {changed_teleport}, {}});
+            }
+        }
+    }
+
     void post_collision_to_part(Uuid destination, const script::LslEvent& event) {
         const auto target = task_parts.find(destination);
         std::optional<script::LslEvent> filtered;
@@ -21296,6 +23381,77 @@ struct RegionRuntime::State : SceneAdmissionBackend,
             if (entry.instance && entry.item.parent == destination)
                 entry.instance->post_event(filtered ? *filtered : event);
         }
+    }
+
+    std::array<Vector3, 16 * 16> wind_cells{};
+    std::optional<std::chrono::steady_clock::time_point> last_wind_update;
+    std::mutex wind_config_mutex;
+
+    void publish_wind() {
+        const auto clients = viewers->agents();
+        if (clients.empty())
+            return;
+        try {
+            auto layer = wind_layer_packet(wind_cells);
+            auto packet = lludp::make_packet("LayerData");
+            packet.zerocoded = true;
+            packet.block("LayerID")["Type"] = std::uint64_t(layer.type);
+            packet.block("LayerData")["Data"] = std::move(layer.data);
+            for (const auto& client : clients)
+                if (client.connected)
+                    viewers->transport().enqueue_if_session(client.circuit->agent_id, client.circuit->session_id,
+                                                            packet, ThrottleOutPacketType::Wind);
+        } catch (const std::invalid_argument& failure) {
+            error(std::string("Could not encode wind layer: ") + failure.what());
+        }
+    }
+
+    void generate_wind(const RegionPolicies::Wind& wind) {
+        using Model = RegionPolicies::Wind::Model;
+        if (wind.model == Model::Disabled) {
+            wind_cells.fill({});
+            return;
+        }
+        if (wind.model == Model::SimpleRandom) {
+            static thread_local std::mt19937 generator(std::random_device{}());
+            std::uniform_real_distribution<double> sample(-1.0, 1.0);
+            for (auto& cell : wind_cells)
+                cell = {static_cast<float>(sample(generator)) * wind.strength,
+                        static_cast<float>(sample(generator)) * wind.strength, 0.f};
+            return;
+        }
+
+        const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count() % 60;
+        const double theta = (static_cast<float>(seconds) / 86400.f) * (2 * std::numbers::pi) * wind.rate;
+        const double angle_offset = std::sin(theta) * std::sin(theta * 2) * std::sin(theta * 9) * std::cos(theta * 4);
+        constexpr double radians_per_degree = std::numbers::pi / 180.;
+        const double average_angle = wind.average_direction * radians_per_degree;
+        const double angle_variation = wind.direction_variation * radians_per_degree;
+        const double angle = average_angle + angle_variation * angle_offset;
+        const double speed_offset = std::sin(theta) * std::sin(theta * 4) + std::sin(theta * 13) / 3.;
+        const auto speed = static_cast<float>(std::abs(wind.average_strength + wind.strength_variation * speed_offset));
+        const auto x = static_cast<float>(std::cos(angle));
+        const auto y = static_cast<float>(std::sin(angle));
+        const auto length = std::sqrt(x * x + y * y);
+        wind_cells.fill({x / length * speed, y / length * speed, 0.f});
+    }
+
+    void update_wind() {
+        const auto wind = [&] {
+            std::lock_guard lock(wind_config_mutex);
+            return policies.wind;
+        }();
+        if (wind.model == RegionPolicies::Wind::Model::Disabled)
+            return;
+        const auto now = std::chrono::steady_clock::now();
+        const auto interval = std::chrono::duration<double>(
+            static_cast<double>(policies.scene_frame_time) * wind.update_frames);
+        if (last_wind_update && now - *last_wind_update < interval)
+            return;
+        last_wind_update = now;
+        generate_wind(wind);
+        publish_wind();
     }
 
     void send_avatar_health(Uuid agent, Uuid session, float health) {
@@ -21604,25 +23760,46 @@ struct RegionRuntime::State : SceneAdmissionBackend,
         }
     }
 
+    void remove_estate_disabled_scripts() {
+        if (!estate_script_removal_pending.exchange(false))
+            return;
+        std::lock_guard lock(task_data_mutex);
+        for (auto& [item, entry] : scripts) {
+            if (!entry.instance)
+                continue;
+            const auto part = entry.item.parent;
+            replace_script_instance(entry);
+            if (world.object(part)) {
+                script_events(part).remove(item);
+                refresh_script_flags(part);
+                restored_scripts.push_back({part, item, changed_region_start, {}});
+            }
+        }
+    }
+
     void run_scripts() {
         const bool execute_scripts = scripts_enabled();
         if (execute_scripts) {
             std::lock_guard lock(task_data_mutex);
             const auto pending = std::exchange(restored_scripts, {});
             for (const auto& [part, item, changed, attached_avatar] : pending) {
-                const auto diagnostics = compile_task(part, item);
+                const int state_source = changed == changed_region_start ? 0 : 1;
+                const auto diagnostics = compile_task(part, item, {}, state_source);
                 for (const auto& diagnostic : diagnostics)
                     error("Restored native script " + item.str() + ": " + diagnostic);
                 if ((changed || !attached_avatar.is_zero()) && diagnostics.empty()) {
                     const auto entry = scripts.find(item);
-                    if (entry != scripts.end() && entry->second.instance && entry->second.instance->running()) {
-                        if (changed)
-                            entry->second.instance->post_event({"changed", {changed}, {}});
+                    if (entry != scripts.end() && entry->second.instance) {
                         if (!attached_avatar.is_zero())
+                            entry->second.post_rez(0);
+                        if (changed && entry->second.instance->running())
+                            entry->second.instance->post_event({"changed", {changed}, {}});
+                        if (!attached_avatar.is_zero() && entry->second.instance->running())
                             entry->second.instance->post_event({"attach", {attached_avatar.str()}, {}});
                     }
                 }
                 incoming_script_checkpoints.erase({part, item});
+                incoming_managed_script_states.erase({part, item});
             }
             for (const auto& transfer : std::exchange(incoming_controls, {}))
                 restore_script_controls(transfer);
@@ -21888,22 +24065,26 @@ struct RegionRuntime::State : SceneAdmissionBackend,
                 capability_runtime->client_closed(a.circuit->agent_id);
             capability_runtime->capabilities().remove_circuit_caps(*a.circuit, current);
         }
-        bool preserve_session;
+        bool departed_to_another_grid;
         {
             std::lock_guard lock(teleport_mutex);
-            preserve_session = a.crossed_child ||
-                departing_foreign_sessions.erase(a.circuit->session_id) != 0;
+            departed_to_another_grid = departing_foreign_sessions.erase(a.circuit->session_id) != 0;
         }
+        const bool preserve_session = a.crossed_child;
         bool logged_out = !preserve_session;
         if (!preserve_session && a.root)
             logged_out = sessions.logout_from_region(a.circuit->session_id, descriptor.id);
         else if (!preserve_session)
             sessions.logout(a.circuit->session_id);
-        if (running && logged_out && a.root && policies.friend_status_changed)
+        if (running && logged_out && a.root && !departed_to_another_grid && policies.friend_status_changed)
             policies.friend_status_changed(a.circuit->agent_id, a.circuit->session_id, false);
-        if ((logged_out || (!preserve_session && a.root && a.circuit->verified_foreign_login)) &&
-            policies.logged_out)
+        if (departed_to_another_grid && a.root) {
+            if (policies.departed_to_another_grid)
+                policies.departed_to_another_grid(a);
+        } else if ((logged_out || (!preserve_session && a.root && a.circuit->verified_foreign_login)) &&
+                   policies.logged_out) {
             policies.logged_out(a);
+        }
         for (auto& other : viewers->agents())
             if (other.root) {
                 auto p = lludp::make_packet("KillObject");
@@ -21951,6 +24132,11 @@ UdpEndpoint RegionRuntime::start(std::shared_ptr<server::RegistryCapabilityListe
     s->plain_script_registry = std::move(plain_script_listener);
     if (!s->registry)
         throw std::invalid_argument("Region capability listener required");
+    {
+        std::lock_guard lock(s->wind_config_mutex);
+        s->last_wind_update.reset();
+        s->generate_wind(s->policies.wind);
+    }
     {
         std::lock_guard lock(s->snapshot_fragments_mutex);
         s->snapshot_fragments_directory.clear();
@@ -22091,12 +24277,40 @@ UdpEndpoint RegionRuntime::start(std::shared_ptr<server::RegistryCapabilityListe
         const auto state = weak.lock();
         return state && state->agent_transfer_pending(session);
     };
+    options.movement_frozen = [weak](const ViewerAgent& avatar) {
+        const auto state = weak.lock();
+        return state && state->movement_frozen(avatar);
+    };
     options.local_seat_exit = [weak](const ViewerAgent& before, const ViewerAgent& after) {
         if (const auto state = weak.lock())
             state->finish_local_seat_exit(before, after);
     };
-    options.prepare_root = [weak](ViewerAgent& a) {
+    options.route_local_teleport = [weak](const ViewerAgent& avatar, Vector3 target, std::uint64_t flags) {
+        const auto state = weak.lock();
+        return state ? state->route_local_teleport(avatar, target, flags) : std::optional{target};
+    };
+    options.local_teleport_complete = [weak](const ViewerAgent& avatar, bool arrived) {
+        if (const auto state = weak.lock()) {
+            const auto physics = state->viewer_physics.load();
+            if (arrived) {
+                if (physics)
+                    physics->teleported(state->physics_agent(avatar));
+                for (const auto& viewer : state->viewers->agents())
+                    if (viewer.root)
+                        state->send_avatar(avatar, viewer);
+            } else {
+                if (physics && !avatar.seat && !avatar.ground_sitting)
+                    physics->teleport_refused(avatar);
+                state->send_parcel_access_alert(avatar, "Can't teleport closer to destination");
+            }
+            state->notify_attachments_of_local_teleport(avatar.local_id);
+        }
+    };
+    options.prepare_root = [weak](ViewerAgent& a, bool local_teleport) {
         if (auto v = weak.lock()) {
+            const bool use_default_landing = !a.seat && a.position == Vector3{128.f, 128.f, 22.5f};
+            if (use_default_landing)
+                a.position = v->policies.default_landing;
             if (!a.root && !a.seat && a.circuit->teleport_flags != 0)
                 v->route_root_arrival(a);
             auto appearance = a.appearance();
@@ -22114,10 +24328,18 @@ UdpEndpoint RegionRuntime::start(std::shared_ptr<server::RegistryCapabilityListe
             }
             if (a.seat)
                 return;
-            a.position =
-                root_landing_position(a.position, v->descriptor.size_x, v->descriptor.size_y,
-                                      appearance ? appearance->avatar_height : 0,
-                                      [&](float x, float y) { return v->world.terrain().height_at(x, y); });
+            const auto ground = [&](float x, float y) { return v->world.terrain().height_at(x, y); };
+            const auto width = v->descriptor.size_x;
+            const auto height = v->descriptor.size_y;
+            if (local_teleport)
+                a.position = local_teleport_position(
+                    a.position, width, height, appearance ? std::optional{appearance->avatar_height} : std::nullopt,
+                    ground);
+            else
+                a.position = root_landing_position(
+                    a.position, width, height, appearance ? appearance->avatar_height : 0, ground);
+            if (local_teleport || use_default_landing)
+                a.camera_position = a.position;
         }
     };
     s->viewers = std::make_unique<ViewerRegion>(
@@ -22152,7 +24374,7 @@ UdpEndpoint RegionRuntime::start(std::shared_ptr<server::RegistryCapabilityListe
                             v->capability_runtime->client_closed(c->agent_id);
                         v->capability_runtime->capabilities().remove_circuit_caps(*c, current);
                     }
-                    if (v->policies.logged_out) {
+                    if (current && v->policies.logged_out) {
                         ViewerAgent pending;
                         pending.circuit = c;
                         pending.position = c->start_position;
@@ -22464,6 +24686,7 @@ void RegionRuntime::poll(double host_sleep_ms) {
         state.stats_agent_ns.fetch_add(static_cast<std::int64_t>(sample.agent_ms * 1000000.),
                                        std::memory_order_relaxed);
     }
+    state.remove_estate_disabled_scripts();
     state.run_inventory();
     state.finish_avatar_crossings(false);
     state.finish_object_crossings(false);
@@ -22471,6 +24694,11 @@ void RegionRuntime::poll(double host_sleep_ms) {
     state.run_inventory_scripts();
     state.deliver_script_http_events();
     const auto reparented = state.viewers->refresh_seated_positions();
+    state.update_wind();
+    if (state.scripts_enabled()) {
+        state.poll_script_targets();
+        state.poll_script_sensors();
+    }
     state.run_scripts();
     state.publish_impact_sounds(physics_sample.prim_collision_reports);
     state.publish_prim_collisions(physics_sample.prim_collision_reports);
@@ -22480,6 +24708,7 @@ void RegionRuntime::poll(double host_sleep_ms) {
     state.run_land_stats_requests();
     const auto scene_updates_start = std::chrono::steady_clock::now();
     state.world.expire_temporary_objects(scene_updates_start);
+    state.world.expire_particle_systems(scene_updates_start);
     state.run_parcel_return_requests();
     state.return_expired_parcel_objects(scene_updates_start);
     state.refresh_avatar_parcel_views();
@@ -22525,6 +24754,14 @@ void RegionRuntime::stop(const std::function<void()>& save_scene) {
         }
     };
     attempt([&] { s->finish_avatar_crossings(true); });
+    attempt([&] {
+        if (s->policies.script_remote_data_channels)
+            s->policies.script_remote_data_channels->cancel_region(s->descriptor.id);
+    });
+    attempt([&] {
+        if (s->policies.script_outbound_http)
+            s->policies.script_outbound_http->stop_all();
+    });
     attempt([&] {
         if (s->socket)
             s->socket->stop();
@@ -22601,7 +24838,11 @@ void RegionRuntime::stop(const std::function<void()>& save_scene) {
     }
     s->scripts.clear();
     s->script_listeners.clear();
+    s->script_targets.clear();
+    s->script_sensors.clear();
+    s->next_sensor_sweep = 0.;
     s->incoming_script_checkpoints.clear();
+    s->incoming_managed_script_states.clear();
     s->incoming_controls.clear();
     s->captured_controls.clear();
     s->viewer_script_controls.clear();
@@ -22664,7 +24905,7 @@ bool RegionRuntime::deliver_instant_message(const RegionInstantMessage& message)
     return state_->deliver_instant_message(message);
 }
 bool RegionRuntime::receive_grid_moderation(const RegionInstantMessage& message) {
-    if (message.bucket.empty())
+    if (!state_->running || !state_->viewers || message.bucket.empty())
         return false;
     static const Uuid service_god("6571e388-6218-4574-87db-f9379718315e");
     if (message.sender != service_god) {
@@ -22693,6 +24934,19 @@ bool RegionRuntime::notify_friend_rights(Uuid recipient, Uuid principal, std::in
 }
 bool RegionRuntime::notify_friend_termination(Uuid recipient, Uuid former_friend) {
     return state_->notify_friend_termination(recipient, former_friend);
+}
+bool RegionRuntime::notify_inventory_item(const services::InventoryItem& item) {
+    const auto state = state_;
+    if (!state->running || !state->viewers || !state->capability_runtime)
+        return false;
+    const auto viewer = state->viewers->agent(item.owner);
+    if (!viewer || !viewer->root || viewer->logout_requested)
+        return false;
+    const auto queue = state->capability_runtime->event_queue();
+    if (!queue)
+        return false;
+    queue->bulk_inventory(&item, item.owner);
+    return true;
 }
 bool RegionRuntime::alert_viewer(Uuid recipient, const std::string& message) {
     auto state = state_;
@@ -23134,6 +25388,108 @@ network::Value RegionRuntime::land_data(std::uint64_t handle, std::uint32_t x, s
 World& RegionRuntime::world() {
     return state_->world;
 }
+void RegionRuntime::gather_region_asset_references(UuidGatherer& gatherer) const {
+    {
+        std::lock_guard lock(state_->terrain_texture_mutex);
+        for (const auto texture : state_->terrain_texture_assets)
+            gatherer.add_gathered(texture, 0);
+        for (const auto material : state_->terrain_pbr_materials)
+            gatherer.add_gathered(material, 0);
+    }
+    {
+        std::lock_guard lock(state_->region_map_image_mutex);
+        gatherer.add_gathered(state_->generated_terrain_map.value_or(state_->descriptor.terrain_image), 0);
+    }
+
+    const auto parcels = state_->policies.list_parcels ? state_->policies.list_parcels()
+                                                      : std::vector<std::shared_ptr<const ScriptParcel>>{};
+    std::vector<std::shared_ptr<const Value>> environments;
+    {
+        std::lock_guard lock(state_->environment_mutex);
+        if (state_->environment_day.settings)
+            environments.push_back(state_->environment_day.settings);
+        for (const auto& parcel : parcels) {
+            if (!parcel)
+                continue;
+            const auto environment = state_->parcel_environment(*parcel);
+            if (environment && environment->settings)
+                environments.push_back(environment->settings);
+        }
+    }
+    auto& assets = gatherer.state()->gathered;
+    const auto add_textures = [&](const Value& frame, std::initializer_list<const char*> keys) {
+        for (const auto* key : keys) {
+            const auto id = osd_uuid(frame.get(key));
+            if (!id.is_zero())
+                assets[id] = 0;
+        }
+    };
+    for (const auto& environment : environments) {
+        for (const auto& [name, frame] : environment->get("day_cycle").get("frames").map) {
+            const auto type = osd_string(frame.get("type"));
+            if (type == "water")
+                add_textures(frame, {"normal_map", "transparent_texture"});
+            else if (type == "sky")
+                add_textures(frame, {"bloom_id", "cloud_id", "halo_id", "moon_id", "rainbow_id", "sun_id"});
+        }
+    }
+
+    if (state_->viewers) {
+        std::lock_guard lock(state_->appearance_mutex);
+        for (const auto& viewer : state_->viewers->agents()) {
+            if (!viewer.root)
+                continue;
+            const auto appearance = viewer.appearance();
+            if (appearance && appearance->texture)
+                gather_baked_textures(gatherer, appearance->texture->faces);
+        }
+    }
+}
+std::vector<std::shared_ptr<GatherObject>> RegionRuntime::snapshot_asset_objects() const {
+    std::vector<ObjectAssetPart> parts;
+    {
+        std::lock_guard lock(state_->task_data_mutex);
+        auto objects = state_->world.objects();
+        parts.reserve(objects.size());
+        for (auto& object : objects) {
+            auto& part = parts.emplace_back(ObjectAssetPart{std::move(object), 0, {}});
+            const auto found = state_->task_parts.find(part.object.id);
+            if (found == state_->task_parts.end() || !found->second.inventory)
+                continue;
+            for (const auto& item : found->second.inventory->items())
+                part.inventory.push_back(item->clone());
+        }
+    }
+
+    std::vector<ObjectAssetLinkset> objects;
+    std::map<std::uint32_t, std::size_t> roots;
+    std::vector<ObjectAssetPart> children;
+    for (auto& part : parts) {
+        if (part.object.parent_id != 0 && !part.object.is_attachment) {
+            children.push_back(std::move(part));
+            continue;
+        }
+        roots.emplace(part.object.local_id, objects.size());
+        objects.emplace_back().parts.push_back(std::move(part));
+    }
+    for (auto& part : children) {
+        const auto root = roots.find(part.object.parent_id);
+        if (root != roots.end())
+            objects[root->second].parts.push_back(std::move(part));
+        else
+            objects.emplace_back().parts.push_back(std::move(part));
+    }
+
+    std::vector<std::shared_ptr<GatherObject>> result;
+    result.reserve(objects.size());
+    for (auto& object : objects) {
+        std::ranges::sort(object.parts.begin() + 1, object.parts.end(), {}, [](const auto& part) {
+            return part.object.link_order;
+        });
+        result.push_back(gather_object_snapshot(std::move(object)));
+    }
+    return result;
+}
 ViewerRegion& RegionRuntime::viewers() {
     if (!state_->viewers)
         throw std::logic_error("Region not started");
@@ -23244,42 +25600,61 @@ public:
             if (!try_parse_sdk_uuid(state.attribute("UUID").value(), item_id) || item_id.is_zero() ||
                 !try_parse_sdk_uuid(state.attribute("Asset").value(), asset_id) || asset_id.is_zero())
                 continue;
-            const std::string_view running = state.child("ScriptState").child_value("Running");
+            const auto script_state = state.child("ScriptState");
+            const std::string_view running = script_state.child_value("Running");
             const bool stopped = running == "False" || running == "false" || running == "0";
             if (!stopped && running != "True" && running != "true" && running != "1")
                 continue;
+
+            const std::string_view engine = state.attribute("Engine").value();
             for (auto& part : linkset.parts) {
                 for (auto& item : part.inventory) {
-                    if (item.inventory_type == 10 && item.item_id == item_id && item.asset_id == asset_id) {
-                        item.script_running = !stopped;
-                        checkpoints.erase(item_id);
-                        if (std::string_view(state.attribute("Engine").value()) != "NativeLSL")
-                            continue;
-                        const std::string_view encoded = state.child("ScriptState").child_value("NativeCheckpoint");
-                        if (encoded.empty() || encoded.size() > 6 * 1024 * 1024)
-                            continue;
-                        Value binary;
-                        binary.kind = Value::Kind::Binary;
-                        binary.text = encoded;
-                        try {
-                            auto saved = script::decode_lsl_checkpoint(*osd_binary(binary));
-                            if (!saved || saved->running != item.script_running)
-                                continue;
-                            auto& checkpoint = checkpoints.insert_or_assign(item_id, std::move(*saved)).first->second;
-                            const std::string_view listeners = state.child("ScriptState").child_value("NativeListeners");
-                            if (!listeners.empty() && listeners.size() <= 6 * 1024 * 1024) {
-                                Value listener_data;
-                                listener_data.kind = Value::Kind::Binary;
-                                listener_data.text = listeners;
-                                if (auto decoded = script::decode_lsl_listeners(*osd_binary(listener_data)))
-                                    checkpoint.listeners = std::move(*decoded);
-                            }
-                        } catch (const std::exception&) {
-                            // A malformed extension leaves the accepted VM checkpoint intact.
-                        }
+                    if (item.inventory_type != 10 || item.item_id != item_id || item.asset_id != asset_id)
+                        continue;
+
+                    checkpoints.erase(item_id);
+                    if (engine == "YEngine") {
+                        auto saved = read_managed_script_state(script_state);
+                        if (saved.source_hash.empty())
+                            item.script_running = !stopped;
+                        part.managed_script_states.insert_or_assign(item_id, std::move(saved));
+                        continue;
                     }
+
+                    item.script_running = !stopped;
+                    if (engine == "NativeLSL")
+                        restore_native_checkpoint(item, script_state);
                 }
             }
+        }
+    }
+
+private:
+    void restore_native_checkpoint(const TaskInventoryItem& item, pugi::xml_node script_state) {
+        constexpr std::size_t max_encoded_size = 6 * 1024 * 1024;
+        const std::string_view encoded = script_state.child_value("NativeCheckpoint");
+        if (encoded.empty() || encoded.size() > max_encoded_size)
+            return;
+
+        Value binary;
+        binary.kind = Value::Kind::Binary;
+        binary.text = encoded;
+        try {
+            auto saved = script::decode_lsl_checkpoint(*osd_binary(binary));
+            if (!saved || saved->running != item.script_running)
+                return;
+            auto& checkpoint = checkpoints.insert_or_assign(item.item_id, std::move(*saved)).first->second;
+
+            const std::string_view listeners = script_state.child_value("NativeListeners");
+            if (listeners.empty() || listeners.size() > max_encoded_size)
+                return;
+            Value listener_data;
+            listener_data.kind = Value::Kind::Binary;
+            listener_data.text = listeners;
+            if (auto decoded = script::decode_lsl_listeners(*osd_binary(listener_data)))
+                checkpoint.listeners = std::move(*decoded);
+        } catch (const std::exception&) {
+            // A malformed listener extension leaves the accepted VM checkpoint intact.
         }
     }
 };
@@ -23406,9 +25781,9 @@ std::shared_ptr<AgentTransferScene> RegionRuntime::get_scene(const Uuid& region)
     return std::make_shared<CrossingScene>(state_->policies.allow_script_crossing);
 }
 bool RegionRuntime::create_object(GridRegion* destination, const Vector3& position,
-                                  std::shared_ptr<SimulationObject> object, bool) {
+                                  std::shared_ptr<SimulationObject> object, bool local_call) {
     auto& state = *state_;
-    const auto transfer = std::dynamic_pointer_cast<CrossingObject>(object);
+    auto transfer = std::dynamic_pointer_cast<CrossingObject>(object);
     if (!destination || !transfer || transfer->linkset.parts.empty() ||
         destination->id != state.descriptor.id || !state.running)
         return false;
@@ -23425,6 +25800,11 @@ bool RegionRuntime::create_object(GridRegion* destination, const Vector3& positi
     if (!state.object_can_enter(root, point, true, static_cast<std::int32_t>(transfer->linkset.parts.size())))
         return false;
 
+    const auto root_id = root.id;
+    // In-process transfers already carry typed script checkpoints and listener state.
+    if (local_call)
+        transfer = std::make_shared<CrossingObject>(*transfer);
+
     std::vector<SceneObject> parts;
     parts.reserve(transfer->linkset.parts.size());
     for (const auto& part : transfer->linkset.parts)
@@ -23434,7 +25814,7 @@ bool RegionRuntime::create_object(GridRegion* destination, const Vector3& positi
         return false;
     constexpr std::int32_t changed_region = 256;
     state.restore_crossing_inventory(*transfer, changed_region);
-    state.world.publish_added_linkset(root.id);
+    state.world.publish_added_linkset(root_id);
     return true;
 }
 
@@ -23451,6 +25831,9 @@ void RegionRuntime::State::restore_crossing_inventory(const CrossingObject& tran
         registry.serial(part.inventory_serial);
         for (const auto& item : inventory)
             if (item->inventory_type == 10) {
+                if (const auto plugins = part.managed_script_states.find(item->item_id); plugins != part.managed_script_states.end())
+                    incoming_managed_script_states.insert_or_assign(
+                        std::pair{part.object.id, item->item_id}, plugins->second);
                 if (const auto saved = transfer.checkpoints.find(item->item_id);
                     saved != transfer.checkpoints.end())
                     incoming_script_checkpoints.insert_or_assign(
@@ -23578,15 +25961,22 @@ void RegionRuntime::restore_task_inventory(
     for (const auto& item : items) {
         if (!item || item->inventory_type != 10 || inventory.find(item->item_id) != item)
             continue;
+        bool has_native_checkpoint = false;
         if (const auto saved = script_states.find(item->item_id); saved != script_states.end()) {
             if (auto checkpoint = script::decode_lsl_checkpoint(saved->second)) {
+                has_native_checkpoint = true;
                 item->script_running = checkpoint->running;
                 state_->incoming_script_checkpoints.insert_or_assign({part, item->item_id}, std::move(*checkpoint));
             }
         }
-        constexpr std::int32_t changed_region_start = 1024;
+        if (source == TaskInventoryRestoreSource::RegionStart && !has_native_checkpoint &&
+            !state_->policies.yengine_state_root.empty()) {
+            const auto directory = state_->policies.yengine_state_root / "Yengine" / state_->descriptor.id.str();
+            if (auto saved = read_yengine_state_file(directory, item->item_id, item->asset_id))
+                state_->incoming_managed_script_states.insert_or_assign({part, item->item_id}, std::move(*saved));
+        }
         state_->restored_scripts.push_back(
-            {part, item->item_id, source == TaskInventoryRestoreSource::RegionStart ? changed_region_start : 0});
+            {part, item->item_id, source == TaskInventoryRestoreSource::RegionStart ? State::changed_region_start : 0});
     }
 }
 
@@ -23624,6 +26014,55 @@ RegionRuntime::snapshot_task_inventory(Uuid part) const {
         result.push_back(*item);
     return result;
 }
+std::string RegionRuntime::wind_console_command(std::span<const std::string> arguments) {
+    if (arguments.size() < 3 || arguments.size() > 4)
+        return "Usage: wind <plugin> <param> [value]";
+    auto& state = *state_;
+    std::lock_guard lock(state.wind_config_mutex);
+    auto& wind = state.policies.wind;
+    const auto& plugin = arguments[1];
+    const auto& parameter = arguments[2];
+    if (plugin == "base" && parameter == "wind_update_rate") {
+        if (arguments.size() != 4)
+            return "Invalid parameters to change parameters for Wind module base, usage: wind base <parameter> <value>";
+        unsigned int frames = 0;
+        const auto& input = arguments[3];
+        if (!framework::try_parse_unsigned_integer(input, frames) ||
+            frames == 0 || frames > static_cast<unsigned int>(std::numeric_limits<int>::max()))
+            return "Invalid value " + input + " specified for " + parameter;
+        wind.update_frames = static_cast<int>(frames);
+        return {};
+    }
+    float* value = nullptr;
+    if (plugin == "SimpleRandomWind" && parameter == "strength")
+        value = &wind.strength;
+    if (plugin == "ConfigurableWind") {
+        using Wind = RegionPolicies::Wind;
+        constexpr std::pair<std::string_view, float Wind::*> parameters[]{
+            {"avgStrength", &Wind::average_strength}, {"avgDirection", &Wind::average_direction},
+            {"varStrength", &Wind::strength_variation}, {"varDirection", &Wind::direction_variation},
+            {"rateChange", &Wind::rate},
+        };
+        for (const auto& [name, field] : parameters)
+            if (name == parameter)
+                value = &(wind.*field);
+    }
+    if (!value)
+        return "Unknown " + plugin + " parameter " + parameter;
+    std::string output;
+    if (arguments.size() == 4) {
+        float parsed = 0.f;
+        if (!framework::parse_invariant_float(arguments[3], parsed)) {
+            output = "Invalid value " + arguments[3] + "\n";
+            parsed = 0.f;
+        }
+        *value = parsed;
+    }
+    std::ostringstream formatted;
+    formatted << *value;
+    return output + parameter + (arguments.size() == 4 ? " set to " : " : ") + formatted.str();
+}
+
 void RegionRuntime::set_scripts_enabled(bool enabled) {
     std::lock_guard lock(state_->estate_region_settings_mutex);
     constexpr std::uint32_t skip_scripts = 0x2000u;

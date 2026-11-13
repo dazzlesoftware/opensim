@@ -64,6 +64,13 @@ public:
                        const std::shared_ptr<FlotsamCacheLifecycle>&,
                        const std::shared_ptr<FlotsamConsoleBackend>&,
                        const std::shared_ptr<FlotsamConsoleOutput>&);
+    static void status(const std::shared_ptr<FlotsamInstanceConfig>&,
+                       const std::shared_ptr<FlotsamCacheLifecycle>&,
+                       const std::shared_ptr<FlotsamConsoleBackend>&,
+                       const std::shared_ptr<FlotsamConsoleOutput>&);
+    static void touch_assets(const std::shared_ptr<FlotsamCacheLifecycle>&,
+                             const std::shared_ptr<FlotsamConsoleBackend>&,
+                             const std::shared_ptr<FlotsamConsoleOutput>&);
 
 private:
     std::shared_ptr<FlotsamInstanceConfig> config_;

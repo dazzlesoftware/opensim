@@ -23,8 +23,12 @@ String star_literal();
 String translate_win32_expression(const String& expression);
 // Empty spans also represent nullable .NET strings converted to ReadOnlySpan.
 // Both methods operate on raw UTF16, retaining NUL and invalid surrogates.
-bool matches_win32_expression(std::u16string_view expression,std::u16string_view name,bool ignore_case,const CasingBackend&);
-bool matches_simple_expression(std::u16string_view expression,std::u16string_view name,bool ignore_case,const CasingBackend&);
-bool matches_win32_expression(std::u16string_view expression,std::u16string_view name,bool ignore_case=true,CasingMode mode=CasingMode::Normal);
-bool matches_simple_expression(std::u16string_view expression,std::u16string_view name,bool ignore_case=true,CasingMode mode=CasingMode::Normal);
+bool matches_win32_expression(std::u16string_view expression, std::u16string_view name, bool ignore_case,
+                              const CasingBackend&);
+bool matches_simple_expression(std::u16string_view expression, std::u16string_view name, bool ignore_case,
+                               const CasingBackend&);
+bool matches_win32_expression(std::u16string_view expression, std::u16string_view name,
+                              bool ignore_case = true, CasingMode mode = CasingMode::Normal);
+bool matches_simple_expression(std::u16string_view expression, std::u16string_view name,
+                               bool ignore_case = true, CasingMode mode = CasingMode::Normal);
 }

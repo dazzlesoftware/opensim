@@ -1,8 +1,11 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/scene/map_tile.hpp"
+#include "opensim/framework/asset_base.hpp"
+#include "opensim/framework/primitive_base_shape.hpp"
 #include "opensim/framework/sdk_quaternion.hpp"
 #include "opensim/framework/texture_entry.hpp"
+#include "opensim/physics/mesh_asset.hpp"
 #include "opensim/scene/world.hpp"
 
 #include <cmath>
@@ -105,7 +108,7 @@ PrimTransform prim_transform(const SceneObject& part, const SceneObject* root) {
     return {position, part.scale, rotation};
 }
 
-std::uint32_t cylinder_segments(const PrimTransform& transform, const MapBitmap& image) {
+physics::AssetMeshLod projected_lod(const PrimTransform& transform, const MapBitmap& image) {
     const auto x = framework::sdk_rotate_vector({transform.scale.x, 0.f, 0.f}, transform.rotation);
     const auto y = framework::sdk_rotate_vector({0.f, transform.scale.y, 0.f}, transform.rotation);
     const auto z = framework::sdk_rotate_vector({0.f, 0.f, transform.scale.z}, transform.rotation);
@@ -114,12 +117,27 @@ std::uint32_t cylinder_segments(const PrimTransform& transform, const MapBitmap&
     const float viewport_width = static_cast<float>(image.width);
     const float viewport_height = static_cast<float>(image.height);
     const float screen_factor = 4.f * (width / viewport_width) * (height / viewport_height);
-    // Warp3D chooses LOD 0 at 2^16 and LOD 1 at 2^12. Both higher LODs use 24 sides.
     if (screen_factor >= 65536.f)
-        return 6;
+        return physics::AssetMeshLod::Lowest;
     if (screen_factor >= 4096.f)
-        return 12;
-    return 24;
+        return physics::AssetMeshLod::Low;
+    if (screen_factor >= 256.f)
+        return physics::AssetMeshLod::Medium;
+    return physics::AssetMeshLod::High;
+}
+
+WarpTerrainMesh transform_render_face(const physics::AssetRenderFace& face, const PrimTransform& transform) {
+    WarpTerrainMesh result;
+    result.vertices.reserve(face.geometry.vertices.size());
+    for (std::size_t index = 0; index < face.geometry.vertices.size(); ++index) {
+        const auto uv = face.texcoords.empty() ? std::array{0.f, 0.f} : face.texcoords[index];
+        result.vertices.push_back(transform.vertex(face.geometry.vertices[index], uv[0], uv[1]));
+    }
+    const auto& indices = face.geometry.indices;
+    result.triangles.reserve(indices.size() / 3);
+    for (std::size_t index = 0; index < indices.size(); index += 3)
+        result.triangles.push_back({indices[index], indices[index + 1], indices[index + 2]});
+    return result;
 }
 
 struct CylinderVertex {
@@ -236,7 +254,8 @@ std::array<WarpTerrainMesh, 5> build_warp_prism_faces(const SceneObject& part, c
 
 void draw_warp_prims(WarpMapRaster& raster, std::span<const SceneObject> objects,
                      const std::function<MapBitmap(const framework::Uuid&)>& load_texture,
-                     bool texture_prims, float minimum_height, float maximum_height) {
+                     bool texture_prims, float minimum_height, float maximum_height,
+                     const std::function<std::shared_ptr<framework::AssetBase>(framework::Uuid)>& load_mesh) {
     std::map<std::uint32_t, const SceneObject*> roots;
     for (const auto& object : objects)
         if (!object.parent_id && !object.is_attachment)
@@ -264,8 +283,7 @@ void draw_warp_prims(WarpMapRaster& raster, std::span<const SceneObject> objects
             shape.path_scale_y != full_path_scale || shape.path_shear_x || shape.path_shear_y ||
             shape.path_twist_begin || shape.path_twist || shape.path_taper_x || shape.path_taper_y ||
             shape.path_skew || shape.path_radius_offset || shape.path_revolutions;
-        if (part.is_attachment || shape.pcode != primitive_pcode || shape.path_curve != linear_path ||
-            !supported_profile || cut_or_hollow || deformed_path)
+        if (part.is_attachment || shape.pcode != primitive_pcode)
             continue;
 
         const SceneObject* root = nullptr;
@@ -281,19 +299,52 @@ void draw_warp_prims(WarpMapRaster& raster, std::span<const SceneObject> objects
             continue;
 
         try {
-            // The managed renderer falls back to the regular shape mesher when
-            // it has no decoded mesh or sculpt geometry for the part.
+            const auto transform = prim_transform(part, root);
+            std::optional<std::vector<physics::AssetRenderFace>> render_faces;
+            if (load_mesh && part.extra_params.size() > 1) {
+                auto geometry = framework::PrimitiveBaseShapeCore::create([](const std::string&) {});
+                geometry.read_extra_params(std::make_shared<framework::ShapeByteArray>(part.extra_params));
+                constexpr unsigned mesh_sculpt_type = 5;
+                if (geometry.sculpt_entry && !geometry.sculpt_texture.is_zero()) {
+                    const auto lod = projected_lod(transform, raster.image());
+                    if ((geometry.sculpt_type & 7) == mesh_sculpt_type) {
+                        const auto asset = load_mesh(geometry.sculpt_texture);
+                        if (asset && asset->data && !asset->data->empty()) {
+                            const std::string_view bytes{reinterpret_cast<const char*>(asset->data->data()),
+                                                         asset->data->size()};
+                            render_faces = physics::decode_asset_render_mesh(bytes, lod);
+                        }
+                    } else if (load_texture) {
+                        const auto bitmap = load_texture(geometry.sculpt_texture);
+                        if (auto face = physics::build_sculpt_render_face(
+                                bitmap.pixels, bitmap.width, bitmap.height, bitmap.channels, geometry.sculpt_type, lod)) {
+                            render_faces.emplace();
+                            render_faces->push_back(std::move(*face));
+                        }
+                    }
+                }
+            }
+            if (!render_faces && (shape.path_curve != linear_path || !supported_profile || cut_or_hollow || deformed_path))
+                continue;
+
             framework::TextureEntry entry(part.texture_entry);
             if (!entry.default_texture)
                 continue;
             std::array<WarpTerrainMesh, 6> box_faces;
             std::array<WarpTerrainMesh, 5> prism_faces;
             std::array<WarpTerrainMesh, 3> cylinder_faces;
+            std::vector<WarpTerrainMesh> asset_faces;
             std::uint32_t segments = 0;
             std::span<WarpTerrainMesh> faces;
-            if (cylinder) {
-                const auto transform = prim_transform(part, root);
-                segments = cylinder_segments(transform, raster.image());
+            if (render_faces) {
+                asset_faces.reserve(render_faces->size());
+                for (const auto& face : *render_faces)
+                    asset_faces.push_back(transform_render_face(face, transform));
+                faces = asset_faces;
+            } else if (cylinder) {
+                const auto lod = projected_lod(transform, raster.image());
+                constexpr std::array<std::uint32_t, 4> segments_by_lod{6, 12, 24, 24};
+                segments = segments_by_lod[static_cast<std::size_t>(lod)];
                 cylinder_faces = build_cylinder_faces(transform, segments);
                 faces = cylinder_faces;
             } else if (prism) {
@@ -304,6 +355,8 @@ void draw_warp_prims(WarpMapRaster& raster, std::span<const SceneObject> objects
                 faces = box_faces;
             }
             for (std::size_t index = 0; index < faces.size(); ++index) {
+                if (faces[index].triangles.empty())
+                    continue;
                 const auto face = entry.get_face(static_cast<unsigned>(index));
                 const auto rgba = face->color();
                 const auto opacity = static_cast<unsigned>(rgba[3] * 255.f);
@@ -347,7 +400,11 @@ void draw_warp_prims(WarpMapRaster& raster, std::span<const SceneObject> objects
                     auto& vertex = vertices[point];
                     std::array uv{vertex.u - .5f, .5f - vertex.v};
                     if (face->mapping() == planar) {
-                        if (cylinder) {
+                        if (render_faces) {
+                            const auto& render_face = (*render_faces)[index];
+                            const auto normal = render_face.normals.empty() ? Vector3{} : render_face.normals[point];
+                            uv = planar_uv(render_face.geometry.vertices[point], normal, part.scale);
+                        } else if (cylinder) {
                             const auto local = cylinder_vertex(index, static_cast<std::uint32_t>(point), segments);
                             uv = planar_uv(local.position, local.normal, part.scale);
                         } else if (prism) {

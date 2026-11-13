@@ -65,7 +65,8 @@ NwcXmlRpcHttpTransport::NwcXmlRpcHttpTransport(std::shared_ptr<WebHttpClients> c
 }
 std::shared_ptr<NwcXmlRpcResponse>
 NwcXmlRpcHttpTransport::send(const std::shared_ptr<NwcXmlRpcRequest>& request,
-                             const std::optional<std::u16string>& url, std::int32_t timeout) {
+                             const std::optional<std::u16string>& url, std::int32_t timeout,
+                             std::function<bool()> interrupted) {
     auto s = state_;
     auto client = s->clients ? s->clients->get_new_global_client(timeout) : nullptr;
     framework::ConfigUriObjectPtr uri;
@@ -84,6 +85,8 @@ NwcXmlRpcHttpTransport::send(const std::shared_ptr<NwcXmlRpcRequest>& request,
                              u"The '" + *uri->scheme() + u"' scheme is not supported.");
     framework::ConfigXmlHttpOperation operation;
     operation.method = "POST";
+    operation.request_interrupted = interrupted;
+    operation.body_interrupted = std::move(interrupted);
     operation.body = std::move(body);
     operation.timeout_milliseconds = timeout > 0 ? timeout : 30000;
     operation.redirect_limit = 10;

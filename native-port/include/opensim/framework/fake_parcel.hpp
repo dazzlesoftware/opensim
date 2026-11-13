@@ -30,9 +30,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace opensim::framework {
 struct FakeParcelPosition {
  std::uint64_t region_handle=0;
- std::uint32_t x=0,y=0,z=0;
+ std::uint32_t x = 0, y = 0, z = 0;
 };
-Uuid build_fake_parcel_id(std::uint64_t region_handle,std::uint32_t x,std::uint32_t y);
-Uuid build_fake_parcel_id(std::uint64_t region_handle,std::uint32_t x,std::uint32_t y,std::uint32_t z);
+Uuid build_fake_parcel_id(std::uint64_t region_handle, std::uint32_t x, std::uint32_t y);
+Uuid build_fake_parcel_id(std::uint64_t region_handle, std::uint32_t x, std::uint32_t y, std::uint32_t z);
 bool parse_fake_parcel_id(Uuid,FakeParcelPosition&);
 }

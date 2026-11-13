@@ -6,7 +6,7 @@
 #include <string>
 #include <string_view>
 namespace opensim::framework {
-enum class DotnetRegexCaseBehavior:std::int32_t {NotSet,Invariant,NonTurkish,Turkish};
+enum class DotnetRegexCaseBehavior : std::int32_t { NotSet, Invariant, NonTurkish, Turkish };
 // Preserve the virtual CultureInfo.Name getter, including lazy evaluation and
 // the two distinct getter calls for a nonempty first result.
 using DotnetRegexCultureName=std::function<std::u16string()>;

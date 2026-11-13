@@ -83,20 +83,78 @@ def main():
     write_config(fixtures / "folders.xml", [{"folderID": folder_a, "name": "A", "type": 65535, "version": 65536}, {"folderID": "00000000-0000-0000-0000-000000000004", "parentFolderID": folder_b, "name": "Too early"}, {"folderID": folder_b, "name": "B"}])
     write_config(fixtures / "items.xml", [{"inventoryID": item_id, "folderID": folder_a, "name": "First", "basePermissions": 4294967295, "currentPermissions": -1, "flags": -2147483648}, {"inventoryID": item_id, "folderID": folder_a, "name": "Ignored duplicate"}, {"inventoryID": item_id, "folderID": folder_b, "name": "Global replacement", "groupPermissions": 42}])
     write_config(fixtures / "control.xml", [{"RootVersion": -1}, {"foldersFile": "folders.xml", "itemsFile": "items.xml"}])
-    write_config(fixtures / "case-items.xml", [{"inventoryID": item_id, "folderID": root_id, "NAME": "Uppercase", "Description": "Case", "inventoryType": 7}])
+    write_config(fixtures / "case-items.xml", [{
+        "inventoryID": f" {item_id} ",
+        "folderID": f" {root_id} ",
+        "assetID": item_id.replace("-", ""),
+        "NAME": "Uppercase",
+        "Description": "Case",
+        "inventoryType": " +7 ",
+        "basePermissions": " +4294967295 ",
+    }])
     write_config(fixtures / "case.xml", [{"foldersFile": "absent.xml", "itemsFile": "case-items.xml"}])
+    write_config(fixtures / "directory-input.xml", [{"itemsFile": "case-items.xml"}])
+    (fixtures / "世界").mkdir(exist_ok=True)
+    (fixtures / "世界/items.xml").write_bytes((fixtures / "case-items.xml").read_bytes())
+    write_config(fixtures / "unicode-path.xml", [
+        {"foldersFile": "世界/missing.xml", "itemsFile": "世界/items.xml"},
+    ])
+    (fixtures / "whitespace-items.xml").write_text(
+        f'<Nini><Section Name="Item"><Key Name="inventoryID" Value="{item_id}"/>'
+        '<Key Name="name" Value="Literal\tTab"/><Key Name="description" Value="Escaped&#x9;Tab"/>'
+        '</Section></Nini>', encoding="utf-8",
+    )
+    write_config(fixtures / "whitespace.xml", [{"itemsFile": "whitespace-items.xml"}])
+    (fixtures / "linebreak-folders.xml").write_bytes(
+        f'<Nini><Section Name="Folder"><Key Name="folderID" Value="{folder_a}"/>'
+        '<Key Name="name" Value="Line\r\nBreak"/></Section></Nini>'.encode("utf-8")
+    )
+    write_config(fixtures / "linebreak.xml", [{"foldersFile": "linebreak-folders.xml"}])
+    (fixtures / "entity-folders.xml").write_text(
+        '<!DOCTYPE Nini [<!ENTITY label "Library &amp; Catalog">]>'
+        f'<Nini><Section Name="Folder"><Key Name="folderID" Value="{folder_a}"/>'
+        '<Key Name="name" Value="&label;"/></Section></Nini>', encoding="utf-8",
+    )
+    write_config(fixtures / "entity.xml", [{"foldersFile": "entity-folders.xml"}])
+    (fixtures / "external-entity.xml").write_text(
+        '<!DOCTYPE Nini [<!ENTITY % external SYSTEM "unavailable.dtd">%external;]>'
+        '<Nini><Section Name="Root"><Key Name="RootVersion" Value="3"/></Section></Nini>',
+        encoding="utf-8",
+    )
     (fixtures / "malformed.xml").write_text("<Nini><Section>")
+    (fixtures / "multiple-roots.xml").write_text(
+        '<Nini><Section Name="Root"><Key Name="RootVersion" Value="99"/></Section></Nini><Nini/>',
+        encoding="utf-8",
+    )
     (fixtures / "duplicate-folders.xml").write_text(f'<Nini><Section Name="Same"><Key Name="folderID" Value="{folder_a}"/><Key Name="name" Value="First"/></Section><Section Name="Same"><Key Name="folderID" Value="{folder_b}"/><Key Name="name" Value="Second"/></Section></Nini>')
     write_config(fixtures / "duplicate-sections.xml", [{"foldersFile": "duplicate-folders.xml", "itemsFile": "absent.xml"}])
     (fixtures / "duplicate-keys.xml").write_text('<Nini><Section Name="Root"><Key Name="RootVersion" Value="1"/><Key Name="RootVersion" Value="2"/></Section></Nini>')
     differences = []
     scenarios = []
-    for control in [ROOT / "bin/inventory/Libraries.xml", fixtures / "control.xml", fixtures / "case.xml", fixtures / "malformed.xml", fixtures / "absent.xml", fixtures / "duplicate-sections.xml", fixtures / "duplicate-keys.xml", Path("--tree")]:
+    for name, content, managed_error, native_error in [
+        ("wrong-root", "<Library/>", "System.ArgumentException", "Did not find Nini XML root node"),
+        ("unnamed-section", "<Nini><Section/></Nini>", "System.NullReferenceException", "Object reference"),
+        ("missing-key-value", '<Nini><Section Name="Root"><Key Name="RootVersion"/></Section></Nini>',
+         "System.NullReferenceException", "Object reference"),
+    ]:
+        path = fixtures / (name + ".xml")
+        path.write_text(content, encoding="utf-8")
+        for executable, error in [(command, managed_error), ([args.native], native_error)]:
+            result = subprocess.run(executable + [str(path)], capture_output=True, text=True, timeout=60)
+            if not result.returncode or error not in result.stdout + result.stderr:
+                raise AssertionError(f"{name}: {result.stdout}{result.stderr}")
+        scenarios.append({"name": name, "rejected": True})
+    controls = [
+        "control.xml", "case.xml", "directory-input.xml", "malformed.xml",
+        "multiple-roots.xml", "absent.xml", "duplicate-sections.xml", "duplicate-keys.xml",
+        "whitespace.xml", "linebreak.xml", "entity.xml", "external-entity.xml", "unicode-path.xml",
+    ]
+    for control in [ROOT / "bin/inventory/Libraries.xml", *(fixtures / name for name in controls), Path("--tree")]:
         snapshots = []
         for executable in [command, [args.native]]:
             result = subprocess.run(executable + [str(control)], capture_output=True, text=True, encoding="utf-8", timeout=60)
             if control.name == "duplicate-keys.xml":
-                if not result.returncode or not ("System.ArgumentException" in result.stderr or "ERROR:Duplicate library configuration key" in result.stdout):
+                if not result.returncode or not ("System.ArgumentException" in result.stderr or "ERROR:" in result.stdout):
                     raise AssertionError("Duplicate-key rejection differs: " + result.stdout + result.stderr)
                 snapshots.append(["DUPLICATE_KEY_REJECTED"])
                 continue
@@ -124,7 +182,8 @@ def main():
     (work / "library-parity-results.json").write_text(json.dumps(report, indent=2) + "\n")
     if differences:
         raise AssertionError(json.dumps(differences[:5], indent=2))
-    print(f"PASS: {len(scenarios)} catalog scenarios; {scenarios[0]['folderCount']} shipped folders and {scenarios[0]['itemCount']} shipped items match the original service")
+    shipped = next(scenario for scenario in scenarios if scenario["name"] == "Libraries.xml")
+    print(f"PASS: {len(scenarios)} catalog scenarios; {shipped['folderCount']} shipped folders and {shipped['itemCount']} shipped items match the original service")
 
 
 if __name__ == "__main__":

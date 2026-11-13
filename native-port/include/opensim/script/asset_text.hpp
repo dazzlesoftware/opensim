@@ -12,6 +12,12 @@ namespace opensim::script {
 std::string asset_text(std::span<const std::uint8_t>);
 std::string asset_text(const framework::AssetBytes&);
 std::vector<std::string> notecard_lines(const framework::AssetBytes&);
+struct LandmarkAsset {
+    framework::Uuid region;
+    framework::Vector3 position;
+    std::uint64_t handle = 0;
+};
+LandmarkAsset parse_landmark(const framework::AssetBytes&);
 framework::Vector3d landmark_position_relative_to(const framework::AssetBytes&, std::uint32_t region_x,
                                                  std::uint32_t region_y);
 }

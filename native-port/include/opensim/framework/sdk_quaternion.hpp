@@ -3,6 +3,8 @@
 #pragma once
 #include "opensim/framework/quaternion_text.hpp"
 #include "opensim/framework/vector_text.hpp"
+#include <cmath>
+#include <numbers>
 #if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_IX86))
 #include <intrin.h>
 #elif defined(__x86_64__) || defined(__i386__)
@@ -41,5 +43,32 @@ inline float sdk_quaternion_length_squared(const Quaternion& q) noexcept {
     if (sdk_sse41_supported())
         return (q.x * q.x + q.y * q.y) + (q.z * q.z + q.w * q.w);
     return ((q.x * q.x + q.y * q.y) + q.z * q.z) + q.w * q.w;
+}
+inline Quaternion sdk_slerp_quaternion(Quaternion a, Quaternion b, float amount) noexcept {
+    const float x = a.x * b.x;
+    const float y = a.y * b.y;
+    const float z = a.z * b.z;
+    const float w = a.w * b.w;
+    float dot = sdk_sse41_supported() ? (x + y) + (z + w) : ((x + y) + z) + w;
+    if (dot < 0) {
+        dot = -dot;
+        a = {-a.x, -a.y, -a.z, -a.w};
+    }
+    if (std::isnan(dot)) {
+        const auto left = std::sin(std::numbers::pi_v<float> * (.5f - amount));
+        const auto right = std::sin(std::numbers::pi_v<float> * amount);
+        return {a.x * left - a.y * right, a.y * left + a.x * right,
+                a.z * left - a.w * right, a.w * left + a.z * right};
+    }
+    auto left = 1.f - amount;
+    auto right = amount;
+    if (1.f - dot >= .05f) {
+        const auto angle = std::acos(dot);
+        const auto inverse = 1.f / std::sin(angle);
+        left = std::sin(angle * left) * inverse;
+        right = std::sin(angle * amount) * inverse;
+    }
+    return {a.x * left + b.x * right, a.y * left + b.y * right,
+            a.z * left + b.z * right, a.w * left + b.w * right};
 }
 }

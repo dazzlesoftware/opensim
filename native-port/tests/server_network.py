@@ -175,9 +175,15 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
                 self.reader = threading.Thread(target=read_stdout, daemon=True)
                 self.reader.start()
                 try:
-                    line = lines.get(timeout=15)
-                    if not line or not line.startswith("LISTENING "):
-                        raise RuntimeError("Server did not start: " + str(line) + self.process.stderr.read())
+                    deadline = time.monotonic() + 15
+                    startup = []
+                    while True:
+                        line = lines.get(timeout=max(0, deadline - time.monotonic()))
+                        if line is None:
+                            raise RuntimeError("Server did not start: " + "".join(startup) + self.process.stderr.read())
+                        if line.startswith("LISTENING "):
+                            break
+                        startup.append(line)
                     self.uri = urllib.parse.urlsplit(line.split(" ", 1)[1].strip())
                     self.lines = lines
                 except BaseException:
@@ -387,6 +393,24 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
             check(destination["result"] == "true" and destination["internal_port"] == "9000", "Gatekeeper resolves a linked region")
             check(server.login({"region_uuid": "00000000-0000-0000-0000-000000000000"}, "get_region")["result"] == "false",
                   "Gatekeeper reports a missing region")
+
+            def check_gatekeeper_types(connection, port=None):
+                invalid_calls = (
+                    ("link_region", []),
+                    ("link_region", {"region_name": 7}),
+                    ("get_region", {"region_uuid": 7}),
+                    ("get_region", {"region_uuid": region_id, "agent_id": True}),
+                    ("get_region", {"region_uuid": region_id, "agent_home_uri": []}),
+                )
+                for method, fields in invalid_calls:
+                    try:
+                        connection.login(fields, method, connector_port=port)
+                    except xmlrpc.client.Fault as fault:
+                        check(fault.faultCode == -32603, f"{method} faults on an invalid XML-RPC type")
+                    else:
+                        check(False, f"{method} accepted an invalid XML-RPC type")
+
+            check_gatekeeper_types(server)
             check(
                 registry({"METHOD":"get_region_by_name", "NAME":"http://127.0.0.1:9000/Network Region"}).findtext("result/uuid") == region_id,
                 "configured local grid URL resolves through HTTP",
@@ -443,8 +467,12 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
             check(grid_request("getgriduserinfo", UserID=grid_user).findtext("result") == "Failure", "grid-user absent record failure")
             check(grid_request("loggedin", UserID=grid_user).findtext("result/Online") == "True", "grid-user login stored through HTTP")
             check(
-                grid_request("sethome", UserID=grid_user, RegionID=grid_region, Position="<10,20,30>").findtext("result") == "Success",
-                "grid-user home updated through HTTP",
+                grid_request("sethome", UserID=grid_user, RegionID=f" {grid_region} ", Position="<10,20,30>").findtext("result") == "Success",
+                "grid-user home accepts a space-padded SDK region UUID",
+            )
+            check(
+                grid_request("sethome", UserID=grid_user, RegionID="{" + grid_region + "}").findtext("result") == "Failure",
+                "grid-user home rejects a brace-wrapped region UUID",
             )
             check(
                 grid_request("setposition", UserID=grid_user, RegionID=grid_region, Position="<40,50,60>").findtext("result") == "Success",
@@ -454,6 +482,38 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
                 grid_request("loggedout", UserID=grid_user, RegionID=grid_region, Position="<70,80,90>").findtext("result") == "Success",
                 "grid-user logout through HTTP",
             )
+            statistics_region = str(uuid.uuid4())
+            check(
+                registry({**registration, "uuid": statistics_region, "regionName": "Statistics Region",
+                          "locX": "76800", "locY": "76800", "sizeX": "512", "sizeY": "512"}).findtext("Result")
+                == "Success",
+                "register a four-tile region for grid statistics",
+            )
+            now = int(time.time())
+            with contextlib.closing(sqlite3.connect(root / "grid-user.db")) as connection, connection:
+                residents = connection.execute("SELECT COUNT(*) FROM GridUser WHERE UserID NOT LIKE '%;%'").fetchone()[0]
+                connection.executemany(
+                    "INSERT INTO GridUser (UserID, Login) VALUES (?, ?)",
+                    [(f"{uuid.uuid4()};http://foreign.example/;Foreign User", now),
+                     (str(uuid.uuid4()), now - 2592001),
+                     (str(uuid.uuid4()), "invalid")],
+                )
+            status, headers, stats = server.request("GET", "/get_grid_stats")
+            counts = ET.fromstring(stats)
+            check(
+                status == 200 and counts.tag == "gridstats"
+                and counts.findtext("residents") == str(residents + 2)
+                and counts.findtext("active_users") == "2"
+                and counts.findtext("region_count") == "6",
+                "grid statistics count region tiles, local residents, and recent local and foreign users",
+            )
+            check(
+                registry({"METHOD": "deregister", "REGIONID": statistics_region}).findtext("Result") == "Success"
+                and server.request("GET", "/get_grid_stats")[2] == stats,
+                "grid statistics keep the cached response after deregistration",
+            )
+            for path in ("/get_grid_stats", "/get_grid_info", "/json_grid_info"):
+                check(server.request("HEAD", path)[0] == 405, f"{path} requires GET")
             check(
                 server.request("POST", "/griduser", "METHOD=loggedin&UserID=blocked", headers={"X-SecondLife-Shard":""})[0] == 403,
                 "grid-user script request excluded",
@@ -564,6 +624,16 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
             else:
                 check(status >= 400, "unsupported gzip fails explicitly")
                 skipped.append("gzip support not compiled")
+        legacy_grid_user = str(uuid.uuid4())
+        with contextlib.closing(sqlite3.connect(root / "grid-user.db")) as connection, connection:
+            connection.execute(
+                "UPDATE GridUser SET HomeRegionID=?, LastRegionID=? WHERE UserID=?",
+                (f" {grid_region} ", "{" + grid_region + "}", grid_user),
+            )
+            connection.execute(
+                "INSERT INTO GridUser (UserID, Login, Logout, Online) VALUES (?, ?, ?, ?)",
+                (legacy_grid_user, "+-1", "-1\0", "\0 True \0"),
+            )
         with RunningServer() as restarted:
             status, _, body = restarted.request("POST", "/accounts", "METHOD=getaccount&UserID=" + created_id)
             check(status == 200 and ET.fromstring(body).findtext("result/FirstName") == "New", "provisioned account survives restart")
@@ -592,6 +662,13 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
                 and info.findtext("LastPosition") == "<70, 80, 90>",
                 "grid-user home and logout position survive server restart",
             )
+            check(info.findtext("HomeRegionID") == grid_region and info.findtext("LastRegionID") == str(uuid.UUID(int=0)),
+                  "stored grid-user region IDs use SDK parsing after restart")
+            status, _, result = restarted.request("POST", "/griduser", "METHOD=getgriduserinfo&UserID=" + legacy_grid_user)
+            legacy = ET.fromstring(result).find("result")
+            check(status == 200 and legacy.findtext("Login") == "01/01/1970 00:00:00"
+                  and legacy.findtext("Logout") == "12/31/1969 23:59:59" and legacy.findtext("Online") == "True",
+                  "grid-user dates and online state follow .NET parsing for legacy stored values")
             check(restarted.login(credentials)["message"].startswith("Error connecting"), "account/password persistence survives server restart")
         config.write_text(base_config + f"\n[GatekeeperService]\nScopeID={persisted_scope}\nAllowTeleportsToAnyRegion=false\n", encoding="utf-8")
         with RunningServer() as restricted:
@@ -606,27 +683,88 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
             destination = restricted.login({"region_uuid": str(uuid.uuid4())}, "get_region")
             check(destination["uuid"] == persisted_id and destination["message"] == "Teleporting to the default region.",
                   "Gatekeeper redirects arbitrary region requests to the default region")
-        with socket.socket() as probe:
+        with socket.socket() as probe, socket.socket() as discovery_probe:
             probe.bind(("127.0.0.1", 0))
             public_port = probe.getsockname()[1]
+            discovery_probe.bind(("127.0.0.1", 0))
+            discovery_port = discovery_probe.getsockname()[1]
         split_config = with_settings(base_config, "GridService",
                                      LocalServiceModule="OpenSim.Services.GridService.dll:GridService")
         split_config = split_config.replace("EnableGridEndpoint = true\n", "").replace(
             "EnableGridUserEndpoint = true\n", "")
+        travel_session = str(uuid.uuid4())
+        expired_session = str(uuid.uuid4())
+        travel_schema = (Path(__file__).resolve().parents[2] /
+                         "OpenSim/Data/SQLite/Resources/HGTravelStore.migrations").read_text(encoding="utf-8")
+        with contextlib.closing(sqlite3.connect(root / "split-travel.db")) as travel, travel:
+            travel.executescript(travel_schema.split("\n", 1)[1].replace("hg_traveling_data", '"travel history"'))
+            travel.execute('INSERT INTO "travel history" (SessionID, UserID, ServiceToken) VALUES (?, ?, ?)',
+                           (travel_session, str(uuid.uuid4()), "legacy-travel-token"))
+            travel.execute(
+                'INSERT INTO "travel history" (SessionID, UserID, ServiceToken, TMStamp) '
+                "VALUES (?, ?, ?, datetime('now', '-3 day'))",
+                (expired_session, str(uuid.uuid4()), "expired-travel-token"))
         config.write_text(split_config + f"\n[GatekeeperService]\nScopeID={persisted_scope}\n[ServiceList]\n"
                           f"GatekeeperServiceInConnector={public_port}/OpenSim.Server.Handlers.dll:GatekeeperServiceInConnector\n"
+                          f"UserAgentServerConnector={public_port}/OpenSim.Server.Handlers.dll:UserAgentServerConnector\n"
                           f"HeloServiceInConnector={public_port}/OpenSim.Server.Handlers.dll:HeloServiceInConnector\n"
                           f"BakedTextureService={public_port}/OpenSim.Server.Handlers.dll:XBakesConnector\n"
                           f"MuteListConnector={public_port}/OpenSim.Server.Handlers.dll:MuteListServiceConnector\n"
                           f"PresenceServiceConnector={public_port}/OpenSim.Server.Handlers.dll:PresenceServiceConnector\n"
                           f"GridServiceConnector={public_port}/OpenSim.Server.Handlers.dll:GridServiceConnector\n"
                           f"GridUserServiceConnector={public_port}/OpenSim.Server.Handlers.dll:GridUserServiceConnector\n"
+                          f"GridInfoServerInConnector={discovery_port}/OpenSim.Server.Handlers.dll:GridInfoServerInConnector\n"
+                          "[UserAgentService]\n"
+                          "LocalServiceModule=OpenSim.Services.HypergridService.dll:UserAgentService\n"
+                          "StorageProvider=OpenSim.Data.SQLite.dll\n"
+                          "ConnectionString=Data Source=split-travel.db\nRealm=travel history\n"
                           "[PresenceService]\nLocalServiceModule=OpenSim.Services.PresenceService.dll:PresenceService\n"
                           "[GridUserService]\nLocalServiceModule=OpenSim.Services.UserAccountService.dll:GridUserService\n"
                           "AuthType=BasicHttpAuthentication\nHttpAuthUsername=griduser\n"
                           "HttpAuthPassword=fixture-griduser-password\n",
                           encoding="utf-8")
         with RunningServer() as split:
+            with contextlib.closing(sqlite3.connect(root / "split-travel.db")) as travel:
+                version = travel.execute(
+                    "SELECT version FROM migrations WHERE name = 'HGTravelStore'").fetchone()
+                check(version == (2,), "The travel store records the original SQLite migration version")
+                default_realm = travel.execute("SELECT COUNT(*) FROM hg_traveling_data").fetchone()
+                check(default_realm == (0,), "A custom travel realm still initializes the original schema")
+            check(split.login({"sessionID": travel_session, "token": "legacy-travel-token"},
+                              "verify_agent", connector_port=public_port) == {"result": "True"},
+                  "Home-agent verification reads an existing SQLite travel realm")
+            check(split.login({"sessionID": expired_session, "token": "expired-travel-token"},
+                              "verify_agent", connector_port=public_port) == {"result": "False"},
+                  "Home-agent startup expires old records in the configured SQLite realm")
+            identity = {"first": credentials["first"], "last": credentials["last"]}
+            check(split.login(identity, "get_uuid", connector_port=public_port)["UUID"] != str(uuid.UUID(int=0)),
+                  "Home-agent lookup shares the configured Hypergrid listener")
+            try:
+                split.login(identity, "get_uuid")
+            except xmlrpc.client.Fault as fault:
+                check(fault.faultCode == -32601, "Home-agent lookup is scoped to its configured listener")
+            else:
+                check(False, "Home-agent lookup is scoped to its configured listener")
+            home_path = f"/homeagent/{uuid.uuid4()}/"
+            check(split.request("GET", home_path, connector_port=public_port)[0] == 405
+                  and split.request("GET", home_path)[0] == 404,
+                  "Home-agent admission is scoped to the same listener as its XML-RPC methods")
+            for path in ("/get_grid_info", "/json_grid_info", "/get_grid_stats"):
+                check(split.request("GET", path, connector_port=discovery_port)[0] == 200
+                      and split.request("GET", path)[0] == 404,
+                      f"{path} is served only on the configured grid discovery port")
+            discovery = split.login({}, "get_grid_info", connector_port=discovery_port)
+            check(discovery["gridnick"] == "native-test" and discovery["login"] == split.uri.geturl(),
+                  "grid discovery XML-RPC runs on the configured port and advertises the login listener")
+            try:
+                split.login({}, "get_grid_info")
+            except xmlrpc.client.Fault as fault:
+                check(fault.faultCode == -32601, "the login listener does not register split grid discovery XML-RPC")
+            else:
+                check(False, "the login listener does not register split grid discovery XML-RPC")
+            check(split.request("POST", "/", xmlrpc.client.dumps((credentials,), methodname="login_to_simulator"),
+                                "text/xml", connector_port=discovery_port)[0] == 404,
+                  "the standalone grid discovery port does not accept viewer login")
             check(split.request("POST", "/mutelist", connector_port=public_port)[0] == 401,
                   "Mute list shares its configured service listener")
             check(split.request("POST", "/mutelist")[0] == 404,
@@ -656,6 +794,7 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
                   "Grid-user service is scoped to its configured listener")
             check(split.login({"region_uuid": persisted_id}, "get_region", public_port)["uuid"] == persisted_id,
                   "Gatekeeper resolves regions on its configured port")
+            check_gatekeeper_types(split, public_port)
             check(split.request("HEAD", "/helo", connector_port=public_port)[0] == 200,
                   "HELO and Gatekeeper share the public listener")
             check(split.request("POST", bake_path, b"shared listener bake", headers=bake_auth, connector_port=public_port)[0] == 200,
@@ -726,14 +865,73 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
             status, _, body = legacy.request("POST", "/presence", presence_body)
             check(status == 200 and ET.fromstring(body).findtext("result") == "null",
                   "Legacy Startup.ServiceConnectors registers presence on the primary listener")
-        config.write_text(with_settings(startup_presence, "NativeServer", EnablePresenceEndpoint="false",
-                                        EnableGridUserEndpoint="false", EnableGridEndpoint="false",
-                                        EnableAccountEndpoint="false"), encoding="utf-8")
+        private_grid_config = with_settings(startup_presence, "NativeServer", EnablePresenceEndpoint="false",
+                                            EnableGridUserEndpoint="false", EnableGridEndpoint="false",
+                                            EnableAccountEndpoint="false")
+        config.write_text(private_grid_config, encoding="utf-8")
         with RunningServer() as disabled:
             check(disabled.request("POST", "/accounts", "METHOD=getaccount")[0] == 404, "account route can be disabled")
             check(disabled.request("POST", "/presence", presence_body)[0] == 404, "presence route can be disabled")
             check(disabled.request("POST", "/grid", "METHOD=get_default_regions")[0] == 404, "grid registry route can be disabled")
             check(disabled.request("POST", "/griduser", "METHOD=loggedin")[0] == 404, "grid-user route can be disabled")
+            check(disabled.request("GET", "/get_grid_stats")[0] == 405, "statistics require local grid and grid-user services")
+        statistics_config = with_settings(
+            private_grid_config, "GridService", LocalServiceModule="OpenSim.Services.GridService.dll:GridService",
+        )
+        config.write_text(statistics_config, encoding="utf-8")
+        with RunningServer() as statistics_only:
+            status, _, body = statistics_only.request("GET", "/get_grid_stats")
+            check(status == 200 and ET.fromstring(body).findtext("region_count") == "2",
+                  "grid statistics can read persistent regions with the service endpoints disabled")
+            check(statistics_only.request("POST", "/grid", "METHOD=get_default_regions")[0] == 404
+                  and statistics_only.request("POST", "/griduser", "METHOD=loggedin")[0] == 404,
+                  "statistics-only storage does not expose grid service routes")
+        config.write_text(with_settings(
+            statistics_config, "NativeServer", GridRegionDatabase="missing-statistics-regions.db",
+        ), encoding="utf-8")
+        with RunningServer() as unavailable_statistics:
+            check(unavailable_statistics.request("GET", "/get_grid_stats")[0] == 405
+                  and unavailable_statistics.request("GET", "/get_grid_info")[0] == 200,
+                  "missing statistics storage leaves grid discovery running")
+        config.write_text(with_settings(base_config, "GridInfoService", DisableStatsEndpoint="true"), encoding="utf-8")
+        with RunningServer() as disabled_stats:
+            check(disabled_stats.request("GET", "/get_grid_stats")[0] == 404, "grid statistics route can be disabled")
+        discovery_config = with_settings(
+            base_config, "Startup", HomeURI="http://127.0.0.1:8101/", GatekeeperURI="http://127.0.0.1:8102/",
+            HomeURIAlias="http://127.0.0.1:8103/", GatekeeperURIAlias="http://127.0.0.1:8104/",
+        )
+        discovery_config = with_settings(
+            discovery_config, "Hypergrid", HomeURI="http://127.0.0.1:8201/", GatekeeperURI="http://127.0.0.1:8202/",
+            HomeURIAlias="http://127.0.0.1:8203/", GatekeeperURIAlias="http://127.0.0.1:8204/",
+        )
+        config.write_text(discovery_config, encoding="utf-8")
+        with RunningServer() as discovery:
+            expected = {
+                "home": "http://127.0.0.1:8201/",
+                "gatekeeper": "http://127.0.0.1:8202/",
+                "homealias": "http://127.0.0.1:8203/",
+                "gatekeeperalias": "http://127.0.0.1:8204/",
+            }
+            xml = ET.fromstring(discovery.request("GET", "/get_grid_info")[2])
+            payloads = (
+                {element.tag: element.text for element in xml},
+                json.loads(discovery.request("GET", "/json_grid_info")[2]),
+                discovery.login({}, "get_grid_info"),
+            )
+            check(
+                all(all(payload.get(key) == value for key, value in expected.items()) for payload in payloads),
+                "all grid discovery formats give Hypergrid URI settings precedence over Startup",
+            )
+        fallback_config = with_settings(base_config, "LoginService", SRV_HomeURI="http://127.0.0.1:8301/")
+        fallback_config = with_settings(fallback_config, "GridInfoService", home="http://127.0.0.1:8302/")
+        config.write_text(fallback_config, encoding="utf-8")
+        with RunningServer() as discovery:
+            check(discovery.login({}, "get_grid_info")["home"] == "http://127.0.0.1:8302/",
+                  "configured grid discovery home takes precedence over the login-service fallback")
+        config.write_text(with_settings(fallback_config, "Hypergrid", HomeURI=""), encoding="utf-8")
+        with RunningServer() as discovery:
+            check(discovery.login({}, "get_grid_info")["home"] == "http://127.0.0.1:8301/",
+                  "an empty Hypergrid home uses the login-service fallback")
         config.write_text(base_config, encoding="utf-8")
         try:
             with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as probe:
@@ -744,7 +942,13 @@ GatekeeperURIAlias = http://ALIAS.EXAMPLE/,bad/path
             with RunningServer(("--host", "::1")) as ipv6:
                 check(ipv6.request("GET", "/health")[0] == 200, "IPv6 listener and peer transport")
         fixture = Path(__file__).parent / "fixtures"
-        config.write_text(with_settings(base_config, "NativeServer", TlsCertificate=(fixture / "localhost-cert.pem").as_posix(), TlsPrivateKey=(fixture / "localhost-key.pem").as_posix()), encoding="utf-8")
+        certificate = root / "証明書.pem"
+        private_key = root / "秘密鍵.pem"
+        certificate.write_bytes((fixture / "localhost-cert.pem").read_bytes())
+        private_key.write_bytes((fixture / "localhost-key.pem").read_bytes())
+        config.write_text(with_settings(
+            base_config, "NativeServer", TlsCertificate=certificate.name, TlsPrivateKey=private_key.name,
+        ), encoding="utf-8")
         if args.http_only:
             skipped.append("TLS not selected for explicit HTTP-only coverage")
         elif features["tls"]:

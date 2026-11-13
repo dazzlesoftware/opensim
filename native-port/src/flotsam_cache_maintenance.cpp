@@ -155,6 +155,15 @@ std::vector<Path> entries(const Path& path, bool dirs) {
     return result;
 }
 }
+namespace {
+std::shared_ptr<FlotsamMaintenanceBackend> native_filesystem_backend(
+    std::function<void(const std::string&, const std::string&)> log,
+    std::shared_ptr<framework::NativeInvariantDateTimeContext> datetime);
+}
+FlotsamCacheMaintenance::FlotsamCacheMaintenance(
+    Path dir, std::function<void(const std::string&, const std::string&)> log)
+    : directory_(std::move(dir)), backend_(native_filesystem_backend(std::move(log), {})) {}
+
 FlotsamCacheMaintenance::FlotsamCacheMaintenance(Path dir, std::shared_ptr<FlotsamMaintenanceBackend> backend)
     : directory_(std::move(dir)), backend_(std::move(backend)) {
     auto& b = backend_;
@@ -215,6 +224,8 @@ std::int32_t FlotsamCacheMaintenance::count(const Path& path) const noexcept {
     }
 }
 std::int32_t FlotsamCacheMaintenance::touch(bool uncached) {
+    if (!backend_->gather)
+        throw std::logic_error("Flotsam scene gathering is unavailable");
     backend_->info("[FLOTSAM ASSET CACHE] start touch files of assets in use");
     auto state = backend_->gather();
     if (!state)
@@ -236,16 +247,14 @@ std::int32_t FlotsamCacheMaintenance::touch(bool uncached) {
     }
     return static_cast<std::int32_t>(state->gathered.size());
 }
-std::shared_ptr<FlotsamMaintenanceBackend> FlotsamCacheMaintenance::native_backend(
-    std::shared_ptr<FlotsamFileStore> store, std::shared_ptr<FlotsamFileAccess> access,
-    std::shared_ptr<AssetService> service, std::function<std::shared_ptr<scene::UuidGathererState>()> gather,
-    std::function<bool()> running, std::function<void(const std::string&, const std::string&)> log,
+namespace {
+std::shared_ptr<FlotsamMaintenanceBackend> native_filesystem_backend(
+    std::function<void(const std::string&, const std::string&)> log,
     std::shared_ptr<framework::NativeInvariantDateTimeContext> datetime) {
     if (!datetime)
         datetime = framework::shared_native_invariant_datetime_context();
-    if (!store || !access || !service || !gather || !running || !log)
-        throw std::invalid_argument(
-            "Native maintenance requires cache/access/service/scene/log dependencies");
+    if (!log)
+        throw std::invalid_argument("Native Flotsam maintenance requires a logger");
     auto b = std::make_shared<FlotsamMaintenanceBackend>();
     b->combine = [](auto& root, auto& name) { return root / Path(name); };
     auto io = native_flotsam_file_backend({});
@@ -262,6 +271,18 @@ std::shared_ptr<FlotsamMaintenanceBackend> FlotsamCacheMaintenance::native_backe
     b->info = [log](auto& text) { log("info", text); };
     b->warn = [log](auto& text) { log("warn", text); };
     b->sleep = [](int ms) { std::this_thread::sleep_for(std::chrono::milliseconds(ms)); };
+    return b;
+}
+}
+std::shared_ptr<FlotsamMaintenanceBackend> FlotsamCacheMaintenance::native_backend(
+    std::shared_ptr<FlotsamFileStore> store, std::shared_ptr<FlotsamFileAccess> access,
+    std::shared_ptr<AssetService> service, std::function<std::shared_ptr<scene::UuidGathererState>()> gather,
+    std::function<bool()> running, std::function<void(const std::string&, const std::string&)> log,
+    std::shared_ptr<framework::NativeInvariantDateTimeContext> datetime) {
+    if (!store || !access || !service || !gather || !running || !log)
+        throw std::invalid_argument(
+            "Native maintenance requires cache/access/service/scene/log dependencies");
+    auto b = native_filesystem_backend(std::move(log), std::move(datetime));
     b->gather = std::move(gather);
     b->running = std::move(running);
     b->file_name = [store](auto& id) { return store->file_name(id); };

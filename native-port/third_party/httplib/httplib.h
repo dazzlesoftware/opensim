@@ -1830,11 +1830,16 @@ struct Request {
   bool opensim_source_redirects = false;
   // Opt-in streaming phase policy; zero/false preserve existing APIs.
   time_t opensim_stream_header_timeout_msec = 0;
+  bool opensim_require_reused_connection = false;
   std::function<bool()> opensim_stream_header_interrupted;
   bool opensim_stream_raw_content = false;
   // Framework validates supplied headers with its strict source ASCII encoder.
   bool opensim_request_ascii_headers = false;
   std::function<void(Headers &)> opensim_prepare_request_headers;
+  // Optional authority-form target for an application-issued CONNECT.
+  std::string opensim_stream_authority_target;
+  // Runs after the transport handshake and before any HTTP request bytes.
+  std::function<bool(Headers &, void *)> opensim_prepare_connected_headers;
   // Opt-in consumed framework HTTP/1 head parser; default reader is unchanged.
   std::function<bool(const std::function<ssize_t(char *, size_t)> &, Response &)> opensim_response_head_reader;
   // Opt-in client header policy, before response framing/body processing.
@@ -2817,6 +2822,11 @@ public:
     bool opensim_idle_connection_usable() const;
     size_t opensim_buffered_size() const;
     bool opensim_has_buffered_data() const { return opensim_buffered_size()!=0; }
+#ifdef CPPHTTPLIB_SSL_ENABLED
+    tls::session_t opensim_tls_session() const {
+      return connection_ ? connection_->session : nullptr;
+    }
+#endif
 
     StreamHandle() = default;
     StreamHandle(const StreamHandle &) = delete;
@@ -3446,6 +3456,9 @@ public:
 
   void set_proxy(const std::string &host, int port);
   void opensim_set_proxy_tunnel(std::function<bool(Stream &, Response &, Error &)> callback);
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+  void opensim_set_tls_proxy(Client &proxy);
+#endif
   void opensim_set_tls_server_names(std::function<OpensimTlsServerNames()> callback);
   void set_proxy_basic_auth(const std::string &username,
                             const std::string &password);
@@ -3541,6 +3554,10 @@ private:
 };
 
 class SSLClient final : public ClientImpl {
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+  friend class Client;
+  SSLClient *opensim_tls_proxy_ = nullptr;
+#endif
 public:
   explicit SSLClient(const std::string &host);
 
@@ -10624,7 +10641,7 @@ inline bool parse_www_authenticate(const Response &res,
         if (unquoted.size() != val.size()) {
           unquoted = unescape_quoted_pairs(unquoted);
         }
-        auth[std::move(key_part)] = std::move(unquoted);
+        auth[case_ignore::to_lower(key_part)] = std::move(unquoted);
       });
 
   // RFC 7616 Section 3.3 requires realm and nonce on every Digest challenge;
@@ -11414,6 +11431,9 @@ inline const char *pem_c_str(const char *pem, size_t len, std::string &buf) {
 // WebSocketClient also exposes; everything else takes the defaults, which is
 // what keeps the two clients on one implementation.
 struct ClientTlsSessionOptions {
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+  tls::session_t *opensim_outer_session = nullptr;
+#endif
   bool opensim_sni_override = false;
   std::string opensim_sni_host;
   bool opensim_ignore_sni_error = false;
@@ -11507,6 +11527,23 @@ inline bool setup_client_tls_session(
     // The mode is set on the context, so under the same lock
     set_verify_client(ctx, verify_in_handshake);
     session = create_session(ctx, sock);
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+    if (session && options.opensim_outer_session) {
+      auto bio = BIO_new(BIO_f_ssl());
+      auto outer = static_cast<SSL *>(*options.opensim_outer_session);
+      if (!bio || BIO_set_ssl(bio, outer, BIO_CLOSE) != 1) {
+        BIO_free(bio);
+        free_session(session);
+        session = nullptr;
+      } else {
+        // BIO_f_ssl shuts down its owned session when freed. The CONNECT peer
+        // can already have closed the socket after the inner close_notify.
+        SSL_set_quiet_shutdown(outer, 1);
+        SSL_set_bio(static_cast<SSL *>(session), bio, bio);
+        *options.opensim_outer_session = nullptr;
+      }
+    }
+#endif
   }
   if (!session) { return fail(Error::SSLConnection, 0, get_error()); }
 
@@ -13373,10 +13410,21 @@ inline SSLSocketStream::SSLSocketStream(
 inline SSLSocketStream::~SSLSocketStream() = default;
 
 inline bool SSLSocketStream::is_readable() const {
-  return tls::pending(session_) > 0;
+  if (tls::pending(session_) > 0) { return true; }
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+  auto bio = SSL_get_rbio(static_cast<SSL *>(session_));
+  if (bio && BIO_method_type(bio) == BIO_TYPE_SSL) {
+    SSL *outer = nullptr;
+    if (BIO_get_ssl(bio, &outer) == 1 && outer) {
+      return SSL_pending(outer) > 0;
+    }
+  }
+#endif
+  return false;
 }
 
 inline bool SSLSocketStream::wait_readable() const {
+  if (is_readable()) { return true; }
   if (max_timeout_msec_ <= 0) {
     return select_read_interruptible(sock_, read_timeout_sec_,
                                      read_timeout_usec_, read_interrupted_) > 0;
@@ -15724,10 +15772,20 @@ inline bool ClientImpl::ensure_socket_connection(Socket &socket, Error &error) {
 }
 
 inline bool ClientImpl::setup_proxy_connection(
-    Socket & /*socket*/,
-    std::chrono::time_point<std::chrono::steady_clock> /*start_time*/,
-    Response & /*res*/, bool & /*success*/, Error & /*error*/) {
-  return true;
+    Socket &socket, std::chrono::time_point<std::chrono::steady_clock> start_time,
+    Response &res, bool &success, Error &error) {
+  if (!opensim_proxy_tunnel_ || !is_proxy_enabled_for_host(host_)) { return true; }
+  success = detail::process_client_socket(
+      socket.sock, read_timeout_sec_, read_timeout_usec_, write_timeout_sec_,
+      write_timeout_usec_, max_timeout_msec_, start_time, [&](Stream &stream) {
+        static_cast<detail::SocketStream &>(stream).opensim_disable_read_buffer();
+        return opensim_proxy_tunnel_(stream, res, error);
+      });
+  if (!success) {
+    shutdown_socket(socket);
+    close_socket(socket);
+  }
+  return success;
 }
 
 inline void ClientImpl::shutdown_ssl(Socket & /*socket*/,
@@ -16051,6 +16109,11 @@ inline ClientImpl::StreamHandle ClientImpl::open_stream_(Request &req) {
     }
 
     if (!is_alive) {
+      if (req.opensim_require_reused_connection) {
+        handle.error = Error::Connection;
+        handle.response.reset();
+        return handle;
+      }
       if (!ensure_socket_connection(socket_, handle.error)) {
         handle.opensim_native_connection_error = opensim_native_connection_error_;
         handle.opensim_native_dns_error = opensim_native_dns_error_;
@@ -16102,14 +16165,27 @@ inline ClientImpl::StreamHandle ClientImpl::open_stream_(Request &req) {
   add_credential_headers(req);
 
   if (req.opensim_prepare_request_headers) { req.opensim_prepare_request_headers(req.headers); }
+  if (req.opensim_prepare_connected_headers) {
+    void *session = nullptr;
+#ifdef CPPHTTPLIB_SSL_ENABLED
+    session = handle.opensim_tls_session();
+#endif
+    if (!req.opensim_prepare_connected_headers(req.headers, session)) {
+      handle.error = Error::Canceled;
+      handle.response.reset();
+      return handle;
+    }
+  }
 
   // Build the request line and headers in memory first, like write_request()
   // does, so that a rejected header leaves nothing on the wire.
   {
     detail::BufferStream bstrm;
 
-    if (detail::write_request_line(bstrm, req.method,
-                                   proxy_target_prefix() + req.path) < 0) {
+    const auto target = req.opensim_stream_authority_target.empty()
+                            ? proxy_target_prefix() + req.path
+                            : req.opensim_stream_authority_target;
+    if (detail::write_request_line(bstrm, req.method, target) < 0) {
       handle.error = Error::Write;
       handle.response.reset();
       return handle;
@@ -16471,7 +16547,7 @@ inline size_t ClientImpl::StreamHandle::opensim_buffered_size() const {
 
 // A plain HTTP proxy reads the target in absolute-form (RFC 9112 3.2.2)
 inline std::string ClientImpl::proxy_target_prefix() const {
-  if (is_ssl() || !is_proxy_enabled_for_host(host_)) { return std::string(); }
+  if (is_ssl() || opensim_proxy_tunnel_ || !is_proxy_enabled_for_host(host_)) { return std::string(); }
   return "http://" + detail::make_host_and_port_string(host_, port_, false);
 }
 
@@ -19060,6 +19136,13 @@ inline void Client::set_proxy(const std::string &host, int port) {
 inline void Client::opensim_set_proxy_tunnel(std::function<bool(Stream &, Response &, Error &)> callback) {
   cli_->opensim_set_proxy_tunnel(std::move(callback));
 }
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+inline void Client::opensim_set_tls_proxy(Client &proxy) {
+  assert(is_ssl_ && proxy.is_ssl_);
+  static_cast<SSLClient &>(*cli_).opensim_tls_proxy_ =
+      static_cast<SSLClient *>(proxy.cli_.get());
+}
+#endif
 inline void Client::opensim_set_tls_server_names(std::function<OpensimTlsServerNames()> callback) {
   cli_->opensim_set_tls_server_names(std::move(callback));
 }
@@ -19368,6 +19451,20 @@ inline bool SSLClient::connect_with_proxy(
     Response &res, bool &success, Error &error) {
   success = true;
   if (opensim_proxy_tunnel_) {
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+    if (opensim_tls_proxy_) {
+      success = opensim_tls_proxy_->initialize_ssl(socket, error) &&
+                process_socket(socket, start_time, [&](Stream &stream) {
+                  return opensim_proxy_tunnel_(stream, res, error);
+                });
+      if (!success) {
+        shutdown_ssl(socket, false);
+        shutdown_socket(socket);
+        close_socket(socket);
+      }
+      return success;
+    }
+#endif
     auto connected=detail::process_client_socket(socket.sock,read_timeout_sec_,read_timeout_usec_,write_timeout_sec_,write_timeout_usec_,max_timeout_msec_,start_time,
       [&](Stream &stream){static_cast<detail::SocketStream &>(stream).opensim_disable_read_buffer();return opensim_proxy_tunnel_(stream,res,error);});
     if(!connected){shutdown_ssl(socket,true);shutdown_socket(socket);close_socket(socket);success=false;}
@@ -19602,6 +19699,9 @@ inline bool SSLClient::initialize_ssl(Socket &socket, Error &error) {
   }
 
   detail::ClientTlsSessionOptions options;
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+  if (socket.ssl) { options.opensim_outer_session = &socket.ssl; }
+#endif
   options.server_hostname_verification = server_hostname_verification_;
   options.session_verifier = session_verifier_;
   options.ctx_mutex = &ctx_mutex_;

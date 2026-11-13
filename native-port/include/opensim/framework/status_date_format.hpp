@@ -19,7 +19,7 @@ struct StatusDateFormatBackend {
  // host owns culture selection, format validation, errors and localization.
  std::function<std::string(AssetDateTime,const std::string&)> current_culture_format;
 };
-std::string format_status_date(AssetDateTime,const std::string& pattern,const StatusDateFormatBackend&);
+std::string format_status_date(AssetDateTime, const std::string& pattern, const StatusDateFormatBackend&);
 }
 namespace opensim::services {
 struct FlotsamConsoleBackend;

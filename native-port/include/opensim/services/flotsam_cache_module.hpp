@@ -1,6 +1,7 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #pragma once
+#include "opensim/framework/atomic_shared_ptr.hpp"
 #include "opensim/services/asset_storage_factory.hpp"
 #include "opensim/framework/asset_cache.hpp"
 #include "opensim/framework/object_job_engine.hpp"
@@ -29,11 +30,12 @@ public:
 };
 struct FlotsamCacheSharedState {
     std::mutex defaults_mutex;
-    std::atomic<std::shared_ptr<framework::ObjectJobQueue>> worker;
-    std::atomic<std::shared_ptr<std::unordered_set<std::string>>> default_assets{
+    opensim::framework::AtomicSharedPtr<framework::ObjectJobQueue> worker;
+    opensim::framework::AtomicSharedPtr<std::unordered_set<std::string>> default_assets{
         std::make_shared<std::unordered_set<std::string>>()};
     std::shared_ptr<FlotsamFileState> files = std::make_shared<FlotsamFileState>();
 };
+std::shared_ptr<FlotsamCacheSharedState> shared_flotsam_cache_state();
 struct FlotsamCacheLifecycle {
     std::recursive_mutex timer_mutex;
     std::vector<std::shared_ptr<FlotsamCacheScene>> scenes;

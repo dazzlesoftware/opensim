@@ -1,16 +1,393 @@
-using System;using System.Text;using System.Collections.Generic;using OpenMetaverse;using OpenMetaverse.StructuredData;using OpenSim.Framework;using TPFlags=OpenSim.Framework.Constants.TeleportFlags;using GridRegion=OpenSim.Services.Interfaces.GridRegion;
-namespace OpenSim.Services.Interfaces{public class GridRegion{public string RegionName,RawServerURI,ServerURI;public UUID RegionID;}public class PresenceInfo{public string UserID;}}
-public interface IUserAccountCacheModule{void Remove(UUID a);}public interface IPresenceService{OpenSim.Services.Interfaces.PresenceInfo GetAgent(UUID session);}
-public class AdmissionContext{public OSDMap command;public string trace="";public int sleeps;public AdmissionReference owner;public AgentCircuitData input;public ScenePresence actor;public bool F(string k,bool f=false)=>command.ContainsKey(k)?command[k].AsBoolean():f;public int N(string k,int f=0)=>command.ContainsKey(k)?command[k].AsInteger():f;public string T(string k,string f="")=>command.ContainsKey(k)?command[k].AsString():f;public void Log(string op,string value=""){trace+=op+":"+AdmissionReference.H(value)+";";if(T("failure")==op)throw new Exception(op);}}
-public enum ScenePresenceState{Running,PreRemove,Removing,Removed}
-public class ScenePresence{AdmissionContext c;public bool dead,child,notClose;public ScenePresenceState state;public uint flags;public string Name="Test User";public UUID UUID=AdmissionReference.Id(7);public object ControllingClient;public ScenePresence(AdmissionContext ctx){c=ctx;string mode=c.T("presence");child=mode!="root"&&mode!="removing_root";dead=mode=="deleted";state=mode=="preremove"?ScenePresenceState.PreRemove:mode.StartsWith("removing")?ScenePresenceState.Removing:mode=="removed"?ScenePresenceState.Removed:ScenePresenceState.Running;ControllingClient=c.F("client",true)?new object():null;}public bool IsDeleted=>dead;public bool IsChildAgent=>child;public ScenePresenceState LifecycleState{get=>state;set{c.Log("state",((int)value).ToString());state=value;}}public bool DoNotCloseAfterTeleport{set{c.Log("not-close",value?"1":"0");notClose=value;}}public TPFlags TeleportFlags{set{c.Log("presence-flags",((uint)value).ToString());flags=(uint)value;}}public void AdjustKnownSeeds()=>c.Log("adjust");}
-public class AdmissionCircuits:AgentCircuitManager{AdmissionContext c;public AdmissionCircuits(AdmissionContext ctx){c=ctx;}public void Seed(AgentCircuitData a)=>base.AddNewCircuit(a);public override void AddNewCircuit(AgentCircuitData a){c.Log("add",a.circuitcode+":"+a.teleportFlags);base.AddNewCircuit(a);}public override void RemoveCircuit(AgentCircuitData a){c.Log("remove",a.circuitcode.ToString());base.RemoveCircuit(a);}}
-public class AdmissionEntity{AdmissionContext c;public AdmissionEntity(AdmissionContext ctx){c=ctx;}public bool IsInTransit(UUID a){c.Log("transit",a.ToString());return c.F("transit");}}
-public class AdmissionCaps{AdmissionContext c;public AdmissionCaps(AdmissionContext ctx){c=ctx;}public void SetAgentCapsSeeds(AgentCircuitData a){c.Log("seeds",a.AgentID.ToString());a.CapsPath="seeded";if(c.F("reset_caps"))c.owner.DropCaps();}public void CreateCaps(UUID a,uint code)=>c.Log("create-caps",a+":"+code);public void ActivateCaps(uint code)=>c.Log("activate",code.ToString());}
-public class AdmissionCache:IUserAccountCacheModule{AdmissionContext c;public AdmissionCache(AdmissionContext ctx){c=ctx;}public void Remove(UUID a)=>c.Log("cache-remove",a.ToString());}
-public class AdmissionPresenceService:IPresenceService{AdmissionContext c;public AdmissionPresenceService(AdmissionContext ctx){c=ctx;}public OpenSim.Services.Interfaces.PresenceInfo GetAgent(UUID a){c.Log("grid-presence",a.ToString());return c.F("missing_grid")?null:new(){UserID=(c.F("wrong_grid")?AdmissionReference.Id(9):AdmissionReference.Id(7)).ToString()};}}
-public class AdmissionRegion{public string RegionName="Region";public uint RegionSizeX=256,RegionSizeY=256;}
-public class AdmissionLog{AdmissionContext c;public AdmissionLog(AdmissionContext ctx){c=ctx;}public void DebugFormat(string s,params object[] args){if(s.Contains("told of incoming"))c.Log("incoming");}public void InfoFormat(string s,params object[] args){}public void WarnFormat(string s,params object[] args){}public void ErrorFormat(string s,params object[] args){}public void Debug(string s){}}
-namespace OpenSim.Framework{public static class Util{public static AdmissionContext context;public static string GetViewerName(AgentCircuitData a){context.Log("viewer");if(a==null)throw new Exception();return context.T("viewer","Viewer 1");}}}
-public partial class AdmissionReference{AdmissionContext c;AdmissionRegion RegionInfo=new();string Name="Region";bool LoginsEnabled,TelehubAllowLandmarks,SeeIntoRegion;List<string> m_AllowedViewers=new(),m_BannedViewers=new();object m_removeClientLock=new(),m_newUserConnLock=new();AdmissionCircuits m_authenticateHandler;AdmissionEntity EntityTransferModule;AdmissionCaps m_capsModule;AdmissionLog m_log;public AdmissionReference(AdmissionContext ctx){c=ctx;c.owner=this;Util.context=c;LoginsEnabled=c.F("enabled",true);TelehubAllowLandmarks=c.F("landmarks");SeeIntoRegion=c.F("see",true);RegionInfo.RegionSizeX=(uint)c.N("size_x",256);RegionInfo.RegionSizeY=(uint)c.N("size_y",256);foreach(OSD n in (c.command["allowed"] as OSDArray??new OSDArray()))m_AllowedViewers.Add(n.Type==OSDType.Unknown?null:n.AsString());foreach(OSD n in (c.command["banned"] as OSDArray??new OSDArray()))m_BannedViewers.Add(n.Type==OSDType.Unknown?null:n.AsString());m_authenticateHandler=new(c);EntityTransferModule=new(c);if(c.F("caps",true))m_capsModule=new(c);m_log=new(c);if(c.F("old_circuit"))m_authenticateHandler.Seed(new AgentCircuitData{AgentID=Id(7),circuitcode=99});if(c.T("presence")!=""&&c.T("presence")!="none")c.actor=new(c);}public void DropCaps()=>m_capsModule=null;ScenePresence GetScenePresence(UUID a){c.Log("presence",a.ToString());return c.actor;}void Sleep(int n){c.Log("sleep",n.ToString());++c.sleeps;if(c.N("after")>0&&c.sleeps>=c.N("after")){if(c.F("delete_after"))c.actor.dead=true;else c.actor.state=ScenePresenceState.Running;}}bool CheckLandPositionAccess(UUID a,bool n,bool h,bool count,Vector3 p,out string reason){c.Log("land",a+":"+(n?"1":"0")+":"+(h?"1":"0")+":"+(count?"1":"0")+":"+B(p.X)+":"+B(p.Y));reason=c.F("land_deny")?"land-denied":"";return !c.F("land_deny");}void CloseAgent(UUID a,bool force){c.Log("close",a+":"+(force?"1":"0"));if(c.actor!=null)c.actor.dead=true;}T RequestModuleInterface<T>()where T:class{if(typeof(T)==typeof(IUserAccountCacheModule)){c.Log("cache-module");return c.F("cache",true)?new AdmissionCache(c) as T:null;}if(typeof(T)==typeof(IPresenceService)){c.Log("presence-module");return c.F("presence_service",true)?new AdmissionPresenceService(c) as T:null;}throw new Exception();}bool AuthorizeUser(AgentCircuitData a,bool bypass,out string reason){c.Log("authorize",a.AgentID+":"+(bypass?"1":"0"));reason=c.F("auth_deny")?"auth-denied":"";return !c.F("auth_deny");}void CacheUserName(object unused,AgentCircuitData a)=>c.Log("name",a.AgentID.ToString());public static UUID Id(int n)=>new UUID("00000000-0000-0000-0000-00000000000"+n);public static string H(string s)=>Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();public static string B(float f)=>(float.IsNaN(f)?0x7fc00000u:BitConverter.SingleToUInt32Bits(f)).ToString("x8");
-public static void Main(){Culture.SetCurrentCulture();string line;while((line=Console.ReadLine())!=null){var c=new AdmissionContext{command=(OSDMap)OSDParser.DeserializeJson(Encoding.UTF8.GetString(Convert.FromHexString(line)))};c.input=new(){AgentID=Id(7),SessionID=Id(8),circuitcode=123,firstname="Test",lastname="User",CapsPath="initial",startpos=new(1,2,30),teleportFlags=17};if(c.command["position"] is OSDArray v)c.input.startpos=new((float)v[0].AsReal(),(float)v[1].AsReal(),(float)v[2].AsReal());var scene=new AdmissionReference(c);string reason="before",result;try{var circuit=c.F("null_agent")?null:c.input;bool ok=c.F("verify_only")?scene.VerifyUserPresence(circuit,out reason):scene.NewUserConnection(circuit,(uint)c.N("flags"),null,out reason,c.F("require_presence",true));result=ok?"1":"0";}catch{result="EX";}var a=c.input;var sp=c.actor;Console.WriteLine(result+"|"+H(reason)+"|"+H(c.trace)+"|"+B(a.startpos.X)+":"+B(a.startpos.Y)+"|"+a.teleportFlags+"|"+H(a.CapsPath??"")+"|"+scene.m_authenticateHandler.GetAgentCircuits().Count+":"+(ReferenceEquals(scene.m_authenticateHandler.GetAgentCircuitData(Id(7)),a)?"1":"0")+"|"+(sp==null?"-":((int)sp.state)+":"+(sp.dead?"1":"0")+":"+(sp.notClose?"1":"0")+":"+sp.flags)+"|"+(scene.m_capsModule!=null?"1":"0"));}}}
+using System;
+using System.Text;
+using System.Collections.Generic;
+using OpenMetaverse;
+using OpenMetaverse.StructuredData;
+using OpenSim.Framework;
+using TPFlags = OpenSim.Framework.Constants.TeleportFlags;
+using GridRegion = OpenSim.Services.Interfaces.GridRegion;
+
+namespace OpenSim.Services.Interfaces
+{
+    public class GridRegion
+    {
+        public string RegionName, RawServerURI, ServerURI;
+        public UUID RegionID;
+    }
+
+    public class PresenceInfo
+    {
+        public string UserID;
+    }
+}
+
+public interface IUserAccountCacheModule
+{
+    void Remove(UUID a);
+}
+
+public interface IPresenceService
+{
+    OpenSim.Services.Interfaces.PresenceInfo GetAgent(UUID session);
+}
+
+public class AdmissionContext
+{
+    public OSDMap command;
+    public string trace = "";
+    public int sleeps;
+    public AdmissionReference owner;
+    public AgentCircuitData input;
+    public ScenePresence actor;
+    public bool F(string k, bool f = false) => command.ContainsKey(k) ? command[k].AsBoolean() : f;
+    public int N(string k, int f = 0) => command.ContainsKey(k) ? command[k].AsInteger() : f;
+    public string T(string k, string f = "") => command.ContainsKey(k) ? command[k].AsString() : f;
+    public void Log(string op, string value = "")
+    {
+        trace += op + ":" + AdmissionReference.H(value) + ";";
+        if (T("failure") == op)
+            throw new Exception(op);
+    }
+}
+
+public enum ScenePresenceState
+{
+    Running,
+    PreRemove,
+    Removing,
+    Removed
+}
+
+public class ScenePresence
+{
+    AdmissionContext c;
+    public bool dead, child, notClose;
+    public ScenePresenceState state;
+    public uint flags;
+    public string Name = "Test User";
+    public UUID UUID = AdmissionReference.Id(7);
+    public object ControllingClient;
+    public ScenePresence(AdmissionContext ctx)
+    {
+        c = ctx;
+        string mode = c.T("presence");
+        child = mode != "root" && mode != "removing_root";
+        dead = mode == "deleted";
+        state = mode == "preremove" ? ScenePresenceState.PreRemove : mode.StartsWith("removing") ? ScenePresenceState.Removing : mode == "removed" ? ScenePresenceState.Removed : ScenePresenceState.Running;
+        ControllingClient = c.F("client", true) ? new object () : null;
+    }
+
+    public bool IsDeleted => dead;
+    public bool IsChildAgent => child;
+
+    public ScenePresenceState LifecycleState
+    {
+        get => state;
+        set
+        {
+            c.Log("state", ((int)value).ToString());
+            state = value;
+        }
+    }
+
+    public bool DoNotCloseAfterTeleport
+    {
+        set
+        {
+            c.Log("not-close", value ? "1" : "0");
+            notClose = value;
+        }
+    }
+
+    public TPFlags TeleportFlags
+    {
+        set
+        {
+            c.Log("presence-flags", ((uint)value).ToString());
+            flags = (uint)value;
+        }
+    }
+
+    public void AdjustKnownSeeds() => c.Log("adjust");
+}
+
+public class AdmissionCircuits : AgentCircuitManager
+{
+    AdmissionContext c;
+    public AdmissionCircuits(AdmissionContext ctx)
+    {
+        c = ctx;
+    }
+
+    public void Seed(AgentCircuitData a) => base.AddNewCircuit(a);
+    public override void AddNewCircuit(AgentCircuitData a)
+    {
+        c.Log("add", a.circuitcode + ":" + a.teleportFlags);
+        base.AddNewCircuit(a);
+    }
+
+    public override void RemoveCircuit(AgentCircuitData a)
+    {
+        c.Log("remove", a.circuitcode.ToString());
+        base.RemoveCircuit(a);
+    }
+}
+
+public class AdmissionEntity
+{
+    AdmissionContext c;
+    public AdmissionEntity(AdmissionContext ctx)
+    {
+        c = ctx;
+    }
+
+    public bool IsInTransit(UUID a)
+    {
+        c.Log("transit", a.ToString());
+        return c.F("transit");
+    }
+}
+
+public class AdmissionCaps
+{
+    AdmissionContext c;
+    public AdmissionCaps(AdmissionContext ctx)
+    {
+        c = ctx;
+    }
+
+    public void SetAgentCapsSeeds(AgentCircuitData a)
+    {
+        c.Log("seeds", a.AgentID.ToString());
+        a.CapsPath = "seeded";
+        if (c.F("reset_caps"))
+            c.owner.DropCaps();
+    }
+
+    public void CreateCaps(UUID a, uint code) => c.Log("create-caps", a + ":" + code);
+    public void ActivateCaps(uint code) => c.Log("activate", code.ToString());
+}
+
+public class AdmissionCache : IUserAccountCacheModule
+{
+    AdmissionContext c;
+    public AdmissionCache(AdmissionContext ctx)
+    {
+        c = ctx;
+    }
+
+    public void Remove(UUID a) => c.Log("cache-remove", a.ToString());
+}
+
+public class AdmissionPresenceService : IPresenceService
+{
+    AdmissionContext c;
+    public AdmissionPresenceService(AdmissionContext ctx)
+    {
+        c = ctx;
+    }
+
+    public OpenSim.Services.Interfaces.PresenceInfo GetAgent(UUID a)
+    {
+        c.Log("grid-presence", a.ToString());
+        return c.F("missing_grid") ? null : new()
+        {
+            UserID = (c.F("wrong_grid") ? AdmissionReference.Id(9) : AdmissionReference.Id(7)).ToString()
+        };
+    }
+}
+
+public class AdmissionRegion
+{
+    public string RegionName = "Region";
+    public uint RegionSizeX = 256, RegionSizeY = 256;
+}
+
+public class AdmissionLog
+{
+    AdmissionContext c;
+    public AdmissionLog(AdmissionContext ctx)
+    {
+        c = ctx;
+    }
+
+    public void DebugFormat(string s, params object[] args)
+    {
+        if (s.Contains("told of incoming"))
+            c.Log("incoming");
+    }
+
+    public void InfoFormat(string s, params object[] args)
+    {
+    }
+
+    public void WarnFormat(string s, params object[] args)
+    {
+    }
+
+    public void ErrorFormat(string s, params object[] args)
+    {
+    }
+
+    public void Debug(string s)
+    {
+    }
+}
+
+namespace OpenSim.Framework
+{
+    public static class Util
+    {
+        public static AdmissionContext context;
+        public static string GetViewerName(AgentCircuitData a)
+        {
+            context.Log("viewer");
+            if (a == null)
+                throw new Exception();
+            return context.T("viewer", "Viewer 1");
+        }
+    }
+}
+
+public partial class AdmissionReference
+{
+    AdmissionContext c;
+    AdmissionRegion RegionInfo = new();
+    string Name = "Region";
+    bool LoginsEnabled, TelehubAllowLandmarks, SeeIntoRegion;
+    List<string> m_AllowedViewers = new(), m_BannedViewers = new();
+    object m_removeClientLock = new(), m_newUserConnLock = new();
+    AdmissionCircuits m_authenticateHandler;
+    AdmissionEntity EntityTransferModule;
+    AdmissionCaps m_capsModule;
+    AdmissionLog m_log;
+    public AdmissionReference(AdmissionContext ctx)
+    {
+        c = ctx;
+        c.owner = this;
+        Util.context = c;
+        LoginsEnabled = c.F("enabled", true);
+        TelehubAllowLandmarks = c.F("landmarks");
+        SeeIntoRegion = c.F("see", true);
+        RegionInfo.RegionSizeX = (uint)c.N("size_x", 256);
+        RegionInfo.RegionSizeY = (uint)c.N("size_y", 256);
+        foreach (OSD n in (c.command["allowed"] as OSDArray ?? new OSDArray()))
+            m_AllowedViewers.Add(n.Type == OSDType.Unknown ? null : n.AsString());
+        foreach (OSD n in (c.command["banned"] as OSDArray ?? new OSDArray()))
+            m_BannedViewers.Add(n.Type == OSDType.Unknown ? null : n.AsString());
+        m_authenticateHandler = new(c);
+        EntityTransferModule = new(c);
+        if (c.F("caps", true))
+            m_capsModule = new(c);
+        m_log = new(c);
+        if (c.F("old_circuit"))
+            m_authenticateHandler.Seed(new AgentCircuitData { AgentID = Id(7), circuitcode = 99 });
+        if (c.T("presence") != "" && c.T("presence") != "none")
+            c.actor = new(c);
+    }
+
+    public void DropCaps() => m_capsModule = null;
+    ScenePresence GetScenePresence(UUID a)
+    {
+        c.Log("presence", a.ToString());
+        return c.actor;
+    }
+
+    void Sleep(int n)
+    {
+        c.Log("sleep", n.ToString());
+        ++c.sleeps;
+        if (c.N("after") > 0 && c.sleeps >= c.N("after"))
+        {
+            if (c.F("delete_after"))
+                c.actor.dead = true;
+            else
+                c.actor.state = ScenePresenceState.Running;
+        }
+    }
+
+    bool CheckLandPositionAccess(UUID a, bool n, bool h, bool count, Vector3 p, out string reason)
+    {
+        c.Log("land", a + ":" + (n ? "1" : "0") + ":" + (h ? "1" : "0") + ":" + (count ? "1" : "0") + ":" + B(p.X) + ":" + B(p.Y));
+        reason = c.F("land_deny") ? "land-denied" : "";
+        return !c.F("land_deny");
+    }
+
+    void CloseAgent(UUID a, bool force)
+    {
+        c.Log("close", a + ":" + (force ? "1" : "0"));
+        if (c.actor != null)
+            c.actor.dead = true;
+    }
+
+    T RequestModuleInterface<T>()
+        where T : class
+    {
+        if (typeof(T) == typeof(IUserAccountCacheModule))
+        {
+            c.Log("cache-module");
+            return c.F("cache", true) ? new AdmissionCache(c) as T : null;
+        }
+
+        if (typeof(T) == typeof(IPresenceService))
+        {
+            c.Log("presence-module");
+            return c.F("presence_service", true) ? new AdmissionPresenceService(c) as T : null;
+        }
+
+        throw new Exception();
+    }
+
+    bool AuthorizeUser(AgentCircuitData a, bool bypass, out string reason)
+    {
+        c.Log("authorize", a.AgentID + ":" + (bypass ? "1" : "0"));
+        reason = c.F("auth_deny") ? "auth-denied" : "";
+        return !c.F("auth_deny");
+    }
+
+    void CacheUserName(object unused, AgentCircuitData a) => c.Log("name", a.AgentID.ToString());
+    public static UUID Id(int n) => new UUID("00000000-0000-0000-0000-00000000000" + n);
+    public static string H(string s) => Convert.ToHexString(Encoding.UTF8.GetBytes(s)).ToLowerInvariant();
+    public static string B(float f) => (float.IsNaN(f) ? 0x7fc00000u : BitConverter.SingleToUInt32Bits(f)).ToString("x8");
+    public static void Main()
+    {
+        Culture.SetCurrentCulture();
+        string line;
+        while ((line = Console.ReadLine()) != null)
+        {
+            var c = new AdmissionContext
+            {
+                command = (OSDMap)OSDParser.DeserializeJson(Encoding.UTF8.GetString(Convert.FromHexString(line)))
+            };
+            c.input = new()
+            {
+                AgentID = Id(7),
+                SessionID = Id(8),
+                circuitcode = 123,
+                firstname = "Test",
+                lastname = "User",
+                CapsPath = "initial",
+                startpos = new(1, 2, 30),
+                teleportFlags = 17
+            };
+            if (c.command["position"] is OSDArray v)
+                c.input.startpos = new((float)v[0].AsReal(), (float)v[1].AsReal(), (float)v[2].AsReal());
+            var scene = new AdmissionReference(c);
+            string reason = "before", result;
+            try
+            {
+                var circuit = c.F("null_agent") ? null : c.input;
+                bool ok = c.F("verify_only") ? scene.VerifyUserPresence(circuit, out reason) : scene.NewUserConnection(circuit, (uint)c.N("flags"), null, out reason, c.F("require_presence", true));
+                result = ok ? "1" : "0";
+            }
+            catch
+            {
+                result = "EX";
+            }
+
+            var a = c.input;
+            var sp = c.actor;
+            Console.WriteLine(result + "|" + H(reason) + "|" + H(c.trace) + "|" + B(a.startpos.X) + ":" + B(a.startpos.Y) + "|" + a.teleportFlags + "|" + H(a.CapsPath ?? "") + "|" + scene.m_authenticateHandler.GetAgentCircuits().Count + ":" + (ReferenceEquals(scene.m_authenticateHandler.GetAgentCircuitData(Id(7)), a) ? "1" : "0") + "|" + (sp == null ? "-" : ((int)sp.state) + ":" + (sp.dead ? "1" : "0") + ":" + (sp.notClose ? "1" : "0") + ":" + sp.flags) + "|" + (scene.m_capsModule != null ? "1" : "0"));
+        }
+    }
+}

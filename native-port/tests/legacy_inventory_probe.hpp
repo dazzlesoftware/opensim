@@ -16,5 +16,6 @@ struct LegacyInventoryProbeIo {
 // perform actual production codec/network I/O; the helper fabricates no replies.
 // Optional JSON item_name/item_flags default to the connected fixture values.
 // Optional verify_partial_batch tests the original 12-item send's valid prefix.
-void run_legacy_inventory_probe(framework::Uuid agent,const std::filesystem::path& metadata,const LegacyInventoryProbeIo&);
+void run_legacy_inventory_probe(framework::Uuid agent, const std::filesystem::path& metadata,
+                                const LegacyInventoryProbeIo&);
 }

@@ -2214,6 +2214,21 @@ void UbodeWorld::set_momentum(framework::Vector3 momentum) {
     avatar.api->BodySetLinearVel(avatar.Body, velocity.X, velocity.Y, velocity.Z);
     avatar.api->BodyEnable(avatar.Body);
 }
+void UbodeWorld::move_avatar_position(framework::Vector3 position) {
+    auto& avatar = *impl_;
+    avatar.avatar();
+    const auto target = from(position);
+    if (!finite(target))
+        return;
+    std::lock_guard guard(avatar.api->mutex);
+    avatar.api->allocate();
+    avatar.api->BodySetPosition(avatar.Body, target.X, target.Y, target.Z);
+    avatar.api->BodyEnable(avatar.Body);
+    avatar._position = target;
+    avatar.m_freemove = false;
+    avatar._zeroFlag = false;
+    avatar.m_pidControllerActive = true;
+}
 void UbodeWorld::snap_avatar_position(framework::Vector3 position) {
     impl_->avatar();
     const auto target = from(position);

@@ -32,6 +32,8 @@ public:
 // Default StreamReader UTF8 fallback with automatic UTF8/16/32 BOM detection.
 // Text is preserved verbatim: no newline normalization or second BOM removal.
 StreamReaderText decode_stream_reader_text(std::span<const std::uint8_t>);
+// Decode bytes in a known Unicode encoding. The caller handles any preamble.
+std::u16string decode_unicode_text(std::span<const std::uint8_t>, StreamReaderEncoding);
 StreamReaderText read_stream_reader_text(const std::filesystem::path&);
 // Separate BCL ReadLine behavior; Nini tokenization consumes text instead.
 std::vector<std::u16string> stream_reader_lines(std::u16string_view);

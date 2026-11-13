@@ -30,6 +30,18 @@ int main(int argc, char **) {
             unsigned w, h, n;
             int mode, seed;
             while (std::cin >> w >> h >> mode >> seed >> n) {
+                if (mode >= 4) {
+                    std::array<opensim::framework::Vector3, 256> wind;
+                    for (int i = 0; i < 256; ++i)
+                        wind[i] = {mode == 4 ? float(seed) : (i % 16 - 8) * .125f + seed,
+                                   mode == 4 ? 0.f : (i / 16 - 8) * .25f, 0.f};
+                    const auto packet = wind_layer_packet(wind);
+                    std::cout << unsigned(packet.type) << ":";
+                    for (auto byte : packet.data)
+                        std::cout << std::hex << std::setfill('0') << std::setw(2) << unsigned(byte);
+                    std::cout << std::dec << ";\n";
+                    continue;
+                }
                 Terrain t(w, h);
                 fill(t, mode, seed);
                 std::vector<TerrainPatchCoordinate> p(n);

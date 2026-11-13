@@ -93,7 +93,8 @@ Value login_failure(std::string_view name) {
     if (name == "UserProblem")
         return failure(
             "key",
-            "Could not authenticate your avatar. Please check your username and password, and check the grid if problems persist.");
+            "Could not authenticate your avatar. Please check your username and password, "
+            "and check the grid if problems persist.");
     if (name == "GridProblem")
         return failure("key", "Error connecting to the desired location. Try connecting to another region.");
     if (name == "InventoryProblem")
@@ -112,7 +113,8 @@ Value login_failure(std::string_view name) {
     if (name == "AlreadyLoggedInProblem")
         return failure(
             "presence",
-            "You appear to be already logged in. Please wait a a minute or two and retry. If this takes longer than a few minutes please contact the grid owner. ");
+            "You appear to be already logged in. Please wait a a minute or two and retry. "
+            "If this takes longer than a few minutes please contact the grid owner. ");
     if (name == "InternalError")
         return failure("Internal Error", "Error generating Login Response");
     if (name == "IncompleteXMLRPC")
@@ -175,25 +177,28 @@ std::optional<std::string> LoginService::console_command(const std::vector<std::
     }
     return {};
 }
-Value LoginService::login(const LoginRequest& r) {
+Value LoginService::login(const LoginRequest& request) {
     const auto session = orchestrator_ ? Uuid::random() : Uuid{};
     try {
-        const std::string client =
-            r.version.find(' ') != std::string::npos ? r.version : r.channel + " " + r.version;
+        const std::string client = request.version.find(' ') != std::string::npos
+                                       ? request.version
+                                       : request.channel + " " + request.version;
         if ((allowed_clients_ && !allowed_clients_->matches(client)) ||
-            (denied_clients_ && denied_clients_->matches(client)) || identifier_denied(denied_macs_, r.mac) ||
-            identifier_denied(denied_id0s_, r.id0))
+            (denied_clients_ && denied_clients_->matches(client)) || identifier_denied(denied_macs_, request.mac) ||
+            identifier_denied(denied_id0s_, request.id0))
             return login_failure("LoginBlockedProblem");
-        const auto account = store_.find(r.scope, r.first, r.last);
+        const auto account = store_.find(request.scope, request.first, request.last);
         if (!account)
             return login_failure("UserProblem");
         if (account->user_level < minimum_level_.load())
             return login_failure("LoginBlockedProblem");
         if (account->principal_id == "6571e388-6218-4574-87db-f9379718315e")
             return login_failure("UserProblem");
-        if (r.scope != ZeroUuid && account->scope_id != r.scope && account->scope_id != ZeroUuid)
+        if (request.scope != ZeroUuid && account->scope_id != request.scope && account->scope_id != ZeroUuid)
             return login_failure("UserProblem");
-        const std::string password = r.password.starts_with("$1$") ? r.password.substr(3) : md5(r.password);
+        const std::string password = request.password.starts_with("$1$")
+                                         ? request.password.substr(3)
+                                         : md5(request.password);
         const auto authentication =
             authenticate_ ? authenticate_(account->principal_id, password, 30, allow_web_keys_)
                           : store_.authenticate(account->principal_id, password, 30, allow_web_keys_);
@@ -202,42 +207,38 @@ Value LoginService::login(const LoginRequest& r) {
         Uuid secure_session;
         if (!try_parse_sdk_uuid(utf16_replacing(authentication.token), secure_session))
             return login_failure("UserProblem");
-        if (orchestrator_) {
-            const auto scope = Uuid(r.scope == ZeroUuid ? account->scope_id : r.scope);
-            auto prepared = orchestrator_->prepare(*account, scope, session, secure_session, r.start);
-            if (auto* failure = std::get_if<Value>(&prepared))
-                return *failure;
-            if (completion_) {
-                LoginCompletionRequest request;
-                request.start = r.start;
-                request.viewer = r.version;
-                request.channel = r.channel;
-                request.mac = r.mac;
-                request.id0 = r.id0;
-                request.remote_ip = r.remote_ip;
-                request.first = r.first;
-                request.last = r.last;
-                if (!authentication.real_id.empty())
-                    request.real_id = Uuid(authentication.real_id);
-                auto result = completion_->finish(std::get<PreparedLogin>(prepared), request);
-                if (auto* rejected = std::get_if<Value>(&result)) {
-                    orchestrator_->abort(session);
-                    return *rejected;
-                }
-                auto response = std::get<std::shared_ptr<LoginResponse>>(result);
-                return r.llsd ? response->to_llsd() : response->to_xml_rpc();
-            }
-            // The source LaunchAgentAtGrid returns a null circuit with an empty
-            // reason when no simulation connector exists. Admission is still
-            // unavailable here; clean up presence and preserve that response.
+        if (!orchestrator_)
+            return login_failure(require_inventory_ ? "InventoryProblem" : "GridProblem");
+
+        const auto scope = Uuid(request.scope == ZeroUuid ? account->scope_id : request.scope);
+        auto prepared = orchestrator_->prepare(*account, scope, session, secure_session, request.start);
+        if (auto* failure = std::get_if<Value>(&prepared))
+            return *failure;
+
+        if (!completion_) {
+            // The managed login service returns an empty reason when the simulation connector is absent.
             orchestrator_->abort(session);
             return failure("key", "");
         }
-        if (require_inventory_)
-            return login_failure("InventoryProblem");
-        // Region/inventory/presence launch is the next migration scope. Never
-        // issue a successful viewer response or circuit until those services exist.
-        return login_failure("GridProblem");
+
+        LoginCompletionRequest completion_request;
+        completion_request.start = request.start;
+        completion_request.viewer = request.version;
+        completion_request.channel = request.channel;
+        completion_request.mac = request.mac;
+        completion_request.id0 = request.id0;
+        completion_request.remote_ip = request.remote_ip;
+        completion_request.first = request.first;
+        completion_request.last = request.last;
+        if (!authentication.real_id.empty())
+            completion_request.real_id = Uuid(authentication.real_id);
+        auto result = completion_->finish(std::get<PreparedLogin>(prepared), completion_request);
+        if (auto* rejected = std::get_if<Value>(&result)) {
+            orchestrator_->abort(session);
+            return *rejected;
+        }
+        auto response = std::get<std::shared_ptr<LoginResponse>>(result);
+        return request.llsd ? response->to_llsd() : response->to_xml_rpc();
     } catch (const std::exception&) {
         if (orchestrator_)
             orchestrator_->cleanup(session);

@@ -52,6 +52,9 @@ def main():
             )
         )
 
+    for mode in (4, 5):
+        for seed in (-3, 0, 3):
+            add(16, 16, mode, seed, [])
     for width, height in [(256, 256), (512, 256), (256, 512), (512, 512), (32, 48)]:
         for mode in range(4):
             add(width, height, mode, 1, [])

@@ -100,10 +100,18 @@ def main():
         '<Nini/><Nini/>',
         '',
         '<Nini><Other/><Section Name="x"><other/></Section></Nini>',
+        config([{'assetID': ' 00000000-0000-0000-0000-000000000008 '}]),
+        config([{'assetID': '00000000000000000000000000000008'}]),
+        '<Nini><Section Name="x"><Key Name="name" Value="Literal\tTab&#x9;Escaped"/></Section></Nini>',
+        '<Nini><Section Name="x"><Key Name="name" Value="Line\r\nBreak"/></Section></Nini>',
+        '<!DOCTYPE Nini [<!ENTITY label "Asset &amp; Catalog">]>'
+        '<Nini><Section Name="x"><Key Name="name" Value="&label;"/></Section></Nini>',
+        '<!DOCTYPE Nini [<!ENTITY % external SYSTEM "unavailable.dtd">%external;]>'
+        '<Nini><Section Name="x"><Key Name="name" Value="Local asset"/></Section></Nini>',
     ]
     controls = []
     for i, xml in enumerate(xmls):
-        (w / f'set-{i}.xml').write_text(xml, encoding='utf-8')
+        (w / f'set-{i}.xml').write_bytes(xml.encode('utf-8'))
         name = f'control-{i}.xml'
         (w / name).write_text(config([{'file': f'set-{i}.xml'}]), encoding='utf-8')
         controls.append(name)
@@ -148,7 +156,7 @@ def main():
             cwd=w,
             capture_output=True,
             text=True,
-            timeout=180,
+            timeout=300,
         )
         assert r.returncode == 0, r.stderr[-2000:]
         rows.append(r.stdout.splitlines())

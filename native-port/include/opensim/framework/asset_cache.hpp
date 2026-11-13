@@ -6,7 +6,7 @@ namespace opensim::framework {
 class IAssetCache {
 public:
     virtual ~IAssetCache()=default;
-    virtual void cache(const std::shared_ptr<AssetBase>& asset,bool replace=false)=0;
+    virtual void cache(const std::shared_ptr<AssetBase>& asset, bool replace = false) = 0;
     virtual void cache_negative(const std::string& id)=0;
     // False denotes a negative-cache hit; the source callers may ignore it.
     virtual bool get(const std::string& id,std::shared_ptr<AssetBase>& asset)=0;

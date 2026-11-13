@@ -36,38 +36,48 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace opensim::network {
 class HttpResponseChannel;
 struct HttpRequest {
-    std::string method,path,body,remote_ip,content_type;
-    std::map<std::string,std::string> headers;
+    std::string method;
+    std::string path;
+    std::string body;
+    std::string remote_ip;
+    std::string content_type;
+    std::map<std::string, std::string> headers;
     std::string raw_target;
-    int remote_port=0;
-    std::string http_version="HTTP/1.1";
+    int remote_port = 0;
+    std::string http_version = "HTTP/1.1";
     std::shared_ptr<HttpResponseChannel> response_channel;
-    std::uint32_t request_id=0;
-    double arrival_timestamp=0;
+    std::uint32_t request_id = 0;
+    double arrival_timestamp = 0;
 };
 struct HttpResponse {
-    int status=200;
-    std::string content_type="text/plain; charset=utf-8",body;
-    std::map<std::string,std::string> headers;
-    bool keep_alive=false;
-    bool deferred=false;
+    int status = 200;
+    std::string content_type = "text/plain; charset=utf-8";
+    std::string body;
+    std::map<std::string, std::string> headers;
+    bool keep_alive = false;
+    bool deferred = false;
 };
 struct HttpServerOptions {
-    std::string host="127.0.0.1";
-    int port=9000,workers=8,queued_requests=64,timeout_seconds=5;
-    std::size_t maximum_body=1024*1024;
-    std::string certificate,private_key;
+    std::string host = "127.0.0.1";
+    int port = 9000;
+    int workers = 8;
+    int queued_requests = 64;
+    int timeout_seconds = 5;
+    std::size_t maximum_body = 1024 * 1024;
+    std::string certificate;
+    std::string private_key;
     std::vector<std::string> custom_methods;
-    bool decompress_request_body=true;
-    std::string pkcs12_bundle, pkcs12_password;
+    bool decompress_request_body = true;
+    std::string pkcs12_bundle;
+    std::string pkcs12_password;
 };
 class HttpServer {
 public:
-    using Handler=std::function<HttpResponse(const HttpRequest&)>;
-    HttpServer(HttpServerOptions options,Handler handler);
+    using Handler = std::function<HttpResponse(const HttpRequest&)>;
+    HttpServer(HttpServerOptions options, Handler handler);
     ~HttpServer();
-    HttpServer(const HttpServer&)=delete;
-    HttpServer& operator=(const HttpServer&)=delete;
+    HttpServer(const HttpServer&) = delete;
+    HttpServer& operator=(const HttpServer&) = delete;
     int start(const std::function<void(int)>& on_bound = {});
     void stop();
     bool is_running() const;

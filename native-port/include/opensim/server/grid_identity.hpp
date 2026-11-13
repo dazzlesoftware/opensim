@@ -29,7 +29,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/server/config.hpp"
 #include "opensim/framework/http_uri.hpp"
 #include <vector>
+namespace opensim::network { class WebHttpClients; }
 namespace opensim::server {
+std::string script_grid_service_value(const IniConfig&, const network::WebHttpClients&, std::string_view key);
 // Validate the destination and resolve the claimed home before asking it to verify the session.
 bool authenticate_gatekeeper_agent(const class GridIdentity& grid, std::string_view token,
                                    std::string_view client_ip, std::string_view home_uri,

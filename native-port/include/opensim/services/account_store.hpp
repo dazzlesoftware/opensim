@@ -46,7 +46,14 @@ struct AuthenticationResult {
 };
 class AccountStore {
 public:
-    AccountStore(const std::string& accounts_path, const std::string& auth_path, bool initialize = false, bool source_accounts = false, std::string account_realm = "UserAccounts", std::string auth_realm = "auth", bool local_authentication = true);
+    AccountStore(
+        const std::string& accounts_path,
+        const std::string& auth_path,
+        bool initialize = false,
+        bool source_accounts = false,
+        std::string account_realm = "UserAccounts",
+        std::string auth_realm = "auth",
+        bool local_authentication = true);
     ~AccountStore();
     AccountStore(const AccountStore&) = delete;
     AccountStore& operator=(const AccountStore&) = delete;

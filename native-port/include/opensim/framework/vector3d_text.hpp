@@ -32,8 +32,8 @@
 #include <string_view>
 namespace opensim::framework {
 struct Vector3d {
- double x=0,y=0,z=0;
- bool operator==(const Vector3d&)const=default;
+    double x = 0, y = 0, z = 0;
+    bool operator==(const Vector3d&) const = default;
 };
 bool try_parse_sdk_vector3d(std::u16string_view,Vector3d&);
 std::string vector3d_string(const Vector3d&);

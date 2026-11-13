@@ -112,7 +112,13 @@ network::HttpResponse InventoryAssetUpload::handle(const network::HttpRequest &r
             body =
                 "<llsd><map><key>new_asset</key>" + str(asset.str()) + "<key>new_inventory_item</key><uuid>" +
                 item_.str() +
-                "</uuid><key>state</key><string>complete</string><key>new_next_owner_mask</key><integer>0</integer><key>new_group_mask</key><integer>0</integer><key>new_everyone_mask</key><integer>0</integer><key>inventory_item_flags</key><integer>0</integer></map></llsd>";
+                "</uuid>"
+                "<key>state</key><string>complete</string>"
+                "<key>new_next_owner_mask</key><integer>0</integer>"
+                "<key>new_group_mask</key><integer>0</integer>"
+                "<key>new_everyone_mask</key><integer>0</integer>"
+                "<key>inventory_item_flags</key><integer>0</integer>"
+                "</map></llsd>";
         if (backend_.dump)
             backend_.dump(data);
         result.body = std::move(body);

@@ -2,6 +2,11 @@
 #include "opensim/physics/mesh_asset.hpp"
 #include "opensim/network/osd_value.hpp"
 #include "opensim/network/sdk_llsd_binary.hpp"
+#include "opensim/framework/asset_base.hpp"
+#include "opensim/framework/primitive_base_shape.hpp"
+#include "opensim/framework/texture_entry.hpp"
+#include "opensim/scene/map_tile.hpp"
+#include "opensim/scene/world.hpp"
 #include <algorithm>
 #include <bit>
 #include <cmath>
@@ -15,7 +20,7 @@ static void check(bool b, const char* text) {
     if (!b)
         throw std::runtime_error(text);
 }
-static void check_mesh_asset_decoder() {
+static void check_mesh_asset_decoder(bool render_only = false) {
     using network::Value;
     const auto binary = [](std::initializer_list<std::uint8_t> bytes) {
         return network::osd_from_binary(std::make_shared<std::vector<std::uint8_t>>(bytes));
@@ -60,6 +65,108 @@ static void check_mesh_asset_decoder() {
         number(static_cast<std::uint32_t>(compressed.size()));
         return header + "}}padding" + compressed;
     };
+    if (render_only) {
+        auto render_face = submesh;
+        render_face.set("TexCoord0", binary({0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 255, 255}));
+        const auto uv_pair = [](int u, int v) {
+            Value pair;
+            pair.kind = Value::Kind::Array;
+            pair.array = {Value(u), Value(v)};
+            return pair;
+        };
+        render_face.set("TexCoord0Domain", Value::object({{"Min", uv_pair(0, 0)}, {"Max", uv_pair(1, 1)}}));
+        render_face.set("Normal", binary({255}));
+        Value render_contents;
+        render_contents.kind = Value::Kind::Array;
+        render_contents.array = {Value::object({{"NoGeometry", Value(true)}}), render_face};
+        const auto render_asset = asset(render_contents, "high_lod", 7);
+        const auto decoded_render = physics::decode_asset_render_mesh(render_asset, physics::AssetMeshLod::High);
+        check(decoded_render && decoded_render->size() == 1 &&
+                  decoded_render->front().texcoords[1] == std::array{1.f, 0.f},
+              "Warp3D render LOD skips empty submeshes and normal data and decodes UV coordinates");
+        check(!physics::decode_asset_render_mesh(render_asset, physics::AssetMeshLod::Low),
+              "missing requested render LOD reports absent geometry");
+        render_contents.array[1].set("TexCoord0", binary({0, 0, 0, 0}));
+        check(!physics::decode_asset_render_mesh(asset(render_contents, "high_lod", 7), physics::AssetMeshLod::High),
+              "truncated render UV data is rejected");
+
+        const auto mesh_id = framework::Uuid("7e0b2a75-0b6a-4aae-8f6a-0ea69823e5aa");
+        auto part = scene::SceneObject::primitive({}, {4.f, 4.f, 20.f}, {4.f, 4.f, 2.f});
+        const auto mesh_shape = framework::PrimitiveBaseShapeCore::create_mesh(2, mesh_id, [](const std::string&) {});
+        part.extra_params = mesh_shape.extra_params();
+        part.shape.path_curve = 32;
+        framework::TextureEntry textures(framework::TextureEntry::white_texture);
+        textures.get_face(0)->color({0.f, 1.f, 0.f, 1.f});
+        part.texture_entry = textures.bytes();
+        scene::WarpMapRaster raster(8, 8);
+        scene::draw_warp_prims(raster, std::span(&part, 1), {}, false, -100.f, 4086.f,
+                              [&](framework::Uuid id) {
+                                  check(id == mesh_id, "Warp3D requests the mesh asset UUID");
+                                  auto result = std::make_shared<framework::AssetBase>();
+                                  result->data = std::make_shared<std::vector<std::uint8_t>>(
+                                      render_asset.begin(), render_asset.end());
+                                  return result;
+                              });
+        const auto& pixels = raster.image().pixels;
+        const scene::MapColor green{0, 255, 0};
+        const auto offset = (5 * 8 + 3) * 3;
+        check(std::equal(green.begin(), green.end(), pixels.begin() + offset),
+              "Warp3D draws render geometry using the compacted face order");
+
+        scene::MapBitmap sculpt{4, 4, {}};
+        for (unsigned y = 0; y < 4; ++y) {
+            for (unsigned x = 0; x < 4; ++x) {
+                sculpt.pixels.insert(sculpt.pixels.end(),
+                    {static_cast<std::uint8_t>(x * 85), static_cast<std::uint8_t>(y * 85), 128});
+            }
+        }
+        const auto sculpt_face = [&](std::uint8_t type) {
+            return physics::build_sculpt_render_face(sculpt.pixels, 4, 4, 3, type, physics::AssetMeshLod::High);
+        };
+        const auto plane = sculpt_face(3);
+        const auto sphere = sculpt_face(1);
+        const auto torus = sculpt_face(2);
+        const auto cylinder = sculpt_face(4);
+        const auto mirrored = sculpt_face(3 | 0x80);
+        check(plane && plane->geometry.vertices.size() == 16 && plane->geometry.indices.size() == 54 &&
+                  std::equal(plane->geometry.indices.begin(), plane->geometry.indices.begin() + 6,
+                             std::array{0u, 4u, 5u, 0u, 5u, 1u}.begin()) &&
+                  plane->normals.front() == framework::Vector3{0, 0, -1} &&
+                  plane->texcoords.back() == std::array{1.f, 1.f},
+              "sculpt plane matches managed topology, normals, and texture coordinates");
+        check(sphere && sphere->geometry.vertices.size() == 30 &&
+                  sphere->geometry.vertices[0] == sphere->geometry.vertices[4] &&
+                  torus && torus->geometry.vertices.size() == 25 &&
+                  torus->geometry.vertices[0] == torus->geometry.vertices[20] &&
+                  cylinder && cylinder->geometry.vertices.size() == 20 &&
+                  cylinder->geometry.vertices[0] == cylinder->geometry.vertices[4],
+              "sculpt sphere, torus, and cylinder close the managed poles and seams");
+        check(mirrored && mirrored->geometry.vertices.front().x == .5f &&
+                  mirrored->geometry.indices[1] == 5,
+              "sculpt mirror reflects X and reverses winding");
+        const auto low = physics::build_sculpt_render_face(
+            std::vector<std::uint8_t>(64 * 64 * 3), 64, 64, 3, 3, physics::AssetMeshLod::Lowest);
+        check(low && low->geometry.vertices.size() == 81 && low->geometry.indices.size() == 384,
+              "sculpt map subsamples to the managed low-detail grid");
+        check(!physics::build_sculpt_render_face(std::vector<std::uint8_t>(17 * 17 * 3),
+                  17, 17, 3, 3, physics::AssetMeshLod::Lowest),
+              "sculpt maps that overrun the managed sampling grid are rejected");
+
+        auto sculpt_shape = framework::PrimitiveBaseShapeCore::create_mesh(1, mesh_id, [](const std::string&) {});
+        sculpt_shape.set_sculpt_properties(3 | 0x40, mesh_id);
+        part.extra_params = sculpt_shape.extra_params();
+        scene::WarpMapRaster sculpt_raster(8, 8);
+        scene::draw_warp_prims(sculpt_raster, std::span(&part, 1),
+                              [&](const auto& id) {
+                                  check(id == mesh_id, "Warp3D requests the sculpt map UUID");
+                                  return sculpt;
+                              }, false, -100.f, 4086.f,
+                              [](auto) { return std::shared_ptr<framework::AssetBase>{}; });
+        check(std::equal(green.begin(), green.end(), sculpt_raster.image().pixels.begin() + offset),
+              "Warp3D draws geometry decoded from a sculpt bitmap");
+        return;
+    }
+
     for (const auto section : {"physics_shape", "physics_mesh"}) {
         const auto decoded = physics::decode_asset_physics_mesh(asset(contents, section, 7));
         check(decoded && decoded->indices == std::vector<std::uint32_t>{0, 1, 2, 3, 4, 5},
@@ -70,6 +177,7 @@ static void check_mesh_asset_decoder() {
     }
     check(!physics::decode_asset_physics_mesh(asset(contents, "physics_mesh", 90000)),
           "out-of-range mesh block rejected");
+
     contents.array[0].set("TriangleList", binary({0, 0, 1, 0, 3, 0}));
     check(!physics::decode_asset_physics_mesh(asset(contents, "physics_mesh", 7)),
           "out-of-range submesh index rejected");
@@ -1008,6 +1116,10 @@ static void check_avatar_volume_detect(const std::filesystem::path& path) {
 int main(int argc, char** argv) {
     try {
         check(argc >= 2, "explicit library path argument required");
+        if (std::string_view(argv[1]) == "--render-mesh") {
+            check_mesh_asset_decoder(true);
+            return 0;
+        }
         std::filesystem::path path = argv[1];
         if (argc >= 3) {
             probe(path, std::stoi(argv[2]));

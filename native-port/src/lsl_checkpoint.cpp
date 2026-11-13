@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <cmath>
 #include <limits>
 #include <set>
 #include <stdexcept>
@@ -15,6 +16,13 @@ constexpr std::array<std::uint8_t, 4> listener_signature{'L', 'S', 'L', 1};
 constexpr std::uint8_t listener_version = 2;
 constexpr std::uint8_t permissions_version = 3;
 constexpr std::uint8_t start_parameter_version = 4;
+constexpr std::uint8_t sensor_version = 5;
+constexpr std::uint8_t regex_listener_version = 6;
+constexpr std::uint8_t regex_listener_blob_version = 2;
+
+bool has_regex_listeners(const std::vector<LslListenerCheckpoint>& listeners) {
+    return std::ranges::any_of(listeners, [](const auto& listener) { return listener.regex_flags != 0; });
+}
 constexpr std::size_t maximum_bytes = 4 * 1024 * 1024;
 constexpr std::size_t maximum_entries = 65536;
 constexpr unsigned maximum_depth = 64;
@@ -41,6 +49,7 @@ template <class Archive, class Detector> void detector_fields(Archive& archive, 
 class Writer {
     std::vector<std::uint8_t> output_{signature.begin(), signature.end()};
     unsigned depth_ = 0;
+    bool include_listener_regex_ = false;
 
     void append(std::span<const std::uint8_t> bytes) {
         if (bytes.size() > maximum_bytes - output_.size())
@@ -91,6 +100,11 @@ class Writer {
     }
     void field(const LslListenerCheckpoint& value) {
         listener_fields(*this, value);
+        if (include_listener_regex_)
+            field(value.regex_flags);
+    }
+    void field(const LslSensorQuery& value) {
+        fields(value.name, value.key, value.type, value.range, value.arc, value.interval);
     }
     template <class T> void field(const std::vector<T>& values) {
         if (values.size() > maximum_entries)
@@ -124,14 +138,18 @@ class Writer {
     std::vector<std::uint8_t> encode(const LslCheckpoint& checkpoint, bool include_extensions) {
         checkpoint_fields(*this, checkpoint);
         const bool has_permissions = !checkpoint.permissions_granter.is_zero() || checkpoint.permissions_mask != 0;
-        if (checkpoint.start_parameter != 0) {
-            output_[3] = start_parameter_version;
+        include_listener_regex_ = include_extensions && has_regex_listeners(checkpoint.listeners);
+        if (checkpoint.start_parameter != 0 || !checkpoint.sensors.empty() || include_listener_regex_) {
+            output_[3] = include_listener_regex_ ? regex_listener_version
+                       : checkpoint.sensors.empty() ? start_parameter_version : sensor_version;
             if (include_extensions) {
                 fields(checkpoint.listeners, checkpoint.permissions_granter, checkpoint.permissions_mask);
             } else {
                 fields(std::vector<LslListenerCheckpoint>{}, framework::Uuid{}, std::int32_t{0});
             }
             field(checkpoint.start_parameter);
+            if (output_[3] >= sensor_version)
+                field(checkpoint.sensors);
         } else if (include_extensions && (!checkpoint.listeners.empty() || has_permissions)) {
             output_[3] = has_permissions ? permissions_version : listener_version;
             field(checkpoint.listeners);
@@ -142,6 +160,9 @@ class Writer {
     }
     std::vector<std::uint8_t> encode_listeners(const std::vector<LslListenerCheckpoint>& listeners) {
         output_.assign(listener_signature.begin(), listener_signature.end());
+        include_listener_regex_ = has_regex_listeners(listeners);
+        if (include_listener_regex_)
+            output_[3] = regex_listener_blob_version;
         field(listeners);
         return std::move(output_);
     }
@@ -150,6 +171,7 @@ class Writer {
 class Reader {
     std::span<const std::uint8_t> remaining_;
     unsigned depth_ = 0;
+    bool include_listener_regex_ = false;
 
     [[noreturn]] static void invalid() {
         throw std::invalid_argument("Invalid LSL checkpoint");
@@ -210,6 +232,13 @@ class Reader {
     }
     void field(LslListenerCheckpoint& value) {
         listener_fields(*this, value);
+        if (include_listener_regex_)
+            field(value.regex_flags);
+    }
+    void field(LslSensorQuery& value) {
+        fields(value.name, value.key, value.type, value.range, value.arc, value.interval);
+        if (value.interval && (!std::isfinite(*value.interval) || *value.interval == 0.))
+            invalid();
     }
     template <class T> void field(std::vector<T>& values) {
         const auto count = number(4);
@@ -276,24 +305,31 @@ class Reader {
             invalid();
         const auto header = take(signature.size());
         if (!std::ranges::equal(header.first(3), std::span(signature).first(3)) ||
-            header[3] < signature[3] || header[3] > start_parameter_version)
+            header[3] < signature[3] || header[3] > regex_listener_version)
             invalid();
         LslCheckpoint checkpoint;
         checkpoint_fields(*this, checkpoint);
+        include_listener_regex_ = header[3] >= regex_listener_version;
         if (header[3] >= listener_version)
             read_listeners(checkpoint.listeners);
         if (header[3] >= permissions_version)
             fields(checkpoint.permissions_granter, checkpoint.permissions_mask);
         if (header[3] >= start_parameter_version)
             field(checkpoint.start_parameter);
+        if (header[3] >= sensor_version)
+            field(checkpoint.sensors);
         if (!remaining_.empty())
             invalid();
         return checkpoint;
     }
     std::vector<LslListenerCheckpoint> decode_listeners() {
-        if (remaining_.size() > maximum_bytes ||
-            !std::ranges::equal(take(listener_signature.size()), listener_signature))
+        if (remaining_.size() > maximum_bytes)
             invalid();
+        const auto header = take(listener_signature.size());
+        if (!std::ranges::equal(header.first(3), std::span(listener_signature).first(3)) ||
+            header[3] < listener_signature[3] || header[3] > regex_listener_blob_version)
+            invalid();
+        include_listener_regex_ = header[3] >= regex_listener_blob_version;
         std::vector<LslListenerCheckpoint> listeners;
         read_listeners(listeners);
         if (!remaining_.empty())

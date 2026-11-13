@@ -114,6 +114,36 @@ void run() {
     check(probe(1, 1, 0, 0, 0, 3).starts_with("OK|0:"), "empty folder sentinel packet");
     check(probe(1, 1, 6, 7, 0, 0).starts_with("OK|0:"), "both fetch flags false sends empty sentinel");
     check(probe(1, 1, 6, 7, 0, 3).starts_with("OK|0:"), "folder batching uses manual splitting");
+    services::InventoryFolder folder, child;
+    folder.id = id(10);
+    child.id = id(11);
+    child.parent = folder.id;
+    std::vector<network::lludp::Packet> updates;
+    inventory_bulk_folder(id(1), folder, [&](framework::Uuid requested) {
+        services::InventoryCollection content;
+        if (requested == folder.id) {
+            content.folders.push_back(child);
+            for (int i = 0; i < 6; ++i) {
+                services::InventoryItem item;
+                item.id = id(20 + i);
+                item.parent = folder.id;
+                content.items.push_back(item);
+            }
+        }
+        return content;
+    }, [&](auto packet, bool split) {
+        check(split && packet.zerocoded, "bulk folder uses zero-coded split-capable packets");
+        updates.push_back(std::move(packet));
+    });
+    check(updates.size() == 3, "bulk folder emits two item batches and a trailing empty child");
+    check(updates[0].blocks.at("ItemData").size() == 5 &&
+              updates[1].blocks.at("ItemData").size() == 1 &&
+              updates[2].blocks.at("ItemData").empty(),
+          "bulk folder groups at most five items per packet");
+    check(updates[0].block("ItemData").at("ItemID") == network::lludp::FieldValue{id(25)} &&
+              updates[2].block("FolderData").at("FolderID") == network::lludp::FieldValue{child.id} &&
+              updates[0].block("AgentData").at("TransactionID") == updates[2].block("AgentData").at("TransactionID"),
+          "bulk folder preserves reverse item order and one transaction ID");
 }
 }
 int main(int argc, char **argv) {

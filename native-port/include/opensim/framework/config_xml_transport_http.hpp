@@ -120,6 +120,8 @@ struct ConfigXmlHttpOperation {
     // separate interruption callback above.
     std::function<bool()> request_interrupted;
     std::function<std::exception_ptr(std::string, int)> error;
+    // Request content validation runs after connecting and encoding headers.
+    std::function<void()> validate_request_content;
 };
 using ConfigXmlHttpRequester = std::function<std::shared_ptr<ConfigXmlStream>(std::shared_ptr<ConfigXmlUri>,
                                                                               const ConfigXmlHttpOperation&)>;

@@ -70,21 +70,25 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--native", required=True, type=Path)
     parser.add_argument("--connection", default=os.environ.get("OPENSIM_OFFLINE_IM_TEST_CONNECTION"))
-    parser.add_argument("--provider", choices=("PGSQL", "MySQL"), default="PGSQL")
+    parser.add_argument("--provider", choices=("PGSQL", "MySQL", "SQLite"), default="PGSQL")
     parser.add_argument("--realm", help="Use an existing table in the isolated test database")
     args = parser.parse_args()
-    if not args.connection:
+    if args.provider != "SQLite" and not args.connection:
         parser.error("Set --connection or OPENSIM_OFFLINE_IM_TEST_CONNECTION")
-    if "\n" in args.connection or "\r" in args.connection:
+    if args.connection and ("\n" in args.connection or "\r" in args.connection):
         raise ValueError("Connection string must fit on one line")
 
     with tempfile.TemporaryDirectory() as temporary:
         realm = args.realm or f"offline_fixture_{uuid.uuid4().hex}"
         config = Path(temporary) / "offline.ini"
-        config.write_text(
-            "[NativeServer]\nEnableOfflineIMEndpoint=true\n"
-            "[Network]\nhttp_listener_port=0\n"
+        database = (
             f'[DatabaseService]\nStorageProvider=unused.dll\nConnectionString="{args.connection}"\n'
+            if args.provider != "SQLite" else ""
+        )
+        config.write_text(
+            "[NativeServer]\nEnableOfflineIMEndpoint=true\nOfflineIMDatabase=offline-fixture.db\n"
+            "[Network]\nhttp_listener_port=0\n"
+            f"{database}"
             f"[Messaging]\nStorageProvider=OpenSim.Data.{args.provider}.dll\n"
             f"MaxOfflineIMs=1\nRealm={realm}\n",
             encoding="utf-8",
@@ -92,7 +96,11 @@ def main():
         command = [str(args.native.resolve()), "--config", str(config)]
         subprocess.run(command + ["--init-db"], check=True, timeout=30)
         recipient = "92929292-9292-4292-8292-929292929292"
-        message = {"METHOD": "STORE", "ToAgentID": recipient, "Message": "SQL & café", "BinaryBucket": "00 FF"}
+        message = {
+            "METHOD": "STORE", "ToAgentID": recipient, "Message": "SQL & café",
+            "Dialog": "9", "Offline": "0", "SessionID": "41414141-4141-4141-8141-414141414141",
+            "BinaryBucket": "00 FF",
+        }
 
         for restart in (False, True):
             with running_server(command) as post, running_server(command) as peer:
@@ -115,8 +123,8 @@ def main():
                     assert len(delivered) == 1
                     assert all(reply.find("RESULT").get("type") == "List" for reply in replies)
                     result = delivered[0]
-                    assert result.findtext("RESULT/im-0/Message") == message["Message"]
-                    assert result.findtext("RESULT/im-0/BinaryBucket") == message["BinaryBucket"]
+                    for field in ("Message", "BinaryBucket", "Dialog", "Offline", "SessionID"):
+                        assert result.findtext(f"RESULT/im-0/{field}") == message[field], field
                     assert len(post(METHOD="GET", PrincipalID=recipient).find("RESULT")) == 0
                     assert post(**(message | {"Message": " \t "})).findtext("RESULT") == "True"
                     assert peer(METHOD="GET", PrincipalID=recipient).findtext("RESULT/im-0/Message") == " \t "

@@ -246,7 +246,8 @@ bool parameter(std::u16string_view value, std::size_t& at) {
     ws(value, at);
     return true;
 }
-bool parse_transfer(std::u16string_view value, bool& chunked) {
+bool parse_transfer(std::u16string_view value, bool& chunked,
+                    std::vector<std::u16string>* codings = nullptr) {
     std::size_t at = 0;
     bool found = false;
     while (true) {
@@ -263,6 +264,9 @@ bool parse_transfer(std::u16string_view value, bool& chunked) {
         if (!take_token(value, at))
             return false;
         auto name = value.substr(start, at - start);
+        std::u16string coding;
+        if (codings)
+            coding = name;
         bool is_chunked = name.size() == 7;
         constexpr std::u16string_view target = u"chunked";
         for (std::size_t i = 0; is_chunked && i < name.size(); ++i) {
@@ -277,12 +281,22 @@ bool parse_transfer(std::u16string_view value, bool& chunked) {
             do {
                 ++at;
                 ws(value, at);
+                const auto parameter_start = at;
                 if (!parameter(value, at))
                     return false;
+                if (codings) {
+                    auto item = value.substr(parameter_start, at - parameter_start);
+                    while (!item.empty() && (item.back() == u' ' || item.back() == u'\t'))
+                        item.remove_suffix(1);
+                    coding += u"; ";
+                    coding += item;
+                }
                 ws(value, at);
             } while (at < value.size() && value[at] == u';');
         }
         found |= is_chunked;
+        if (codings)
+            codings->push_back(is_chunked ? u"chunked" : std::move(coding));
         if (at == value.size()) {
             chunked = found;
             return true;
@@ -362,6 +376,27 @@ bool config_http_transfer_encoding_chunked(const std::vector<std::u16string>& va
             return true;
     }
     return false;
+}
+std::vector<std::u16string> config_http_disable_chunked_request_encoding(
+    const std::vector<std::u16string>& values) {
+    std::vector<std::u16string> result;
+    bool removed_chunked = false;
+    for (const auto& value : values) {
+        std::vector<std::u16string> codings;
+        bool chunked = false;
+        if (!parse_transfer(value, chunked, &codings)) {
+            result.push_back(value);
+            continue;
+        }
+        for (auto& coding : codings) {
+            if (!removed_chunked && coding == u"chunked") {
+                removed_chunked = true;
+                continue;
+            }
+            result.push_back(std::move(coding));
+        }
+    }
+    return result;
 }
 [[noreturn]] void config_http_response_headers_ended(bool can_retry) {
     auto inner = std::make_shared<ConfigHttpHeaderError>("System.Net.Http.HttpIOException",

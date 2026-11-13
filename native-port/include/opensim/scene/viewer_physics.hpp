@@ -37,6 +37,8 @@ class ViewerPhysics {
                  std::optional<MovementAnimation> movement = {});
     std::optional<MovementAnimation> movement_animation(framework::Uuid agent, framework::Uuid session) const;
     void teleported(const ViewerAgent&);
+    void teleport_refused(const ViewerAgent&);
+    void script_teleported(const ViewerAgent&, bool apply_momentum);
     void input(const ViewerAgent&);
     void appearance_changed(const ViewerAgent&);
     void running(const ViewerAgent&);

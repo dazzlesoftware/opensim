@@ -7,6 +7,7 @@
 #include "opensim/framework/ip_address.hpp"
 #include "opensim/framework/text.hpp"
 #include "opensim/network/service_protocol.hpp"
+#include "http_tls_certificate.hpp"
 #include <httplib.h>
 #ifdef CPPHTTPLIB_OPENSSL_SUPPORT
 #include <openssl/pkcs12.h>
@@ -478,8 +479,8 @@ struct AsyncHttpServer::Impl : std::enable_shared_from_this<Impl> {
                 throw std::invalid_argument("TLS requires certificate and private key");
 #ifdef CPPHTTPLIB_OPENSSL_SUPPORT
             auto tls = options.pkcs12_bundle.empty()
-                ? std::make_shared<Listener<httplib::SSLServer>>(self, options.certificate.c_str(),
-                                                                 options.private_key.c_str())
+                ? std::make_shared<Listener<httplib::SSLServer>>(self, httplib::tls::ContextSetupCallback(
+                      [&](auto context) { return load_http_pem_certificate(context, options); }))
                 : std::make_shared<Listener<httplib::SSLServer>>(self, httplib::tls::ContextSetupCallback(
                       [&](auto context) { return configure_pkcs12(static_cast<SSL_CTX*>(context), options); }));
             server = tls;

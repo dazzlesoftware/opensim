@@ -14,6 +14,7 @@ import tempfile
 from xml.etree import ElementTree
 
 from asset_endpoint_network import asset_xml, request, server
+from sql_travel_network import check_travel
 
 ROOT = Path(__file__).resolve().parents[2]
 FIRST_ASSET = "12121212-1212-4212-8212-121212121212"
@@ -275,6 +276,8 @@ INSERT INTO assets VALUES ('{LEGACY_ASSET}','Legacy asset','From version one',7,
             check_database(native, probe, work, psql, port, database)
         psql("postgres", "CREATE DATABASE fs_assets")
         check_filesystem(native, work, psql, port, dotnet)
+        psql("postgres", "CREATE DATABASE travel")
+        check_travel(native, work, psql, port, "PGSQL")
     finally:
         command("pg_ctl", "-D", str(cluster), "-m", "fast", "-w", "stop")
     print("PASS: native PostgreSQL assets, fresh and legacy migrations, binary payloads, and restart")

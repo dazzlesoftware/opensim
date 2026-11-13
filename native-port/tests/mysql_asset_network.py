@@ -15,6 +15,7 @@ from time import monotonic, sleep
 from xml.etree import ElementTree
 
 from asset_endpoint_network import asset_xml, request, server
+from sql_travel_network import check_travel
 
 ROOT = Path(__file__).resolve().parents[2]
 ASSET = "12121212-1212-4212-8212-121212121212"
@@ -329,6 +330,8 @@ VALUES ('{LEGACY}','Legacy asset','Previously stored',7,1,0,X'A5');
                 check_database(native, probe, work, sql, port, database)
             sql(None, "CREATE DATABASE fs_assets")
             check_filesystem(native, work, sql, port, verify_stats, dotnet)
+            sql(None, "CREATE DATABASE travel")
+            check_travel(native, work, sql, port, "MySQL")
         except Exception:
             print(log.read_text(encoding="utf-8", errors="replace"))
             raise

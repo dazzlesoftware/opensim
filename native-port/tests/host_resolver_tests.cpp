@@ -1,4 +1,5 @@
 #include "opensim/framework/host_resolver.hpp"
+#include "opensim/framework/outbound_url_filter.hpp"
 #include "opensim/services/login_response.hpp"
 #include <atomic>
 #include <chrono>
@@ -12,6 +13,37 @@ void check(bool passed, const char* message) {
 }
 int main() {
     try {
+        const auto url = [](std::u16string_view text) {
+            return framework::ConfigUriComponents::absolute(std::make_shared<const std::u16string>(text),
+                framework::native_config_uri_components_backend());
+        };
+        const framework::OutboundUrlFilter defaults;
+        check(!defaults.allows(*url(u"http://127.0.0.1:9000")) &&
+                  !defaults.allows(*url(u"http://[::1]")) &&
+                  defaults.allows(*url(u"https://8.8.8.8")),
+              "default script HTTP filter blocks loopback and IPv6-only destinations");
+        check(defaults.allows(*url(u"http://0.0.0.0")) && defaults.allows(*url(u"http://[::]")),
+              "the managed DNS rejection of unspecified literals uses the filter's lookup failure path");
+
+        unsigned invalid_entries = 0;
+        using Addresses = std::vector<framework::HostResolver::Address>;
+        const auto lookup = [](const std::string& host) -> std::optional<Addresses> {
+            if (host == "offline.test")
+                return std::nullopt;
+            const auto address = [](const char* value) {
+                return std::make_shared<framework::IpAddress>(*framework::IpAddress::parse(std::string(value)));
+            };
+            if (host == "mixed.test")
+                return Addresses{address("8.8.8.8"), address("127.0.0.2")};
+            return Addresses{address("127.0.0.2")};
+        };
+        const framework::OutboundUrlFilter filter("127.0.0.2/255.0.0.0|10.0.0.0/33", " exception.test:8080 ",
+            lookup, [&](std::string_view, bool network) { invalid_entries += network; });
+        check(invalid_entries == 1 && !filter.allows(*url(u"http://mixed.test")) &&
+                  filter.allows(*url(u"http://mixed.test:8080")) &&
+                  filter.allows(*url(u"http://offline.test")),
+              "every IPv4 answer must pass the filter, with port-specific exceptions and DNS failure fallback");
+
         auto address = std::make_shared<framework::IpAddress>(*framework::IpAddress::parse("2001:db8::1"));
         std::atomic<int> lookups = 0;
         auto resolver = std::make_shared<framework::HostResolver>(
@@ -69,6 +101,9 @@ int main() {
         auto automatic = std::make_unique<framework::HostResolver>();
         auto local = automatic->host_from_dns("localhost");
         check(local && !local->unspecified(), "native system DNS resolves localhost");
+        const auto system_ip = framework::HostResolver::local_host_address();
+        check(system_ip && !system_ip->unspecified() && framework::IpAddress::parse(system_ip->str()),
+              "SYSTEMIP resolves to a usable numeric address");
         auto start = std::chrono::steady_clock::now();
         automatic.reset();
         check(std::chrono::steady_clock::now() - start < std::chrono::seconds(5),

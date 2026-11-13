@@ -186,7 +186,9 @@ void AgentAccessHandler::post_agent(const Value& args, HttpResponse& response,
         if (!gatekeeper_uri.empty())
             gatekeeper.set_server_uri(gatekeeper_uri);
         gatekeeper.external_host = osd_string(args.get("gatekeeper_host"));
-        gatekeeper.http_port = osd_unsigned(args.get("gatekeeper_port"));
+        std::int32_t gatekeeper_port = 0;
+        if (services::parse_account_integer(osd_string(args.get("gatekeeper_port")), gatekeeper_port))
+            gatekeeper.http_port = static_cast<std::uint32_t>(gatekeeper_port);
         const auto destination_uri = osd_string(args.get("destination_serveruri"));
         if (!destination_uri.empty())
             destination.set_server_uri(destination_uri);

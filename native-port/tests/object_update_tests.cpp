@@ -224,6 +224,102 @@ static void check_root_physics_shape() {
     }
 }
 
+static void check_timed_particles() {
+    using namespace std::chrono_literals;
+    World world(framework::Uuid::random());
+    const auto part = world.add(SceneObject::primitive(framework::Uuid::random(), {128, 128, 30}), false);
+    if (!part)
+        throw std::runtime_error("could not place the particle fixture");
+    world.drain_events();
+    const auto now = std::chrono::steady_clock::now() + 1h;
+    const std::vector<std::uint8_t> particles(86, 42);
+    world.set_particle_system(part->id, particles, 0.f, now);
+    world.expire_particle_systems(now + 1s);
+    if (world.object(part->id)->changed || world.object(part->id)->particle_system != particles)
+        throw std::runtime_error("zero-age OSSL particles must remain without marking the prim changed");
+    world.drain_events();
+    world.set_particle_system(part->id, particles, .5f, now);
+    if (world.drain_events().size() != 1)
+        throw std::runtime_error("timed particle creation must queue one full update");
+    world.expire_particle_systems(now + 590ms);
+    if (world.object(part->id)->particle_system != particles)
+        throw std::runtime_error("timed particles expired before the source age and grace period");
+    world.expire_particle_systems(now + 610ms);
+    if (!world.object(part->id)->particle_system.empty() || !world.drain_events().empty())
+        throw std::runtime_error("timed particle expiry must clear state without another viewer update");
+    world.set_particle_system(part->id, particles, .5f, now);
+    world.set_particle_system(part->id, particles, {}, now + 200ms);
+    world.expire_particle_systems(now + 1s);
+    if (world.object(part->id)->particle_system != particles)
+        throw std::runtime_error("a persistent replacement must cancel the old timed emitter");
+
+    world.drain_events();
+    world.set_particle_system(part->id, particles, .5f, std::chrono::steady_clock::now() - 1s);
+    if (!world.object(part->id)->particle_system.empty() ||
+        !world.object(part->local_id)->particle_system.empty() ||
+        !world.objects().front().particle_system.empty())
+        throw std::runtime_error("viewer and backup reads must omit an expired emitter before the next tick");
+    world.drain_events();
+    world.set_particle_system(part->id, {});
+    if (!world.drain_events().empty())
+        throw std::runtime_error("clearing an already expired emitter must not queue a viewer update");
+}
+static void check_script_derez() {
+    using namespace std::chrono_literals;
+    using framework::Uuid;
+    World world(Uuid::random());
+    const auto owner = Uuid::random();
+    const auto place = [&](Uuid object_owner, Uuid rezzer = {}, std::uint32_t parent = 0) {
+        auto object = SceneObject::primitive(object_owner, {128, 128, 30});
+        object.rezzer = rezzer;
+        object.parent_id = parent;
+        const auto added = world.add(std::move(object));
+        if (!added)
+            throw std::runtime_error("could not place a script derez fixture");
+        return *added;
+    };
+    const auto root = place(owner);
+    const auto host_part = place(owner, {}, root.local_id);
+    const auto immediate = place(owner, root.id);
+    const auto immediate_child = place(owner, root.id, immediate.local_id);
+    const auto temporary = place(owner, root.id);
+    const auto foreign = place(Uuid::random(), root.id);
+    const auto unrelated = place(owner, Uuid::random());
+    const auto child_target = place(owner, root.id, temporary.local_id);
+    world.drain_events();
+
+    const auto now = std::chrono::steady_clock::now();
+    script::LslHost host;
+    host.derez_object = [&](Uuid source, Uuid target, bool later) {
+        return world.derez_script_object(source, target, later, now);
+    };
+    std::string replies;
+    host.chat = [&](const script::LslChat& chat) { replies += chat.text; };
+    script::LslContext context;
+    context.object = host_part.id;
+    context.owner = owner;
+    const auto call = [](Uuid target, int flag) {
+        return "llSay(1,(string)llDerezObject(\"" + target.str() + "\"," + std::to_string(flag) + "));";
+    };
+    const auto program = script::compile_lsl(
+        "default{state_entry(){" + call({}, 0) + call(foreign.id, 0) + call(unrelated.id, 0) +
+        call(child_target.id, 0) + call(immediate.id, 0) + call(temporary.id, -1) + "}}");
+    if (!program)
+        throw std::runtime_error("could not compile the script derez fixture");
+    script::LslInstance instance(program.program, context, std::move(host));
+    if (instance.run(100).status != script::LslRunStatus::Idle || replies != "000011" ||
+        world.object(immediate.id) || world.object(immediate_child.id) ||
+        !world.object(foreign.id) || !world.object(unrelated.id) || !world.object(child_target.id))
+        throw std::runtime_error("llDerezObject must enforce rezzer, ownership and root identity");
+    if (!world.derez_script_object(host_part.id, temporary.id, true, now + 30s))
+        throw std::runtime_error("marking an already temporary object must succeed");
+    world.expire_temporary_objects(now + 59s);
+    if (!world.object(temporary.id) || !(world.object(temporary.id)->flags & 0x20000000u))
+        throw std::runtime_error("llDerezObject must preserve the temporary object for one minute");
+    world.expire_temporary_objects(now + 60s);
+    if (world.object(temporary.id) || world.object(child_target.id))
+        throw std::runtime_error("repeated llDerezObject must preserve the original expiry deadline");
+}
 int main(int argc, char**) {
     try {
         if (argc > 1) {
@@ -237,6 +333,8 @@ int main(int argc, char**) {
             }
             return 0;
         }
+        check_timed_particles();
+        check_script_derez();
         auto o = object(3, 0);
         auto p = object_update(o, 123, .5f);
         auto& b = p.block("ObjectData");
@@ -254,7 +352,7 @@ int main(int argc, char**) {
             if (mode == 0)
                 o.is_attachment = true;
             if (mode == 1)
-                o.shape.pcode = 255;
+                o.shape.pcode = 1;
             bool threw = false;
             try {
                 object_update(o, 0, 1);
@@ -279,6 +377,7 @@ int main(int argc, char**) {
         asset_part.object.buoyancy = 1.25f;
         asset_part.object.force = {1.f, -2.f, 3.f};
         asset_part.object.torque = {-4.f, 5.f, -6.f};
+        asset_part.object.particle_system.assign(86, 42);
         std::u16string asset_xml;
         framework::XmlTextWriterIo io;
         io.encoding = [] { return std::shared_ptr<framework::NativeXmlTextEncoding>{}; };
@@ -300,6 +399,13 @@ int main(int argc, char**) {
             throw std::runtime_error("force did not survive object asset serialization");
         if (restored->linksets.at(0).parts.at(0).object.torque != asset_part.object.torque)
             throw std::runtime_error("torque did not survive object asset serialization");
+        const auto& restored_part = restored->linksets.at(0).parts.at(0).object;
+        const auto particles = network::lludp::decode_datagram(
+            network::lludp::encode_datagram(object_update(restored_part, 123, 1)));
+        if (restored_part.particle_system != asset_part.object.particle_system ||
+            std::get<std::vector<std::uint8_t>>(particles.block("ObjectData").at("PSBlock")) !=
+                asset_part.object.particle_system)
+            throw std::runtime_error("particle system did not survive the object asset and viewer update");
         o = object(1, 0);
         o.is_attachment = true;
         o.parent_id = 42;

@@ -26,11 +26,67 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "opensim/network/http_server.hpp"
+#include "opensim/framework/filesystem.hpp"
+#include "http_tls_certificate.hpp"
 #include <httplib.h>
+#include <fstream>
 #include <stdexcept>
 #include <thread>
+#include <utility>
 
 namespace opensim::network {
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+bool load_http_pem_certificate(void* context, const HttpServerOptions& options) {
+    auto* tls = static_cast<SSL_CTX*>(context);
+    const auto read = [](const std::string& filename) -> std::string {
+        std::ifstream file(framework::utf8_path(filename), std::ios::binary | std::ios::ate);
+        const auto size = static_cast<std::streamoff>(file.tellg());
+        if (size <= 0 || !std::in_range<int>(size))
+            return {};
+        std::string contents(static_cast<std::size_t>(size), '\0');
+        file.seekg(0);
+        if (!file.read(contents.data(), size))
+            return {};
+        return contents;
+    };
+    const auto certificate_pem = read(options.certificate);
+    const auto key_pem = read(options.private_key);
+    if (certificate_pem.empty() || key_pem.empty())
+        return false;
+
+    const std::unique_ptr<BIO, decltype(&BIO_free)> certificates(
+        BIO_new_mem_buf(certificate_pem.data(), static_cast<int>(certificate_pem.size())), BIO_free);
+    const std::unique_ptr<BIO, decltype(&BIO_free)> private_key(
+        BIO_new_mem_buf(key_pem.data(), static_cast<int>(key_pem.size())), BIO_free);
+    if (!certificates || !private_key)
+        return false;
+
+    ERR_clear_error();
+    const std::unique_ptr<X509, decltype(&X509_free)> certificate(
+        PEM_read_bio_X509_AUX(certificates.get(), nullptr, nullptr, nullptr), X509_free);
+    if (!certificate || SSL_CTX_use_certificate(tls, certificate.get()) != 1)
+        return false;
+
+    for (;;) {
+        const std::unique_ptr<X509, decltype(&X509_free)> intermediate(
+            PEM_read_bio_X509(certificates.get(), nullptr, nullptr, nullptr), X509_free);
+        if (!intermediate) {
+            const auto error = ERR_peek_last_error();
+            if (ERR_GET_LIB(error) != ERR_LIB_PEM || ERR_GET_REASON(error) != PEM_R_NO_START_LINE)
+                return false;
+            ERR_clear_error();
+            break;
+        }
+        if (SSL_CTX_add1_chain_cert(tls, intermediate.get()) != 1)
+            return false;
+    }
+
+    const std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> key(
+        PEM_read_bio_PrivateKey(private_key.get(), nullptr, nullptr, nullptr), EVP_PKEY_free);
+    return key && SSL_CTX_use_PrivateKey(tls, key.get()) == 1 && SSL_CTX_check_private_key(tls) == 1;
+}
+#endif
+
 struct HttpServer::Impl {
     HttpServerOptions options;
     std::unique_ptr<httplib::Server> server;
@@ -47,8 +103,8 @@ HttpServer::HttpServer(HttpServerOptions options, Handler handler) : impl_(std::
         if (options.certificate.empty() || options.private_key.empty())
             throw std::invalid_argument("TLS requires both certificate and private key");
 #ifdef CPPHTTPLIB_OPENSSL_SUPPORT
-        impl_->server =
-            std::make_unique<httplib::SSLServer>(options.certificate.c_str(), options.private_key.c_str());
+        impl_->server = std::make_unique<httplib::SSLServer>(httplib::tls::ContextSetupCallback(
+            [&](auto context) { return load_http_pem_certificate(context, options); }));
         if (!impl_->server->is_valid())
             throw std::runtime_error("Cannot load TLS certificate/private key");
 #else

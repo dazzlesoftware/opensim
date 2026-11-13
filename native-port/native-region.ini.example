@@ -1,5 +1,5 @@
 ; Experimental connected native region. Full simulator parity remains unfinished.
-; Copy beside the databases as native-region.ini. Paths resolve relative to it.
+; Copy beside the account databases as native-region.ini.
 [NativeServer]
 ListenAddress = 127.0.0.1
 EnableLocalRegion = true
@@ -53,8 +53,7 @@ DefaultRegionFlags = +DefaultRegion +FallbackRegion
 RequireInventory = true
 WelcomeMessage = Experimental native OpenSim region
 
-; Asset service paths follow the original service's process working directory.
-; This checkout example assumes you launch from native-port/.
+; Relative asset database paths resolve from the process working directory.
 [Modules]
 ; Select the original local profile connector; the service below is disabled by default.
 UserProfilesServices = LocalUserProfilesServicesConnector
@@ -80,7 +79,7 @@ LocalServiceModule = OpenSim.Services.AssetService.dll:AssetService
 StorageProvider = OpenSim.Data.SQLite.dll
 ConnectionString = URI=file:assets.db;version=3;Pooling=false
 DefaultAssetLoader = OpenSim.Framework.AssetLoader.Filesystem.dll
-AssetLoaderArgs = ../bin/assets/AssetSets.xml
+AssetLoaderArgs = assets/AssetSets.xml
 
 [ClientStack.LindenCaps]
 Cap_GetTexture = localhost
@@ -93,7 +92,7 @@ Cap_FetchLib2 = localhost
 Cap_FetchLibDescendents2 = localhost
 
 [LibraryService]
-DefaultLibrary = ../bin/inventory/Libraries.xml
+; Omit DefaultLibrary to load the bundled inventory library.
 LibraryName = OpenSim Library
 
 ; Optional original memory-only Flotsam cache and baked uploads:

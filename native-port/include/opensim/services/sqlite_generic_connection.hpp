@@ -1,6 +1,7 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #pragma once
+#include "opensim/framework/atomic_shared_ptr.hpp"
 #include "opensim/services/sqlite_migration.hpp"
 #include <atomic>
 #include <mutex>
@@ -39,7 +40,7 @@ private:
 // One instance corresponds to the original generic class's static fields for T.
 // Keep a shared owner when reading the connection, including failed startup.
 struct SqliteGenericState {
-    std::atomic<std::shared_ptr<SqliteDatabase>> connection;
+    opensim::framework::AtomicSharedPtr<SqliteDatabase> connection;
     std::atomic<bool> initialized = false;
 };
 struct SqliteQueryState {

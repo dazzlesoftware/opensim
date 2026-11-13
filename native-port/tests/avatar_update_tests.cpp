@@ -1,7 +1,9 @@
 #include "opensim/scene/avatar_update.hpp"
+#include "opensim/framework/sdk_quaternion.hpp"
 #include <iostream>
 #include <iomanip>
 #include <stdexcept>
+#include <limits>
 using namespace opensim;
 using namespace scene;
 static AvatarUpdate avatar(int seed, int mode) {
@@ -41,6 +43,30 @@ static AvatarUpdate avatar(int seed, int mode) {
 }
 int main(int argc, char**) {
     try {
+        const framework::Quaternion identity{0, 0, 0, 1};
+        struct SlerpCase {
+            const char* name;
+            framework::Quaternion target;
+            framework::Quaternion expected;
+        };
+        const SlerpCase slerp_cases[] = {
+            {"orthogonal", {1, 0, 0, 0}, {.38268346f, 0, 0, .9238795f}},
+            {"at cutoff", {1, 0, 0, .95f}, {.25398484f, 0, 0, .9968504f}},
+            {"above cutoff", {1, 0, 0, .950001f}, {.25f, 0, 0, .98750025f}},
+            {"negative dot", {1, 0, 0, -.5f}, {.2988585f, 0, 0, -.9659258f}},
+            {"antipodal", {0, 0, 0, -1}, {0, 0, 0, -1}},
+            {"unordered", {1, 0, 0, std::numeric_limits<float>::quiet_NaN()},
+             {0, 0, -.70710677f, .70710677f}},
+        };
+        const auto close = [](float actual, float expected) {
+            return std::abs(actual - expected) <= 2e-7f;
+        };
+        for (const auto& [name, target, expected] : slerp_cases) {
+            const auto actual = framework::sdk_slerp_quaternion(identity, target, .25f);
+            if (!(close(actual.x, expected.x) && close(actual.y, expected.y) &&
+                  close(actual.z, expected.z) && close(actual.w, expected.w)))
+                throw std::runtime_error(std::string("Quaternion interpolation differs from the bundled SDK: ") + name);
+        }
         if (argc > 1) {
             int seed, mode;
             while (std::cin >> seed >> mode) {

@@ -28,7 +28,12 @@ std::shared_ptr<TextureFace> TextureFace::clone() const {
     return result;
 }
 std::int16_t TextureFace::quantize_offset(float value) {
-    value = (!(value < 1.f) ? 1.f : (!(value > -1.f) ? -1.f : value)) * 32767.f;
+    // Preserve the SDK's upper bound for NaN as well as positive overflow.
+    if (!(value < 1.f))
+        value = 1.f;
+    else if (value < -1.f)
+        value = -1.f;
+    value *= 32767.f;
     value = value >= 0 ? value + 0.5f : value - 0.5f;
     return std::bit_cast<std::int16_t>(static_cast<std::uint16_t>(integer(value)));
 }

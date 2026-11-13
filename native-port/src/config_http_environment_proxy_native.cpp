@@ -62,6 +62,23 @@ std::u16string comparison_url(const Object& object) {
            config_uri_unescape(*value->absolute_path(), u'?', u'#', 0xffff, 3, true, false) +
            config_uri_unescape(*value->query(), u'#', 0xffff, 0xffff, 3, true, true);
 }
+
+bool native_socks_uri(const Object& object) {
+    if (!config_generic_uri_owns(object))
+        return false;
+    const auto scheme = *object->scheme();
+    return scheme == u"socks4" || scheme == u"socks4a" || scheme == u"socks5";
+}
+
+std::u16string generic_proxy_url(const Object& object) {
+    using Component = ConfigGenericUriComponent;
+    return *object->scheme() + u"://" + *config_generic_uri_component(object, Component::Host) +
+           u":" + utf16(std::to_string(config_generic_uri_port(object))) +
+           config_uri_unescape(*config_generic_uri_component(object, Component::AbsolutePath),
+                               u'?', u'#', 0xffff, 3, true, false) +
+           config_uri_unescape(*config_generic_uri_component(object, Component::Query),
+                               u'#', 0xffff, 0xffff, 3, true, true);
+}
 }
 std::shared_ptr<ConfigXmlCredentials> config_http_default_network_credentials() {
     static auto value = std::make_shared<ConfigHttpNetworkCredential>(t(u""), t(u""), t(u""), true);
@@ -151,6 +168,11 @@ native_config_http_environment_proxy_backend(ConfigHttpEnvironmentProxyNativeOpt
         if (!a || !c || a == c || a->original_string() == c->original_string() || !a->is_absolute() ||
             !c->is_absolute() || (a->http_components() && c->http_components()))
             return config_http_proxy_http_uri_equal(a, c);
+        if (native_socks_uri(a) && native_socks_uri(c))
+            return generic_proxy_url(a) == generic_proxy_url(c);
+        if ((a->http_components() && native_socks_uri(c)) ||
+            (c->http_components() && native_socks_uri(a)))
+            return false;
         if (!other)
             required("Proxy Uri.Equals requires the complete nonHTTP SDK provider");
         return other(a, c);

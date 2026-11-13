@@ -37,11 +37,16 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/server/avatar_endpoint.hpp"
 #include "opensim/server/friends_endpoint.hpp"
 #include "opensim/server/offline_im_endpoint.hpp"
+#include <mutex>
 namespace opensim::server {
 class LoginApplication {
   public:
     LoginApplication(services::ILoginService& login, const IniConfig& config);
-    network::HttpResponse handle(const network::HttpRequest& request, bool allow_gatekeeper = true);
+    network::HttpResponse handle(const network::HttpRequest& request, bool allow_gatekeeper = true,
+                                 bool allow_grid_discovery = true, bool allow_home_agent = true);
+    std::optional<network::HttpResponse> handle_home_agent(const network::HttpRequest& request);
+    std::optional<network::HttpResponse> handle_grid_discovery(const network::HttpRequest& request,
+                                                              bool include_xml_rpc);
     network::HttpResponse handle_gatekeeper(const network::HttpRequest& request);
     void set_default_login_uri(const std::string& uri);
     void set_presence_endpoint(PresenceEndpoint* endpoint) {
@@ -52,6 +57,10 @@ class LoginApplication {
     }
     void set_grid_endpoint(GridEndpoint* endpoint) {
         grid_ = endpoint;
+    }
+    void set_grid_statistics(services::GridService* grid, services::GridUserStore* users) {
+        statistics_grid_ = grid;
+        statistics_users_ = users;
     }
     void set_friends_endpoint(FriendsEndpoint* endpoint) {
         friends_ = endpoint;
@@ -93,6 +102,17 @@ class LoginApplication {
     }
 
   private:
+    network::Value gatekeeper_rpc(std::string_view method, const network::Value& data);
+    std::optional<network::Value> home_agent_rpc(std::string_view method, const network::Value& data,
+                                                 std::string_view caller);
+    network::HttpResponse handle_grid_statistics(const network::HttpRequest& request);
+    std::string grid_discovery_rpc_response() const;
+    bool grid_statistics_disabled_;
+    services::GridService* statistics_grid_ = nullptr;
+    services::GridUserStore* statistics_users_ = nullptr;
+    std::mutex grid_statistics_mutex_;
+    std::int64_t grid_statistics_updated_ = 0;
+    std::string grid_statistics_xml_;
     JsonRpcDispatcher json_rpc_;
     std::function<bool(const network::Value&)> grid_message_;
     std::function<network::Value(std::string_view, const network::Value&)> gatekeeper_;
@@ -102,6 +122,7 @@ class LoginApplication {
     std::function<network::Value(std::string_view, const network::Value&, std::string_view)>
         home_user_lookup_;
     services::LoginHandlers handlers_;
+    mutable std::mutex grid_info_mutex_;
     std::map<std::string, std::string> grid_info_;
     PresenceEndpoint* presence_ = nullptr;
     GridUserEndpoint* grid_user_ = nullptr;

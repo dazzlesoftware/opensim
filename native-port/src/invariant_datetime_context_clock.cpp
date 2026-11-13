@@ -2,6 +2,7 @@
 // Ported from dotnet/runtime v8.0.31 DateTime.Windows.cs, DateTime.Unix.cs,
 // CalendarData.Windows.cs / Unix.cs and System.Native/pal_datetime.c.
 // .NET Foundation, MIT license; see third_party/dotnet_collation/LICENSE.
+#include "opensim/framework/atomic_shared_ptr.hpp"
 #include "invariant_datetime_context_platform.hpp"
 #include <atomic>
 #include <chrono>
@@ -28,7 +29,7 @@ using Getter = void(WINAPI*)(FILETIME*);
 struct Clock {
     bool leap = false;
     Getter getter = nullptr;
-    std::atomic<std::shared_ptr<const Cache>> cache{std::make_shared<Cache>()};
+    opensim::framework::AtomicSharedPtr<const Cache> cache{std::make_shared<Cache>()};
     Clock() {
         struct LeapInfo {
             BYTE enabled;

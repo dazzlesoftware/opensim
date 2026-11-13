@@ -28,6 +28,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 #include "opensim/framework/uuid.hpp"
 namespace opensim::framework {
+std::string invariant_float_string(float value);
 std::string vector3_string(const Vector3& value);
 bool parse_invariant_float(std::string_view text,float& value);
 bool parse_invariant_float_with_grouping(std::string_view text, float& value);

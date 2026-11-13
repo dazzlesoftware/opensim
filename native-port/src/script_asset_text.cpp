@@ -52,38 +52,44 @@ std::vector<std::string> notecard_lines(const framework::AssetBytes& bytes) {
     return lines;
 }
 
-framework::Vector3d landmark_position_relative_to(const framework::AssetBytes& bytes,
-                                                 std::uint32_t region_x, std::uint32_t region_y) {
+LandmarkAsset parse_landmark(const framework::AssetBytes& bytes) {
     if (!bytes || bytes->empty())
         throw std::invalid_argument("Empty landmark asset");
     const std::string_view raw(reinterpret_cast<const char*>(bytes->data()), bytes->size());
-    const auto text = framework::trim_utf8(framework::utf8(framework::utf16_replacing(raw)));
-    std::string_view remaining = text;
-    std::array<std::string_view, 4> fields;
+    const auto text = framework::utf16_replacing(framework::trim_utf8(raw));
+    std::u16string_view remaining = text;
+    std::array<std::u16string_view, 4> fields;
     for (auto& field : fields) {
-        const auto end = remaining.find('\n');
+        const auto end = remaining.find(u'\n');
         field = remaining.substr(0, end);
-        remaining = end == std::string_view::npos ? std::string_view{} : remaining.substr(end + 1);
+        remaining = end == std::u16string_view::npos ? std::u16string_view{} : remaining.substr(end + 1);
     }
     if (fields[0].size() < 18 || fields[1].size() < 46 || fields[2].size() < 10 || fields[3].size() < 14)
         throw std::invalid_argument("Incomplete landmark asset");
 
-    std::array<float, 3> local{};
+    LandmarkAsset landmark;
+    framework::try_parse_sdk_uuid(framework::utf8(fields[1].substr(10, 36)), landmark.region);
     auto scalars = fields[2].substr(10);
-    for (auto& component : local) {
-        const auto end = scalars.find(' ');
+    for (auto* component : {&landmark.position.x, &landmark.position.y, &landmark.position.z}) {
+        const auto end = scalars.find(u' ');
         try {
-            component = framework::invariant_convert_to_single(framework::utf16_replacing(scalars.substr(0, end)));
+            *component = framework::invariant_convert_to_single(std::u16string(scalars.substr(0, end)));
         } catch (const framework::InvariantNumberError&) {
             // Single.TryParse leaves invalid components at zero.
         }
-        if (end == std::string_view::npos)
+        if (end == std::u16string_view::npos)
             break;
         scalars.remove_prefix(end + 1);
     }
-    std::uint64_t handle = 0;
-    framework::try_parse_unsigned_integer(fields[3].substr(14), handle);
-    return {double(handle >> 32) - region_x + local[0],
-            double(static_cast<std::uint32_t>(handle)) - region_y + local[1], local[2]};
+    framework::try_parse_unsigned_integer(framework::utf8(fields[3].substr(14)), landmark.handle);
+    return landmark;
+}
+
+framework::Vector3d landmark_position_relative_to(const framework::AssetBytes& bytes,
+                                                 std::uint32_t region_x, std::uint32_t region_y) {
+    const auto landmark = parse_landmark(bytes);
+    return {double(landmark.handle >> 32) - region_x + landmark.position.x,
+            double(static_cast<std::uint32_t>(landmark.handle)) - region_y + landmark.position.y,
+            landmark.position.z};
 }
 }

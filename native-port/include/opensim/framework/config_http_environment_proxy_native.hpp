@@ -18,6 +18,15 @@ class ConfigHttpNetworkCredential final : public ConfigXmlCredentials {
 };
 std::shared_ptr<ConfigXmlCredentials> config_http_default_network_credentials();
 
+// ICredentials lookup for origin challenges. A null result declines that scheme.
+class ConfigHttpOriginCredentials : public ConfigXmlCredentials {
+  public:
+    virtual std::shared_ptr<ConfigHttpNetworkCredential>
+    get_credential(const std::shared_ptr<ConfigXmlUri>& uri, std::string_view scheme) const = 0;
+    // URI-scoped caches may perform a fresh lookup after an automatic redirect.
+    virtual bool allows_redirect_lookup() const { return false; }
+};
+
 struct ConfigHttpEnvironmentProxyNativeOptions {
     ConfigUriObjectBackend uris;
     std::function<ConfigUriText(ConfigUriText)> environment;

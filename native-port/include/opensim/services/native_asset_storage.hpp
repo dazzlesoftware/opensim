@@ -1,6 +1,7 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #pragma once
+#include "opensim/framework/atomic_shared_ptr.hpp"
 #include "opensim/services/filesystem_asset_loader.hpp"
 #include "opensim/services/migration.hpp"
 #include <atomic>
@@ -24,7 +25,7 @@ protected:
 private:
     SqliteAssetStore::Warn warn_;
     MigrationLog log_;
-    std::atomic<std::shared_ptr<SqliteAssetStore>> store_;
+    opensim::framework::AtomicSharedPtr<SqliteAssetStore> store_;
 };
 class NativeAssetStorageBackend : public AssetStorageBackend,
                                   public AssetLoaderFiles,

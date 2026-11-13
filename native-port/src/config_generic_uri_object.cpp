@@ -792,8 +792,10 @@ class GenericUriObject final : public ConfigUriObject {
     }
     Text http_pool_identity() const {
         std::lock_guard lock(mutex_);
-        if (*scheme() != u"http")
-            throw std::invalid_argument("HTTP proxy pool identity requires an HTTP URI");
+        const auto& protocol = *state_.syntax->scheme;
+        if (protocol != u"http" && protocol != u"https" &&
+            protocol != u"socks4" && protocol != u"socks4a" && protocol != u"socks5")
+            throw std::invalid_argument("HTTP proxy pool identity requires an HTTP, HTTPS, or SOCKS proxy URI");
         return parts(3, 61);
     }
     bool is_absolute() const override {

@@ -48,6 +48,10 @@ SceneObject SceneObject::primitive(framework::Uuid owner, framework::Vector3 pos
 World::World(framework::Uuid region, std::uint32_t width, std::uint32_t height, std::uint32_t last_local_id)
     : region_(region), terrain_(width, height), last_local_id_(last_local_id) {
 }
+void World::clamp_inserted_prim_sizes(float minimum, float maximum) {
+    std::lock_guard lock(mutex_);
+    insertion_scale_limits_.emplace(minimum, maximum);
+}
 std::uint32_t World::allocate_local_id() {
     return last_local_id_.fetch_add(1, std::memory_order_relaxed) + 1u;
 }
@@ -73,6 +77,17 @@ std::optional<SceneObject> World::add_unlocked(SceneObject object, bool attach_t
     }
     if (object.is_attachment && (object.shape.pcode != 9 || object.shape.state == 0 || object.parent_id == 0))
         return {};
+    if (insertion_scale_limits_) {
+        const auto [minimum, maximum] = *insertion_scale_limits_;
+        const auto clamp = [minimum, maximum](float axis) {
+            if (axis > maximum)
+                return maximum;
+            if (axis < minimum)
+                return minimum;
+            return axis;
+        };
+        object.scale = {clamp(object.scale.x), clamp(object.scale.y), clamp(object.scale.z)};
+    }
     if (object.shape.pcode == 9 && !object.parent_id && object.physics.shape == no_physics_shape)
         object.physics.shape = default_physics_shape(object);
     if (object.local_id == 0)
@@ -87,8 +102,10 @@ std::optional<SceneObject> World::add_unlocked(SceneObject object, bool attach_t
             object.link_order = ++link_sequence_;
         else
             link_sequence_ = std::max(link_sequence_, object.link_order);
-    } else
-        object.link_order = 0;
+        object.link_membership_order = assign_link_membership_unlocked(by_local_.at(object.parent_id));
+    } else {
+        object.link_order = object.link_membership_order = 0;
+    }
     if (!object.parent_id && !object.is_attachment && (object.flags & 0x20000000u))
         temporary_expiry_[object.id] = std::chrono::steady_clock::now() + std::chrono::minutes(1);
     objects_[object.id] = object;
@@ -185,7 +202,8 @@ bool World::attach_from_ground(framework::Uuid id, std::uint32_t wearer_local_id
 std::optional<SceneObject> World::object(framework::Uuid id) const {
     std::lock_guard lock(mutex_);
     auto i = objects_.find(id);
-    return i == objects_.end() ? std::nullopt : std::optional(i->second);
+    return i == objects_.end() ? std::nullopt
+                              : std::optional(snapshot_unlocked(i->second, std::chrono::steady_clock::now()));
 }
 std::optional<SceneObject> World::object(std::uint32_t local_id) const {
     std::lock_guard lock(mutex_);
@@ -193,15 +211,27 @@ std::optional<SceneObject> World::object(std::uint32_t local_id) const {
     if (i == by_local_.end())
         return {};
     auto row = objects_.find(i->second);
-    return row == objects_.end() ? std::nullopt : std::optional(row->second);
+    return row == objects_.end() ? std::nullopt
+                                : std::optional(snapshot_unlocked(row->second, std::chrono::steady_clock::now()));
 }
 std::vector<SceneObject> World::objects() const {
     std::lock_guard lock(mutex_);
     std::vector<SceneObject> result;
     result.reserve(objects_.size());
-    for (auto& [id, object] : objects_)
-        result.push_back(object);
+    const auto now = std::chrono::steady_clock::now();
+    for (const auto& [id, object] : objects_)
+        result.push_back(snapshot_unlocked(object, now));
     return result;
+}
+SceneObject World::snapshot_unlocked(const SceneObject& part, std::chrono::steady_clock::time_point now) const {
+    auto snapshot = part;
+    if (!snapshot.particle_system.empty() && particles_expired_unlocked(part.id, now))
+        snapshot.particle_system.clear();
+    return snapshot;
+}
+bool World::particles_expired_unlocked(framework::Uuid id, std::chrono::steady_clock::time_point now) const {
+    const auto expiry = particle_expiry_.find(id);
+    return expiry != particle_expiry_.end() && now.time_since_epoch() > expiry->second;
 }
 namespace {
 std::optional<PhysicalPrim> collision_prim(const SceneObject& object, const SceneObject& root) {
@@ -477,6 +507,34 @@ std::int32_t World::prim_count(framework::Uuid id, bool include_attachments) con
                 ++count;
     return count;
 }
+std::uint64_t World::assign_link_membership_unlocked(framework::Uuid root) {
+    const auto entry = free_link_memberships_.find(root);
+    if (entry == free_link_memberships_.end())
+        return ++link_sequence_;
+    auto& free = entry->second;
+    const auto order = free.back();
+    free.pop_back();
+    if (free.empty())
+        free_link_memberships_.erase(entry);
+    return order;
+}
+
+std::vector<framework::Uuid> World::link_children_in_membership_order(framework::Uuid id) const {
+    std::lock_guard lock(mutex_);
+    const auto root = objects_.find(id);
+    if (root == objects_.end() || !root->second.local_id)
+        return {};
+    std::vector<const SceneObject*> children;
+    for (const auto& [part_id, part] : objects_)
+        if (!part.is_attachment && part.parent_id == root->second.local_id)
+            children.push_back(&part);
+    std::ranges::sort(children, {}, &SceneObject::link_membership_order);
+    std::vector<framework::Uuid> result;
+    result.reserve(children.size());
+    for (const auto* child : children)
+        result.push_back(child->id);
+    return result;
+}
 framework::Uuid World::link_key(framework::Uuid id, std::int32_t number) const {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
@@ -688,6 +746,14 @@ void World::set_allowed_drop(framework::Uuid id, bool allowed) {
     if (flags != part.flags) {
         part.flags = flags;
         mark_linkset_changed_unlocked(part);
+    }
+}
+void World::set_script_access_pin(framework::Uuid id, std::int32_t pin) {
+    std::lock_guard lock(mutex_);
+    const auto entry = objects_.find(id);
+    if (entry != objects_.end() && entry->second.script_access_pin != pin) {
+        entry->second.script_access_pin = pin;
+        mark_linkset_changed_unlocked(entry->second);
     }
 }
 void World::set_seat_camera(framework::Uuid id, std::optional<framework::Vector3> eye,
@@ -930,7 +996,7 @@ void World::update_extra_param(framework::Uuid id, std::uint16_t type, bool enab
     event_unlocked(WorldEventKind::Updated, object);
 }
 bool World::set_render_materials(const SceneObject& previous, std::vector<std::uint8_t> extra_params,
-                                 std::vector<std::uint8_t> overrides) {
+                                 std::vector<std::uint8_t> overrides, std::int32_t script_changes) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(previous.id);
     if (entry == objects_.end())
@@ -941,7 +1007,7 @@ bool World::set_render_materials(const SceneObject& previous, std::vector<std::u
     part.extra_params = std::move(extra_params);
     part.material_overrides = std::move(overrides);
     mark_linkset_changed_unlocked(part);
-    event_unlocked(WorldEventKind::MaterialsUpdated, part);
+    event_unlocked(WorldEventKind::MaterialsUpdated, part, script_changes);
     return true;
 }
 bool World::update_shape(framework::Uuid id, PrimShape shape) {
@@ -1038,6 +1104,38 @@ void World::set_texture_animation(framework::Uuid id, const std::vector<std::uin
     mark_linkset_changed_unlocked(part);
     event_unlocked(WorldEventKind::Updated, part);
 }
+void World::set_particle_system(framework::Uuid id, std::vector<std::uint8_t> bytes,
+                                std::optional<float> timed_age, std::chrono::steady_clock::time_point now) {
+    std::lock_guard lock(mutex_);
+    const auto entry = objects_.find(id);
+    if (entry == objects_.end())
+        return;
+    auto& part = entry->second;
+    if (particles_expired_unlocked(id, now))
+        part.particle_system.clear();
+    particle_expiry_.erase(id);
+    if (bytes.empty() && part.particle_system.empty())
+        return;
+    const bool changed = bytes.empty() || !timed_age || *timed_age != 0;
+    if (!bytes.empty() && timed_age && *timed_age > .0001 && std::isfinite(*timed_age))
+        particle_expiry_.emplace(id, now.time_since_epoch() + std::chrono::duration<double>(*timed_age + .1));
+    part.particle_system = std::move(bytes);
+    if (changed)
+        mark_linkset_changed_unlocked(part);
+    event_unlocked(WorldEventKind::Updated, part);
+}
+void World::expire_particle_systems(std::chrono::steady_clock::time_point now) {
+    std::lock_guard lock(mutex_);
+    for (auto expiry = particle_expiry_.begin(); expiry != particle_expiry_.end();) {
+        if (now.time_since_epoch() <= expiry->second) {
+            ++expiry;
+            continue;
+        }
+        if (auto part = objects_.find(expiry->first); part != objects_.end())
+            part->second.particle_system.clear();
+        expiry = particle_expiry_.erase(expiry);
+    }
+}
 bool World::update_texture(framework::Uuid id, const std::vector<std::uint8_t>& bytes) {
     framework::TextureEntry incoming(bytes);
     std::lock_guard lock(mutex_);
@@ -1122,7 +1220,7 @@ bool World::update_angular_velocity(framework::Uuid id, framework::Vector3 angul
     event_unlocked(full_refresh ? WorldEventKind::Updated : WorldEventKind::TerseUpdated, object);
     return true;
 }
-bool World::link_prim(framework::Uuid id, framework::Uuid root_id, int physical_capacity) {
+bool World::link_prim(framework::Uuid id, framework::Uuid root_id, int physical_capacity, bool insert) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     const auto parent = objects_.find(root_id);
@@ -1167,17 +1265,25 @@ bool World::link_prim(framework::Uuid id, framework::Uuid root_id, int physical_
         part.parent_id = root.local_id;
         part.attached_to_backup = false;
         part.link_order = ++link_sequence_;
+        part.link_membership_order = assign_link_membership_unlocked(root.id);
         part.changed = true;
         event_unlocked(WorldEventKind::Updated, part, changed_link);
     };
     root.changed = true;
     event_unlocked(WorldEventKind::Updated, root, changed_link);
-    for (const auto& [part_id, part] : objects_)
-        if (!part.is_attachment && part.parent_id == root.local_id)
-            event_unlocked(WorldEventKind::Updated, part, changed_link);
+    std::vector<SceneObject*> existing_children;
+    for (auto& [part_id, part] : objects_) {
+        if (!part.is_attachment && part.parent_id == root.local_id) {
+            if (insert)
+                existing_children.push_back(&part);
+            else
+                event_unlocked(WorldEventKind::Updated, part, changed_link);
+        }
+    }
     child.sale_type = 0;
     child.sale_price = 10;
     temporary_expiry_.erase(child.id);
+    free_link_memberships_.erase(child.id);
     reparent(child, source_position, source_rotation);
     std::vector<SceneObject*> source_children;
     for (auto& [part_id, part] : objects_)
@@ -1192,9 +1298,15 @@ bool World::link_prim(framework::Uuid id, framework::Uuid root_id, int physical_
                  {source_position.x + offset.x, source_position.y + offset.y, source_position.z + offset.z},
                  framework::sdk_multiply_quaternion(source_rotation, part.rotation));
     }
+    std::ranges::sort(existing_children, {}, &SceneObject::link_order);
+    for (auto* part : existing_children) {
+        part->link_order = ++link_sequence_;
+        part->changed = true;
+        event_unlocked(WorldEventKind::Updated, *part, changed_link);
+    }
     return true;
 }
-bool World::delink_child(framework::Uuid id, framework::Uuid expected_root) {
+bool World::delink_child(framework::Uuid id, framework::Uuid expected_root, bool notify_remaining) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     const auto parent = objects_.find(expected_root);
@@ -1215,16 +1327,17 @@ bool World::delink_child(framework::Uuid id, framework::Uuid expected_root) {
     if (child.physics.shape == no_physics_shape)
         child.physics.shape = default_physics_shape(child);
     child.attached_to_backup = true;
-    child.link_order = 0;
+    free_link_memberships_[root.id].push_back(child.link_membership_order);
+    child.link_order = child.link_membership_order = 0;
     if (child.flags & 0x20000000u)
         temporary_expiry_[child.id] = std::chrono::steady_clock::now() + std::chrono::minutes(1);
     child.changed = root.changed = true;
     constexpr std::int32_t changed_link = 32;
     event_unlocked(WorldEventKind::Updated, child, changed_link);
-    event_unlocked(WorldEventKind::Updated, root, changed_link);
+    event_unlocked(WorldEventKind::Updated, root, notify_remaining ? changed_link : 0);
     for (const auto& [part_id, part] : objects_)
         if (!part.is_attachment && part.parent_id == root.local_id)
-            event_unlocked(WorldEventKind::Updated, part, changed_link);
+            event_unlocked(WorldEventKind::Updated, part, notify_remaining ? changed_link : 0);
     return true;
 }
 framework::Uuid World::linkset_root_id_unlocked(framework::Uuid id) const {
@@ -1436,6 +1549,41 @@ bool World::set_linkset_data(framework::Uuid id, std::vector<std::uint8_t> data,
     entry->second.changed = true;
     return true;
 }
+static void transfer_part_owner(SceneObject& part, framework::Uuid owner, framework::Uuid group,
+                                bool apply_next_permissions) {
+    if (part.group != part.owner)
+        part.last_owner = part.owner;
+    part.owner = owner;
+    part.group = group;
+    if (apply_next_permissions) {
+        constexpr std::uint32_t export_permission = 1u << 16;
+        part.base_mask &= part.next_mask | export_permission;
+        part.owner_mask &= part.next_mask;
+        part.everyone_mask &= part.next_mask | export_permission;
+        part.group_mask = 0;
+    }
+    part.changed = true;
+}
+
+bool World::transfer_temporary_attachment(const SceneObject& expected, framework::Uuid owner, framework::Uuid group,
+                                          bool apply_next_permissions) {
+    std::lock_guard lock(mutex_);
+    const auto entry = objects_.find(expected.id);
+    if (entry == objects_.end() || entry->second.owner != expected.owner ||
+        entry->second.is_attachment || entry->second.parent_id)
+        return false;
+    auto& root = entry->second;
+    root.sale_type = 0;
+    root.sale_price = 10;
+    for (auto& [id, part] : objects_) {
+        if (id != root.id && (part.is_attachment || !root.local_id || part.parent_id != root.local_id))
+            continue;
+        transfer_part_owner(part, owner, group, apply_next_permissions);
+        event_unlocked(WorldEventKind::Updated, part);
+    }
+    return true;
+}
+
 bool World::sell_original(const SceneObject& expected, framework::Uuid owner, framework::Uuid group,
                           bool apply_next_permissions, bool propagate_permissions, bool included_with_parcel) {
     std::lock_guard lock(mutex_);
@@ -1451,23 +1599,12 @@ bool World::sell_original(const SceneObject& expected, framework::Uuid owner, fr
     for (auto& [id, part] : objects_) {
         if (id != root.id && (part.is_attachment || !root.local_id || part.parent_id != root.local_id))
             continue;
-        if (part.group != part.owner)
-            part.last_owner = part.owner;
-        part.owner = owner;
-        part.group = group;
-        if (apply_next_permissions) {
-            constexpr std::uint32_t export_permission = 1u << 16;
-            part.base_mask &= part.next_mask | export_permission;
-            part.owner_mask &= part.next_mask;
-            part.everyone_mask &= part.next_mask | export_permission;
-            part.group_mask = 0;
-        }
+        transfer_part_owner(part, owner, group, apply_next_permissions);
         if (id == root.id) {
             part.sale_type = 0;
             part.sale_price = 10;
             part.click_action = 0;
         }
-        part.changed = true;
         constexpr std::int32_t changed_owner = 128;
         event_unlocked(WorldEventKind::Updated, part,
                        propagate_permissions || id == root.id ? changed_owner : 0);
@@ -1637,7 +1774,7 @@ bool World::resize_group_uniform(framework::Uuid id, double factor, float minimu
     return true;
 }
 
-bool World::delink_root(framework::Uuid id) {
+bool World::delink_root(framework::Uuid id, bool membership_order) {
     std::lock_guard lock(mutex_);
     const auto entry = objects_.find(id);
     if (entry == objects_.end() || entry->second.is_attachment || entry->second.parent_id != 0 ||
@@ -1650,10 +1787,12 @@ bool World::delink_root(framework::Uuid id) {
             children.push_back(&part);
     if (children.empty())
         return false;
-    const auto first = std::min_element(children.begin(), children.end(), [](const auto* a, const auto* b) {
-        return a->link_order < b->link_order;
-    });
-    auto& replacement = **first;
+    const auto order = membership_order ? &SceneObject::link_membership_order : &SceneObject::link_order;
+    std::ranges::sort(children, {}, order);
+    auto& replacement = *children.front();
+    auto& free = free_link_memberships_[root.id];
+    for (const auto* child : children)
+        free.push_back(child->link_membership_order);
     const auto origin = replacement.position;
     const auto rotation = replacement.rotation;
     const framework::Quaternion inverse{-rotation.x, -rotation.y, -rotation.z, rotation.w};
@@ -1666,7 +1805,7 @@ bool World::delink_root(framework::Uuid id) {
         replacement.physics.shape = default_physics_shape(replacement);
     replacement.rezzed_at = root.rezzed_at;
     replacement.attached_to_backup = true;
-    replacement.link_order = 0;
+    replacement.link_order = replacement.link_membership_order = 0;
     if (replacement.flags & 0x20000000u)
         temporary_expiry_[replacement.id] = std::chrono::steady_clock::now() + std::chrono::minutes(1);
     constexpr std::int32_t changed_link = 32;
@@ -1680,6 +1819,8 @@ bool World::delink_root(framework::Uuid id) {
             inverse);
         child->rotation = framework::sdk_multiply_quaternion(inverse, child->rotation);
         child->parent_id = replacement.local_id;
+        if (membership_order)
+            child->link_order = child->link_membership_order = ++link_sequence_;
         child->rezzed_at = root.rezzed_at;
         child->changed = true;
         event_unlocked(WorldEventKind::Updated, *child, changed_link);
@@ -1687,6 +1828,19 @@ bool World::delink_root(framework::Uuid id) {
     event_unlocked(WorldEventKind::Updated, root, changed_link);
     return true;
 }
+void World::schedule_linkset_update(framework::Uuid id, std::int32_t script_changes) {
+    std::lock_guard lock(mutex_);
+    const auto root = objects_.find(id);
+    if (root == objects_.end())
+        return;
+    root->second.changed = true;
+    event_unlocked(WorldEventKind::Updated, root->second, script_changes);
+    for (const auto& [part_id, part] : objects_) {
+        if (!part.is_attachment && part.parent_id == root->second.local_id && part.parent_id)
+            event_unlocked(WorldEventKind::Updated, part, script_changes);
+    }
+}
+
 void World::publish_added_linkset(framework::Uuid id) {
     std::lock_guard lock(mutex_);
     const auto root = objects_.find(id);
@@ -1701,6 +1855,38 @@ bool World::remove(framework::Uuid id, bool send_update) {
     std::lock_guard lock(mutex_);
     return remove_unlocked(id, send_update);
 }
+bool World::derez_script_object(framework::Uuid source, framework::Uuid target, bool temporary,
+                               std::chrono::steady_clock::time_point now) {
+    std::lock_guard lock(mutex_);
+    const auto host = objects_.find(source);
+    const auto destination = objects_.find(target);
+    if (host == objects_.end() || destination == objects_.end())
+        return false;
+
+    const auto& source_part = host->second;
+    auto& root = destination->second;
+    if (root.is_attachment || root.parent_id || root.owner != source_part.owner)
+        return false;
+
+    auto source_root = source;
+    if (source_part.parent_id && !source_part.is_attachment) {
+        const auto parent = by_local_.find(source_part.parent_id);
+        if (parent == by_local_.end())
+            return false;
+        source_root = parent->second;
+    }
+    if (source_root == target || root.rezzer != source_root)
+        return false;
+    if (!temporary)
+        return remove_unlocked(target);
+
+    constexpr std::uint32_t temporary_on_rez = 0x20000000u;
+    if (!(root.flags & temporary_on_rez)) {
+        root.flags |= temporary_on_rez;
+        temporary_expiry_[target] = now + std::chrono::minutes(1);
+    }
+    return true;
+}
 void World::expire_temporary_objects(std::chrono::steady_clock::time_point now) {
     std::lock_guard lock(mutex_);
     for (auto expiry = temporary_expiry_.begin(); expiry != temporary_expiry_.end();) {
@@ -1714,10 +1900,16 @@ void World::expire_temporary_objects(std::chrono::steady_clock::time_point now) 
 }
 bool World::remove_unlocked(framework::Uuid id, bool send_update) {
     temporary_expiry_.erase(id);
+    particle_expiry_.erase(id);
     auto i = objects_.find(id);
     if (i == objects_.end())
         return false;
     auto object = i->second;
+    free_link_memberships_.erase(id);
+    if (!object.is_attachment && object.parent_id) {
+        if (const auto root = by_local_.find(object.parent_id); root != by_local_.end())
+            free_link_memberships_[root->second].push_back(object.link_membership_order);
+    }
     if (!send_update) {
         std::erase_if(events_, [&](const auto& event) {
             return event.object.id == id ||
@@ -1733,6 +1925,7 @@ bool World::remove_unlocked(framework::Uuid id, bool send_update) {
                     event_unlocked(WorldEventKind::Removed, part);
                 by_local_.erase(part.local_id);
                 selected_.erase(part.id);
+                particle_expiry_.erase(part.id);
                 child = objects_.erase(child);
             } else
                 ++child;

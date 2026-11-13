@@ -3,11 +3,15 @@
 #include "opensim/services/region_asset_runtime.hpp"
 #include "opensim/services/scene_capabilities.hpp"
 #include "opensim/server/http_route_registry.hpp"
+#include "opensim/scene/uuid_gatherer.hpp"
 #include <filesystem>
 #include <algorithm>
 #include <sqlite3.h>
 #include <fstream>
 #include <iostream>
+#include <future>
+#include <thread>
+#include <utility>
 using namespace opensim;
 using namespace opensim::services;
 namespace {
@@ -129,10 +133,148 @@ void cache_profiles() {
     try {
         RegionAssetRuntime assets(server::IniConfig::load(file), scene.shared_events());
     } catch (const std::invalid_argument &e) {
-        rejected = std::string(e.what()).find("file cache is not implemented") != std::string::npos;
+        rejected = std::string(e.what()).find("requires live scene asset gathering") != std::string::npos;
     }
     check(rejected && scene.events().on_register_caps.snapshot().size() == before,
-          "unimplemented file cache fails explicitly without alternate persistence or subscription");
+          "automatic expiry requires live scene asset protection");
+    const auto cache_directory = directory.path / "disk-cache";
+    {
+        std::ofstream out(file, std::ios::app);
+        out << "\n[AssetCache]\nFileCleanupTimer=0\nMemoryCacheEnabled=false\nCacheDirectory="
+            << text(cache_directory) << '\n';
+    }
+    const auto disk_settings = server::IniConfig::load(file);
+    const auto disk_file = cache_directory / local.str().substr(0, 3) / local.str();
+    {
+        RegionAssetRuntime assets(disk_settings, scene.shared_events());
+        auto bake = std::make_shared<framework::AssetBase>(local, "disk bake", std::int8_t(0), "creator");
+        bake->local(true);
+        bake->temporary(true);
+        bake->data = std::make_shared<std::vector<std::uint8_t>>(3, 42);
+        check(assets.store(bake) == local.str(), "local asset accepted by disk cache");
+        for (int attempt = 0; attempt < 200 && !std::filesystem::exists(disk_file); ++attempt)
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        check(std::filesystem::is_regular_file(disk_file), "Flotsam worker wrote the tiered cache file");
+        assets.stop();
+    }
+    {
+        RegionAssetRuntime assets(disk_settings, scene.shared_events());
+        const auto bake = assets.get(local);
+        check(bake && bake->local() && bake->data && *bake->data == std::vector<std::uint8_t>(3, 42),
+              "fresh region asset runtime reads the local asset from the disk cache");
+        const auto status_file = cache_directory / ("RegionStatus_" + local.str() + ".fac");
+        std::ofstream(status_file) << "Cache status fixture";
+        auto status = std::make_shared<std::promise<bool>>();
+        auto reported = status->get_future();
+        auto output = [status, local, counted = false](const std::string& line) mutable {
+            if (line == "[FLOTSAM ASSET CACHE]   File Cache: 2 assets")
+                counted = true;
+            if (line.starts_with("[FLOTSAM ASSET CACHE] Region: " + local.str() + "."))
+                status->set_value(counted);
+        };
+        check(assets.cache_console({"fcache", "status"}, output) &&
+                  reported.wait_for(std::chrono::seconds(2)) == std::future_status::ready && reported.get(),
+              "disk status counts cache files and reports the region stamp");
+        assets.asset_cache()->expire(local.str());
+        check(!std::filesystem::exists(disk_file) && !assets.get(local),
+              "explicit asset expiry removes the file and the cached asset");
+        std::string cleared;
+        check(assets.cache_console({"fcache", "clear", "file"}, [&](const auto& line) { cleared = line; }) &&
+                  cleared == "File cache cleared." &&
+                  std::filesystem::is_directory(cache_directory) && std::filesystem::is_empty(cache_directory),
+              "disk clear removes the cache tier and root region stamp");
+        assets.stop();
+    }
+    {
+        std::ofstream out(file, std::ios::app);
+        out << "\n[AssetCache]\nFileCacheEnabled=true\nFileCleanupTimer=0.00001\nFileCacheTimeout=0.000001\n"
+            << "CacheDirectory=" << text(cache_directory) << '\n';
+    }
+    const auto stale = framework::Uuid::random().str();
+    const auto stale_file = cache_directory / stale.substr(0, 3) / stale;
+    for (const auto& entry : {disk_file, stale_file}) {
+        std::filesystem::create_directories(entry.parent_path());
+        std::ofstream(entry) << "cache cleanup fixture";
+    }
+    {
+        std::string cleanup_log;
+        std::mutex cleanup_log_mutex;
+        RegionAssetRuntime assets(
+            server::IniConfig::load(file), scene.shared_events(), {}, {}, local,
+            [&](const auto&, const auto& message) {
+                std::lock_guard lock(cleanup_log_mutex);
+                cleanup_log += message + '\n';
+            }, {}, {},
+            [local](opensim::scene::UuidGatherer& gatherer) { gatherer.add_gathered(local, 0); });
+        for (int attempt = 0; attempt < 200 && std::filesystem::exists(stale_file); ++attempt)
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        assets.quiesce_cache_cleanup();
+        if (std::filesystem::exists(stale_file) || !std::filesystem::exists(disk_file)) {
+            std::lock_guard lock(cleanup_log_mutex);
+            std::cerr << cleanup_log;
+        }
+        check(!std::filesystem::exists(stale_file) && std::filesystem::exists(disk_file),
+              "automatic expiry keeps a scene-referenced file and removes an unreferenced file");
+        check(std::filesystem::exists(cache_directory / ("RegionStatus_" + local.str() + ".fac")),
+              "automatic expiry stamps the scanned region");
+        assets.stop();
+    }
+    {
+        const auto referenced = framework::Uuid::random();
+        const auto destination = cache_directory / referenced.str().substr(0, 3) / referenced.str();
+        std::promise<void> allow_scan;
+        auto scan_ready = allow_scan.get_future().share();
+        RegionAssetRuntime assets(
+            disk_settings, scene.shared_events(), {}, {}, local, {}, {}, {},
+            [referenced, scan_ready](opensim::scene::UuidGatherer& gatherer) {
+                if (scan_ready.wait_for(std::chrono::seconds(2)) != std::future_status::ready)
+                    throw std::runtime_error("Cache scan ran on the console thread");
+                gatherer.add_gathered(referenced, 0);
+            });
+        auto texture = std::make_shared<framework::AssetBase>(referenced, "scene texture", std::int8_t(0), "");
+        texture->data = std::make_shared<std::vector<std::uint8_t>>(3, 42);
+        check(assets.store(texture) == referenced.str(), "store a persistent scene texture");
+        const auto await_file = [&] {
+            for (int attempt = 0; attempt < 200 && !std::filesystem::exists(destination); ++attempt)
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            return std::filesystem::is_regular_file(destination);
+        };
+        check(await_file(), "initial scene texture reached disk cache");
+        assets.asset_cache()->expire(referenced.str());
+        check(!std::filesystem::exists(destination), "prefetch fixture starts with a cache miss");
+        auto completion = std::make_shared<std::promise<std::string>>();
+        auto result = completion->get_future();
+        check(assets.cache_console({"fcache", "assets"}, [completion](const auto& line) {
+                  if (line.starts_with("Completed check"))
+                      completion->set_value(line);
+              }),
+              "fcache assets returns while the scan is still pending");
+        std::string overlap;
+        check(assets.cache_console({"fcache", "assets"}, [&](const auto& line) { overlap = line; }) &&
+                  overlap == "Flotsam assets check already running",
+              "fcache rejects an overlapping scan while the worker is active");
+        allow_scan.set_value();
+        check(result.wait_for(std::chrono::seconds(2)) == std::future_status::ready &&
+                  result.get() == "Completed check with 1 assets." && await_file(),
+              "fcache assets fetches and caches a scene texture from persistent storage");
+        auto entered = std::make_shared<std::promise<void>>();
+        auto entered_future = entered->get_future();
+        std::promise<void> release;
+        auto released = release.get_future().share();
+        check(assets.cache_console({"fcache", "status"}, [entered, released, first = true](const auto&) mutable {
+                  if (std::exchange(first, false)) {
+                      entered->set_value();
+                      released.wait_for(std::chrono::seconds(2));
+                  }
+              }) && entered_future.wait_for(std::chrono::seconds(2)) == std::future_status::ready,
+              "status starts on the console worker");
+        auto shutdown = std::async(std::launch::async, [&] { assets.quiesce_cache_cleanup(); });
+        const auto waits_for_status = shutdown.wait_for(std::chrono::milliseconds(30)) == std::future_status::timeout;
+        release.set_value();
+        shutdown.get();
+        check(waits_for_status, "shutdown waits for an active console callback");
+        assets.stop();
+    }
     scene.shutdown();
 }
 void run() {

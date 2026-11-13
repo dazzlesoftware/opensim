@@ -111,6 +111,28 @@ int main(int argc, char** argv) {
         }
         auto reply = send("RegionHandshakeReply");
         transmit(reply);
+        const auto verify_landmark_offset = [&] {
+            auto request = send("TeleportLandmarkRequest");
+            auto& info = request.block("Info");
+            info["AgentID"] = agent;
+            info["SessionID"] = session;
+            info["LandmarkID"] = Uuid("84848484-8484-4484-8484-848484848484");
+            transmit(request);
+            wait([&](const auto& list) {
+                for (const auto& packet : list) {
+                    if (packet.spec->name != "TeleportLocal")
+                        continue;
+                    const auto& reply = packet.block("Info");
+                    if (std::get<std::uint64_t>(reply.at("TeleportFlags")) != 10)
+                        continue;
+                    const auto& position = std::get<std::vector<double>>(reply.at("Position"));
+                    if (position != std::vector<double>{125, 126, 30})
+                        throw std::runtime_error("Landmark handle did not shift the landing point");
+                    return true;
+                }
+                return false;
+            });
+        };
         if (argc > 6 && std::string_view(argv[6]) == "Rotating fixture") {
             std::lock_guard lock(mutex);
             const auto handshake = std::find_if(packets.begin(), packets.end(), [](const auto& p) {
@@ -283,10 +305,10 @@ int main(int argc, char** argv) {
                         continue;
                     const auto& data = packet.block("MessageBlock");
                     if (std::get<Uuid>(data.at("ToAgentID")) == agent &&
-                        std::get<std::uint64_t>(data.at("Dialog")) == 4 &&
-                        std::get<std::uint64_t>(data.at("Offline")) == 0 &&
+                        std::get<std::uint64_t>(data.at("Dialog")) == 9 &&
+                        std::get<std::uint64_t>(data.at("Offline")) == 1 &&
                         std::get<std::vector<std::uint8_t>>(data.at("BinaryBucket")) ==
-                            std::vector<std::uint8_t>{0, 1, 255})
+                            std::vector<std::uint8_t>{0})
                         return true;
                 }
                 return false;
@@ -362,6 +384,45 @@ int main(int argc, char** argv) {
         auto complete = send("CompleteAgentMovement");
         complete.block("AgentData")["CircuitCode"] = std::uint64_t(code);
         transmit(complete);
+        if (argc > 6 && (std::string_view(argv[6]) == "--rez-tree" ||
+                         std::string_view(argv[6]) == "--restore-tree")) {
+            const bool rez = std::string_view(argv[6]) == "--rez-tree";
+            wait([&](const auto& list) { return has(list, "AgentMovementComplete"); });
+            if (rez) {
+                auto add = send("ObjectAdd");
+                auto& shape = add.block("ObjectData");
+                shape["PCode"] = std::uint64_t{111};
+                shape["State"] = std::uint64_t{7};
+                shape["Scale"] = std::vector<double>{.5, .5, .5};
+                shape["Rotation"] = std::vector<double>{0, 0, 0, 1};
+                shape["RayStart"] = std::vector<double>{135, 128, 70};
+                shape["RayEnd"] = std::vector<double>{135, 128, 21};
+                shape["RayEndIsIntersection"] = std::uint64_t{1};
+                transmit(add);
+            }
+            wait([&](const auto& list) {
+                for (const auto& packet : list) {
+                    if (packet.spec->name != "ObjectUpdate")
+                        continue;
+                    for (const auto& part : packet.blocks.at("ObjectData")) {
+                        if (std::get<std::uint64_t>(part.at("PCode")) != 111)
+                            continue;
+                        const auto id = std::get<Uuid>(part.at("FullID")).str();
+                        if (!rez && (argc < 8 || id != argv[7]))
+                            continue;
+                        if (std::get<std::uint64_t>(part.at("State")) != 7 ||
+                            std::get<std::vector<std::uint8_t>>(part.at("Data")) != std::vector<std::uint8_t>{7} ||
+                            std::get<std::vector<double>>(part.at("Scale")) != std::vector<double>{4, 4, 10} ||
+                            !(std::get<std::uint64_t>(part.at("UpdateFlags")) & 0x400u))
+                            throw std::runtime_error("Cypress update lost its species, scale, or phantom flag");
+                        std::cout << id << std::endl;
+                        return true;
+                    }
+                }
+                return false;
+            });
+            return 0;
+        }
         if (argc > 6 && (std::string_view(argv[6]) == "--rez-persistent" ||
                          std::string_view(argv[6]) == "--restore-persistent")) {
             const bool rez = std::string_view(argv[6]) == "--rez-persistent";
@@ -1725,6 +1786,15 @@ int main(int argc, char** argv) {
             grab.sequence = sequence++;
             transmit(grab);
             wait([&](const auto& list) { return chat(list, "Touched."); });
+            const auto resize_prim = [&](std::vector<double> dimensions) {
+                auto resize = send("ObjectScale");
+                auto scale = lludp::make_block(resize.spec->blocks.at(1));
+                scale["ObjectLocalID"] = std::uint64_t(local);
+                scale["Scale"] = std::move(dimensions);
+                resize.blocks["ObjectData"] = {std::move(scale)};
+                transmit(resize);
+            };
+            resize_prim({2, 3, 4});
             wait([&](const auto& list) { return chat(list, "Changed 8"); });
             std::cout << "Disable scene scripting" << std::endl;
             std::string acknowledgement;
@@ -1744,12 +1814,7 @@ int main(int argc, char** argv) {
                 if (chat(added, "Touched."))
                     throw std::runtime_error("Touch executed after disabling scripting");
             }
-            auto resize = send("ObjectScale");
-            auto scale = lludp::make_block(resize.spec->blocks.at(1));
-            scale["ObjectLocalID"] = std::uint64_t(local);
-            scale["Scale"] = std::vector<double>{3, 4, 5};
-            resize.blocks["ObjectData"] = {std::move(scale)};
-            transmit(resize);
+            resize_prim({3, 4, 5});
             wait([&](const auto& list) {
                 for (const auto& packet : list)
                     if (primitive(packet) &&
@@ -1875,7 +1940,9 @@ int main(int argc, char** argv) {
                        chat(
                            list,
                            "Parcel details " + agent.str() +
-                               ", 31744, 00000000-0000-4000-8000-000000000002, 32, Parcel 2, Fixture parcel, 00000000-0000-4000-8000-000000000003, 1700000002, <132.500000, 128.250000, 25.000000>, <0.000000, 1.000000, 0.000000>, 1, 0, 42, 10898, 1, 1");
+                               ", 31744, 00000000-0000-4000-8000-000000000002, 32, Parcel 2, Fixture parcel, "
+                               "00000000-0000-4000-8000-000000000003, 1700000002, <132.500000, 128.250000, 25.000000>, <0.000000, "
+                               "1.000000, 0.000000>, 1, 0, 42, 10898, 1, 1");
             });
             wait([&](const auto& list) {
                 for (auto value = epoch - 15; value <= epoch + 15; ++value)
@@ -2069,14 +2136,36 @@ int main(int argc, char** argv) {
                 return false;
             });
             auto remote_teleport = send("TeleportLocationRequest");
-            remote_teleport.block("Info")["RegionHandle"] = (std::uint64_t{512} << 32) | 768;
+            constexpr std::uint64_t source_origin = 256000;
+            remote_teleport.block("Info")["RegionHandle"] =
+                ((source_origin + 4) << 32) | (source_origin + 8);
+            remote_teleport.block("Info")["Position"] =
+                std::vector<double>{772. - (source_origin + 4), 768. - (source_origin + 8), 0};
             transmit(remote_teleport);
             wait([&](const auto& list) { return has(list, "TeleportFailed"); });
+            wait([&](const auto& list) {
+                return std::ranges::any_of(list, [&](const auto& packet) {
+                    if (packet.spec->name != "MapBlockReply" ||
+                        std::get<Uuid>(packet.block("AgentData").at("AgentID")) != agent ||
+                        std::get<std::uint64_t>(packet.block("AgentData").at("Flags")) != 0)
+                        return false;
+                    const auto& tiles = packet.blocks.at("Data");
+                    if (tiles.size() != 1)
+                        return false;
+                    const auto& tile = tiles.front();
+                    return packet.reliable && packet.blocks.at("Size").empty() &&
+                           std::get<std::uint64_t>(tile.at("X")) == source_origin / 256 &&
+                           std::get<std::uint64_t>(tile.at("Y")) == source_origin / 256 &&
+                           std::get<std::uint64_t>(tile.at("Access")) == 254;
+                });
+            });
             auto flight = send("AgentUpdate");
             flight.block("AgentData")["ControlFlags"] = std::uint64_t{0x2000};
             transmit(flight);
             remote_teleport.sequence = sequence++;
-            remote_teleport.block("Info")["RegionHandle"] = (std::uint64_t{1024} << 32) | 768;
+            remote_teleport.block("Info")["RegionHandle"] = (source_origin << 32) | source_origin;
+            remote_teleport.block("Info")["Position"] =
+                std::vector<double>{1048. - source_origin, 803. - source_origin, 42};
             transmit(remote_teleport);
             wait([&](const auto& list) { return has(list, "TeleportFinish"); });
             wait([&](const auto& list) {
@@ -2146,25 +2235,7 @@ int main(int argc, char** argv) {
                 }
                 return false;
             });
-            home.sequence = sequence++;
-            home.block("Info")["LandmarkID"] = Uuid("84848484-8484-4484-8484-848484848484");
-            transmit(home);
-            wait([&](const auto& list) {
-                for (const auto& packet : list) {
-                    if (packet.spec->name != "TeleportLocal")
-                        continue;
-                    const auto& info = packet.block("Info");
-                    if (std::get<std::uint64_t>(info.at("TeleportFlags")) != 10)
-                        continue;
-                    const auto& position = std::get<std::vector<double>>(info.at("Position"));
-                    if (position != std::vector<double>{125, 126, 30})
-                        throw std::runtime_error(
-                            "Unexpected landmark position: " + std::to_string(position[0]) + "," +
-                            std::to_string(position[1]) + "," + std::to_string(position[2]));
-                    return true;
-                }
-                return false;
-            });
+            verify_landmark_offset();
             auto subregion = send("TeleportLocationRequest");
             auto& subregion_info = subregion.block("Info");
             subregion_info["RegionHandle"] = (std::uint64_t{256004} << 32) | 256008;
@@ -2317,11 +2388,25 @@ int main(int argc, char** argv) {
             unknown_area["LocalID"] = std::int64_t{999};
             unknown_area["West"] = 112.;
             unknown_area["East"] = 113.;
-            edit_land.blocks["ParcelData"].push_back(std::move(second_area));
-            edit_land.blocks["ParcelData"].push_back(std::move(unknown_area));
+            edit_land.blocks["ParcelData"].push_back(second_area);
+            edit_land.blocks["ParcelData"].push_back(unknown_area);
             const auto second_brush = edit_land.block("ModifyBlockExtended");
             edit_land.blocks["ModifyBlockExtended"].push_back(second_brush);
             edit_land.blocks["ModifyBlockExtended"].push_back(second_brush);
+            const auto first_area =
+                scene::terrain_layer_packets(smoothed_land, std::span(&flattened_patch, 1)).front().data;
+            transmit(edit_land);
+            wait([&](const auto& list) {
+                return std::ranges::any_of(list, [&](const auto& packet) {
+                    return packet.spec->name == "LayerData" &&
+                           std::get<std::vector<std::uint8_t>>(packet.block("LayerData").at("Data")) == first_area;
+                });
+            });
+            // The original terrain module starts its cooldown after each parcel block.
+            std::this_thread::sleep_for(std::chrono::milliseconds(25));
+            edit_land.sequence = sequence++;
+            edit_land.blocks["ParcelData"] = {std::move(second_area)};
+            edit_land.blocks["ModifyBlockExtended"] = {second_brush};
             for (int x = 110; x <= 111; ++x)
                 for (int y = 110; y <= 111; ++y)
                     smoothed_land.set(x, y, 24.f);
@@ -2335,6 +2420,10 @@ int main(int argc, char** argv) {
                                raised_area;
                 });
             });
+            std::this_thread::sleep_for(std::chrono::milliseconds(25));
+            edit_land.sequence = sequence++;
+            edit_land.blocks["ParcelData"] = {std::move(unknown_area)};
+            transmit(edit_land);
             std::this_thread::sleep_for(std::chrono::milliseconds(25));
             auto limit_land = send("ModifyLand");
             limit_land.block("ModifyBlock")["Action"] = std::uint64_t{1};
@@ -3467,7 +3556,7 @@ int main(int argc, char** argv) {
                             continue;
                         const auto& bytes = std::get<std::vector<std::uint8_t>>(chat.at("Message"));
                         if (std::string(bytes.begin(), std::find(bytes.begin(), bytes.end(), 0)) ==
-                            "Runtime permissions 32784/32912/" + agent.str())
+                            "Runtime permissions 32816/32944/" + agent.str())
                             return true;
                     }
                 return false;
@@ -4194,6 +4283,10 @@ int main(int argc, char** argv) {
                 transmit(send("MuteListRequest"));
                 wait(has_empty_mute_list);
             }
+            if (std::any_of(argv, argv + argc, [](const char* option) {
+                    return std::string_view(option) == "--verify-landmark-offset";
+                }))
+                verify_landmark_offset();
             auto logout = send("LogoutRequest");
             transmit(logout);
             wait([&](const auto& p) { return has(p, "LogoutReply"); });

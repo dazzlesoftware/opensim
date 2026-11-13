@@ -30,13 +30,8 @@ void check(bool value, const char *text) {
     if (!value)
         throw std::runtime_error(text);
 }
-void check_attachment_asset_round_trip() {
-    ObjectAssetPart attachment;
-    attachment.object.id = Uuid::random();
-    attachment.object.shape.state = 5;
-    attachment.last_attachment_point = 6;
-    attachment.attachment_position = {.25f, -.5f, .75f};
-
+std::vector<std::uint8_t> serialize_object_asset(const ObjectAssetPart& root,
+                                                 std::span<const ObjectAssetPart> children = {}) {
     std::u16string xml;
     framework::XmlTextWriterIo io;
     io.encoding = [] { return std::shared_ptr<framework::NativeXmlTextEncoding>{}; };
@@ -51,11 +46,17 @@ void check_attachment_asset_round_trip() {
         xml.append(data->data(), data->size());
     };
     framework::NativeXmlTextWriter writer(std::move(io));
-    write_object_asset_xml(writer, attachment, {});
-
+    write_object_asset_xml(writer, root, children);
     const auto utf8 = framework::utf8(xml);
-    const std::vector<std::uint8_t> bytes(utf8.begin(), utf8.end());
-    const auto restored = read_object_asset_xml(bytes);
+    return {utf8.begin(), utf8.end()};
+}
+void check_attachment_asset_round_trip() {
+    ObjectAssetPart attachment;
+    attachment.object.id = Uuid::random();
+    attachment.object.shape.state = 5;
+    attachment.last_attachment_point = 6;
+    attachment.attachment_position = {.25f, -.5f, .75f};
+    const auto restored = read_object_asset_xml(serialize_object_asset(attachment));
     check(restored && restored->linksets.size() == 1 && restored->linksets.front().parts.size() == 1,
           "read serialized attachment");
     const auto& part = restored->linksets.front().parts.front();
@@ -145,9 +146,15 @@ void run(bool wear_replaces_all, bool attachments_enabled = true) {
 integer saw_camera;
 integer viewer_listener;
 integer wear_count;
+integer inventory_rez;
 
 default
 {
+    on_rez(integer parameter)
+    {
+        inventory_rez = parameter == 0 && llGetStartParameter() == 0 && llGetAttached() == 5;
+    }
+
     attach(key avatar)
     {
         if (avatar == NULL_KEY && llGetAttached() == 6 && llGetLinkNumber() == 2)
@@ -162,6 +169,9 @@ default
         }
         if (avatar == llGetOwner() && llGetAttached() == 5 && llGetLinkNumber() == 2)
         {
+            if (inventory_rez)
+                llSay(0, "Inventory on_rez preceded attach");
+            inventory_rez = FALSE;
             ++wear_count;
             if (wear_count == 2)
                 llSay(0, "Inventory attachment resumed its script");
@@ -337,13 +347,15 @@ default
     std::atomic<bool> mute_avatar_sounds = false;
     std::atomic<bool> god_mode = false;
     RegionPolicies policies;
+    policies.auto_grant_attach_permissions = wear_replaces_all;
+    policies.auto_grant_all_script_permissions = !wear_replaces_all;
     policies.physical_linkset_capacity = 2;
     bool allow_drop_rez = false;
     int drop_permission_checks = 0;
     std::atomic<int> drop_parcel_capacity = 15000;
     policies.prim_limits_enabled = true;
     policies.enforce_parcel_rez_permissions = true;
-    policies.max_prims_per_user = 0;
+    policies.max_prims_per_user = 1;
     policies.script_parcel_capacity = [&](std::int32_t) { return drop_parcel_capacity.load(); };
     policies.can_rez = [&](Uuid, framework::Vector3, std::string&) {
         ++drop_permission_checks;
@@ -366,6 +378,7 @@ default
     auto restricted_parcel = std::make_shared<ScriptParcel>(*open_parcel);
     restricted_parcel->owner = Uuid::random();
     auto public_parcel = std::make_shared<ScriptParcel>(*restricted_parcel);
+    public_parcel->id = Uuid::random();
     public_parcel->flags |= 1u << 6;
     std::atomic<int> drop_parcel_mode = 0;
     auto adjacent_parcel = std::make_shared<ScriptParcel>(*open_parcel);
@@ -374,8 +387,11 @@ default
     policies.script_parcel_at = [&](framework::Vector3 position) -> std::shared_ptr<const ScriptParcel> {
         if (split_parcel && position.x >= 180)
             return adjacent_parcel;
-        if (const auto mode = drop_parcel_mode.load(); mode)
+        if (const auto mode = drop_parcel_mode.load(); mode) {
+            if (mode == 3)
+                return position.x >= 240 ? public_parcel : open_parcel;
             return mode == 1 ? restricted_parcel : public_parcel;
+        }
         return mute_avatar_sounds ? quiet_parcel : open_parcel;
     };
     policies.can_move = [](auto agent, const auto &object) { return agent == object.owner; };
@@ -456,6 +472,45 @@ default
     descriptor.name = "Asset owner";
     descriptor.external_host = "127.0.0.1";
     descriptor.internal_endpoint = RegionEndpoint{"127.0.0.1", 0};
+    std::atomic<bool> estate_access{false};
+    policies.estate_manager = [&, owner = circuit->agent_id](Uuid agent) { return estate_access && agent == owner; };
+    const auto permission_group = Uuid::random();
+    const auto offline_owner = Uuid::random();
+    policies.script_account = [&](Uuid id) -> std::optional<UserAccount> {
+        if (id != offline_owner)
+            return {};
+        UserAccount account(id);
+        account.first_name = "Offline";
+        account.last_name = "Owner";
+        return account;
+    };
+    policies.group_record_name = [&](Uuid id) -> std::optional<std::string> {
+        if (id == permission_group)
+            return "Permission Test Group";
+        return {};
+    };
+    GridRegion permission_destination;
+    permission_destination.id = Uuid::random();
+    permission_destination.x = descriptor.x + 256;
+    permission_destination.y = descriptor.y;
+    std::atomic<bool> permission_teleport_cancelled = false;
+    policies.teleport_destination = [&](std::uint64_t handle) -> std::optional<GridRegion> {
+        if (handle == permission_destination.handle())
+            return permission_destination;
+        return {};
+    };
+    policies.teleport_access = [](auto&, const auto&, auto, bool, auto&) { return std::string{}; };
+    policies.teleport_create = [](const auto&, auto&, auto& destination, const auto& viewer,
+                                  auto, auto, auto&, const auto&, std::uint32_t flags,
+                                  const auto*, auto&) -> std::optional<network::lludp::Packet> {
+        auto finish = network::lludp::make_packet("TeleportFinish");
+        auto& info = finish.block("Info");
+        info["AgentID"] = viewer.circuit->agent_id;
+        info["RegionHandle"] = destination.handle();
+        info["TeleportFlags"] = std::uint64_t{flags};
+        return finish;
+    };
+    policies.cancel_teleport_destination = [&](auto&, Uuid, Uuid) { permission_teleport_cancelled = true; };
     RegionRuntime runtime(descriptor, presence, std::move(policies));
     auto endpoint = runtime.start(std::make_shared<server::RegistryCapabilityListener>(
         server::CapabilityListenerInfo{false, 19009, 0, {}}));
@@ -501,6 +556,21 @@ default
         }
         if (!predicate())
             throw std::runtime_error("region owner/UDP deadline at fixture line " + std::to_string(caller.line()));
+    };
+    const auto await_ack = [&](std::uint32_t sequence,
+                               std::source_location caller = std::source_location::current()) {
+        pump([&] {
+            std::lock_guard lock(received_mutex);
+            return std::ranges::any_of(received, [&](const auto& packet) {
+                if (std::ranges::find(packet.acknowledgements, sequence) != packet.acknowledgements.end())
+                    return true;
+                if (packet.spec->name != "PacketAck")
+                    return false;
+                return std::ranges::any_of(packet.blocks.at("Packets"), [&](const auto& row) {
+                    return std::get<std::uint64_t>(row.at("ID")) == sequence;
+                });
+            });
+        }, caller);
     };
     auto transferred = std::make_shared<framework::AgentData>();
     transferred->agent_id = circuit->agent_id;
@@ -1344,6 +1414,7 @@ default
     wear.block("ObjectData")["ItemID"] = wear_item.id;
     send(wear);
     pump([&] { return heard("Inventory attachment child received wear"); });
+    check(heard("Inventory on_rez preceded attach"), "inventory wear posts on_rez before attach");
     const auto wearer_after_rez = runtime.viewers().agent(circuit->agent_id);
     const auto saved_wear = reopened_avatars.get_appearance(circuit->agent_id)->attachment_for_item(wear_item.id);
     const auto live_wear = wearer_after_rez->appearance()->attachment_for_item(wear_item.id);
@@ -1622,12 +1693,67 @@ default
     add_shape["RayEndIsIntersection"] = std::uint64_t{1};
     expect_rez_denial(add, "full parcel rejects new prim");
     drop_parcel_capacity = 15000;
+    auto tree = add;
+    tree.sequence = ++sequence;
+    tree.block("ObjectData")["PCode"] = std::uint64_t{111};
+    tree.block("ObjectData")["State"] = std::uint64_t{7};
+    send(tree);
+    std::optional<SceneObject> rezzed_tree;
+    pump([&] {
+        const auto objects = runtime.world().objects();
+        const auto found = std::ranges::find_if(objects, [](const auto& object) {
+            return object.shape.pcode == 111;
+        });
+        if (found == objects.end())
+            return false;
+        rezzed_tree = *found;
+        std::lock_guard lock(received_mutex);
+        return std::ranges::any_of(received, [&](const auto& packet) {
+            if (packet.spec->name != "ObjectUpdate")
+                return false;
+            return std::ranges::any_of(packet.blocks.at("ObjectData"), [&](const auto& row) {
+                return std::get<Uuid>(row.at("FullID")) == rezzed_tree->id &&
+                       std::get<std::vector<std::uint8_t>>(row.at("Data")) == std::vector<std::uint8_t>{7};
+            });
+        });
+    });
+    check(rezzed_tree->scale == framework::Vector3{4, 4, 10} && (rezzed_tree->flags & 0x400u),
+          "Cypress rez uses the managed scale and phantom flag");
+    runtime.world().remove(rezzed_tree->id);
     drop_parcel_mode = 1;
     add.sequence = ++sequence;
     expect_rez_denial(add, "restricted parcel rejects creation", "You cannot create objects here.");
     rez_linkset.sequence = ++sequence;
     expect_rez_denial(rez_linkset, "restricted parcel rejects inventory rez", "You cannot rez objects here.");
     check(inventory.item(circuit->agent_id, ground_item->id).has_value(), "parcel denial preserves inventory");
+    drop_parcel_mode = 3;
+    add_shape["RayStart"] = std::vector<double>{245, 170, 40};
+    add_shape["RayEnd"] = std::vector<double>{245, 170, 30};
+    rez_linkset.block("RezData")["RayStart"] = std::vector<double>{245, 170, 40};
+    rez_linkset.block("RezData")["RayEnd"] = std::vector<double>{245, 170, 30};
+    const auto before_public_rez = runtime.world().objects();
+    add.sequence = ++sequence;
+    send(add);
+    pump([&] { return runtime.world().size() == before_public_rez.size() + 1; });
+    const auto after_public_rez = runtime.world().objects();
+    const auto public_prim = std::ranges::find_if(after_public_rez, [&](const auto& part) {
+        return std::ranges::find(before_public_rez, part.id, &SceneObject::id) == before_public_rez.end();
+    });
+    check(public_prim != after_public_rez.end() && public_prim->owner == circuit->agent_id,
+          "public parcel admits a prim at the per-user limit");
+    add.sequence = ++sequence;
+    expect_rez_denial(add, "public parcel rejects new prim above the per-user limit",
+                      "Unable to rez object because you have reached your limit");
+    rez_linkset.sequence = ++sequence;
+    expect_rez_denial(rez_linkset, "public parcel rejects inventory linkset above the per-user limit",
+                      "Unable to rez object because you have reached your limit");
+    check(inventory.item(circuit->agent_id, ground_item->id).has_value(),
+          "per-user limit denial preserves inventory");
+    check(runtime.world().remove(public_prim->id), "remove the prim added at the per-user limit");
+    add_shape["RayStart"] = std::vector<double>{170, 170, 40};
+    add_shape["RayEnd"] = std::vector<double>{170, 170, 30};
+    rez_linkset.block("RezData")["RayStart"] = std::vector<double>{170, 170, 40};
+    rez_linkset.block("RezData")["RayEnd"] = std::vector<double>{170, 170, 30};
     drop_parcel_mode = 0;
     drop_parcel_capacity = occupied_prims;
     split_parcel = true;
@@ -1704,21 +1830,26 @@ default
         check(assets.store(asset).has_value(), "store scripted rez fixture source");
         return asset->full_id();
     };
-    const auto spawned_script = store_script("Rez parameter", R"LSL(
+    const std::string_view spawned_source = R"LSL(
 default
 {
     on_rez(integer parameter)
     {
         if (parameter == llGetStartParameter() && (parameter == 17 || parameter == 19))
             llSetObjectDesc("Rez parameter verified");
+        else if (parameter == 0)
+            llSetObjectDesc("Unexpected viewer on_rez");
     }
     changed(integer reason)
     {
         if (reason == CHANGED_REGION_START && llGetStartParameter() == 17)
             llSetObjectDesc("Restart restored rez parameter");
+        else if (reason == CHANGED_REGION_START && llGetStartParameter() == 0)
+            llSetObjectDesc("Started after scripts were enabled");
     }
 }
-)LSL");
+)LSL";
+    const auto spawned_script = store_script("Rez parameter", spawned_source);
     const auto owner_text = circuit->agent_id.str();
     const std::string scripted_asset_xml =
         "<SceneObjectGroup><SceneObjectPart><UUID>" + Uuid::random().str() +
@@ -1731,8 +1862,25 @@ default
         "</OwnerID><Shape><PCode>9</PCode></Shape><OffsetPosition><X>2</X><Y>0</Y><Z>0</Z></OffsetPosition>"
         "</SceneObjectPart></OtherParts></SceneObjectGroup>";
     auto scripted_asset = std::make_shared<framework::AssetBase>(Uuid::random(), "Scripted linkset", 6, owner_text);
-    scripted_asset->data = std::make_shared<std::vector<std::uint8_t>>(scripted_asset_xml.begin(),
-                                                                       scripted_asset_xml.end());
+    auto parsed_scripted_asset = read_object_asset_xml({
+        reinterpret_cast<const std::uint8_t*>(scripted_asset_xml.data()), scripted_asset_xml.size()});
+    check(parsed_scripted_asset && parsed_scripted_asset->linksets.front().parts.size() == 2,
+          "read scripted rez linkset");
+    auto& scripted_parts = parsed_scripted_asset->linksets.front().parts;
+    auto stopped_task = scripted_parts.front().inventory.front();
+    stopped_task.reset_ids(scripted_parts.back().object.id);
+    stopped_task.script_running = false;
+    scripted_parts.back().inventory.push_back(stopped_task);
+    const auto stopped_program = script::compile_lsl(spawned_source);
+    check(bool(stopped_program), "compile stopped script checkpoint fixture");
+    script::LslContext stopped_context;
+    stopped_context.start_parameter = 99;
+    script::LslInstance stopped_instance(stopped_program.program, stopped_context, script::LslHost{}, false);
+    auto stopped_checkpoint = stopped_instance.checkpoint();
+    check(stopped_checkpoint && !stopped_checkpoint->running, "snapshot stopped script fixture");
+    scripted_parts.back().native_script_checkpoints.emplace(stopped_task.item_id, std::move(*stopped_checkpoint));
+    scripted_asset->data = std::make_shared<std::vector<std::uint8_t>>(
+        serialize_object_asset(scripted_parts.front(), std::span(scripted_parts).subspan(1)));
     check(assets.store(scripted_asset).has_value(), "store scripted rez object");
     const auto rez_task = [&](const std::string& name, Uuid asset, std::int32_t type, std::uint32_t permissions) {
         auto item = std::make_shared<framework::TaskInventoryItem>();
@@ -1745,6 +1893,253 @@ default
         item->current_permissions = permissions;
         return item;
     };
+    const std::string permission = wear_replaces_all ? "PERMISSION_ATTACH" : "PERMISSION_TRIGGER_ANIMATION";
+    const auto permission_script = store_script("Automatic permission grant",
+        "default { state_entry() { llRequestPermissions(llGetOwner(), " + permission + "); }"
+        " run_time_permissions(integer mask) { if (mask == " + permission +
+        " && llGetPermissions() == mask && llGetPermissionsKey() == llGetOwner())"
+        " llSetObjectDesc(\"Automatic permission granted\"); } }");
+    const auto permission_object = runtime.world().add(
+        SceneObject::primitive(circuit->agent_id, {194, 170, 30}));
+    check(permission_object.has_value(), "add automatic permission test object");
+    const auto permission_task = rez_task("Automatic permission grant", permission_script, 10, 0);
+    permission_task->reset_ids(permission_object->id);
+    runtime.restore_task_inventory(permission_object->id, {permission_task});
+    pump([&] {
+        const auto object = runtime.world().object(permission_object->id);
+        return object && object->description == "Automatic permission granted";
+    });
+    runtime.world().remove(permission_object->id);
+    if (!wear_replaces_all) {
+        const auto revoke_script = store_script("Viewer revokes animation permission", R"LSL(
+default {
+    state_entry() { llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION); }
+    run_time_permissions(integer mask) {
+        llSetObjectDesc("Permission granted");
+        llSetTimerEvent(0.1);
+    }
+    timer() {
+        if (llGetPermissions() == 0 && llGetPermissionsKey() == NULL_KEY) {
+            llSetObjectDesc("Permission revoked");
+            llSetTimerEvent(0.0);
+        } else {
+            llSetObjectDesc("Permission retained");
+        }
+    }
+}
+)LSL");
+        const auto object = runtime.world().add(SceneObject::primitive(circuit->agent_id, {194, 170, 30}));
+        check(object.has_value(), "add viewer permission revocation object");
+        const auto task = rez_task("Viewer revokes animation permission", revoke_script, 10, 0);
+        task->reset_ids(object->id);
+        runtime.restore_task_inventory(object->id, {task});
+        const auto has_description = [&](std::string_view expected) {
+            const auto prim = runtime.world().object(object->id);
+            return prim && prim->description == expected;
+        };
+        pump([&] { return has_description("Permission granted") || has_description("Permission retained"); });
+        const auto revoke = [&](Uuid target) {
+            auto packet = make("RevokePermissions");
+            packet.block("Data")["ObjectID"] = target;
+            packet.block("Data")["ObjectPermissions"] = std::uint64_t{16};
+            send(packet);
+            return packet.sequence;
+        };
+        await_ack(revoke(object->id));
+        const auto check_at = std::chrono::steady_clock::now() + std::chrono::milliseconds(250);
+        pump([&] {
+            check(!has_description("Permission revoked"), "object-targeted viewer revocation preserves the grant");
+            return std::chrono::steady_clock::now() >= check_at && has_description("Permission retained");
+        });
+        auto teleport = make("TeleportLocationRequest");
+        auto& destination = teleport.block("Info");
+        destination["RegionHandle"] = permission_destination.handle();
+        destination["Position"] = std::vector<double>{128, 128, 30};
+        destination["LookAt"] = std::vector<double>{0, 1, 0};
+        send(teleport);
+        pump([&] {
+            std::lock_guard lock(received_mutex);
+            return std::ranges::any_of(received, [&](const auto& packet) {
+                return packet.spec->name == "TeleportFinish" &&
+                       std::get<std::uint64_t>(packet.block("Info").at("RegionHandle")) ==
+                           permission_destination.handle();
+            });
+        });
+        await_ack(revoke(descriptor.id));
+        const auto transfer_check_at = std::chrono::steady_clock::now() + std::chrono::milliseconds(250);
+        pump([&] {
+            check(!has_description("Permission revoked"), "pending teleport preserves the permission");
+            return std::chrono::steady_clock::now() >= transfer_check_at;
+        });
+        auto cancel = make("TeleportCancel");
+        cancel.block("Info")["AgentID"] = circuit->agent_id;
+        cancel.block("Info")["SessionID"] = circuit->session_id;
+        send(cancel);
+        pump([&] { return permission_teleport_cancelled.load(); });
+        check(has_description("Permission retained"), "pending teleport preserves the permission");
+        revoke(descriptor.id);
+        pump([&] { return has_description("Permission revoked"); });
+        runtime.world().remove(object->id);
+    }
+    if (wear_replaces_all) {
+        const auto release_script = store_script("Control permission reassignment",
+            "default { state_entry() { llRequestPermissions(llGetOwner(), PERMISSION_TAKE_CONTROLS); }"
+            " run_time_permissions(integer mask) {"
+            " if (mask & PERMISSION_TAKE_CONTROLS) {"
+            " llTakeControls(CONTROL_FWD, TRUE, FALSE);"
+            " llRequestPermissions(\"" + offline_owner.str() + "\", PERMISSION_TAKE_CONTROLS);"
+            " } else if (llGetPermissions() == 0) { llSetObjectDesc(\"Controls released\"); } } }");
+        const auto object = runtime.world().add(SceneObject::primitive(circuit->agent_id, {194, 170, 30}));
+        check(object.has_value(), "add control reassignment test object");
+        const auto task = rez_task("Control permission reassignment", release_script, 10, 0);
+        task->reset_ids(object->id);
+        runtime.restore_task_inventory(object->id, {task});
+        pump([&] {
+            std::lock_guard lock(received_mutex);
+            return std::ranges::any_of(received, [&](const auto& packet) {
+                return packet.spec->name == "ScriptQuestion" &&
+                       std::get<Uuid>(packet.block("Data").at("ItemID")) == task->item_id;
+            });
+        });
+        auto reply = make("ScriptAnswerYes");
+        reply.block("Data")["TaskID"] = object->id;
+        reply.block("Data")["ItemID"] = task->item_id;
+        reply.block("Data")["Questions"] = std::int64_t{4};
+        send(reply);
+        pump([&] {
+            const auto prim = runtime.world().object(object->id);
+            return prim && prim->description == "Controls released";
+        });
+        runtime.world().remove(object->id);
+
+        const auto control_script = store_script("Control permission denial", R"LSL(
+default {
+    state_entry() { llRequestPermissions(llGetOwner(), PERMISSION_TAKE_CONTROLS); }
+    run_time_permissions(integer mask) {
+        if (mask & PERMISSION_TAKE_CONTROLS) {
+            llSetObjectDesc((string)mask);
+            llTakeControls(CONTROL_FWD, TRUE, FALSE);
+            llRequestPermissions(llGetOwner(), PERMISSION_TAKE_CONTROLS);
+        } else {
+            llSetObjectDesc("Control permission denied");
+        }
+    }
+}
+)LSL");
+        const auto companion_script = store_script("Companion permission listener", R"LSL(
+default {
+    state_entry() {
+        llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION);
+        llRequestPermissions(llGetOwner(), 0);
+    }
+    run_time_permissions(integer mask) { llSetObjectName((string)mask); }
+}
+)LSL");
+        const auto control_object = runtime.world().add(
+            SceneObject::primitive(circuit->agent_id, {194, 170, 30}));
+        check(control_object.has_value(), "add control permission test object");
+        const auto control_task = rez_task("Control permission denial", control_script, 10, 0);
+        control_task->reset_ids(control_object->id);
+        const auto companion_task = rez_task("Companion permission listener", companion_script, 10, 0);
+        companion_task->reset_ids(control_object->id);
+        std::size_t first_packet;
+        {
+            std::lock_guard lock(received_mutex);
+            first_packet = received.size();
+        }
+        runtime.restore_task_inventory(control_object->id, {control_task, companion_task});
+        const auto question_count = [&](const Uuid& item_id) {
+            return std::count_if(received.begin() + first_packet, received.end(), [&](const auto& packet) {
+                return packet.spec->name == "ScriptQuestion" &&
+                       std::get<Uuid>(packet.block("Data").at("ItemID")) == item_id;
+            });
+        };
+        const auto answer = [&](const Uuid& task_id, const Uuid& item_id, int permissions) {
+            auto packet = make("ScriptAnswerYes");
+            packet.block("Data")["TaskID"] = task_id;
+            packet.block("Data")["ItemID"] = item_id;
+            packet.block("Data")["Questions"] = std::int64_t{permissions};
+            send(packet);
+            return packet.sequence;
+        };
+        pump([&] {
+            const auto object = runtime.world().object(control_object->id);
+            if (!object || object->name != "0")
+                return false;
+            std::lock_guard lock(received_mutex);
+            return question_count(control_task->item_id) == 1 &&
+                   question_count(companion_task->item_id) == 1;
+        });
+        constexpr int take_controls_permission = 4;
+        constexpr int trigger_animation_permission = 16;
+        constexpr std::uint64_t forward_control = 1;
+        const auto wrong_task_reply = answer(duplicate_source->id, control_task->item_id, 0);
+        await_ack(wrong_task_reply);
+        const auto submitted_permissions = take_controls_permission | trigger_animation_permission;
+        answer(control_object->id, Uuid::random(), submitted_permissions);
+        pump([&] {
+            const auto object = runtime.world().object(control_object->id);
+            if (!object || object->description != std::to_string(submitted_permissions) ||
+                object->name != std::to_string(submitted_permissions))
+                return false;
+            std::lock_guard lock(received_mutex);
+            return question_count(control_task->item_id) >= 2 &&
+                   std::any_of(received.begin() + first_packet, received.end(), [&](const auto& packet) {
+                       if (packet.spec->name != "ScriptControlChange")
+                           return false;
+                       const auto& data = packet.blocks.at("Data").front();
+                       return std::get<std::uint64_t>(data.at("Controls")) == forward_control &&
+                              std::get<bool>(data.at("TakeControls"));
+                   });
+        });
+        {
+            std::lock_guard lock(received_mutex);
+            first_packet = received.size();
+        }
+        answer(control_object->id, control_task->item_id, 0);
+        pump([&] {
+            const auto object = runtime.world().object(control_object->id);
+            if (!object || object->description != "Control permission denied")
+                return false;
+            std::lock_guard lock(received_mutex);
+            return std::any_of(received.begin() + first_packet, received.end(), [&](const auto& packet) {
+                if (packet.spec->name != "ScriptControlChange")
+                    return false;
+                const auto& data = packet.blocks.at("Data").front();
+                return std::get<std::uint64_t>(data.at("Controls")) == forward_control &&
+                       !std::get<bool>(data.at("TakeControls"));
+            });
+        });
+        runtime.world().remove(control_object->id);
+
+        const auto owner_script = store_script("Permission prompt owner",
+            "default { state_entry() { llRequestPermissions(\"" + circuit->agent_id.str() +
+            "\", PERMISSION_TRIGGER_ANIMATION); } }");
+        const auto check_prompt_owner = [&](Uuid owner, Uuid group, std::u16string_view expected_name) {
+            auto prim = SceneObject::primitive(owner, {194, 170, 30});
+            prim.group = group;
+            const auto object = runtime.world().add(std::move(prim));
+            check(object.has_value(), "add permission test object");
+            const auto task = rez_task("Permission prompt owner", owner_script, 10, 0);
+            task->owner_id = owner;
+            task->reset_ids(object->id);
+            runtime.restore_task_inventory(object->id, {task});
+            pump([&] {
+                std::lock_guard lock(received_mutex);
+                return std::ranges::any_of(received, [&](const auto& packet) {
+                    if (packet.spec->name != "ScriptQuestion")
+                        return false;
+                    const auto& data = packet.block("Data");
+                    return std::get<Uuid>(data.at("ItemID")) == task->item_id &&
+                           framework::sdk_bytes_to_string(
+                               std::get<std::vector<std::uint8_t>>(data.at("ObjectOwner"))) == expected_name;
+                });
+            });
+            runtime.world().remove(object->id);
+        };
+        check_prompt_owner(permission_group, permission_group, u"Permission Test Group");
+        check_prompt_owner(offline_owner, {}, u"Offline Owner");
+    }
     const auto spawner = store_script("Scripted rez", R"LSL(
 integer received;
 default
@@ -1789,6 +2184,12 @@ default
         return part.rezzer == duplicate_source->id && part.position == framework::Vector3{173, 170, 30};
     });
     check(checkpoint_root != rezzed_parts.end(), "find centered object for script restore");
+    const auto stopped_child = runtime.world().link_key(checkpoint_root->id, 2);
+    const auto stopped_states = runtime.snapshot_task_script_states(stopped_child);
+    check(stopped_states.size() == 1, "snapshot stopped script on the rezzed child");
+    const auto rezzed_stopped = script::decode_lsl_checkpoint(stopped_states.begin()->second);
+    check(rezzed_stopped && !rezzed_stopped->running && rezzed_stopped->start_parameter == 17,
+          "a rezzed stopped script retains its running flag and receives the new rez parameter");
     const auto checkpoint_tasks = runtime.snapshot_task_inventory(checkpoint_root->id);
     const auto checkpoint_states = runtime.snapshot_task_script_states(checkpoint_root->id);
     check(checkpoint_tasks && checkpoint_tasks->size() == 1 && checkpoint_states.size() == 1,
@@ -1802,6 +2203,41 @@ default
         {{restarted_task->item_id, checkpoint_states.begin()->second}},
         RegionRuntime::TaskInventoryRestoreSource::RegionStart);
     pump([&] { return runtime.world().object(restored_part->id)->description == "Restart restored rez parameter"; });
+
+    auto deferred_item = *ground_item;
+    deferred_item.id = Uuid::random();
+    deferred_item.asset_id = scripted_asset->full_id();
+    deferred_item.name = "Rez with scripts disabled";
+    check(inventory.add_item(deferred_item), "store the object for viewer rez with scripts disabled");
+    runtime.set_scripts_enabled(false);
+    auto deferred_rez = make("RezObject");
+    deferred_rez.block("InventoryData")["ItemID"] = deferred_item.id;
+    deferred_rez.block("RezData")["RayStart"] = std::vector<double>{168, 166, 40};
+    deferred_rez.block("RezData")["RayEnd"] = std::vector<double>{168, 166, 30};
+    deferred_rez.block("RezData")["RayEndIsIntersection"] = true;
+    send(deferred_rez);
+    Uuid deferred_root;
+    pump([&] {
+        for (const auto& part : runtime.world().objects()) {
+            if (part.name == deferred_item.name) {
+                deferred_root = part.id;
+                return true;
+            }
+        }
+        return false;
+    });
+    check(runtime.snapshot_task_script_states(deferred_root).empty(),
+          "viewer rez does not compile scripts while region scripts are disabled");
+    runtime.set_scripts_enabled(true);
+    pump([&] {
+        const auto part = runtime.world().object(deferred_root);
+        return part && part->description == "Started after scripts were enabled";
+    });
+    runtime.poll();
+    check(runtime.world().object(deferred_root)->description == "Started after scripts were enabled",
+          "enabling scripts after viewer rez does not replay on_rez");
+    runtime.world().remove(deferred_root);
+
     check(checkpoint_root->die_at_edge, "script-rezzed root defaults to die at edge");
     const auto override_root = std::ranges::find_if(rezzed_parts, [&](const auto& part) {
         return part.rezzer == duplicate_source->id && part.position == framework::Vector3{175, 170, 30};
@@ -2058,6 +2494,45 @@ default
 )LSL", "Linkset allows grab");
     drag(grab_child->id, 195);
     expect_grab_position(195);
+    const auto debug_host = runtime.world().add(SceneObject::primitive(circuit->agent_id, {170, 168, 30}));
+    check(debug_host.has_value(), "add estate scripting toggle fixture");
+    const auto debug_source = store_script("Estate scripting toggle", R"LSL(
+default
+{
+    state_entry() { llSetObjectDesc("Estate script started"); }
+    changed(integer flags)
+    {
+        if (flags == CHANGED_REGION_START && llGetStartParameter() == 0)
+            llSetObjectDesc("Estate script restarted");
+    }
+}
+)LSL");
+    auto debug_task = rez_task("Estate scripting toggle", debug_source, 10, 0);
+    debug_task->reset_ids(debug_host->id);
+    runtime.restore_task_inventory(debug_host->id, {debug_task});
+    pump([&] { return runtime.world().object(debug_host->id)->description == "Estate script started"; });
+
+    const auto set_estate_scripting = [&](bool enabled) {
+        auto request = make("EstateOwnerMessage");
+        request.block("MethodData")["Method"] = wire("setregiondebug");
+        for (const auto* value : {enabled ? "false" : "true", "false", "false"}) {
+            auto parameter = network::lludp::make_block(request.spec->blocks.at(2));
+            parameter["Parameter"] = wire(value);
+            request.blocks["ParamList"].push_back(std::move(parameter));
+        }
+        send(request);
+    };
+    estate_access = true;
+    set_estate_scripting(false);
+    pump([&] { return runtime.snapshot_task_script_states(debug_host->id).empty(); });
+    const auto debug_inventory = runtime.snapshot_task_inventory(debug_host->id);
+    check(debug_inventory && debug_inventory->size() == 1,
+          "disabling estate scripting removes the instance and keeps the inventory item");
+    set_estate_scripting(true);
+    pump([&] { return runtime.world().object(debug_host->id)->description == "Estate script restarted"; });
+    estate_access = false;
+    runtime.world().remove(debug_host->id);
+
     auto final_edit = make("ObjectDescription");
     auto final_edit_part = network::lludp::make_block(final_edit.spec->blocks.at(1));
     final_edit_part["LocalID"] = std::uint64_t(worn_again->local_id);

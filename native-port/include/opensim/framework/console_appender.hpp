@@ -1,6 +1,7 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #pragma once
+#include "opensim/framework/atomic_shared_ptr.hpp"
 #include <atomic>
 #include <cstdint>
 #include <exception>
@@ -39,7 +40,7 @@ class ConsoleAppender {
     void append(std::int32_t level, const std::u16string& message) const;
 
   private:
-    std::atomic<std::shared_ptr<Output>> console_;
+    opensim::framework::AtomicSharedPtr<Output> console_;
     Write write_;
     ExceptionText exception_text_;
 };

@@ -2,6 +2,9 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/scene/uuid_gatherer.hpp"
 #include "opensim/scene/live_asset_gather.hpp"
+#include "opensim/scene/object_asset_xml.hpp"
+#include "opensim/scene/region_runtime.hpp"
+#include "opensim/services/presence_service.hpp"
 #include "opensim/services/flotsam_memory_cache.hpp"
 #include "opensim/framework/culture_prefix.hpp"
 #include "opensim/framework/texture_entry.hpp"
@@ -502,6 +505,90 @@ void native_service() {
             "native projection, particle and nested sound references");
     auto live_backend =
         native_uuid_gatherer_backend(cache, [&](auto& text) { errors.push_back(text); }, [](auto&) {});
+    ObjectAssetLinkset snapshot;
+    auto& root_part = snapshot.parts.emplace_back();
+    root_part.object.texture_entry = framework::TextureEntry(id(201)).bytes();
+    root_part.object.looped_sound = id(202);
+    root_part.object.object_animations = {1, 0};
+    const auto animation = id(203);
+    auto& animation_bytes = root_part.object.object_animations;
+    animation_bytes.insert(animation_bytes.end(), animation.bytes().begin(), animation.bytes().end());
+    animation_bytes.insert(animation_bytes.end(), {1, 'a'});
+    root_part.object.dynamic_attributes_xml =
+        "<llsd><map><key>OpenSim</key><map><key>Materials</key><map><key>Materials</key>"
+        "<array><map><key>Material</key><map><key>NormMap</key><uuid>" + id(204).str() +
+        "</uuid></map></map></array></map></map></map></llsd>";
+    auto& child_part = snapshot.parts.emplace_back();
+    child_part.object.collision_sound = id(205);
+    auto& item = child_part.inventory.emplace_back();
+    item.asset_id = id(206);
+    item.type = 0;
+    UuidGatherer snapshot_gatherer(live_backend);
+    snapshot_gatherer.add_for_inspection(gather_object_snapshot(std::move(snapshot)), [](auto&) {});
+    snapshot_gatherer.gather_all();
+    const auto& snapshot_assets = snapshot_gatherer.state()->gathered;
+    require(snapshot_assets.at(id(201)) == 0 && snapshot_assets.at(id(202)) == 1 &&
+                snapshot_assets.at(id(203)) == 20 && snapshot_assets.at(id(204)) == 0 &&
+                snapshot_assets.at(id(205)) == 1 && snapshot_assets.at(id(206)) == 0 && errors.empty(),
+            "native scene snapshots preserve linked-part textures, sounds, animations, materials and inventory");
+    services::GridRegion region;
+    region.id = id(210);
+    services::NullPresenceStore presence_store;
+    services::PresenceService presence(presence_store);
+    RegionPolicies policies;
+    policies.access = [](auto, const auto&, auto&) { return true; };
+    policies.authorize = [](const auto&, auto&) { return true; };
+    const auto environment = [](const char* type, const char* key, framework::Uuid texture) {
+        using network::Value;
+        EnvironmentDay day;
+        day.apply(Value::object({{"day_cycle", Value::object({
+            {"frames", Value::object({{"frame", Value::object({
+                {"type", Value(type)}, {key, Value(texture.str())}
+            })}})}
+        })}}));
+        return day;
+    };
+    auto parcel = std::make_shared<ScriptParcel>();
+    parcel->environment_day = environment("water", "normal_map", id(216));
+    policies.list_parcels = [parcel] {
+        return std::vector<std::shared_ptr<const ScriptParcel>>{parcel};
+    };
+    RegionRuntime runtime(region, presence, std::move(policies));
+    runtime.set_terrain_texture_assets({id(213), {}, {}, {}}, {id(214), {}, {}, {}});
+    runtime.load_region_map_images(id(215), {});
+    runtime.load_environment_day(environment("sky", "cloud_id", id(217)));
+    auto placed = runtime.world().add(SceneObject::primitive(id(211), {128, 128, 30}));
+    require(bool(placed), "place the live root prim");
+    auto child = SceneObject::primitive(id(211), {0, 0, 1});
+    child.parent_id = placed->local_id;
+    child.looped_sound = id(212);
+    child.particle_system.resize(86);
+    const auto particle_texture = id(222);
+    std::copy(particle_texture.bytes().begin(), particle_texture.bytes().end(), child.particle_system.begin() + 36);
+    require(bool(runtime.world().add(child)), "place the live linked child prim");
+    const auto live_objects = runtime.snapshot_asset_objects();
+    require(live_objects.size() == 1 && live_objects.front()->id() == placed->id &&
+                live_objects.front()->parts()->size() == 2,
+            "runtime snapshots a live linkset with its root and child");
+    UuidGatherer runtime_gatherer(live_backend);
+    runtime_gatherer.add_for_inspection(live_objects.front(), [](auto&) {});
+    runtime.gather_region_asset_references(runtime_gatherer);
+    require(runtime_gatherer.state()->gathered.at(id(212)) == 1,
+            "runtime snapshot protects a linked child's sound");
+    require(runtime_gatherer.state()->gathered.at(particle_texture) == 0,
+            "runtime snapshot protects a linked child's particle texture");
+    for (const auto asset : {id(213), id(214), id(215), id(216), id(217)})
+        require(runtime_gatherer.state()->gathered.at(asset) == 0,
+                "runtime protects terrain and region or parcel environment assets");
+    framework::TextureEntry avatar_texture(id(218));
+    avatar_texture.create_face(8)->texture_id(id(219));
+    avatar_texture.create_face(44)->texture_id(id(220));
+    avatar_texture.create_face(7)->texture_id(id(221));
+    gather_baked_textures(runtime_gatherer, avatar_texture.faces);
+    require(runtime_gatherer.state()->gathered.contains(id(219)) &&
+                runtime_gatherer.state()->gathered.contains(id(220)) &&
+                !runtime_gatherer.state()->gathered.contains(id(221)),
+            "bake collection selects both legacy and extended baked faces");
     SceneFixture scan(0, 0, 1, [](auto&) {}, [](int) {});
     scan.call(live_backend);
     require(scan.last && scan.last->failed.size() == 0 && scan.last->uncertain.size() == 0,

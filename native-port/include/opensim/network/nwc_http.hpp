@@ -16,6 +16,7 @@ class NwcXmlRpcHttpTransport {
     explicit NwcXmlRpcHttpTransport(std::shared_ptr<WebHttpClients>);
     std::shared_ptr<NwcXmlRpcResponse> send(const std::shared_ptr<NwcXmlRpcRequest>&,
                                             const std::optional<std::u16string>& url,
-                                            std::int32_t timeout_milliseconds = 30000);
+                                            std::int32_t timeout_milliseconds = 30000,
+                                            std::function<bool()> interrupted = {});
 };
 }

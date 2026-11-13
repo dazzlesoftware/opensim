@@ -27,6 +27,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "opensim/server/grid_identity.hpp"
 #include "opensim/services/grid_service.hpp"
+#include "opensim/network/async_http_server.hpp"
+#include "opensim/network/web_http_clients.hpp"
+#include <atomic>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -54,12 +57,49 @@ int main() {
             threw = std::string(error.what()) == "GatekeeperURI configuration error";
         }
         check(threw, "empty default requires gatekeeper");
+        std::atomic<int> grid_info_requests = 0;
+        std::atomic<bool> grid_info_available = true;
+        network::HttpServerOptions options;
+        options.port = 0;
+        network::AsyncHttpServer grid_info_server(options, [&](const auto& request, auto channel) {
+            network::HttpResponse response;
+            if (request.path == "/json_grid_info" && request.method == "GET") {
+                ++grid_info_requests;
+                response.status = grid_info_available ? 200 : 503;
+                response.body = R"json({"login":"https://remote.example/login","custom":"remote value","numeric":7})json";
+            } else {
+                response.status = 404;
+            }
+            channel->complete(std::move(response));
+        });
+        int grid_info_port = 0;
+        grid_info_server.start([&](int port) { grid_info_port = port; });
         {
             std::ofstream file(path);
             file
-                << "[Const]\nGatekeeperURI=http://gate.example\nHomeURI=https://home.example:9000\nGatekeeperURIAlias=alias.example,https://alias.example:80, bad/path\nHomeURIAlias=homealias.example\nStunServers=stun.example:3478,stun.example:3478,bad/path\n[GridInfo]\nGridName=Identity Grid\n";
+                << "[Const]\nGatekeeperURI=http://gate.example\nHomeURI=https://home.example:9000\n"
+                   "GatekeeperURIAlias=alias.example,https://alias.example:80, bad/path\n"
+                   "HomeURIAlias=homealias.example\nStunServers=stun.example:3478,stun.example:3478,bad/path\n"
+                   "[GridInfo]\nGridName=Identity Grid\nGridInfoURI=http://127.0.0.1:"
+                << grid_info_port << "\n[GridInfoService]\nlogin=https://configured.example/login\n";
         }
         auto config = server::IniConfig::load(path);
+        network::WebHttpClients clients(network::native_web_http_handler_factory());
+        clients.setup(false, false, nullptr, 4);
+        check(server::script_grid_service_value(empty, clients, "login") == "Configuration Error!" &&
+                  server::script_grid_service_value(config, clients, "login") == "https://configured.example/login" &&
+                  grid_info_requests == 0,
+              "OSSL grid queries prefer configured values and report a missing endpoint");
+        check(server::script_grid_service_value(config, clients, "custom") == "remote value" &&
+                  server::script_grid_service_value(config, clients, "numeric") == "7" &&
+                  server::script_grid_service_value(config, clients, "missing").empty() &&
+                  grid_info_requests == 3,
+              "OSSL grid queries read JSON values from the grid info endpoint");
+        grid_info_available = false;
+        check(server::script_grid_service_value(config, clients, "custom") == "Get GridInfo Failed!" &&
+                  grid_info_requests == 4,
+              "OSSL grid queries handle a failed HTTP request");
+        grid_info_server.stop();
         server::GridIdentity info(config, std::nullopt, resolver);
         check(info.has_hypergrid && info.gate_uri() == "http://gate.example:80" &&
                   info.home_uri() == "https://home.example:9000",

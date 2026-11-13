@@ -2,6 +2,8 @@
 // BSD license: native-port/LICENSE.txt.
 #include "opensim/script/lsl_runtime.hpp"
 #include "opensim/framework/avatar_visual_parameter.hpp"
+#include "opensim/framework/particle_system.hpp"
+#include "opensim/framework/invariant_number_parse.hpp"
 #include "opensim/framework/sha256.hpp"
 #include "opensim/scene/script_control.hpp"
 #include "opensim/framework/text.hpp"
@@ -18,6 +20,7 @@
 #include "opensim/framework/config_uri_unescape.hpp"
 #include "opensim/framework/primitive_base_shape.hpp"
 #include "opensim/framework/sdk_uuid.hpp"
+#include "opensim/framework/sdk_quaternion.hpp"
 #include <bit>
 #include <chrono>
 #include <cstdio>
@@ -54,6 +57,9 @@ constexpr std::pair<std::string_view, unsigned> event_mask_bits[] = {
     {"land_collision_start", 13},
     {"control", 7},
     {"listen", 15},
+    {"email", 9},
+    {"http_response", 10},
+    {"remote_data", 23},
     {"attach", 0},
     {"http_request", 38},
     {"changed", 33},
@@ -63,6 +69,12 @@ constexpr std::pair<std::string_view, unsigned> event_mask_bits[] = {
     {"object_rez", 22},
     {"run_time_permissions", 28},
     {"timer", 2},
+    {"no_sensor", 35},
+    {"sensor", 37},
+    {"at_target", 14},
+    {"not_at_target", 20},
+    {"at_rot_target", 24},
+    {"not_at_rot_target", 19},
 };
 bool is_land_collision_event(std::string_view event) {
     return event == "land_collision_start" || event == "land_collision" || event == "land_collision_end";
@@ -292,6 +304,7 @@ struct Expression {
         Sqrt,
         Pow,
         SetMemoryLimit,
+        ManageEstateAccess,
         GetUsedMemory,
         GetFreeMemory,
         RequestUrl,
@@ -299,9 +312,16 @@ struct Expression {
         ReleaseUrl,
         FreeUrls,
         SimulatorHostname,
+        RegionSize,
+        ScriptEngineName,
+        GridName,
+        GridNick,
+        GridInfo,
         EnvironmentValue,
         HttpHeader,
         HttpResponse,
+        HttpRequest,
+        SendRemoteData,
         HttpContentType,
         ModPow,
         Sin,
@@ -334,6 +354,7 @@ struct Expression {
         SetTextureProperty,
         SetLinkedTextureProperty,
         SetTextureAnimation,
+        SetParticleSystem,
         SendLinkMessage,
         PhysicsMaterial,
         SetPhysicsMaterial,
@@ -346,6 +367,7 @@ struct Expression {
         SetVelocity,
         SetAngularVelocity,
         ApplyImpulse,
+        PushObject,
         ApplyRotationalImpulse,
         SetHover,
         GroundRepel,
@@ -393,6 +415,7 @@ struct Expression {
         RegionName,
         RegionAgentCount,
         RegionFlags,
+        DerezObject,
         ParcelFlags,
         LandOwnerAt,
         OverMyLand,
@@ -530,6 +553,9 @@ struct Expression {
         DeleteSubstring,
         InsertString,
         ReplaceSubstring,
+        RegexIsMatch,
+        RegexMatchString,
+        RegexReplaceString,
         SubstringIndex,
         StringLength,
         Water,
@@ -537,8 +563,12 @@ struct Expression {
         GroundNormal,
         GroundSlope,
         EdgeOfWorld,
+        ModifyLand,
+        RegisterTarget,
+        RemoveTarget,
         GroundContour,
         Cloud,
+        Wind,
         UnixTime,
         Date,
         Timestamp,
@@ -551,6 +581,15 @@ struct Expression {
         Listen,
         ListenControl,
         ListenRemove,
+        RequestEmail,
+        SetRemoteScriptPin,
+        AttachToAvatar,
+        Sensor,
+        CreateLink,
+        BreakLink,
+        DetachFromAvatar,
+        RemoteLoadScript,
+        SendEmail,
         RegionSayTo
     };
     Op op = Op::Literal;
@@ -587,6 +626,7 @@ const LegacyCommand legacy_commands[] = {
     {"llReleaseCamera", "llClearCameraParams", {Type::String}},
     {"llRemoteLoadScript", "llRemoteLoadScriptPin", {Type::String, Type::String, Type::Integer, Type::Integer}, 3000},
     {"llRemoteDataSetRegion", "llOpenRemoteDataChannel", {}},
+    {"llRemoteDataReply", "", {Type::String, Type::String, Type::String, Type::Integer}, 3000, false},
     {"llSetPrimURL", "llSetPrimMediaParams", {Type::String}, 2000},
     {"llRefreshPrimURL", "", {}, 20000},
     {"llCollisionSprite", "", {Type::String}, 0, false},
@@ -713,6 +753,8 @@ LslValue default_value(Type type) {
     }
 }
 struct Instruction {
+    bool open_remote_data_channel = false;
+    std::unique_ptr<Expression> close_remote_data_channel;
     bool owner = false;
     LslChatType chat_type = LslChatType::Say;
     bool sound = false;
@@ -736,6 +778,9 @@ struct Instruction {
     std::array<std::unique_ptr<Expression>, 3> map_arguments;
     bool map_beacon = false;
     std::array<std::unique_ptr<Expression>, 3> load_url_arguments;
+    std::array<std::unique_ptr<Expression>, 2> instant_message_arguments;
+    bool give_inventory = false;
+    std::array<std::unique_ptr<Expression>, 3> give_inventory_list_arguments;
     std::array<std::unique_ptr<Expression>, 4> dialog_arguments;
     std::array<std::unique_ptr<Expression>, 2> object_permission_args;
     bool local_object_rotation = false;
@@ -744,7 +789,12 @@ struct Instruction {
     std::unique_ptr<Expression> status_mask, status_value;
     std::unique_ptr<Expression> volume_detect;
     std::unique_ptr<Expression> damage;
+    std::unique_ptr<Expression> render_material_name, render_material_face;
     std::unique_ptr<Expression> relocate_agent;
+    std::array<std::unique_ptr<Expression>, 5> local_teleport_arguments;
+    std::vector<std::unique_ptr<Expression>> teleport_arguments;
+    bool teleport_owner = false;
+    bool teleport_viewer = false;
     bool eject_from_land = false;
     std::unique_ptr<Expression> heal_agent, heal_rate;
     bool volume_detect_part = false;
@@ -795,6 +845,7 @@ struct Instruction {
 };
 struct Handler {
     std::string parameter;
+    std::size_t parameter_count = 0;
     std::vector<Type> local_types;
     std::vector<Instruction> instructions;
 };
@@ -920,79 +971,99 @@ std::string sha512_text(std::string_view text, bool sha384 = false) {
         result.resize(96);
     return result;
 }
+framework::DotnetRegexNodeText regex_text(std::string_view text) {
+    return std::make_shared<const std::u16string>(framework::utf16_replacing(text));
+}
+
+std::optional<std::int32_t> regex_start(std::size_t length, std::int32_t start) {
+    if (length > static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max()))
+        return std::nullopt;
+    const auto size = static_cast<std::int32_t>(length);
+    if (start < 0)
+        start += size;
+    if (start < 0 || start >= size)
+        return std::nullopt;
+    return start;
+}
+
+std::string replace_regex(const framework::DotnetRegexNodeText& input, std::string_view pattern,
+                          std::string_view replacement, std::int32_t count, std::int32_t position,
+                          std::int32_t options) {
+    using namespace framework;
+    const auto expression = regex_text(pattern);
+    const auto length = static_cast<std::int32_t>(input->size());
+    const bool reverse = (options & 64) != 0;
+    const auto culture = []() { return std::u16string{}; };
+    const auto stack = []() { return sufficient_execution_stack(); };
+    auto parsed = dotnet_regex_parse(expression, options, culture, stack);
+    const auto rules = dotnet_regex_parse_replacement(
+        regex_text(replacement), options, parsed.capture_number_sparse_mapping, parsed.capture_count,
+        parsed.capture_name_to_number, culture, stack);
+    DotnetRegexInterpreter regex(std::move(parsed), expression, stack);
+    struct Edit {
+        std::int32_t index, length;
+        std::u16string text;
+    };
+    std::vector<Edit> edits;
+    int previous = -1;
+    for (std::int64_t replaced = 0; count == -1 || replaced < count; ++replaced) {
+        const auto match = regex.scan(input, 0, length, position, previous,
+                                      DotnetRegexRunnerMode::FullMatchRequired, 100000);
+        if (!match.success)
+            break;
+        Edit edit{match.index, match.length, {}};
+        for (const auto rule : rules.rules) {
+            if (rule >= 0) {
+                edit.text += *rules.strings.at(rule);
+                continue;
+            }
+            const auto slot = -5 - rule;
+            if (slot == -1)
+                edit.text.append(*input, 0, match.index);
+            else if (slot == -2)
+                edit.text.append(*input, match.index + match.length);
+            else if (slot == -4)
+                edit.text += *input;
+            else if (!match.groups.empty()) {
+                const auto group = slot == -3 ? match.groups.size() - 1 : static_cast<std::size_t>(slot);
+                if (group < match.groups.size() && match.groups[group].success)
+                    edit.text.append(*input, match.groups[group].index, match.groups[group].length);
+            }
+        }
+        edits.push_back(std::move(edit));
+        position = match.text_position;
+        previous = match.length;
+    }
+    if (reverse)
+        std::reverse(edits.begin(), edits.end());
+    std::u16string result;
+    std::size_t cursor = 0;
+    for (const auto& edit : edits) {
+        result.append(*input, cursor, edit.index - cursor);
+        result += edit.text;
+        cursor = static_cast<std::size_t>(edit.index) + edit.length;
+    }
+    result.append(*input, cursor);
+    return utf8(result);
+}
+
 std::string replace_substring(const std::string& source, const std::string& pattern,
                               const std::string& replacement, std::int32_t count) {
-    using namespace framework;
     if (source.empty() || pattern.empty() || count == std::numeric_limits<std::int32_t>::min())
         return source;
     try {
-        const auto units = [](std::string_view text) {
-            return std::make_shared<const std::u16string>(utf16_replacing(text));
-        };
-        const auto input = units(source), expression = units(pattern);
+        const auto input = regex_text(source);
         if (input->size() > static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max()))
             return source;
-        const auto length = static_cast<std::int32_t>(input->size());
         const bool reverse = count < 0;
-        const auto options = 512 | (reverse ? 64 : 0);
-        const auto culture = []() { return std::u16string{}; };
-        const auto stack = []() { return sufficient_execution_stack(); };
-        auto parsed = dotnet_regex_parse(expression, options, culture, stack);
-        const auto rules = dotnet_regex_parse_replacement(
-            units(replacement), options, parsed.capture_number_sparse_mapping, parsed.capture_count,
-            parsed.capture_name_to_number, culture, stack);
-        DotnetRegexInterpreter regex(std::move(parsed), expression, stack);
-        struct Edit {
-            std::int32_t index, length;
-            std::u16string text;
-        };
-        std::vector<Edit> edits;
-        auto position = reverse ? length : 0;
-        int previous = -1;
-        auto remaining = count == 0 ? std::numeric_limits<std::int32_t>::max() : std::abs(count);
-        while (remaining-- > 0) {
-            const auto match = regex.scan(input, 0, length, position, previous,
-                                          DotnetRegexRunnerMode::FullMatchRequired, 100000);
-            if (!match.success)
-                break;
-            Edit edit{match.index, match.length, {}};
-            for (const auto rule : rules.rules) {
-                if (rule >= 0) {
-                    edit.text += *rules.strings.at(rule);
-                    continue;
-                }
-                const auto slot = -5 - rule;
-                if (slot == -1)
-                    edit.text.append(*input, 0, match.index);
-                else if (slot == -2)
-                    edit.text.append(*input, match.index + match.length);
-                else if (slot == -4)
-                    edit.text += *input;
-                else if (!match.groups.empty()) {
-                    const auto group = slot == -3 ? match.groups.size() - 1 : static_cast<std::size_t>(slot);
-                    if (group < match.groups.size() && match.groups[group].success)
-                        edit.text.append(*input, match.groups[group].index, match.groups[group].length);
-                }
-            }
-            edits.push_back(std::move(edit));
-            position = match.text_position;
-            previous = match.length;
-        }
-        if (reverse)
-            std::reverse(edits.begin(), edits.end());
-        std::u16string result;
-        std::size_t cursor = 0;
-        for (const auto& edit : edits) {
-            result.append(*input, cursor, edit.index - cursor);
-            result += edit.text;
-            cursor = static_cast<std::size_t>(edit.index) + edit.length;
-        }
-        result.append(*input, cursor);
-        return utf8(result);
+        const auto position = reverse ? static_cast<std::int32_t>(input->size()) : 0;
+        return replace_regex(input, pattern, replacement, count == 0 ? -1 : std::abs(count),
+                             position, 512 | (reverse ? 64 : 0));
     } catch (const std::exception&) {
         return source;
     }
 }
+
 bool truth(const LslValue& value, Type type) {
     if (type == Type::Key) {
         framework::Uuid id;
@@ -1460,10 +1531,27 @@ std::string digest_bytes(std::string_view hex) {
     return result;
 }
 template <class Value> decltype(auto) component_at(Value& value, std::size_t slot) {
-    if (auto* rotation = std::get_if<LslRotation>(&value))
-        return (slot == 0 ? rotation->x : slot == 1 ? rotation->y : slot == 2 ? rotation->z : rotation->w);
+    if (auto* rotation = std::get_if<LslRotation>(&value)) {
+        switch (slot) {
+        case 0:
+            return (rotation->x);
+        case 1:
+            return (rotation->y);
+        case 2:
+            return (rotation->z);
+        default:
+            return (rotation->w);
+        }
+    }
     auto& vector = std::get<framework::Vector3d>(value);
-    return (slot == 0 ? vector.x : slot == 1 ? vector.y : vector.z);
+    switch (slot) {
+    case 0:
+        return (vector.x);
+    case 1:
+        return (vector.y);
+    default:
+        return (vector.z);
+    }
 }
 struct ScriptTermination {
     LslRunStatus status;
@@ -1511,6 +1599,41 @@ LslRotation axes_to_rotation(framework::Vector3d forward, framework::Vector3d le
     return LslRotation{(up.x + forward.z) * scale, (left.z + up.y) * scale, root * 0.5,
                        (forward.y - left.x) * scale};
 }
+struct ParticleRule {
+    std::string_view name;
+    std::string_view expected_type;
+};
+constexpr ParticleRule particle_rules[] = {
+    {"PSYS_PART_FLAGS", "integer"},
+    {"PSYS_PART_START_COLOR", "vector"},
+    {"PSYS_PART_START_ALPHA", "float"},
+    {"PSYS_PART_END_COLOR", "vector"},
+    {"PSYS_PART_END_ALPHA", "float"},
+    {"PSYS_PART_START_SCALE", "vector"},
+    {"PSYS_PART_END_SCALE", "vector"},
+    {"PSYS_PART_MAX_AGE", "float"},
+    {"PSYS_SRC_ACCEL", "vector"},
+    {"PSYS_SRC_PATTERN", "integer"},
+    {"PSYS_SRC_INNERANGLE", "float"},
+    {"PSYS_SRC_OUTERANGLE", "float"},
+    {"PSYS_SRC_TEXTURE", "string or key"},
+    {"PSYS_SRC_BURST_RATE", "float"},
+    {},
+    {"PSYS_SRC_BURST_PART_COUNT", "integer"},
+    {"PSYS_SRC_BURST_RADIUS", "float"},
+    {"PSYS_SRC_BURST_SPEED_MIN", "float"},
+    {"PSYS_SRC_BURST_SPEED_MAX", "float"},
+    {"PSYS_SRC_MAX_AGE", "float"},
+    {"PSYS_SRC_TARGET_KEY", {}},
+    {"PSYS_SRC_OMEGA", "vector"},
+    {"PSYS_SRC_ANGLE_BEGIN", "float"},
+    {"PSYS_SRC_ANGLE_END", "float"},
+    {"PSYS_PART_BLEND_FUNC_SOURCE", "integer"},
+    {"PSYS_PART_BLEND_FUNC_DEST", "integer"},
+    {"PSYS_PART_START_GLOW", "float"},
+    {"PSYS_PART_END_GLOW", "float"},
+};
+
 struct Evaluator {
     std::vector<LslValue>& locals;
     std::vector<LslValue>& globals;
@@ -1558,14 +1681,169 @@ struct Evaluator {
         if (!host.ossl_enabled)
             throw OsslRuntimeError("permission denied. All unsafe OSSL funtions disabled");
     }
-    void script_error(std::string message, std::int32_t sleep_ms = 1000) const {
+    void script_error(std::string message, std::int32_t sleep_ms = 1000,
+                      LslChatType listener_type = LslChatType::Debug) const {
         LslChat chat{LslChatType::Debug, std::numeric_limits<std::int32_t>::max(),
                      framework::truncate_utf16(message, 1023), context};
         if (host.chat)
             host.chat(chat);
-        if (host.listener)
+        if (host.listener) {
+            chat.type = listener_type;
             host.listener(chat);
+        }
         delay(sleep_ms);
+    }
+    void set_particle_rules(framework::Uuid part, const LslList& rules, std::string_view function,
+                            bool timed) const {
+        if (!host.set_particle_system)
+            return;
+        if (rules.items.empty()) {
+            host.set_particle_system(part, {}, {});
+            return;
+        }
+        framework::ParticleSystem particles;
+        const auto integer = [](const LslValue& value) -> std::int32_t {
+            if (const auto* number = std::get_if<std::int32_t>(&value))
+                return *number;
+            if (const auto* number = std::get_if<double>(&value)) {
+                const auto truncated = std::trunc(*number);
+                return truncated >= INT32_MIN && truncated <= INT32_MAX
+                    ? static_cast<std::int32_t>(truncated) : INT32_MIN;
+            }
+            return framework::invariant_convert_to_int32(framework::utf16(std::get<std::string>(value)));
+        };
+        std::size_t index = 0;
+        const ParticleRule* current = nullptr;
+        try {
+            for (; index < rules.items.size(); index += 2) {
+                current = nullptr;
+                const auto rule = integer(rules.items[index]);
+                if (rule < 0 || static_cast<std::size_t>(rule) >= std::size(particle_rules) ||
+                    particle_rules[rule].name.empty())
+                    continue;
+                current = &particle_rules[rule];
+                if (index + 1 == rules.items.size())
+                    throw std::out_of_range("Index was outside the bounds of the array.");
+                const auto& value = rules.items[index + 1];
+                const auto real = [&] {
+                    if (const auto* text = std::get_if<std::string>(&value))
+                        return framework::invariant_convert_to_single(framework::utf16(*text));
+                    if (const auto* number = std::get_if<std::int32_t>(&value))
+                        return static_cast<float>(*number);
+                    return static_cast<float>(std::get<double>(value));
+                };
+                const auto vector = [&] {
+                    const auto input = std::get<framework::Vector3d>(value);
+                    return framework::Vector3{static_cast<float>(input.x), static_cast<float>(input.y),
+                                              static_cast<float>(input.z)};
+                };
+                switch (rule) {
+                case 0:
+                    particles.particle_flags = static_cast<std::uint32_t>(integer(value));
+                    break;
+                case 1:
+                case 3: {
+                    const auto rgb = vector();
+                    auto& color = rule == 1 ? particles.start_color : particles.end_color;
+                    color[0] = rgb.x;
+                    color[1] = rgb.y;
+                    color[2] = rgb.z;
+                    break;
+                }
+                case 2:
+                    particles.start_color[3] = real();
+                    break;
+                case 4:
+                    particles.end_color[3] = real();
+                    break;
+                case 5:
+                case 6: {
+                    const auto size = vector();
+                    auto& scale = rule == 5 ? particles.start_scale : particles.end_scale;
+                    scale = {std::min(size.x, 7.96f), std::min(size.y, 7.96f)};
+                    break;
+                }
+                case 7:
+                    particles.particle_age = real();
+                    break;
+                case 8:
+                    particles.acceleration = vector();
+                    break;
+                case 9:
+                    particles.pattern = static_cast<std::uint8_t>(integer(value));
+                    break;
+                case 10:
+                case 22:
+                    particles.inner_angle = real();
+                    particles.source_flags = (particles.source_flags & ~2u) | (rule == 22 ? 2u : 0u);
+                    break;
+                case 11:
+                case 23:
+                    particles.outer_angle = real();
+                    particles.source_flags = (particles.source_flags & ~2u) | (rule == 23 ? 2u : 0u);
+                    break;
+                case 12: {
+                    const auto& texture = std::get<std::string>(value);
+                    if (!framework::try_parse_sdk_uuid(texture, particles.texture))
+                        particles.texture = host.particle_inventory_asset
+                            ? host.particle_inventory_asset(context.object, texture) : framework::Uuid{};
+                    break;
+                }
+                case 13:
+                    particles.burst_rate = real();
+                    break;
+                case 15:
+                    particles.burst_count = static_cast<std::uint8_t>(integer(value));
+                    break;
+                case 16:
+                    particles.burst_radius = real();
+                    break;
+                case 17:
+                    particles.speed_min = real();
+                    break;
+                case 18:
+                    particles.speed_max = real();
+                    break;
+                case 19:
+                    particles.source_age = real();
+                    break;
+                case 20:
+                    if (!framework::try_parse_sdk_uuid(value_text(value), particles.target))
+                        particles.target = part;
+                    break;
+                case 21:
+                    particles.angular_velocity = vector();
+                    break;
+                case 24:
+                    particles.blend_source = static_cast<std::uint8_t>(integer(value));
+                    break;
+                case 25:
+                    particles.blend_destination = static_cast<std::uint8_t>(integer(value));
+                    break;
+                case 26:
+                    particles.start_glow = real();
+                    break;
+                case 27:
+                    particles.end_glow = real();
+                    break;
+                }
+            }
+        } catch (const std::bad_variant_access&) {
+            auto message = std::string(function) + ": ";
+            if (current) {
+                message += "Error running rule ";
+                message += current->name;
+                message += ": arg #" + std::to_string(index + 1) + " - parameter 1 must be ";
+                message += current->expected_type;
+            } else {
+                message += "Error running particle system params index #" + std::to_string(index) +
+                           ": particle system parameter type must be integer";
+            }
+            script_error(std::move(message), 1000, LslChatType::Shout);
+            return;
+        }
+        host.set_particle_system(part, particles.bytes(),
+                                 timed ? std::optional<float>(particles.source_age) : std::nullopt);
     }
     std::int64_t timer_now() const {
         return host.monotonic_ticks ? host.monotonic_ticks() : ticks();
@@ -1624,6 +1902,13 @@ struct Evaluator {
         result += command.suffix;
         return result;
     }
+    framework::Vector3 current_world_position() const {
+        if (host.object_position)
+            if (const auto position = host.object_position(context.object, false, false))
+                return *position;
+        return context.position;
+    }
+
     LslValue evaluate(const Expression& e) const {
 
         switch (e.op) {
@@ -2488,6 +2773,46 @@ struct Evaluator {
             const auto value = std::get<std::int32_t>(evaluate(*e.left));
             return value == std::numeric_limits<std::int32_t>::min() ? value : std::abs(value);
         }
+        case Expression::Op::HttpRequest: {
+            auto body = std::get<std::string>(evaluate(*e.z));
+            const auto values = std::get<std::shared_ptr<const LslList>>(evaluate(*e.right));
+            auto url = std::get<std::string>(evaluate(*e.left));
+            if (!host.http_request)
+                return std::string{};
+            std::vector<network::ScriptHttpOption> options;
+            options.reserve(values->items.size());
+            for (const auto& value : values->items) {
+                const auto* number = std::get_if<std::int32_t>(&value);
+                options.push_back({number ? std::optional{*number} : std::nullopt, value_text(value)});
+            }
+            auto result = host.http_request(context.object, context.item, std::move(url), options, std::move(body));
+            for (auto& message : result.errors)
+                script_error(std::move(message), 1000, LslChatType::Shout);
+            if (result.invalid_flag)
+                delay(200);
+            return std::move(result.key);
+        }
+        case Expression::Op::SendRemoteData: {
+            auto text = std::get<std::string>(evaluate(*e.elements[3]));
+            const auto integer = std::get<std::int32_t>(evaluate(*e.elements[2]));
+            auto destination = std::get<std::string>(evaluate(*e.elements[1]));
+            auto channel = std::get<std::string>(evaluate(*e.elements[0]));
+            const auto milliseconds = 3000.f * host.script_delay_factor;
+            if (milliseconds >= 10 && double(milliseconds) <= std::numeric_limits<std::int32_t>::max())
+                delay(static_cast<std::int32_t>(milliseconds));
+            return host.send_remote_data
+                ? host.send_remote_data(context.item, std::move(channel), std::move(destination),
+                                        integer, std::move(text)).str()
+                : std::string{};
+        }
+        case Expression::Op::ManageEstateAccess: {
+            const auto avatar = std::get<std::string>(evaluate(*e.right));
+            const auto action = std::get<std::int32_t>(evaluate(*e.left));
+            framework::Uuid target;
+            return std::int32_t(host.manage_estate_access &&
+                framework::try_parse_sdk_uuid(avatar, target) && !target.is_zero() &&
+                host.manage_estate_access(context.object, action, target));
+        }
         case Expression::Op::SetMemoryLimit:
             evaluate(*e.left);
             return std::int32_t{0};
@@ -2523,6 +2848,28 @@ struct Evaluator {
             return host.free_urls ? host.free_urls() : std::int32_t{0};
         case Expression::Op::SimulatorHostname:
             return host.simulator_hostname;
+        case Expression::Op::RegionSize:
+            check_safe_ossl_permission();
+            return context.region_size;
+        case Expression::Op::ScriptEngineName:
+            check_ossl_permission("osGetScriptEngineName");
+            return std::string("NativeLSL");
+        case Expression::Op::GridName:
+            return host.grid_name;
+        case Expression::Op::GridNick:
+            return host.grid_nick;
+        case Expression::Op::GridInfo: {
+            constexpr std::array functions{
+                "osGetGridLoginURI", "osGetGridHomeURI", "osGetGridGatekeeperURI", "osGetGridCustom",
+            };
+            const auto query = static_cast<LslGridQuery>(e.slot);
+            const auto key = e.left ? std::get<std::string>(evaluate(*e.left)) : std::string{};
+            check_ossl_permission(functions.at(e.slot));
+            if (host.grid_info)
+                return host.grid_info(query, key);
+            return std::string(query == LslGridQuery::Login || query == LslGridQuery::Custom
+                                   ? "Configuration Error!" : "");
+        }
         case Expression::Op::EnvironmentValue: {
             const auto name = std::get<std::string>(evaluate(*e.left));
             const auto key = framework::utf8(framework::invariant_lower_utf16(framework::utf16_replacing(name)));
@@ -2861,6 +3208,18 @@ struct Evaluator {
                                            static_cast<float>(vector.z)}, local, angular);
             return std::int32_t{0};
         }
+        case Expression::Op::PushObject: {
+            const bool local = std::get<std::int32_t>(evaluate(*e.elements[3])) != 0;
+            evaluate(*e.elements[2]);
+            const auto impulse = std::get<framework::Vector3d>(evaluate(*e.elements[1]));
+            const auto key = std::get<std::string>(evaluate(*e.elements[0]));
+            framework::Uuid target;
+            if (host.push_object && framework::try_parse_sdk_uuid(key, target) && !target.is_zero()) {
+                host.push_object(context.object, target, {static_cast<float>(impulse.x),
+                    static_cast<float>(impulse.y), static_cast<float>(impulse.z)}, local);
+            }
+            return std::int32_t{0};
+        }
         case Expression::Op::SetForce:
         case Expression::Op::SetTorque:
         case Expression::Op::SetForceAndTorque: {
@@ -2915,6 +3274,20 @@ struct Evaluator {
                 else if (host.linked_prim_parts)
                     for (const auto part : host.linked_prim_parts(context.object, std::get<std::int32_t>(args[0])))
                         host.set_texture_animation(part, bytes);
+            }
+            return std::int32_t{0};
+        }
+        case Expression::Op::SetParticleSystem: {
+            const auto rules = std::get<std::shared_ptr<const LslList>>(evaluate(*e.right));
+            const bool timed = std::get<std::int32_t>(e.value) != 0;
+            if (!e.left)
+                set_particle_rules(context.object, *rules, timed ? "osParticleSystem" : "llParticleSystem", timed);
+            else {
+                const auto link = std::get<std::int32_t>(evaluate(*e.left));
+                if (host.linked_prim_parts)
+                    for (const auto part : host.linked_prim_parts(context.object, link))
+                        set_particle_rules(part, *rules,
+                                           timed ? "osLinkParticleSystem" : "llLinkParticleSystem", timed);
             }
             return std::int32_t{0};
         }
@@ -3323,7 +3696,9 @@ struct Evaluator {
             if (e.op == Expression::Op::ApparentSunHour)
                 return static_cast<double>(hours);
             const auto whole = [](float value) {
-                return std::isfinite(value) ? static_cast<int>(value) : std::numeric_limits<int>::min();
+                if (value >= -2147483648.f && value < 2147483648.f)
+                    return static_cast<int>(value);
+                return std::numeric_limits<int>::min();
             };
             const auto hour = whole(hours);
             auto minutes = (hours - hour) * 60.f;
@@ -3347,8 +3722,8 @@ struct Evaluator {
             }
             const auto name = framework::invariant_lower_utf16(framework::utf16(parameter));
             if (name == u"day_length")
-                return static_cast<double>(host.environment_timing ? host.environment_timing(context.position, false).first
-                                                                    : 14400);
+                return static_cast<double>(host.environment_timing
+                    ? host.environment_timing(current_world_position(), false).first : 14400);
             if (name == u"year_length")
                 return 365.;
             if (name == u"update_interval")
@@ -3361,28 +3736,36 @@ struct Evaluator {
             const auto& query = lsl_environment_queries[e.slot];
             if (query.type == Type::Integer) {
                 const auto [length, offset] = host.environment_timing
-                    ? host.environment_timing(context.position, query.region)
+                    ? host.environment_timing(query.region ? context.position : current_world_position(), query.region)
                     : std::pair<std::int32_t, std::int32_t>{14400, 57600};
                 return query.field == EnvironmentField::DayLength ? length : offset;
             }
             const bool moon = query.field == EnvironmentField::MoonDirection ||
                               query.field == EnvironmentField::MoonRotation;
             const auto rotation = host.environment_rotation
-                ? host.environment_rotation(context.position, query.region, moon) : std::nullopt;
+                ? host.environment_rotation(current_world_position(), query.region, moon) : std::nullopt;
             if (query.type == Type::Rotation)
                 return rotation.value_or(LslRotation{});
             if (!rotation)
                 return framework::Vector3d{};
             auto x = static_cast<float>(rotation->x), y = static_cast<float>(rotation->y);
             auto z = static_cast<float>(rotation->z), w = static_cast<float>(rotation->w);
-            const auto length = std::sqrt(x*x + y*y + z*z + w*w);
-            if (length <= 1e-7f)
+            const auto squared_length = framework::sdk_quaternion_length_squared({x, y, z, w});
+            if (!(squared_length >= 1e-6f))
                 return framework::Vector3d{1, 0, 0};
-            const auto inverse = 1.f / length;
-            x *= inverse;
-            y *= inverse;
-            z *= inverse;
-            w *= inverse;
+            const auto length = std::sqrt(squared_length);
+            if (framework::sdk_sse41_supported()) {
+                x /= length;
+                y /= length;
+                z /= length;
+                w /= length;
+            } else {
+                const auto inverse = 1.f / length;
+                x *= inverse;
+                y *= inverse;
+                z *= inverse;
+                w *= inverse;
+            }
             return framework::Vector3d{2.f * (x*x + w*w) - 1.f, 2.f * (x*y + z*w), 2.f * (x*z - y*w)};
         }
         case Expression::Op::ReplaceAgentEnvironment: {
@@ -3413,11 +3796,24 @@ struct Evaluator {
         case Expression::Op::DrawingCommand:
             return evaluate_drawing_command(e);
         case Expression::Op::LegacyCommand: {
-            for (const auto& argument : e.elements)
-                evaluate(*argument);
             const auto& command = legacy_commands[e.slot];
-            if (!command.report_deprecation)
+            if (command.name == "llRemoteDataReply") {
+                const auto integer = std::get<std::int32_t>(evaluate(*e.elements[3]));
+                auto text = std::get<std::string>(evaluate(*e.elements[2]));
+                auto message = std::get<std::string>(evaluate(*e.elements[1]));
+                auto channel = std::get<std::string>(evaluate(*e.elements[0]));
+                if (host.reply_remote_data)
+                    host.reply_remote_data(channel, message, std::move(text), integer);
+            } else {
+                for (const auto& argument : e.elements)
+                    evaluate(*argument);
+            }
+            if (!command.report_deprecation) {
+                const auto milliseconds = command.script_delay * host.script_delay_factor;
+                if (milliseconds >= 10 && double(milliseconds) <= std::numeric_limits<std::int32_t>::max())
+                    delay(static_cast<std::int32_t>(milliseconds));
                 return std::int32_t{0};
+            }
             auto message = std::string(command.name) + ": Command deprecated";
             if (!command.replacement.empty())
                 message += " - Use " + std::string(command.replacement) + " instead";
@@ -3434,11 +3830,161 @@ struct Evaluator {
             auto name = std::get<std::string>(evaluate(*e.right));
             const auto key = std::get<std::string>(evaluate(*e.z));
             auto message = std::get<std::string>(evaluate(*e.w));
+            const bool regex = !e.elements.empty();
+            const auto flags = regex ? std::get<std::int32_t>(evaluate(*e.elements.front())) : 0;
+            if (regex)
+                check_ossl_permission("osListenRegex");
+            if (!host.add_listener)
+                return std::int32_t{-1};
             framework::Uuid sender;
-            framework::try_parse_sdk_uuid(key, sender);
-            return std::int32_t(host.add_listener
-                ? host.add_listener(context.item, context.object, channel, std::move(name), sender, std::move(message))
-                : -1);
+            if (!framework::try_parse_sdk_uuid(key, sender) && regex)
+                return std::int32_t{-1};
+
+            if (regex) {
+                const auto valid_pattern = [](std::string_view pattern) {
+                    using namespace framework;
+                    try {
+                        dotnet_regex_is_match({}, pattern, 100000);
+                        return true;
+                    } catch (const DotnetRegexClassError&) {
+                        return false;
+                    }
+                };
+                if ((flags & listen_regex_name) && !valid_pattern(name)) {
+                    script_error("Name regex is invalid.");
+                    return std::int32_t{-1};
+                }
+                if ((flags & listen_regex_message) && !valid_pattern(message)) {
+                    script_error("Message regex is invalid.");
+                    return std::int32_t{-1};
+                }
+            }
+            return std::int32_t(host.add_listener(context.item, context.object, channel, std::move(name),
+                                                  sender, std::move(message), flags));
+        }
+        case Expression::Op::Sensor: {
+            if (e.elements.empty()) {
+                if (host.clear_sensors)
+                    host.clear_sensors(context.item);
+                return std::int32_t{0};
+            }
+            LslSensorQuery query{};
+            query.name = std::get<std::string>(evaluate(*e.elements[0]));
+            const auto key = std::get<std::string>(evaluate(*e.elements[1]));
+            framework::try_parse_sdk_uuid(key, query.key);
+            query.type = std::get<std::int32_t>(evaluate(*e.elements[2]));
+            query.range = list_float(evaluate(*e.elements[3]));
+            query.arc = list_float(evaluate(*e.elements[4]));
+            if (e.elements.size() == 6)
+                query.interval = list_float(evaluate(*e.elements[5]));
+            if (host.sensor)
+                host.sensor(context.object, context.item, std::move(query));
+            return std::int32_t{0};
+        }
+        case Expression::Op::CreateLink: {
+            const auto target = std::get<std::string>(evaluate(*e.left));
+            const auto parent = std::get<std::int32_t>(evaluate(*e.right)) != 0;
+            if (!host.create_link)
+                return std::int32_t{0};
+            switch (host.create_link(context.object, context.item, target, parent)) {
+            case LslLinkResult::Completed: {
+                const float milliseconds = 1000.f * host.script_delay_factor;
+                if (milliseconds >= 10.f && milliseconds < 2147483648.f)
+                    delay(static_cast<std::int32_t>(milliseconds));
+                break;
+            }
+            case LslLinkResult::MissingPermission:
+                script_error("llCreateLink: PERMISSION_CHANGE_LINKS required");
+                break;
+            case LslLinkResult::WrongGranter:
+                script_error("llCreateLink: PERMISSION_CHANGE_LINKS not set by script owner");
+                break;
+            case LslLinkResult::Ignored:
+                break;
+            }
+            return std::int32_t{0};
+        }
+        case Expression::Op::BreakLink: {
+            std::optional<std::int32_t> link;
+            if (e.left)
+                link = std::get<std::int32_t>(evaluate(*e.left));
+            if (host.break_link &&
+                host.break_link(context.object, context.item, link) == LslLinkResult::MissingPermission) {
+                script_error(link ? "llBreakLink: PERMISSION_CHANGE_LINKS permission not set" :
+                    "llBreakAllLinks: Script trying to link but PERMISSION_CHANGE_LINKS permission not set!");
+            }
+            return std::int32_t{0};
+        }
+        case Expression::Op::AttachToAvatar: {
+            const auto point = std::get<std::int32_t>(evaluate(*e.left));
+            if (host.attach_to_avatar)
+                host.attach_to_avatar(context.object, context.item, point, e.slot != 0);
+            return std::int32_t{0};
+        }
+        case Expression::Op::DetachFromAvatar:
+            if (host.detach_from_avatar)
+                host.detach_from_avatar(context.object, context.item);
+            return std::int32_t{0};
+        case Expression::Op::SetRemoteScriptPin: {
+            const auto pin = std::get<std::int32_t>(evaluate(*e.left));
+            if (host.set_remote_script_pin)
+                host.set_remote_script_pin(context.object, pin);
+            return std::int32_t{0};
+        }
+        case Expression::Op::RemoteLoadScript: {
+            const auto target_text = std::get<std::string>(evaluate(*e.elements[0]));
+            const auto name = std::get<std::string>(evaluate(*e.elements[1]));
+            const auto pin = std::get<std::int32_t>(evaluate(*e.elements[2]));
+            const auto running = std::get<std::int32_t>(evaluate(*e.elements[3])) != 0;
+            const auto start_parameter = std::get<std::int32_t>(evaluate(*e.elements[4]));
+            framework::Uuid target;
+            if (!framework::try_parse_sdk_uuid(target_text, target) || target.is_zero()) {
+                script_error("llRemoteLoadScriptPin: invalid key '" + target_text + "'");
+            } else if (target != context.object && host.remote_load_script) {
+                switch (host.remote_load_script(context.object, target, name, pin, running, start_parameter)) {
+                case LslRemoteScriptLoad::MissingScript:
+                    script_error("llRemoteLoadScriptPin: Can't find script '" + name + "'");
+                    break;
+                case LslRemoteScriptLoad::NoCopy:
+                    script_error("llRemoteLoadScriptPin: No copy rights");
+                    break;
+                case LslRemoteScriptLoad::Attempted:
+                    delay(3000);
+                    break;
+                }
+            }
+            return std::int32_t{0};
+        }
+        case Expression::Op::RequestEmail: {
+            auto address = std::get<std::string>(evaluate(*e.left));
+            auto subject = std::get<std::string>(evaluate(*e.right));
+            if (host.request_email)
+                host.request_email(context.object, std::move(address), std::move(subject));
+            else
+                script_error("llGetNextEmail: Email module not configured");
+            return std::int32_t{0};
+        }
+        case Expression::Op::SendEmail: {
+            const auto recipient_value = evaluate(*e.left);
+            auto subject = std::get<std::string>(evaluate(*e.right));
+            auto message = std::get<std::string>(evaluate(*e.z));
+            if (!host.send_email) {
+                script_error(e.slot ? "llTargetedEmail: Email module not configured" :
+                                      "llEmail: Email module not configured");
+                return std::int32_t{0};
+            }
+            if (e.slot && framework::utf16(subject).size() + framework::utf16(message).size() > 4096) {
+                script_error("llTargetedEmail: Message is too large");
+                return std::int32_t{0};
+            }
+            std::variant<std::string, std::int32_t> recipient;
+            if (e.slot)
+                recipient = std::get<std::int32_t>(recipient_value);
+            else
+                recipient = std::get<std::string>(recipient_value);
+            host.send_email(context.object, context.item, std::move(recipient), std::move(subject), std::move(message));
+            delay(host.email_delay_ms);
+            return std::int32_t{0};
         }
         case Expression::Op::ListenControl:
         case Expression::Op::ListenRemove: {
@@ -3889,7 +4435,14 @@ struct Evaluator {
         case Expression::Op::LinkNumber:
             return host.link_number ? host.link_number(context.object) : std::int32_t{0};
         case Expression::Op::AttachmentPoint:
-            return context.attachment_point;
+            return host.attachment_point ? host.attachment_point(context.object) : context.attachment_point;
+        case Expression::Op::DerezObject: {
+            const auto temporary = std::get<std::int32_t>(evaluate(*e.right)) != 0;
+            const auto key = std::get<std::string>(evaluate(*e.left));
+            framework::Uuid target;
+            return std::int32_t(host.derez_object && framework::try_parse_sdk_uuid(key, target) &&
+                                !target.is_zero() && host.derez_object(context.object, target, temporary));
+        }
         case Expression::Op::RegionFlags:
             return host.region_flags ? host.region_flags() : std::int32_t{67108864};
         case Expression::Op::RegionAgentCount:
@@ -3955,11 +4508,10 @@ struct Evaluator {
             const auto position = context.root_position.value_or(context.position);
             return framework::Vector3d{position.x, position.y, position.z};
         }
-        case Expression::Op::ObjectPosition:
-            if (host.object_position)
-                if (const auto value = host.object_position(context.object, false, false))
-                    return framework::Vector3d{value->x, value->y, value->z};
-            return framework::Vector3d{context.position.x, context.position.y, context.position.z};
+        case Expression::Op::ObjectPosition: {
+            const auto position = current_world_position();
+            return framework::Vector3d{position.x, position.y, position.z};
+        }
         case Expression::Op::ObjectKey:
             return context.object.str();
         case Expression::Op::GenerateKey:
@@ -3967,6 +4519,9 @@ struct Evaluator {
         case Expression::Op::CreatorKey:
             return context.creator.str();
         case Expression::Op::OwnerKey:
+            if (host.object_owner)
+                if (const auto owner = host.object_owner(context.object))
+                    return owner->str();
             return context.owner.str();
         case Expression::Op::DetectedKey:
         case Expression::Op::DetectedName:
@@ -4089,6 +4644,47 @@ struct Evaluator {
             const auto direction = std::get<framework::Vector3d>(evaluate(*e.right));
             return std::int32_t(!host.edge_of_world || host.edge_of_world(position, direction));
         }
+        case Expression::Op::RegisterTarget: {
+            const auto target_value = evaluate(*e.left);
+            const auto tolerance = static_cast<float>(list_float(evaluate(*e.right)));
+            if (e.slot)
+                return host.register_rotation_target
+                    ? host.register_rotation_target(context.object, context.item,
+                        std::get<LslRotation>(target_value), tolerance) : std::int32_t{0};
+            const auto target = std::get<framework::Vector3d>(target_value);
+            return host.register_position_target
+                ? host.register_position_target(context.object, context.item,
+                    {static_cast<float>(target.x), static_cast<float>(target.y), static_cast<float>(target.z)}, tolerance)
+                : std::int32_t{0};
+        }
+        case Expression::Op::RemoveTarget: {
+            const auto handle = std::get<std::int32_t>(evaluate(*e.left));
+            const auto& remove = e.slot ? host.remove_rotation_target : host.remove_position_target;
+            if (remove)
+                remove(context.object, handle);
+            return std::int32_t{0};
+        }
+        case Expression::Op::Wind: {
+            const auto offset = std::get<framework::Vector3d>(evaluate(*e.left));
+            if (!host.wind)
+                return framework::Vector3d{};
+            const auto coordinate = [](double value) {
+                if (value >= -2147483648. && value < 2147483648.)
+                    return static_cast<std::int32_t>(value);
+                return std::numeric_limits<std::int32_t>::min();
+            };
+            const auto position = current_world_position();
+            const auto wind = host.wind(coordinate(position.x + offset.x),
+                                        coordinate(position.y + offset.y));
+            return framework::Vector3d{wind.x, wind.y, 0.};
+        }
+        case Expression::Op::ModifyLand: {
+            const auto action = std::get<std::int32_t>(evaluate(*e.left));
+            const auto brush = std::get<std::int32_t>(evaluate(*e.right));
+            if (host.modify_land)
+                host.modify_land(context.object, static_cast<std::uint8_t>(action), static_cast<std::uint8_t>(brush));
+            return std::int32_t{0};
+        }
         case Expression::Op::Water:
         case Expression::Op::Cloud:
         case Expression::Op::Ground: {
@@ -4099,8 +4695,9 @@ struct Evaluator {
                 return 0.;
             if (!host.ground_height)
                 throw std::runtime_error("LSL host ground height callback is required");
-            return double(host.ground_height(context.position.x + static_cast<float>(offset.x),
-                                             context.position.y + static_cast<float>(offset.y)));
+            const auto position = current_world_position();
+            return double(host.ground_height(position.x + static_cast<float>(offset.x),
+                                             position.y + static_cast<float>(offset.y)));
         }
         case Expression::Op::GroundNormal:
         case Expression::Op::GroundSlope:
@@ -4109,7 +4706,8 @@ struct Evaluator {
             const auto offset = std::get<framework::Vector3d>(evaluate(*e.left));
             if (!host.ground_normal)
                 throw std::runtime_error("LSL host ground normal callback is required");
-            const auto normal = host.ground_normal(context.position.x, context.position.y,
+            const auto position = current_world_position();
+            const auto normal = host.ground_normal(position.x, position.y,
                                                    static_cast<float>(offset.x), static_cast<float>(offset.y));
             if (e.op == Op::GroundNormal)
                 return framework::Vector3d{normal.x, normal.y, normal.z};
@@ -4417,6 +5015,66 @@ struct Evaluator {
                     --last;
             return framework::utf8(std::u16string_view(units).substr(first, last - first));
         }
+        case Expression::Op::RegexIsMatch: {
+            const auto text = std::get<std::string>(evaluate(*e.left));
+            const auto pattern = std::get<std::string>(evaluate(*e.right));
+            check_ossl_permission("osRegexIsMatch");
+            try {
+                return std::int32_t(framework::dotnet_regex_is_match(text, pattern, 100000));
+            } catch (const framework::DotnetRegexClassError&) {
+                script_error("Possible invalid regular expression detected.");
+                return std::int32_t{0};
+            }
+        }
+        case Expression::Op::RegexMatchString: {
+            using namespace framework;
+            const auto input = regex_text(std::get<std::string>(evaluate(*e.left)));
+            const auto pattern = std::get<std::string>(evaluate(*e.right));
+            const auto start = regex_start(input->size(), std::get<std::int32_t>(evaluate(*e.z)));
+            check_ossl_permission("osMatchString");
+            auto result = std::make_shared<LslList>();
+            if (!start)
+                return std::shared_ptr<const LslList>(std::move(result));
+
+            const auto expression = regex_text(pattern);
+            const auto culture = [] { return std::u16string{}; };
+            DotnetRegexInterpreter regex(
+                dotnet_regex_parse(expression, 0, culture, sufficient_execution_stack),
+                expression, sufficient_execution_stack);
+            auto position = *start;
+            int previous = -1;
+            for (;;) {
+                const auto match = regex.scan(input, 0, static_cast<std::int32_t>(input->size()),
+                                              position, previous, DotnetRegexRunnerMode::FullMatchRequired,
+                                              100000);
+                if (!match.success)
+                    break;
+                for (const auto& group : match.groups) {
+                    if (!group.success)
+                        continue;
+                    result->items.emplace_back(utf8(std::u16string_view(*input).substr(group.index, group.length)));
+                    result->items.emplace_back(group.index);
+                }
+                position = match.text_position;
+                previous = match.length;
+            }
+            return std::shared_ptr<const LslList>(std::move(result));
+        }
+        case Expression::Op::RegexReplaceString: {
+            const auto source = std::get<std::string>(evaluate(*e.left));
+            const auto pattern = std::get<std::string>(evaluate(*e.right));
+            const auto replacement = std::get<std::string>(evaluate(*e.z));
+            const auto count = std::get<std::int32_t>(evaluate(*e.w));
+            const auto offset = std::get<std::int32_t>(evaluate(*e.elements.front()));
+            check_ossl_permission("osReplaceString");
+            const auto input = regex_text(source);
+            const auto start = regex_start(input->size(), offset);
+            if (!start)
+                return source;
+            if (count < -1)
+                throw std::invalid_argument("Specified argument was out of the range of valid values. (Parameter 'count')");
+            return replace_regex(input, pattern, replacement, count, *start, 0);
+        }
         case Expression::Op::ReplaceSubstring: {
             const auto count = std::get<std::int32_t>(evaluate(*e.w));
             const auto replacement = std::get<std::string>(evaluate(*e.z));
@@ -4660,6 +5318,7 @@ struct ScriptState {
 class LslProgram {
   public:
     std::map<std::string, ScriptState> states;
+    std::vector<std::string> state_order{"default"};
     std::vector<Instruction> globals;
     std::string source_hash;
 };
@@ -4759,7 +5418,14 @@ class Parser {
         auto component = std::make_unique<Expression>();
         component->op = Expression::Op::Component;
         component->type = Type::Float;
-        component->slot = is("x") ? 0 : is("y") ? 1 : is("z") ? 2 : 3;
+        if (is("x"))
+            component->slot = 0;
+        else if (is("y"))
+            component->slot = 1;
+        else if (is("z"))
+            component->slot = 2;
+        else
+            component->slot = 3;
         component->height = value->height + 1;
         if (component->height > 128)
             fail(token, "native LSL expression depth exceeded");
@@ -5312,8 +5978,36 @@ class Parser {
             e->type = Type::String;
             return e;
         }
-        if (is("llReplaceSubString")) {
-            e->op = Op::ReplaceSubstring;
+        if (is("osRegexIsMatch") || is("osMatchString")) {
+            const auto command = token;
+            const bool capture = is("osMatchString");
+            e->op = capture ? Op::RegexMatchString : Op::RegexIsMatch;
+            e->type = capture ? Type::List : Type::Integer;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            if (capture) {
+                require(",");
+                e->z = expression();
+                if (e->z->type != Type::Integer)
+                    fail(command, "osMatchString start must be an integer");
+                e->height = e->z->height + 1;
+            }
+            require(")");
+            const auto text = [](Type type) { return type == Type::String || type == Type::Key; };
+            if (!text(e->left->type) || !text(e->right->type))
+                fail(command, "regex matching requires text arguments");
+            e->height = std::max(e->height, 1 + std::max(e->left->height, e->right->height));
+            if (e->height > 128)
+                fail(command, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llReplaceSubString") || is("osReplaceString")) {
+            const auto command = token;
+            const bool has_start = is("osReplaceString");
+            e->op = has_start ? Op::RegexReplaceString : Op::ReplaceSubstring;
             e->type = Type::String;
             advance();
             require("(");
@@ -5324,12 +6018,21 @@ class Parser {
             e->z = expression();
             require(",");
             e->w = expression();
+            if (has_start) {
+                require(",");
+                auto start = expression();
+                if (start->type != Type::Integer)
+                    fail(command, "osReplaceString start must be an integer");
+                e->height = start->height + 1;
+                e->elements.push_back(std::move(start));
+            }
             require(")");
             const auto text = [](Type type) { return type == Type::String || type == Type::Key; };
             if (!text(e->left->type) || !text(e->right->type) || !text(e->z->type) ||
                 e->w->type != Type::Integer)
-                fail(token, "substring replacement requires text arguments and integer count");
-            e->height = 1 + std::max({e->left->height, e->right->height, e->z->height, e->w->height});
+                fail(command, "substring replacement requires text arguments and integer count");
+            e->height = std::max(e->height, 1 + std::max({e->left->height, e->right->height,
+                                                       e->z->height, e->w->height}));
             if (e->height > 128)
                 fail(token, "native LSL expression depth exceeded");
             return e;
@@ -5411,7 +6114,7 @@ class Parser {
                 fail(token, "native LSL expression depth exceeded");
             return e;
         }
-        if (is("llMD5String") || is("llSHA1String") || is("llSHA256String")) {
+        if (is("llMD5String") || is("llSHA1String") || is("llSHA256String") || is("osSHA256")) {
             const bool md5 = is("llMD5String");
             e->op = md5 ? Op::Md5 : is("llSHA1String") ? Op::Sha1 : Op::Sha256;
             e->type = Type::String;
@@ -5997,8 +6700,9 @@ class Parser {
                 fail(command, "native LSL expression depth exceeded");
             return e;
         }
-        if (is("llListen") || is("llListenControl") || is("llListenRemove")) {
-            const bool add = is("llListen");
+        if (is("llListen") || is("osListenRegex") || is("llListenControl") || is("llListenRemove")) {
+            const bool regex = is("osListenRegex");
+            const bool add = regex || is("llListen");
             const bool control = is("llListenControl");
             const auto command = token;
             e->op = add ? Op::Listen : control ? Op::ListenControl : Op::ListenRemove;
@@ -6023,12 +6727,158 @@ class Parser {
                     (e->w->type != Type::String && e->w->type != Type::Key))
                     fail(command, "listen filters must be text");
             }
+            if (regex) {
+                require(",");
+                auto flags = expression();
+                if (flags->type != Type::Integer)
+                    fail(command, "osListenRegex flags must be an integer");
+                e->height = std::max(e->height, flags->height + 1);
+                e->elements.push_back(std::move(flags));
+            }
             require(")");
             for (const auto* argument : {e->left.get(), e->right.get(), e->z.get(), e->w.get()})
                 if (argument)
                     e->height = std::max(e->height, argument->height + 1);
             if (e->height > 128)
                 fail(command, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llSensor") || is("llSensorRepeat") || is("llSensorRemove")) {
+            const int arguments = is("llSensorRemove") ? 0 : is("llSensorRepeat") ? 6 : 5;
+            advance();
+            require("(");
+            for (int index = 0; index < arguments; ++index) {
+                if (index)
+                    require(",");
+                auto argument = expression();
+                const auto type = argument->type;
+                const bool valid = index == 0 ? type == Type::String
+                    : index == 1 ? type == Type::String || type == Type::Key
+                    : index == 2 ? type == Type::Integer
+                    : numeric(type);
+                if (!valid)
+                    fail(token, "Invalid sensor arguments");
+                e->height = std::max(e->height, argument->height + 1);
+                e->elements.push_back(std::move(argument));
+            }
+            require(")");
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            e->op = Op::Sensor;
+            e->type = Type::Integer;
+            return e;
+        }
+        if (is("llCreateLink") || is("llBreakLink") || is("llBreakAllLinks")) {
+            const bool create = is("llCreateLink");
+            const bool all = is("llBreakAllLinks");
+            advance();
+            require("(");
+            if (!all) {
+                e->left = expression();
+                e->height = e->left->height + 1;
+            }
+            if (create) {
+                require(",");
+                e->right = expression();
+                e->height = std::max(e->height, e->right->height + 1);
+                if ((e->left->type != Type::String && e->left->type != Type::Key) ||
+                    e->right->type != Type::Integer)
+                    fail(token, "llCreateLink requires a key and an integer");
+            } else if (!all && e->left->type != Type::Integer) {
+                fail(token, "llBreakLink requires an integer link number");
+            }
+            require(")");
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            e->op = create ? Op::CreateLink : Op::BreakLink;
+            e->type = Type::Integer;
+            return e;
+        }
+        if (is("llAttachToAvatar") || is("llAttachToAvatarTemp")) {
+            e->slot = is("llAttachToAvatarTemp");
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Integer)
+                fail(token, "Attachment point must be an integer");
+            e->op = Op::AttachToAvatar;
+            e->type = Type::Integer;
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llDetachFromAvatar")) {
+            advance();
+            require("(");
+            require(")");
+            e->op = Op::DetachFromAvatar;
+            e->type = Type::Integer;
+            return e;
+        }
+        if (is("llSetRemoteScriptAccessPin")) {
+            advance();
+            require("(");
+            e->left = expression();
+            require(")");
+            if (e->left->type != Type::Integer)
+                fail(token, "llSetRemoteScriptAccessPin requires an integer PIN");
+            e->op = Op::SetRemoteScriptPin;
+            e->type = Type::Integer;
+            e->height = e->left->height + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llRemoteLoadScriptPin")) {
+            advance();
+            require("(");
+            for (int index = 0; index < 5; ++index) {
+                if (index)
+                    require(",");
+                auto argument = expression();
+                const bool valid = index == 0 ? (argument->type == Type::String || argument->type == Type::Key)
+                                            : argument->type == (index == 1 ? Type::String : Type::Integer);
+                if (!valid)
+                    fail(token, "Invalid llRemoteLoadScriptPin arguments");
+                e->height = std::max(e->height, argument->height + 1);
+                e->elements.push_back(std::move(argument));
+            }
+            require(")");
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            e->op = Op::RemoteLoadScript;
+            e->type = Type::Integer;
+            return e;
+        }
+        if (is("llGetNextEmail") || is("llEmail") || is("llTargetedEmail")) {
+            const auto command = token;
+            const bool targeted = is("llTargetedEmail");
+            const bool sending = is("llEmail") || targeted;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            if (sending) {
+                require(",");
+                e->z = expression();
+            }
+            require(")");
+            const auto is_text = [](Type type) { return type == Type::String || type == Type::Key; };
+            if ((targeted ? e->left->type != Type::Integer : !is_text(e->left->type)) ||
+                !is_text(e->right->type) ||
+                (sending && !is_text(e->z->type)))
+                fail(command, "email arguments must be strings");
+            e->height = std::max(e->left->height, e->right->height) + 1;
+            if (sending)
+                e->height = std::max(e->height, e->z->height + 1);
+            if (e->height > 128)
+                fail(command, "native LSL expression depth exceeded");
+            e->op = sending ? Op::SendEmail : Op::RequestEmail;
+            e->slot = targeted;
+            e->type = Type::Integer;
             return e;
         }
         if (is("llMessageLinked")) {
@@ -6070,6 +6920,28 @@ class Parser {
                 }
             }
             require(")");
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llParticleSystem") || is("llLinkParticleSystem") ||
+            is("osParticleSystem") || is("osLinkParticleSystem")) {
+            const bool linked = is("llLinkParticleSystem") || is("osLinkParticleSystem");
+            e->op = Op::SetParticleSystem;
+            e->value = std::int32_t(is("osParticleSystem") || is("osLinkParticleSystem"));
+            advance();
+            require("(");
+            if (linked) {
+                e->left = expression();
+                if (e->left->type != Type::Integer)
+                    fail(token, "Particle link selector must be an integer");
+                require(",");
+            }
+            e->right = expression();
+            if (e->right->type != Type::List)
+                fail(token, "Particle rules must be a list");
+            require(")");
+            e->height = 1 + std::max(e->right->height, e->left ? e->left->height : 0u);
             if (e->height > 128)
                 fail(token, "native LSL expression depth exceeded");
             return e;
@@ -6231,9 +7103,37 @@ class Parser {
                 fail(token, "native LSL expression depth exceeded");
             return e;
         }
-        if (is("llGetSimulatorHostname")) {
+        if (is("osGetGridLoginURI") || is("osGetGridHomeURI") || is("osGetGridGatekeeperURI") ||
+            is("osGetGridCustom")) {
+            const auto query = is("osGetGridLoginURI") ? LslGridQuery::Login
+                             : is("osGetGridHomeURI") ? LslGridQuery::Home
+                             : is("osGetGridGatekeeperURI") ? LslGridQuery::Gatekeeper
+                             : LslGridQuery::Custom;
+            const auto command = token;
+            e->op = Op::GridInfo;
             e->type = Type::String;
-            e->op = Op::SimulatorHostname;
+            e->slot = static_cast<std::size_t>(query);
+            advance();
+            require("(");
+            if (query == LslGridQuery::Custom) {
+                e->left = expression();
+                if (e->left->type != Type::String && e->left->type != Type::Key)
+                    fail(command, "osGetGridCustom requires a text key");
+                e->height = 1 + e->left->height;
+                if (e->height > 128)
+                    fail(command, "native LSL expression depth exceeded");
+            }
+            require(")");
+            return e;
+        }
+        if (is("llGetSimulatorHostname") || is("osGetRegionSize") || is("osGetScriptEngineName") ||
+            is("osGetGridName") || is("osGetGridNick")) {
+            const bool region_size = is("osGetRegionSize");
+            e->type = region_size ? Type::Vector : Type::String;
+            e->op = region_size ? Op::RegionSize
+                    : is("osGetScriptEngineName") ? Op::ScriptEngineName
+                    : is("osGetGridName") ? Op::GridName
+                    : is("osGetGridNick") ? Op::GridNick : Op::SimulatorHostname;
             advance();
             require("(");
             require(")");
@@ -6254,6 +7154,45 @@ class Parser {
                     fail(token, "OSSL URL options must be a list");
             }
             require(")");
+            return e;
+        }
+        if (is("llSendRemoteData")) {
+            const auto command = token;
+            advance();
+            require("(");
+            for (const auto type : {Type::String, Type::String, Type::Integer, Type::String}) {
+                if (!e->elements.empty())
+                    require(",");
+                auto argument = expression();
+                if (!assignable(type, argument->type))
+                    fail(command, "invalid argument type for llSendRemoteData");
+                e->height = std::max(e->height, argument->height + 1);
+                e->elements.push_back(std::move(argument));
+            }
+            require(")");
+            if (e->height > 128)
+                fail(command, "native LSL expression depth exceeded");
+            e->op = Op::SendRemoteData;
+            e->type = Type::Key;
+            return e;
+        }
+        if (is("llHTTPRequest")) {
+            e->op = Op::HttpRequest;
+            e->type = Type::Key;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(",");
+            e->z = expression();
+            require(")");
+            if ((e->left->type != Type::String && e->left->type != Type::Key) || e->right->type != Type::List ||
+                (e->z->type != Type::String && e->z->type != Type::Key))
+                fail(token, "llHTTPRequest requires a URL, options list, and body");
+            e->height = 1 + std::max({e->left->height, e->right->height, e->z->height});
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
             return e;
         }
         if (is("llReleaseURL") || is("llGetHTTPHeader") || is("llHTTPResponse") || is("llSetContentType")) {
@@ -6293,6 +7232,22 @@ class Parser {
             advance();
             require("(");
             require(")");
+            return e;
+        }
+        if (is("llManageEstateAccess")) {
+            e->op = Op::ManageEstateAccess;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if (e->left->type != Type::Integer ||
+                (e->right->type != Type::Key && e->right->type != Type::String))
+                fail(token, "llManageEstateAccess requires an integer action and a key");
+            e->height = 1 + std::max(e->left->height, e->right->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
             return e;
         }
         if (is("llSetMemoryLimit")) {
@@ -6691,6 +7646,23 @@ class Parser {
             require(")");
             return e;
         }
+        if (is("llDerezObject")) {
+            e->op = Op::DerezObject;
+            e->type = Type::Integer;
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if ((e->left->type != Type::Key && e->left->type != Type::String) ||
+                e->right->type != Type::Integer)
+                fail(token, "Invalid object derez arguments");
+            e->height = 1 + std::max(e->left->height, e->right->height);
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            return e;
+        }
         if (is("llGetRegionAgentCount") || is("llGetRegionFlags")) {
             e->op = is("llGetRegionFlags") ? Expression::Op::RegionFlags : Expression::Op::RegionAgentCount;
             advance();
@@ -7024,6 +7996,48 @@ class Parser {
             e->op = Expression::Op::UnixTime;
             return e;
         }
+        if (is("llTarget") || is("llTargetRemove") || is("llRotTarget") || is("llRotTargetRemove")) {
+            const auto command = token;
+            const bool registering = is("llTarget") || is("llRotTarget");
+            const bool rotation = is("llRotTarget") || is("llRotTargetRemove");
+            e->slot = rotation;
+            e->op = registering ? Op::RegisterTarget : Op::RemoveTarget;
+            e->type = Type::Integer;
+            advance();
+            require("(");
+            e->left = expression();
+            if (registering) {
+                require(",");
+                e->right = expression();
+                if (e->left->type != (rotation ? Type::Rotation : Type::Vector) || !numeric(e->right->type))
+                    fail(command, "target registration requires a matching target type and numeric tolerance");
+                e->height = std::max(e->left->height, e->right->height) + 1;
+            } else {
+                if (e->left->type != Type::Integer)
+                    fail(command, "target removal requires an integer handle");
+                e->height = e->left->height + 1;
+            }
+            require(")");
+            if (e->height > 128)
+                fail(command, "native LSL expression depth exceeded");
+            return e;
+        }
+        if (is("llModifyLand")) {
+            advance();
+            require("(");
+            e->left = expression();
+            require(",");
+            e->right = expression();
+            require(")");
+            if (e->left->type != Type::Integer || e->right->type != Type::Integer)
+                fail(token, "llModifyLand requires an integer action and brush");
+            e->height = std::max(e->left->height, e->right->height) + 1;
+            if (e->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            e->op = Op::ModifyLand;
+            e->type = Type::Integer;
+            return e;
+        }
         if (is("llEdgeOfWorld")) {
             advance();
             require("(");
@@ -7037,7 +8051,7 @@ class Parser {
             e->type = Type::Integer;
             return e;
         }
-        if (is("llWater") || is("llGround") || is("llCloud") ||
+        if (is("llWater") || is("llGround") || is("llCloud") || is("llWind") ||
             is("llGroundNormal") || is("llGroundSlope") || is("llGroundContour")) {
             e->type = Type::Float;
             if (is("llGround"))
@@ -7048,7 +8062,9 @@ class Parser {
                 e->op = Op::Water;
             else {
                 e->type = Type::Vector;
-                if (is("llGroundNormal"))
+                if (is("llWind"))
+                    e->op = Op::Wind;
+                else if (is("llGroundNormal"))
                     e->op = Op::GroundNormal;
                 else if (is("llGroundSlope"))
                     e->op = Op::GroundSlope;
@@ -7107,6 +8123,15 @@ class Parser {
             advance();
             return e;
         }
+        for (std::size_t rule = 0; rule < std::size(particle_rules); ++rule) {
+            const auto name = particle_rules[rule].name;
+            if (name.empty() || !is(name))
+                continue;
+            e->type = Type::Integer;
+            e->value = static_cast<std::int32_t>(rule);
+            advance();
+            return e;
+        }
         static constexpr std::pair<std::string_view, std::int32_t> integer_constants[] = {
             {"CONTENT_TYPE_TEXT", 0}, {"CONTENT_TYPE_HTML", 1}, {"CONTENT_TYPE_XML", 2},
             {"CONTENT_TYPE_XHTML", 3}, {"CONTENT_TYPE_ATOM", 4}, {"CONTENT_TYPE_JSON", 5},
@@ -7123,8 +8148,20 @@ class Parser {
             {"SOUND_SYNC", 4},
             {"LINK_ALL_CHILDREN", -3},
             {"LINK_THIS", -4},
+            {"TARGETED_EMAIL_ROOT_CREATOR", 1},
+            {"TARGETED_EMAIL_OBJECT_OWNER", 2},
             {"ALL_SIDES", -1},
             {"ANIM_ON", 1}, {"LOOP", 2}, {"REVERSE", 4}, {"PING_PONG", 8},
+            {"PSYS_PART_INTERP_COLOR_MASK", 1}, {"PSYS_PART_INTERP_SCALE_MASK", 2},
+            {"PSYS_PART_BOUNCE_MASK", 4}, {"PSYS_PART_WIND_MASK", 8}, {"PSYS_PART_FOLLOW_SRC_MASK", 16},
+            {"PSYS_PART_FOLLOW_VELOCITY_MASK", 32}, {"PSYS_PART_TARGET_POS_MASK", 64},
+            {"PSYS_PART_TARGET_LINEAR_MASK", 128}, {"PSYS_PART_EMISSIVE_MASK", 256}, {"PSYS_PART_RIBBON_MASK", 1024},
+            {"PSYS_SRC_PATTERN_DROP", 1}, {"PSYS_SRC_PATTERN_EXPLODE", 2}, {"PSYS_SRC_PATTERN_ANGLE", 4},
+            {"PSYS_SRC_PATTERN_ANGLE_CONE", 8}, {"PSYS_SRC_PATTERN_ANGLE_CONE_EMPTY", 16},
+            {"PSYS_PART_BF_ONE", 0}, {"PSYS_PART_BF_ZERO", 1}, {"PSYS_PART_BF_DEST_COLOR", 2},
+            {"PSYS_PART_BF_SOURCE_COLOR", 3}, {"PSYS_PART_BF_ONE_MINUS_DEST_COLOR", 4},
+            {"PSYS_PART_BF_ONE_MINUS_SOURCE_COLOR", 5}, {"PSYS_PART_BF_SOURCE_ALPHA", 7},
+            {"PSYS_PART_BF_ONE_MINUS_SOURCE_ALPHA", 9},
             {"SMOOTH", 16}, {"ROTATE", 32}, {"SCALE", 64},
             {"BEACON_MAP", 1}, {"BEACON_SHOW_MAP", 1}, {"BEACON_FOCUS_MAP", 2},
             {"DENSITY", 1}, {"FRICTION", 2}, {"RESTITUTION", 4}, {"GRAVITY_MULTIPLIER", 8},
@@ -7151,7 +8188,78 @@ class Parser {
             {"CONTROL_ML_LBUTTON", 0x40000000},
             {"PERMISSION_REMAP_CONTROLS", 0x08},
             {"PERMISSION_TRIGGER_ANIMATION", 0x010},
+            {"AGENT", 1},
+            {"ACTIVE", 2},
+            {"PASSIVE", 4},
+            {"OS_LISTEN_REGEX_NAME", listen_regex_name},
+            {"OS_LISTEN_REGEX_MESSAGE", listen_regex_message},
+            {"OS_LTPAG_NONE", 0x0},
+            {"OS_LTPAG_USEVEL", 0x1},
+            {"OS_LTPAG_USELOOKAT", 0x2},
+            {"OS_LTPAG_ALGNLV", 0x4},
+            {"OS_LTPAG_FORCEFLY", 0x8},
+            {"OS_LTPAG_FORCENOFLY", 0x16},
+            {"SCRIPTED", 8},
+            {"AGENT_BY_USERNAME", 0x10},
+            {"NPC", 0x20},
             {"PERMISSION_ATTACH", 0x20},
+            {"ATTACH_CHEST", 1},
+            {"ATTACH_HEAD", 2},
+            {"ATTACH_LSHOULDER", 3},
+            {"ATTACH_RSHOULDER", 4},
+            {"ATTACH_LHAND", 5},
+            {"ATTACH_RHAND", 6},
+            {"ATTACH_LFOOT", 7},
+            {"ATTACH_RFOOT", 8},
+            {"ATTACH_BACK", 9},
+            {"ATTACH_PELVIS", 10},
+            {"ATTACH_MOUTH", 11},
+            {"ATTACH_CHIN", 12},
+            {"ATTACH_LEAR", 13},
+            {"ATTACH_REAR", 14},
+            {"ATTACH_LEYE", 15},
+            {"ATTACH_REYE", 16},
+            {"ATTACH_NOSE", 17},
+            {"ATTACH_RUARM", 18},
+            {"ATTACH_RLARM", 19},
+            {"ATTACH_LUARM", 20},
+            {"ATTACH_LLARM", 21},
+            {"ATTACH_RHIP", 22},
+            {"ATTACH_RULEG", 23},
+            {"ATTACH_RLLEG", 24},
+            {"ATTACH_LHIP", 25},
+            {"ATTACH_LULEG", 26},
+            {"ATTACH_LLLEG", 27},
+            {"ATTACH_BELLY", 28},
+            {"ATTACH_RPEC", 29},
+            {"ATTACH_LPEC", 30},
+            {"ATTACH_LEFT_PEC", 29},
+            {"ATTACH_RIGHT_PEC", 30},
+            {"ATTACH_HUD_CENTER_2", 31},
+            {"ATTACH_HUD_TOP_RIGHT", 32},
+            {"ATTACH_HUD_TOP_CENTER", 33},
+            {"ATTACH_HUD_TOP_LEFT", 34},
+            {"ATTACH_HUD_CENTER_1", 35},
+            {"ATTACH_HUD_BOTTOM_LEFT", 36},
+            {"ATTACH_HUD_BOTTOM", 37},
+            {"ATTACH_HUD_BOTTOM_RIGHT", 38},
+            {"ATTACH_NECK", 39},
+            {"ATTACH_AVATAR_CENTER", 40},
+            {"ATTACH_LHAND_RING1", 41},
+            {"ATTACH_RHAND_RING1", 42},
+            {"ATTACH_TAIL_BASE", 43},
+            {"ATTACH_TAIL_TIP", 44},
+            {"ATTACH_LWING", 45},
+            {"ATTACH_RWING", 46},
+            {"ATTACH_FACE_JAW", 47},
+            {"ATTACH_FACE_LEAR", 48},
+            {"ATTACH_FACE_REAR", 49},
+            {"ATTACH_FACE_LEYE", 50},
+            {"ATTACH_FACE_REYE", 51},
+            {"ATTACH_FACE_TONGUE", 52},
+            {"ATTACH_GROIN", 53},
+            {"ATTACH_HIND_LFOOT", 54},
+            {"ATTACH_HIND_RFOOT", 55},
             {"PERMISSION_RELEASE_OWNERSHIP", 0x40},
             {"PERMISSION_CHANGE_LINKS", 0x80},
             {"PERMISSION_CHANGE_JOINTS", 0x100},
@@ -7224,6 +8332,31 @@ class Parser {
             {"PARCEL_FLAG_USE_ACCESS_GROUP", 0x100},
             {"PARCEL_FLAG_USE_ACCESS_LIST", 0x200},
             {"PARCEL_FLAG_USE_BAN_LIST", 0x400},
+            {"LAND_LEVEL", 0},
+            {"HTTP_METHOD", 0},
+            {"HTTP_MIMETYPE", 1},
+            {"HTTP_BODY_MAXLENGTH", 2},
+            {"HTTP_VERIFY_CERT", 3},
+            {"HTTP_VERBOSE_THROTTLE", 4},
+            {"HTTP_CUSTOM_HEADER", 5},
+            {"HTTP_PRAGMA_NO_CACHE", 6},
+            {"REMOTE_DATA_CHANNEL", 1},
+            {"REMOTE_DATA_REQUEST", 2},
+            {"REMOTE_DATA_REPLY", 3},
+            {"ESTATE_ACCESS_ALLOWED_AGENT_ADD", 0},
+            {"ESTATE_ACCESS_ALLOWED_AGENT_REMOVE", 1},
+            {"ESTATE_ACCESS_ALLOWED_GROUP_ADD", 2},
+            {"ESTATE_ACCESS_ALLOWED_GROUP_REMOVE", 3},
+            {"ESTATE_ACCESS_BANNED_AGENT_ADD", 4},
+            {"ESTATE_ACCESS_BANNED_AGENT_REMOVE", 5},
+            {"LAND_RAISE", 1},
+            {"LAND_LOWER", 2},
+            {"LAND_SMOOTH", 3},
+            {"LAND_NOISE", 4},
+            {"LAND_REVERT", 5},
+            {"LAND_SMALL_BRUSH", 1},
+            {"LAND_MEDIUM_BRUSH", 2},
+            {"LAND_LARGE_BRUSH", 3},
             {"PARCEL_FLAG_USE_LAND_PASS_LIST", 0x800},
             {"PARCEL_FLAG_LOCAL_SOUND_ONLY", 0x8000},
             {"PARCEL_FLAG_RESTRICT_PUSHOBJECT", 0x200000},
@@ -7612,6 +8745,25 @@ class Parser {
             }
             require(")");
             ins.text = std::move(call);
+        } else if (is("llPushObject")) {
+            auto call = std::make_unique<Expression>();
+            call->op = Expression::Op::PushObject;
+            advance();
+            require("(");
+            constexpr std::array types{Type::String, Type::Vector, Type::Vector, Type::Integer};
+            for (std::size_t index = 0; index < types.size(); ++index) {
+                if (index != 0)
+                    require(",");
+                auto argument = expression();
+                if (argument->type != types[index] && !(index == 0 && argument->type == Type::Key))
+                    fail(token, "llPushObject requires a key, two vectors, and an integer");
+                call->height = std::max(call->height, 1 + argument->height);
+                call->elements.push_back(std::move(argument));
+            }
+            require(")");
+            if (call->height > 128)
+                fail(token, "native LSL expression depth exceeded");
+            ins.text = std::move(call);
         } else if (is("llSetBuoyancy") || is("llSetForce") || is("llSetTorque") || is("llSetForceAndTorque") ||
             is("llSetVelocity") || is("llSetAngularVelocity") ||
             is("llApplyImpulse") || is("llApplyRotationalImpulse")) {
@@ -7749,24 +8901,7 @@ class Parser {
             handler->instructions.push_back(std::move(instruction));
             return;
         }
-        if (update_operator() || (token.kind == Kind::Name && local(token.text)) ||
-            is("llRequestURL") || is("llRequestSecureURL") || is("llReleaseURL") || is("llHTTPResponse") ||
-            is("llSetContentType") || is("osRequestURL") || is("osRequestSecureURL") ||
-            is("llSetTexture") || is("llSetColor") || is("llSetAlpha") ||
-            is("llSetLinkTexture") || is("llSetLinkColor") || is("llSetLinkAlpha") ||
-            is("llSetTextureAnim") || is("llSetLinkTextureAnim") ||
-            is("llSetPhysicsMaterial") || is("llSetBuoyancy") || is("llSetForce") ||
-            is("llSetTorque") || is("llSetForceAndTorque") ||
-            is("llSetVelocity") || is("llSetAngularVelocity") ||
-            is("llApplyImpulse") || is("llApplyRotationalImpulse") ||
-            is("llSetHoverHeight") || is("llStopHover") || is("llGroundRepel") ||
-            is("llMoveToTarget") || is("llStopMoveToTarget") ||
-            is("llLookAt") || is("llRotLookAt") || is("llStopLookAt") ||
-            is("llMessageLinked") || is("llListen") || is("llListenControl") || is("llListenRemove") ||
-            is("llRegionSayTo") ||
-            is("llOffsetTexture") || is("llScaleTexture") || is("llRotateTexture") ||
-            is("osReplaceRegionEnvironment") || is("osReplaceParcelEnvironment") || is("osReplaceAgentEnvironment") ||
-            (token.kind == Kind::Name && (is_drawing_function(token.text) || is_environment_query(token.text)))) {
+        if (token.kind == Kind::Name && local(token.text)) {
             auto instruction = expression_statement();
             require(";");
             handler->instructions.push_back(std::move(instruction));
@@ -8080,6 +9215,68 @@ class Parser {
             handler->instructions.push_back(std::move(ins));
             return;
         }
+        if (is("llTeleportAgent") || is("llTeleportAgentGlobalCoords")) {
+            ins.teleport_viewer = true;
+            const bool global = is("llTeleportAgentGlobalCoords");
+            advance();
+            require("(");
+            auto& args = ins.teleport_arguments;
+            for (std::size_t i = 0; i < 4; ++i) {
+                if (i)
+                    require(",");
+                args.push_back(expression());
+            }
+            if (!assignable(Type::String, args[0]->type) ||
+                (global ? args[1]->type != Type::Vector : !assignable(Type::String, args[1]->type)) ||
+                args[2]->type != Type::Vector || args[3]->type != Type::Vector)
+                fail(token, "Teleport requires an avatar key, a destination and two vectors");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("osTeleportAgent") || is("osTeleportOwner")) {
+            ins.teleport_owner = is("osTeleportOwner");
+            advance();
+            require("(");
+            auto& args = ins.teleport_arguments;
+            args.push_back(expression());
+            while (is(",") && args.size() < 5) {
+                advance();
+                args.push_back(expression());
+            }
+            const std::size_t first = ins.teleport_owner ? 0 : 1;
+            if (args.size() < first + 2 || args.size() > first + 4 ||
+                (!ins.teleport_owner && !assignable(Type::String, args[0]->type)) ||
+                args[args.size() - 2]->type != Type::Vector || args.back()->type != Type::Vector)
+                fail(token, "Teleport requires an optional destination followed by position and look vectors");
+            const auto destination_args = args.size() - first - 2;
+            if ((destination_args == 1 && !assignable(Type::String, args[first]->type)) ||
+                (destination_args == 2 && (args[first]->type != Type::Integer ||
+                                           args[first + 1]->type != Type::Integer)))
+                fail(token, "Teleport destination requires a region name or two integer grid coordinates");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("osLocalTeleportAgent")) {
+            advance();
+            require("(");
+            auto& args = ins.local_teleport_arguments;
+            for (std::size_t i = 0; i < args.size(); ++i) {
+                if (i)
+                    require(",");
+                args[i] = expression();
+            }
+            if (!assignable(Type::Key, args[0]->type) || args[1]->type != Type::Vector ||
+                args[2]->type != Type::Vector || args[3]->type != Type::Vector || args[4]->type != Type::Integer)
+                fail(token, "osLocalTeleportAgent requires an avatar key, three vectors and integer flags");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
         if (is("llTeleportAgentHome") || is("llEjectFromLand")) {
             ins.eject_from_land = is("llEjectFromLand");
             advance();
@@ -8088,6 +9285,20 @@ class Parser {
             if (!assignable(Type::Key, ins.relocate_agent->type))
                 fail(token, ins.eject_from_land ? "llEjectFromLand requires an avatar key"
                                                : "llTeleportAgentHome requires an avatar key");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llSetRenderMaterial")) {
+            advance();
+            require("(");
+            ins.render_material_name = expression();
+            require(",");
+            ins.render_material_face = expression();
+            if (!assignable(Type::String, ins.render_material_name->type) ||
+                ins.render_material_face->type != Type::Integer)
+                fail(token, "llSetRenderMaterial requires a material and an integer face");
             require(")");
             require(";");
             handler->instructions.push_back(std::move(ins));
@@ -8319,6 +9530,39 @@ class Parser {
             if (!text_box)
                 parse_argument(2, Type::List);
             parse_argument(3, Type::Integer);
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llGiveInventoryList")) {
+            advance();
+            require("(");
+            constexpr std::array types{Type::Key, Type::String, Type::List};
+            for (std::size_t i = 0; i < types.size(); ++i) {
+                if (i)
+                    require(",");
+                auto argument = expression();
+                if (!assignable(types[i], argument->type))
+                    fail(token, "llGiveInventoryList requires a destination key, folder name and list");
+                ins.give_inventory_list_arguments[i] = std::move(argument);
+            }
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llInstantMessage") || is("llGiveInventory")) {
+            ins.give_inventory = is("llGiveInventory");
+            advance();
+            require("(");
+            ins.instant_message_arguments[0] = expression();
+            require(",");
+            ins.instant_message_arguments[1] = expression();
+            for (const auto& argument : ins.instant_message_arguments)
+                if (!assignable(Type::String, argument->type))
+                    fail(token, ins.give_inventory ? "llGiveInventory requires a destination key and inventory name"
+                                                   : "llInstantMessage requires an avatar key and message");
             require(")");
             require(";");
             handler->instructions.push_back(std::move(ins));
@@ -8670,6 +9914,27 @@ class Parser {
             handler->instructions.push_back(std::move(ins));
             return;
         }
+        if (is("llOpenRemoteDataChannel")) {
+            advance();
+            require("(");
+            require(")");
+            require(";");
+            ins.open_remote_data_channel = true;
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
+        if (is("llCloseRemoteDataChannel")) {
+            const auto command = token;
+            advance();
+            require("(");
+            ins.close_remote_data_channel = expression();
+            if (!assignable(Type::String, ins.close_remote_data_channel->type))
+                fail(command, "invalid argument type for llCloseRemoteDataChannel");
+            require(")");
+            require(";");
+            handler->instructions.push_back(std::move(ins));
+            return;
+        }
         const auto legacy = std::ranges::find(legacy_commands, token.text, &LegacyCommand::name);
         if (legacy != std::end(legacy_commands)) {
             const auto command = token;
@@ -8700,8 +9965,12 @@ class Parser {
             ins.chat_type = LslChatType::Region;
         else if (is("llOwnerSay"))
             ins.owner = true;
-        else if (!is("llSay"))
-            fail(token, "unsupported statement/API in native LSL subset");
+        else if (!is("llSay")) {
+            auto instruction = expression_statement();
+            require(";");
+            handler->instructions.push_back(std::move(instruction));
+            return;
+        }
         advance();
         require("(");
         if (!ins.owner) {
@@ -8739,6 +10008,7 @@ class Parser {
             auto [it, inserted] = program->states.try_emplace(name.text);
             if (!inserted)
                 fail(name, "duplicate state");
+            program->state_order.push_back(name.text);
             parse_state(it->second);
         }
         if (token.kind != Kind::End)
@@ -8768,7 +10038,9 @@ class Parser {
             require("(");
             const auto parameter = [&](Type type) {
                 require(type == Type::Integer ? "integer" : type == Type::Key ? "key"
-                                               : type == Type::Vector ? "vector" : "string");
+                                               : type == Type::Vector ? "vector"
+                                               : type == Type::Rotation ? "rotation"
+                                               : type == Type::List ? "list" : "string");
                 if (token.kind != Kind::Name)
                     fail(token, "expected event parameter name");
                 if (std::string_view(
@@ -8794,8 +10066,36 @@ class Parser {
                     require(",");
                     parameter(Type::String);
                 }
+            } else if (event == "remote_data") {
+                parameter(Type::Integer);
+                require(",");
+                parameter(Type::Key);
+                require(",");
+                parameter(Type::Key);
+                require(",");
+                parameter(Type::String);
+                require(",");
+                parameter(Type::Integer);
+                require(",");
+                parameter(Type::String);
+            } else if (event == "http_response") {
+                parameter(Type::Key);
+                require(",");
+                parameter(Type::Integer);
+                require(",");
+                parameter(Type::List);
+                require(",");
+                parameter(Type::String);
             } else if (event == "attach" || event == "object_rez") {
                 parameter(Type::Key);
+            } else if (event == "email") {
+                parameter(Type::String);
+                for (int field = 0; field < 3; ++field) {
+                    require(",");
+                    parameter(Type::String);
+                }
+                require(",");
+                parameter(Type::Integer);
             } else if (event == "listen") {
                 parameter(Type::Integer);
                 require(",");
@@ -8806,8 +10106,16 @@ class Parser {
                 parameter(Type::String);
             } else if (is_land_collision_event(event)) {
                 parameter(Type::Vector);
-            } else if (event != "state_entry" && event != "timer" && event != "state_exit") {
+            } else if (event != "state_entry" && event != "timer" && event != "state_exit" &&
+                       event != "not_at_target" && event != "not_at_rot_target" && event != "no_sensor") {
                 parameter(Type::Integer);
+            }
+            if (event == "at_target" || event == "at_rot_target") {
+                const auto type = event == "at_target" ? Type::Vector : Type::Rotation;
+                require(",");
+                parameter(type);
+                require(",");
+                parameter(type);
             }
             if (event == "linkset_data") {
                 require(",");
@@ -8824,6 +10132,7 @@ class Parser {
                 parameter(Type::Key);
             }
             require(")");
+            handler->parameter_count = handler->local_types.size();
             block(true);
             resolve_jumps();
             scopes.pop_back();
@@ -9000,6 +10309,10 @@ struct LslInstance::Impl {
     void reset(bool constructing = false) {
         if (!constructing && host.clear_listeners)
             host.clear_listeners(context.item);
+        if (!constructing && host.clear_targets)
+            host.clear_targets(context.item);
+        if (!constructing && host.clear_sensors)
+            host.clear_sensors(context.item);
         if (!constructing && host.clear_script_permissions)
             host.clear_script_permissions(context.item);
         state = &program->states.at("default");
@@ -9053,7 +10366,8 @@ struct LslInstance::Impl {
                 return true;
             if (flags & ~scale_or_position)
                 return false;
-        } else if (event.name != "timer" && event.name != "touch")
+        } else if (event.name != "timer" && event.name != "touch" && event.name != "not_at_target" &&
+                   event.name != "not_at_rot_target" && event.name != "sensor" && event.name != "no_sensor")
             return false;
 
         const auto time = (host.monotonic_ticks ? host.monotonic_ticks() : ticks()) / 10000000.;
@@ -9077,14 +10391,20 @@ struct LslInstance::Impl {
         }
         const bool dataserver = event.name == "dataserver";
         const bool http_request = event.name == "http_request";
+        const bool http_response = event.name == "http_response";
+        const bool remote_data = event.name == "remote_data";
         const bool link_message = event.name == "link_message";
         const bool listen = event.name == "listen";
+        const bool email = event.name == "email";
         const bool attachment = event.name == "attach";
         const bool script_control = event.name == "control";
-        const auto expected = link_message || listen ? 4u
-                        : event.name == "linkset_data" || http_request || script_control ? 3u
+        const auto expected = remote_data ? 6u : email ? 5u
+                        : link_message || listen || http_response ? 4u
+                        : event.name == "linkset_data" || event.name == "at_target" ||
+                          event.name == "at_rot_target" || http_request || script_control ? 3u
                         : dataserver ? 2u
-                        : event.name == "state_entry" || event.name == "state_exit" || event.name == "timer"
+                        : event.name == "state_entry" || event.name == "state_exit" || event.name == "timer" ||
+                          event.name == "not_at_target" || event.name == "not_at_rot_target" || event.name == "no_sensor"
                             ? 0u
                             : 1u;
         if (event.arguments.size() != expected)
@@ -9094,10 +10414,33 @@ struct LslInstance::Impl {
                     return std::holds_alternative<std::string>(value);
                 }))
                 return false;
+        } else if (remote_data) {
+            for (std::size_t i = 0; i < event.arguments.size(); ++i) {
+                const auto& argument = event.arguments[i];
+                if (i == 0 || i == 4) {
+                    if (!std::holds_alternative<std::int32_t>(argument))
+                        return false;
+                } else if (!std::holds_alternative<std::string>(argument)) {
+                    return false;
+                }
+            }
+        } else if (http_response) {
+            const auto* metadata = std::get_if<std::shared_ptr<const LslList>>(&event.arguments[2]);
+            if (!std::holds_alternative<std::string>(event.arguments[0]) ||
+                !std::holds_alternative<std::int32_t>(event.arguments[1]) ||
+                !metadata || !*metadata ||
+                !std::holds_alternative<std::string>(event.arguments[3]))
+                return false;
         } else if (script_control) {
             if (!std::holds_alternative<std::string>(event.arguments[0]) ||
                 !std::holds_alternative<std::int32_t>(event.arguments[1]) ||
                 !std::holds_alternative<std::int32_t>(event.arguments[2]))
+                return false;
+        } else if (email) {
+            if (!std::holds_alternative<std::int32_t>(event.arguments.back()) ||
+                !std::all_of(event.arguments.begin(), event.arguments.end() - 1, [](const auto& value) {
+                    return std::holds_alternative<std::string>(value);
+                }))
                 return false;
         } else if (listen) {
             if (!std::holds_alternative<std::int32_t>(event.arguments[0]) ||
@@ -9110,6 +10453,16 @@ struct LslInstance::Impl {
                 !std::holds_alternative<std::int32_t>(event.arguments[1]) ||
                 !std::holds_alternative<std::string>(event.arguments[2]) ||
                 !std::holds_alternative<std::string>(event.arguments[3]))
+                return false;
+        } else if (event.name == "at_target") {
+            if (!std::holds_alternative<std::int32_t>(event.arguments[0]) ||
+                !std::holds_alternative<framework::Vector3d>(event.arguments[1]) ||
+                !std::holds_alternative<framework::Vector3d>(event.arguments[2]))
+                return false;
+        } else if (event.name == "at_rot_target") {
+            if (!std::holds_alternative<std::int32_t>(event.arguments[0]) ||
+                !std::holds_alternative<LslRotation>(event.arguments[1]) ||
+                !std::holds_alternative<LslRotation>(event.arguments[2]))
                 return false;
         } else if (is_land_collision_event(event.name)) {
             if (!std::holds_alternative<framework::Vector3d>(event.arguments[0]))
@@ -9178,6 +10531,18 @@ struct LslInstance::Impl {
         reset();
     }
     void execute(const Instruction& instruction) {
+        if (instruction.open_remote_data_channel) {
+            if (host.open_remote_data_channel) {
+                const auto channel = host.open_remote_data_channel(context.object, context.item);
+                if (channel)
+                    post({"remote_data", {std::int32_t{1}, channel->str(), framework::Uuid{}.str(),
+                                         std::string{}, std::int32_t{0}, std::string{}}, {}});
+            }
+            const auto milliseconds = 1000.f * host.script_delay_factor;
+            if (milliseconds >= 10 && double(milliseconds) <= std::numeric_limits<std::int32_t>::max())
+                schedule_sleep(static_cast<std::int32_t>(milliseconds), now());
+            return;
+        }
         if (instruction.reset_script) {
             reset_from_script();
             return;
@@ -9211,6 +10576,15 @@ struct LslInstance::Impl {
                                   [this](const LslValue& slot, const LslValue& value, Type type, bool global) {
                                       check_heap_store(slot, value, type, global);
                                   }};
+        if (instruction.close_remote_data_channel) {
+            const auto channel = std::get<std::string>(evaluator.evaluate(*instruction.close_remote_data_channel));
+            if (host.close_remote_data_channel)
+                host.close_remote_data_channel(context.item, channel);
+            const auto milliseconds = 1000.f * host.script_delay_factor;
+            if (milliseconds >= 10 && double(milliseconds) <= std::numeric_limits<std::int32_t>::max())
+                schedule_sleep(static_cast<std::int32_t>(milliseconds), now());
+            return;
+        }
         if (instruction.script_control_name) {
             const auto name = std::get<std::string>(evaluator.evaluate(*instruction.script_control_name));
             const auto* run = instruction.script_control_run.get();
@@ -9437,6 +10811,68 @@ struct LslInstance::Impl {
                 host.set_agent_heal_rate(id, static_cast<float>(rate));
             return;
         }
+        if (instruction.teleport_viewer) {
+            const auto& args = instruction.teleport_arguments;
+            const auto key = std::get<std::string>(evaluator.evaluate(*args[0]));
+            const auto destination = evaluator.evaluate(*args[1]);
+            LslViewerTeleport request;
+            if (const auto name = std::get_if<std::string>(&destination))
+                request.destination = *name;
+            else
+                request.destination = std::get<framework::Vector3d>(destination);
+            request.position = std::get<framework::Vector3d>(evaluator.evaluate(*args[2]));
+            request.look_at = std::get<framework::Vector3d>(evaluator.evaluate(*args[3]));
+            framework::Uuid agent;
+            if (host.teleport_viewer && framework::try_parse_sdk_uuid(key, agent) && !agent.is_zero())
+                host.teleport_viewer(context.object, context.item, agent, request);
+            return;
+        }
+        if (!instruction.teleport_arguments.empty()) {
+            const auto& args = instruction.teleport_arguments;
+            std::size_t first = 0;
+            auto agent = context.owner;
+            bool valid_agent = true;
+            if (!instruction.teleport_owner) {
+                const auto key = std::get<std::string>(evaluator.evaluate(*args[first++]));
+                valid_agent = framework::try_parse_sdk_uuid(key, agent);
+            }
+            LslTeleport request;
+            const auto destination_args = args.size() - first - 2;
+            if (destination_args == 1)
+                request.destination = std::get<std::string>(evaluator.evaluate(*args[first]));
+            else if (destination_args == 2)
+                request.destination = std::array{
+                    std::get<std::int32_t>(evaluator.evaluate(*args[first])),
+                    std::get<std::int32_t>(evaluator.evaluate(*args[first + 1])),
+                };
+            request.position = std::get<framework::Vector3d>(evaluator.evaluate(*args[args.size() - 2]));
+            request.look_at = std::get<framework::Vector3d>(evaluator.evaluate(*args.back()));
+            if (instruction.teleport_owner)
+                evaluator.check_ossl_permission("osTeleportOwner");
+            else if (destination_args != 0)
+                evaluator.check_ossl_permission("osTeleportAgent");
+            if (valid_agent && host.teleport_agent) {
+                const float delay = host.teleport_agent(context.object, context.item, agent, request) *
+                                    host.script_delay_factor;
+                if (delay >= 10.f && delay < 2147483648.f)
+                    schedule_sleep(static_cast<std::int32_t>(delay), now());
+            }
+            return;
+        }
+        if (instruction.local_teleport_arguments.front()) {
+            const auto& args = instruction.local_teleport_arguments;
+            const auto key = std::get<std::string>(evaluator.evaluate(*args[0]));
+            const LslLocalTeleport request{
+                std::get<framework::Vector3d>(evaluator.evaluate(*args[1])),
+                std::get<framework::Vector3d>(evaluator.evaluate(*args[2])),
+                std::get<framework::Vector3d>(evaluator.evaluate(*args[3])),
+                std::get<std::int32_t>(evaluator.evaluate(*args[4])),
+            };
+            framework::Uuid agent;
+            if (host.local_teleport_agent && framework::try_parse_sdk_uuid(key, agent))
+                host.local_teleport_agent(context.object, context.item, agent, request);
+            return;
+        }
         if (instruction.relocate_agent) {
             const auto key = std::get<std::string>(evaluator.evaluate(*instruction.relocate_agent));
             const auto& relocate = instruction.eject_from_land ? host.eject_from_land : host.teleport_agent_home;
@@ -9447,6 +10883,13 @@ struct LslInstance::Impl {
             const float delay = (instruction.eject_from_land ? 1000.f : 5000.f) * host.script_delay_factor;
             if (delay >= 10.f && delay < 2147483648.f)
                 schedule_sleep(static_cast<std::int32_t>(delay), now());
+            return;
+        }
+        if (instruction.render_material_name) {
+            const auto name = std::get<std::string>(evaluator.evaluate(*instruction.render_material_name));
+            const auto face = std::get<std::int32_t>(evaluator.evaluate(*instruction.render_material_face));
+            if (host.set_render_material && !host.set_render_material(context.object, name, face))
+                evaluator.script_error("llSetRenderMaterial: material \"" + name + "\" not found");
             return;
         }
         if (instruction.damage) {
@@ -9842,6 +11285,89 @@ struct LslInstance::Impl {
                 schedule_sleep(static_cast<std::int32_t>(delay), now());
             return;
         }
+        if (instruction.give_inventory_list_arguments.front()) {
+            const auto& args = instruction.give_inventory_list_arguments;
+            const auto key = std::get<std::string>(evaluator.evaluate(*args[0]));
+            const auto category = std::get<std::string>(evaluator.evaluate(*args[1]));
+            const auto list = std::get<std::shared_ptr<const LslList>>(evaluator.evaluate(*args[2]));
+            framework::Uuid destination;
+            if (!host.give_inventory_list || list->items.empty() ||
+                !framework::try_parse_sdk_uuid(key, destination) || destination.is_zero())
+                return;
+            std::vector<std::string> names;
+            names.reserve(list->items.size());
+            for (const auto& item : list->items)
+                names.push_back(value_text(item));
+            const auto status = host.give_inventory_list(context.object, destination, category, names);
+            switch (status) {
+            case LslInventoryGiveStatus::MissingRecipient:
+                evaluator.script_error("llGiveInventoryList: Unable to give list, destination not found");
+                break;
+            case LslInventoryGiveStatus::MissingItem:
+                evaluator.script_error("llGiveInventoryList: Unable to give list, no items found");
+                break;
+            case LslInventoryGiveStatus::TransferFailed:
+                evaluator.script_error("llGiveInventoryList: Unable to give list");
+                break;
+            case LslInventoryGiveStatus::Done:
+                return;
+            default:
+                break;
+            }
+            const float delay = (status == LslInventoryGiveStatus::AvatarOffer ? 3000.f : 100.f) *
+                                host.script_delay_factor;
+            if (delay >= 10.f && delay < 2147483648.f)
+                schedule_sleep(static_cast<std::int32_t>(delay), now());
+            return;
+        }
+        if (instruction.instant_message_arguments.front()) {
+            const auto& args = instruction.instant_message_arguments;
+            const auto key = std::get<std::string>(evaluator.evaluate(*args[0]));
+            const auto message = std::get<std::string>(evaluator.evaluate(*args[1]));
+            if (instruction.give_inventory) {
+                framework::Uuid destination;
+                if (!framework::try_parse_sdk_uuid(key, destination) || destination.is_zero()) {
+                    evaluator.script_error("llGiveInventory: Can't parse destination key '" + key + "'");
+                    return;
+                }
+                if (!host.give_inventory)
+                    return;
+                const auto result = host.give_inventory(context.object, destination, message);
+                switch (result.status) {
+                case LslInventoryGiveStatus::MissingItem:
+                    evaluator.script_error("llGiveInventory: Can't find inventory object '" + message + "'");
+                    break;
+                case LslInventoryGiveStatus::MissingRecipient:
+                    evaluator.script_error("llGiveInventory: Can't find destination '" + destination.str() + "'");
+                    break;
+                case LslInventoryGiveStatus::TransferFailed:
+                    if (host.chat && !result.message.empty())
+                        host.chat({LslChatType::Say, 0, result.message, context});
+                    break;
+                case LslInventoryGiveStatus::AvatarOffer: {
+                    const float delay = 3000.f * host.script_delay_factor;
+                    if (delay >= 10.f && delay < 2147483648.f)
+                        schedule_sleep(static_cast<std::int32_t>(delay), now());
+                    break;
+                }
+                case LslInventoryGiveStatus::Done:
+                case LslInventoryGiveStatus::ObjectList:
+                    break;
+                }
+                return;
+            }
+            if (!host.instant_message || message.empty())
+                return;
+            framework::Uuid recipient;
+            if (!framework::try_parse_sdk_uuid(key, recipient) || recipient.is_zero())
+                evaluator.script_error("llInstantMessage: An invalid key  was passed to llInstantMessage");
+            else
+                host.instant_message(context.object, recipient, message);
+            const float delay = 2000.f * host.script_delay_factor;
+            if (delay >= 10.f && delay < 2147483648.f)
+                schedule_sleep(static_cast<std::int32_t>(delay), now());
+            return;
+        }
         if (instruction.load_url_arguments.front()) {
             const auto& args = instruction.load_url_arguments;
             const auto avatar = std::get<std::string>(evaluator.evaluate(*args[0]));
@@ -10131,6 +11657,69 @@ std::int64_t ticks_after(std::int64_t now, std::int64_t interval) {
     const auto maximum = std::numeric_limits<std::int64_t>::max();
     return now > maximum - interval ? maximum : now + interval;
 }
+std::int64_t timer_origin(std::int64_t now, std::int64_t elapsed) {
+    const auto minimum = std::numeric_limits<std::int64_t>::min();
+    return now < minimum + elapsed ? minimum : now - elapsed;
+}
+std::string yengine_source_hash(std::string_view source) {
+    Lexer lexer(source);
+    std::string tokens;
+    for (auto token = lexer.next(); token.kind != Kind::End; token = lexer.next()) {
+        tokens.push_back('\0');
+        if (token.kind == Kind::Integer) {
+            tokens += std::to_string(token.integer);
+        } else if (token.kind == Kind::Float) {
+            std::array<char, 64> number;
+            auto formatted = std::to_chars(number.data(), number.data() + number.size(), token.real,
+                                           std::chars_format::scientific);
+            if (formatted.ec != std::errc{})
+                return {};
+            const auto marker = std::find(number.data(), formatted.ptr, 'e');
+            if (marker == formatted.ptr || formatted.ptr - marker < 3)
+                return {};
+            const bool negative = marker[1] == '-';
+            int exponent = 0;
+            if (std::from_chars(marker + 2, formatted.ptr, exponent).ec != std::errc{})
+                return {};
+            if (negative)
+                exponent = -exponent;
+            if (exponent >= -4 && exponent < 17) {
+                formatted = std::to_chars(number.data(), number.data() + number.size(), token.real,
+                                          std::chars_format::fixed);
+                if (formatted.ec != std::errc{})
+                    return {};
+            } else {
+                *marker = 'E';
+            }
+            tokens.append(number.data(), formatted.ptr);
+        } else if (token.kind == Kind::String) {
+            tokens.push_back('"');
+            if (token.text.find_first_of("\"\\\n\t") == std::string::npos) {
+                tokens += token.text;
+                tokens.push_back('"');
+            } else {
+                // YEngine's escaped-string token text omits the closing quote.
+                for (const auto character : token.text) {
+                    if (character == '"' || character == '\\')
+                        tokens.push_back('\\');
+                    if (character == '\n')
+                        tokens += "\\n";
+                    else if (character == '\t')
+                        tokens += "\\t";
+                    else
+                        tokens.push_back(character);
+                }
+            }
+        } else {
+            tokens += token.text;
+        }
+    }
+    auto hash = framework::md5(tokens);
+    for (auto& character : hash)
+        if (character >= 'a' && character <= 'f')
+            character -= 'a' - 'A';
+    return hash;
+}
 bool checkpoint_value_matches(Type type, const LslValue& value) {
     if (type == Type::List) {
         const auto* list = std::get_if<std::shared_ptr<const LslList>>(&value);
@@ -10139,6 +11728,103 @@ bool checkpoint_value_matches(Type type, const LslValue& value) {
     return value.index() == default_value(type).index();
 }
 }
+void LslInstance::restore_timer(std::int64_t interval_ticks, std::int64_t remaining_ticks) {
+    if (interval_ticks <= 0)
+        return;
+    impl_->timer_interval = interval_ticks;
+    impl_->next_timer = ticks_after(impl_->now(), std::max<std::int64_t>(remaining_ticks, 0));
+}
+
+void LslInstance::restore_script_clock(std::optional<std::int64_t> elapsed_ticks,
+                                       std::optional<double> minimum_event_delay) {
+    if (elapsed_ticks && *elapsed_ticks >= 0) {
+        const auto now = impl_->host.monotonic_ticks ? impl_->host.monotonic_ticks() : ticks();
+        impl_->timer_start = timer_origin(now, *elapsed_ticks);
+    }
+    if (minimum_event_delay && std::isfinite(*minimum_event_delay)) {
+        impl_->minimum_event_delay = *minimum_event_delay > 0.001 ? *minimum_event_delay : 0.;
+        impl_->next_event_time.reset();
+    }
+}
+
+void LslInstance::restore_queued_events(std::vector<LslEvent> events) {
+    auto& instance = *impl_;
+    for (auto& event : events) {
+        const auto handler = instance.handlers().find(event.name);
+        if (handler == instance.handlers().end() ||
+            event.arguments.size() != handler->second.parameter_count)
+            continue;
+        const auto parameters = std::span(handler->second.local_types).first(event.arguments.size());
+        if (!std::ranges::equal(parameters, event.arguments, checkpoint_value_matches))
+            continue;
+        if (event.name == "state_entry" &&
+            std::ranges::any_of(instance.queue, [](const auto& pending) { return pending.name == "state_entry"; }))
+            continue;
+        ++instance.counts[event.name];
+        instance.queue.push_back(std::move(event));
+    }
+    instance.control.pending_events = instance.queue.size();
+    if (!instance.queue.empty() && instance.control.state == scene::ScriptExecutionState::Idle)
+        instance.control.state = scene::ScriptExecutionState::OnStartQueue;
+}
+
+bool yengine_source_matches(std::string_view source, std::string_view expected_hash) {
+    return expected_hash.size() == 32 && expected_hash == yengine_source_hash(source);
+}
+
+bool LslInstance::restore_yengine_snapshot(const YEngineSnapshot& saved, std::string_view source_hash,
+                                               std::string_view source) {
+    const auto& program = *impl_->program;
+    if (saved.state_index >= program.state_order.size() || !yengine_source_matches(source, source_hash))
+        return false;
+    const bool initialize_globals = saved.initialize_globals && !program.globals.empty();
+    if (initialize_globals &&
+        (saved.state_index != 0 || saved.next_state_index || (saved.event_code != -1 && saved.event_code != 30)))
+        return false;
+
+    // These slots follow XMRInstAbstract.SendArrays. String and key share a slot array.
+    constexpr std::array<std::size_t, 7> slots{3, 2, 7, 7, 8, 6, 4};
+    std::array<std::size_t, 11> consumed{};
+    LslCheckpoint checkpoint;
+    checkpoint.program_hash = program.source_hash;
+    checkpoint.state = program.state_order[saved.state_index];
+    if (saved.next_state_index) {
+        if (*saved.next_state_index >= program.state_order.size() || saved.event_code != 1)
+            return false;
+        checkpoint.next_state = program.state_order[*saved.next_state_index];
+    }
+    checkpoint.running = impl_->control.running;
+    checkpoint.start_parameter = impl_->context.start_parameter;
+    for (const auto& global : program.globals) {
+        const auto slot = slots.at(static_cast<std::size_t>(global.store_type));
+        const auto index = consumed[slot]++;
+        if (index >= saved.globals[slot].size() ||
+            !checkpoint_value_matches(global.store_type, saved.globals[slot][index]))
+            return false;
+        checkpoint.globals.push_back(saved.globals[slot][index]);
+    }
+    for (std::size_t slot = 0; slot < consumed.size(); ++slot)
+        if (consumed[slot] != saved.globals[slot].size())
+            return false;
+    checkpoint.initialized_globals = initialize_globals ? 0 : checkpoint.globals.size();
+    if (saved.event_code >= 0) {
+        const auto event = std::ranges::find(event_mask_bits, static_cast<unsigned>(saved.event_code),
+                                             &std::pair<std::string_view, unsigned>::second);
+        if (event == std::ranges::end(event_mask_bits))
+            return false;
+        const auto& handlers = program.states.at(checkpoint.state).handlers;
+        const auto handler = handlers.find(std::string(event->first));
+        if (handler == handlers.end() || handler->second.parameter_count != saved.event_arguments.size())
+            return false;
+        checkpoint.active_event = LslEvent{std::string(event->first), saved.event_arguments, saved.event_detectors};
+        checkpoint.locals = saved.event_arguments;
+        const auto types = std::span(handler->second.local_types).subspan(saved.event_arguments.size());
+        for (const auto type : types)
+            checkpoint.locals.push_back(default_value(type));
+    }
+    return restore_checkpoint(checkpoint);
+}
+
 std::optional<LslCheckpoint> LslInstance::checkpoint() const {
     const auto& s = *impl_;
     if (!s.fault.empty())
@@ -10234,9 +11920,7 @@ bool LslInstance::restore_checkpoint(const LslCheckpoint& saved) {
     restored->sleep_requested = saved.sleep_requested;
     restored->timer_interval = saved.timer_interval;
     restored->next_timer = ticks_after(now, saved.timer_remaining);
-    const auto minimum = std::numeric_limits<std::int64_t>::min();
-    restored->timer_start = monotonic_now < minimum + saved.timer_elapsed ? minimum
-                                                                        : monotonic_now - saved.timer_elapsed;
+    restored->timer_start = timer_origin(monotonic_now, saved.timer_elapsed);
     restored->last_say_check = now;
     restored->minimum_event_delay = saved.minimum_event_delay;
     if (saved.event_delay_remaining)
@@ -10321,6 +12005,12 @@ LslRunResult LslInstance::run(std::size_t budget) {
                 if (s.next_state && s.active->name == "state_exit") {
                     if (s.host.clear_listeners)
                         s.host.clear_listeners(s.context.item);
+                    if (s.host.cancel_remote_data)
+                        s.host.cancel_remote_data(s.context.item);
+                    if (s.host.clear_targets)
+                        s.host.clear_targets(s.context.item);
+                    if (s.host.clear_sensors)
+                        s.host.clear_sensors(s.context.item);
                     s.state = std::exchange(s.next_state, nullptr);
                     s.queue.clear();
                     s.counts.clear();

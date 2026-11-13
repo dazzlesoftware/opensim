@@ -3,7 +3,7 @@
 #pragma once
 #include "opensim/network/osd_value.hpp"
 namespace opensim::network {
-std::string osd_json(const Value& value,bool preserve_defaults=false);
+std::string osd_json(const Value& value, bool preserve_defaults = false);
 Value parse_osd_json(std::string_view text);
 Value parse_osd_json_utf16(std::u16string_view text);
 }

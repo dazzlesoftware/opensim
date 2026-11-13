@@ -111,7 +111,14 @@ int tree_test() {
     std::cout << '\n';
     return passed ? 0 : 1;
 }
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#endif
 int main(int argc, char** argv) {
+#ifdef _WIN32
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif
     try {
         if (argc == 2 && std::string(argv[1]) == "--tree")
             return tree_test();

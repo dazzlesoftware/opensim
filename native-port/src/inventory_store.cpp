@@ -226,6 +226,8 @@ bool InventoryFolderStore::store(InventoryFolder &folder) {
     statement.bind(5, folder.owner.str());
     statement.bind(6, folder.parent.str());
     statement.row();
+    if (sqlite3_changes(impl_->db) == 0)
+        return false;
     impl_->increment(folder.parent);
     return true;
 }
@@ -310,6 +312,8 @@ bool InventoryFolderStore::store(InventoryItem &item) {
     statement.bind(19, item.parent.str());
     statement.bind(20, item.group_permissions);
     statement.row();
+    if (sqlite3_changes(impl_->db) == 0)
+        return false;
     impl_->increment(item.parent);
     return true;
 }

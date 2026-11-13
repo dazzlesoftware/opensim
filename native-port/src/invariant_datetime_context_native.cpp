@@ -1,6 +1,7 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // Source-derived .NET Runtime v8.0.31 native provider ownership/cache binding.
 // .NET Foundation, MIT license; see third_party/dotnet_collation/LICENSE.
+#include "opensim/framework/atomic_shared_ptr.hpp"
 #include "invariant_datetime_context_platform.hpp"
 #include <algorithm>
 #include "opensim/framework/file_system_name.hpp"
@@ -30,7 +31,7 @@ struct NativeInvariantDateTimeContext::State {
         std::vector<std::pair<std::u16string, std::shared_ptr<TimeZone>>> named;
         std::function<bool(std::u16string_view, std::u16string_view)> named_equal;
     };
-    std::atomic<std::shared_ptr<Epoch>> cache{std::make_shared<Epoch>()};
+    opensim::framework::AtomicSharedPtr<Epoch> cache{std::make_shared<Epoch>()};
     std::mutex calendar_mutex;
     std::optional<int> cutoff;
     explicit State(NativeInvariantDateTimeContextOptions o)

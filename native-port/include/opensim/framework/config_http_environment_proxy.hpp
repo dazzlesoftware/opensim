@@ -1,6 +1,7 @@
 // Consumed .NET8 HttpEnvironmentProxy and companion credential controller.
 // .NET Foundation MIT license, third_party/dotnet_collation/LICENSE.
 #pragma once
+#include "opensim/framework/atomic_shared_ptr.hpp"
 #include <stdexcept>
 #include <optional>
 #include <vector>
@@ -63,7 +64,7 @@ enum class ConfigHttpEnvironmentProxyPlatform { Windows, Unix };
 class ConfigHttpEnvironmentProxy : public ConfigHttpProxy {
     ConfigUriObjectPtr http_, https_;
     std::optional<std::vector<ConfigUriText>> bypass_;
-    std::atomic<std::shared_ptr<ConfigXmlCredentials>> credentials_;
+    opensim::framework::AtomicSharedPtr<ConfigXmlCredentials> credentials_;
     std::shared_ptr<ConfigHttpEnvironmentProxyBackend> backend_;
     ConfigHttpEnvironmentProxy(ConfigUriObjectPtr, ConfigUriObjectPtr, ConfigUriText,
                                std::shared_ptr<ConfigHttpEnvironmentProxyBackend>);

@@ -14,6 +14,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <utility>
 namespace opensim::scene {
 struct PrimShape {
     int face_count() const;
@@ -75,11 +76,16 @@ struct PhysicalPrim {
 };
 // Single-root object projection for the scene owner. Full linked parts,
 // permissions/effects, physics, inventory/scripts and storage are not implied.
+inline constexpr std::uint8_t grass_pcode = 95;
+inline constexpr bool is_vegetation(std::uint8_t pcode) {
+    return pcode == grass_pcode || pcode == 111 || pcode == 255;
+}
+
 struct SceneObject {
     SceneObject();
     framework::Uuid id, owner, creator, group, rezzer, last_owner;
     std::uint32_t local_id = 0, parent_id = 0, flags = 0;
-    std::uint64_t link_order = 0;
+    std::uint64_t link_order = 0, link_membership_order = 0;
     std::string name = "Object", description, touch_name, sit_name;
     std::string floating_text, media_url;
     // OpenSimulator stores the per-face media list as an OSMedia XML value.
@@ -107,6 +113,7 @@ struct SceneObject {
     framework::Vector3 stand_target{};
     framework::Vector3 camera_eye_offset{}, camera_at_offset{};
     bool force_mouselook = false;
+    std::int32_t script_access_pin = 0;
     framework::Quaternion sit_target_orientation{0, 0, 0, 1};
     std::uint8_t material = 3;
     std::array<std::int32_t, 5> pay_prices{-2, -2, -2, -2, -2};
@@ -129,6 +136,7 @@ struct SceneObject {
     framework::PrimLookAt look_at;
     std::vector<std::uint8_t> texture_entry;
     std::vector<std::uint8_t> texture_animation;
+    std::vector<std::uint8_t> particle_system;
     std::vector<std::uint8_t> extra_params{0};
     std::vector<std::uint8_t> object_animations;
     std::vector<std::uint8_t> material_overrides;
@@ -164,6 +172,7 @@ class World {
 public:
     explicit World(framework::Uuid region = {}, std::uint32_t width = 256, std::uint32_t height = 256,
                    std::uint32_t last_local_id = 720000);
+    void clamp_inserted_prim_sizes(float minimum, float maximum);
     framework::Uuid region_id() const {
         return region_;
     }
@@ -191,6 +200,7 @@ public:
     std::vector<SceneObject> attachments(std::uint32_t parent) const;
     std::int32_t link_number(framework::Uuid id) const;
     framework::Uuid link_key(framework::Uuid id, std::int32_t number) const;
+    std::vector<framework::Uuid> link_children_in_membership_order(framework::Uuid root) const;
     framework::Vector3 geometric_center(framework::Uuid id) const;
     std::array<framework::Vector3, 2> bounding_box(framework::Uuid id) const;
     std::int32_t prim_count(framework::Uuid id, bool include_attachments) const;
@@ -217,16 +227,21 @@ public:
     void set_seat_camera(framework::Uuid id, std::optional<framework::Vector3> eye,
                          std::optional<framework::Vector3> at, std::optional<bool> mouselook);
     void set_allowed_drop(framework::Uuid id, bool allowed);
+    void set_script_access_pin(framework::Uuid id, std::int32_t pin);
     bool update_shape(framework::Uuid id, PrimShape shape);
     bool update_texture(framework::Uuid id, const std::vector<std::uint8_t>& bytes);
     void set_texture_animation(framework::Uuid id, const std::vector<std::uint8_t>& bytes);
+    void set_particle_system(framework::Uuid id, std::vector<std::uint8_t> bytes,
+                             std::optional<float> timed_age = {},
+                             std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now());
+    void expire_particle_systems(std::chrono::steady_clock::time_point now);
     bool update_face_media(const SceneObject& previous, std::string xml, std::string version,
                            std::vector<std::uint8_t> textures);
     std::optional<std::uint8_t> update_material(framework::Uuid id, std::uint8_t material);
     void update_extra_param(framework::Uuid id, std::uint16_t type, bool enabled,
                             const std::vector<std::uint8_t>& data);
     bool set_render_materials(const SceneObject& previous, std::vector<std::uint8_t> extra_params,
-                              std::vector<std::uint8_t> overrides);
+                              std::vector<std::uint8_t> overrides, std::int32_t script_changes = 0);
     bool set_legacy_material_textures(const SceneObject& previous, std::vector<std::uint8_t> textures,
                                       bool publish_update = true);
     bool set_dynamic_attributes(framework::Uuid id, std::string_view expected, std::string xml);
@@ -247,9 +262,12 @@ public:
     bool update_motion(framework::Uuid id, framework::Vector3 velocity, framework::Vector3 angular_velocity,
                        framework::Vector3 acceleration);
     bool remove(framework::Uuid id, bool send_update = true);
+    bool derez_script_object(framework::Uuid source, framework::Uuid target, bool temporary,
+                             std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now());
     void publish_added_linkset(framework::Uuid root);
-    bool delink_child(framework::Uuid id, framework::Uuid expected_root);
-    bool delink_root(framework::Uuid id);
+    void schedule_linkset_update(framework::Uuid root, std::int32_t script_changes);
+    bool delink_child(framework::Uuid id, framework::Uuid expected_root, bool notify_remaining = true);
+    bool delink_root(framework::Uuid id, bool membership_order = false);
     void set_group_flags(framework::Uuid root, bool physical, bool temporary, bool phantom,
                          std::optional<bool> volume_detect = {});
     void set_part_volume_detect(framework::Uuid part, bool enabled);
@@ -258,6 +276,8 @@ public:
     bool set_sale_info(framework::Uuid root, std::uint8_t type, std::int32_t price);
     bool set_linkset_data(framework::Uuid root, std::vector<std::uint8_t> data,
                           std::optional<std::int32_t> empty_limit = {});
+    bool transfer_temporary_attachment(const SceneObject& expected, framework::Uuid owner, framework::Uuid group,
+                                       bool apply_next_permissions);
     bool sell_original(const SceneObject& expected, framework::Uuid owner, framework::Uuid group,
                        bool apply_next_permissions, bool propagate_permissions, bool included_with_parcel);
     std::optional<PrimPhysicsProperties> update_extra_physics(framework::Uuid id, PrimPhysicsProperties requested,
@@ -278,7 +298,7 @@ public:
                       std::optional<framework::Vector3> position = {});
     float group_scale_limit(framework::Uuid root, float limit, bool maximum) const;
     bool resize_group_uniform(framework::Uuid root, double factor, float minimum, float maximum);
-    bool link_prim(framework::Uuid id, framework::Uuid root, int physical_capacity = 0);
+    bool link_prim(framework::Uuid id, framework::Uuid root, int physical_capacity = 0, bool insert = false);
     bool set_inventory_state(framework::Uuid id, bool empty, bool scripted, bool touch,
                              std::optional<std::uint32_t> script_local_flags = {});
     std::vector<WorldEvent> drain_events();
@@ -287,16 +307,22 @@ private:
     std::optional<SceneObject> add_unlocked(SceneObject object, bool attach_to_backup, bool send_update);
     bool remove_unlocked(framework::Uuid id, bool send_update = true);
     void mark_linkset_changed_unlocked(SceneObject& part);
+    SceneObject snapshot_unlocked(const SceneObject& part, std::chrono::steady_clock::time_point now) const;
+    bool particles_expired_unlocked(framework::Uuid id, std::chrono::steady_clock::time_point now) const;
     framework::Uuid linkset_root_id_unlocked(framework::Uuid id) const;
     std::map<framework::Uuid, std::chrono::steady_clock::time_point> temporary_expiry_;
+    std::map<framework::Uuid, std::chrono::duration<double>> particle_expiry_;
+    std::uint64_t assign_link_membership_unlocked(framework::Uuid root);
     void event_unlocked(WorldEventKind kind, const SceneObject& object, std::int32_t script_changes = 0);
     framework::Uuid region_;
     Terrain terrain_;
     std::atomic<std::uint32_t> last_local_id_;
     mutable std::mutex mutex_;
+    std::optional<std::pair<float, float>> insertion_scale_limits_;
     std::map<framework::Uuid, SceneObject> objects_;
     std::map<std::uint32_t, std::vector<framework::Uuid>> attachments_;
     std::map<std::uint32_t, framework::Uuid> by_local_;
+    std::map<framework::Uuid, std::vector<std::uint64_t>> free_link_memberships_;
     std::set<framework::Uuid> selected_;
     std::vector<WorldEvent> events_;
     std::uint64_t sequence_ = 0, link_sequence_ = 0;

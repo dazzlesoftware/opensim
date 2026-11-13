@@ -816,11 +816,23 @@ HttpAuthPassword=service-password
             )
             db.commit()
         expected_buddies = {friend_id: (5, 3), foreign_id: (1, 7)}
+        saved_urls = {
+            "InventoryServerURI": "http://inventory-old.example.test",
+            "AssetServerURI": "http://assets.example.test",
+        }
+        with contextlib.closing(sqlite3.connect(root / "accounts.db")) as db, db:
+            db.execute(
+                "UPDATE UserAccounts SET ServiceURLs=? WHERE PrincipalID=?",
+                (urllib.parse.urlencode(saved_urls).replace("&", " "), principal),
+            )
 
         # Restart the actual server with the remote simulation connector, retaining
         # the same SQLite accounts, inventory, grid-user and region services.
         class Simulator(http.server.BaseHTTPRequestHandler):
             requests = []
+            reject_create = False
+            reject_compressed_create = False
+            transfer_version = 0.4
 
             def log_message(self, *args):
                 pass
@@ -840,7 +852,8 @@ HttpAuthPassword=service-password
 
             def receive(self):
                 body = self.rfile.read(int(self.headers["Content-Length"]))
-                if self.headers.get("X-Content-Encoding") == "gzip":
+                compressed = self.headers.get("X-Content-Encoding") == "gzip"
+                if compressed:
                     body = gzip.decompress(body)
                 try:
                     decoded = json.loads(body)
@@ -858,13 +871,17 @@ HttpAuthPassword=service-password
                     )
                     self.send_error(400)
                     return
-                self.requests.append((self.command, self.path, decoded))
+                self.requests.append((self.command, self.path, decoded, compressed))
+                if self.command == "POST" and compressed and self.reject_compressed_create:
+                    self.send_error(415)
+                    return
+                rejected = self.command == "POST" and self.reject_create
                 data = json.dumps(
                     {
-                        "success": True,
-                        "reason": "",
-                        "negotiated_inbound_version": 0.4,
-                        "negotiated_outbound_version": 0.4,
+                        "success": not rejected,
+                        "reason": "fixture refused admission" if rejected else "",
+                        "negotiated_inbound_version": self.transfer_version,
+                        "negotiated_outbound_version": self.transfer_version,
                         "features": [],
                     }
                 ).encode()
@@ -889,6 +906,7 @@ HttpAuthPassword=service-password
                 ).replace(
                     "RequireInventory=true",
                     "RequireInventory=true\nWelcomeMessage=Hello <USERNAME>\nDSTZone=none\n"
+                    "SRV_InventoryServerURI=http://inventory-new.example.test\n"
                     f"MessageUrl=http://127.0.0.1:{simulator.server_port}/welcome",
                 )
                 + "\n[LibraryService]\nDefaultLibrary="
@@ -960,8 +978,35 @@ HttpAuthPassword=service-password
                     serverIP="127.0.0.1",
                     serverURI=f"http://127.0.0.1:{simulator.server_port}/",
                 )
+                Simulator.reject_create = True
+                refused = login()
+                check(
+                    refused.get("login") == "false" and refused.get("reason") == "key"
+                    and refused.get("message") == "fixture refused admission",
+                    "remote create-agent refusal reaches the viewer",
+                )
+                attempts = [entry[0] for entry in Simulator.requests]
+                check(
+                    bool(attempts) and attempts == ["QUERYACCESS", "POST"] * (len(attempts) // 2),
+                    f"remote destinations refuse admission after granting access: {attempts}",
+                )
+                refused_sessions = {entry[2]["session_id"] for entry in Simulator.requests if entry[0] == "POST"}
+                check(
+                    len(refused_sessions) == 1
+                    and service(
+                        "/presence", METHOD="getagent", SessionID=next(iter(refused_sessions))
+                    ).findtext("result") == "null"
+                    and service("/griduser", METHOD="getgriduserinfo", UserID=principal).findtext(
+                        "result/Online"
+                    ) != "True",
+                    "refused admission clears presence and leaves the grid-user offline",
+                )
+                Simulator.requests.clear()
+                Simulator.reject_create = False
+                Simulator.reject_compressed_create = True
                 success = login(headers={"X-Forwarded-For": "203.0.113.42, 198.51.100.7"},
                                 scope=" 00000000-0000-0000-0000-000000000000suffix")
+                Simulator.reject_compressed_create = False
                 check(
                     success.get("login") == "true",
                     "actual native server completes successful XML-RPC login through remote simulation connector",
@@ -994,10 +1039,40 @@ HttpAuthPassword=service-password
                     "successful HTTP login includes persisted inventory and complete bundled library skeleton",
                 )
                 check(
-                    [r[0] for r in Simulator.requests] == ["QUERYACCESS", "POST"],
-                    "HTTP login queries access before create-agent",
+                    [(entry[0], entry[3]) for entry in Simulator.requests]
+                    == [("QUERYACCESS", False), ("POST", True), ("POST", False)]
+                    and Simulator.requests[1][1:3] == Simulator.requests[2][1:3],
+                    "HTTP login retries the same create-agent request without compression after HTTP 415",
                 )
                 circuit = Simulator.requests[1][2]
+                appearance = circuit["packed_appearance"]
+                check(
+                    circuit["context"]["WearablesCount"] == 15
+                    and len(appearance["wearables"]) == 15
+                    and len(appearance["textures"]) == 29
+                    and "te8" not in appearance,
+                    "legacy simulator negotiation sends legacy wearables and texture fields",
+                )
+                expected_urls = {
+                    "InventoryServerURI": "http://inventory-new.example.test/",
+                    "AssetServerURI": "http://assets.example.test/",
+                }
+                legacy_urls = circuit["service_urls"]
+                check(
+                    circuit["serviceurls"] == expected_urls
+                    and dict(zip(legacy_urls[::2], legacy_urls[1::2])) == expected_urls,
+                    "login circuit includes normalized legacy and configured service URLs",
+                )
+                with contextlib.closing(sqlite3.connect(root / "accounts.db")) as db:
+                    encoded_urls, = db.execute(
+                        "SELECT ServiceURLs FROM UserAccounts WHERE PrincipalID=?", (principal,)
+                    ).fetchone()
+                check(
+                    dict(urllib.parse.parse_qsl(encoded_urls.replace(" ", "&"))) == {
+                        **saved_urls, "InventoryServerURI": expected_urls["InventoryServerURI"]
+                    },
+                    "login persists the configured override and retains the database-only URL",
+                )
                 check(
                     circuit["client_ip"] == "203.0.113.42",
                     "HTTP XML-RPC forwards original first XFF address into admitted circuit",
@@ -1237,6 +1312,7 @@ HttpAuthPassword=service-password
                 for key, value in fields.items():
                     ET.SubElement(llsd_map, "key").text = key
                     ET.SubElement(llsd_map, "string").text = value
+                Simulator.transfer_version = 0.8
                 status, body = request(
                     "/",
                     ET.tostring(llsd_request),
@@ -1257,6 +1333,15 @@ HttpAuthPassword=service-password
                     Simulator.requests[-1][2]["client_ip"] == "127.0.0.1",
                     "HTTP LLSD admission retains socket peer despite forwarded header",
                 )
+                modern_circuit = Simulator.requests[-1][2]
+                modern_appearance = modern_circuit["packed_appearance"]
+                check(
+                    modern_circuit["context"]["WearablesCount"] == -1
+                    and modern_appearance.get("te8")
+                    and "textures" not in modern_appearance,
+                    "modern simulator negotiation sends packed baked textures without a wearable cap",
+                )
+                Simulator.transfer_version = 0.4
                 check(
                     "http_port" not in values
                     and values["message"].text == "Console Connected User\nNext"

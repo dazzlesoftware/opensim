@@ -625,7 +625,10 @@ void actual() {
     {
         std::ofstream file(root / "server.ini");
         file
-            << "[Modules]\nAssetCaching=FlotsamAssetCache\nAssetServices=LocalAssetServicesConnector\n[AssetCache]\nFileCacheEnabled=false\nMemoryCacheEnabled=true\nMemoryCacheTimeout=0.25\n[AssetService]\nLocalServiceModule=OpenSim.Services.AssetService.dll:AssetService\nStorageProvider=OpenSim.Data.SQLite.dll\nConnectionString=URI=file:"
+            << "[Modules]\nAssetCaching=FlotsamAssetCache\nAssetServices=LocalAssetServicesConnector\n[AssetCache]\n"
+               "FileCacheEnabled=false\nMemoryCacheEnabled=true\nMemoryCacheTimeout=0.25\n[AssetService]\n"
+               "LocalServiceModule=OpenSim.Services.AssetService.dll:AssetService\n"
+               "StorageProvider=OpenSim.Data.SQLite.dll\nConnectionString=URI=file:"
             << path_text(root / "assets.db")
             << ";version=3;Pooling=false\nAssetLoaderEnabled=false\nDefaultAssetLoader=OpenSim.Framework.AssetLoader.Filesystem.dll\nAssetLoaderArgs="
             << path_text(root / "control.xml") << '\n';

@@ -600,23 +600,8 @@ void dct16x16(float* a, int* iout, int& wbits) {
     }
 }
 
-void encode(Bits& out, const Terrain& t, TerrainPatchCoordinate p) {
-    auto [low, high] = t.patch_min_max(p.x, p.y);
-    float frange = (high - low) + 1.f;
-    if (!std::isfinite(frange) || frange < 1.f || frange >= 2147483648.f || !std::isfinite(low))
-        throw std::invalid_argument("terrain patch range is not encodable");
-    int range = static_cast<int>(frange);
-    bool large = t.width() > 256 || t.height() > 256;
-    std::uint32_t id = large ? (p.x << 16) | (p.y & 65535) : (p.x << 5) | (p.y & 31);
-    if (std::nearbyint(static_cast<double>(frange) * 100.) / 100. == 1.) {
-        out.byte(0);
-        out.real(low - .5f);
-        out.bits(1, 16);
-        out.bits(id, large ? 32 : 10);
-        out.bits(2, 2);
-        return;
-    }
-    auto block = t.patch(p.x, p.y, .5f * range + low, 1024.f / range);
+void encode_coefficients(Bits& out, std::span<float, 256> block, float low, int range,
+                         std::uint32_t id, bool large) {
     for (float f : block)
         if (!std::isfinite(f))
             throw std::invalid_argument("nonfinite terrain sample");
@@ -650,7 +635,49 @@ void encode(Bits& out, const Terrain& t, TerrainPatchCoordinate p) {
         i++;
     }
 }
+void encode(Bits& out, const Terrain& t, TerrainPatchCoordinate p) {
+    auto [low, high] = t.patch_min_max(p.x, p.y);
+    const float frange = (high - low) + 1.f;
+    if (!std::isfinite(frange) || frange < 1.f || frange >= 2147483648.f || !std::isfinite(low))
+        throw std::invalid_argument("terrain patch range is not encodable");
+    const int range = static_cast<int>(frange);
+    const bool large = t.width() > 256 || t.height() > 256;
+    const std::uint32_t id = large ? (p.x << 16) | (p.y & 65535) : (p.x << 5) | (p.y & 31);
+    if (std::nearbyint(static_cast<double>(frange) * 100.) / 100. == 1.) {
+        out.byte(0);
+        out.real(low - .5f);
+        out.bits(1, 16);
+        out.bits(id, large ? 32 : 10);
+        out.bits(2, 2);
+        return;
+    }
+    auto block = t.patch(p.x, p.y, .5f * range + low, 1024.f / range);
+    encode_coefficients(out, block, low, range, id, large);
+}
 } // namespace
+TerrainLayerPacket wind_layer_packet(std::span<const framework::Vector3, 256> wind) {
+    constexpr std::uint8_t type = 55;
+    Bits out;
+    out.bits(264, 16);
+    out.byte(16);
+    out.byte(type);
+    for (const auto axis : {&framework::Vector3::x, &framework::Vector3::y}) {
+        std::array<float, 256> block;
+        std::ranges::transform(wind, block.begin(), axis);
+        const auto [minimum, maximum] = std::ranges::minmax(block);
+        const float frange = (maximum - minimum) + 1.f;
+        if (!std::isfinite(frange) || frange < 1.f || frange >= 2147483648.f || !std::isfinite(minimum))
+            throw std::invalid_argument("wind patch range is not encodable");
+        const int range = static_cast<int>(frange);
+        const float sub = .5f * range + minimum;
+        const float premult = (1.f / range) * 1024.f;
+        for (auto& value : block)
+            value = (value - sub) * premult;
+        encode_coefficients(out, block, minimum, range, 0, false);
+    }
+    out.byte(97);
+    return {type, std::move(out.data)};
+}
 std::vector<TerrainLayerPacket> terrain_layer_packets(const Terrain& terrain,
                                                       std::span<const TerrainPatchCoordinate> patches) {
     // Use a consistent height/taint snapshot across a stream, without consuming taints.

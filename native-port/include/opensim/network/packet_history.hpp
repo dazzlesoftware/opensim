@@ -40,7 +40,7 @@ public:
 private:
     std::vector<std::uint32_t> items_;
     std::unordered_set<std::uint32_t> set_;
-    std::size_t first_=0,next_=0;
+    std::size_t first_ = 0, next_ = 0;
     std::mutex mutex_;
 };
 }

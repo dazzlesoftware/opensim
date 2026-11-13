@@ -1,6 +1,7 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #pragma once
+#include "opensim/framework/atomic_shared_ptr.hpp"
 #include "opensim/services/scene_capability_events.hpp"
 #include "opensim/server/get_assets.hpp"
 #include "opensim/framework/object_job_engine.hpp"
@@ -43,9 +44,9 @@ class AssetsModuleBackend : public std::enable_shared_from_this<AssetsModuleBack
 };
 struct AssetsModuleState {
     std::recursive_mutex load_mutex;
-    std::atomic<std::shared_ptr<server::AssetRetrievalService>> service;
-    std::atomic<std::shared_ptr<server::GetAssetsHandler>> handler;
-    std::atomic<std::shared_ptr<framework::ObjectJobQueue>> worker;
+    opensim::framework::AtomicSharedPtr<server::AssetRetrievalService> service;
+    opensim::framework::AtomicSharedPtr<server::GetAssetsHandler> handler;
+    opensim::framework::AtomicSharedPtr<framework::ObjectJobQueue> worker;
     framework::AtomicInt32Property scenes;
 };
 class AssetPollHandler;
@@ -98,8 +99,8 @@ class GetAssetsModule : public std::enable_shared_from_this<GetAssetsModule> {
     friend struct GetAssetsModuleProbe;
     std::shared_ptr<AssetsModuleBackend> backend_;
     std::shared_ptr<AssetsModuleState> state_;
-    std::atomic<std::shared_ptr<AssetsModuleScene>> scene_;
-    std::atomic<std::shared_ptr<AssetsUserManagement>> users_;
+    opensim::framework::AtomicSharedPtr<AssetsModuleScene> scene_;
+    opensim::framework::AtomicSharedPtr<AssetsUserManagement> users_;
     bool enabled_ = false;
     std::array<std::optional<std::string>, 4> urls_;
 };

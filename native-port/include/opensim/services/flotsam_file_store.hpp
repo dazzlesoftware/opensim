@@ -55,7 +55,8 @@ public:
         bool update_access = false;
     };
     FlotsamFileStore(Options, std::shared_ptr<FlotsamFileBackend>,
-                     std::shared_ptr<FlotsamFileState> state = {});
+                     std::shared_ptr<FlotsamFileState> state = {},
+                     std::function<Options()> live_options = {});
     std::u16string file_name_text(const std::string& id) const;
     std::filesystem::path file_name(const std::string& id) const;
     void cache(const std::string& id, std::shared_ptr<framework::AssetBase>, bool replace = false);
@@ -71,6 +72,7 @@ public:
 
 private:
     Options options_;
+    std::function<Options()> live_options_;
     std::shared_ptr<FlotsamFileBackend> backend_;
     std::shared_ptr<FlotsamFileState> state_;
     mutable std::mutex statistics_mutex_;

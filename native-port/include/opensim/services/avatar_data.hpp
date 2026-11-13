@@ -7,7 +7,7 @@ namespace opensim::services {
 bool parse_avatar_float(const std::optional<std::string>& text,float& value);
 std::string avatar_float_string(float value);
 struct AvatarData {
-    using Fields=framework::OrderedDictionary<std::string,std::optional<std::string>>;
+    using Fields = framework::OrderedDictionary<std::string, std::optional<std::string>>;
     int avatar_type=0;
     std::shared_ptr<Fields> data;
     AvatarData()=default;

@@ -30,6 +30,7 @@ class FlotsamCacheMaintenance {
   public:
     using Path = std::filesystem::path;
     FlotsamCacheMaintenance(Path, std::shared_ptr<FlotsamMaintenanceBackend>);
+    FlotsamCacheMaintenance(Path, std::function<void(const std::string&, const std::string&)> log);
     void stamp(framework::Uuid);
     // Console clear removes root files as well as subdirectories.
     void clear_files();

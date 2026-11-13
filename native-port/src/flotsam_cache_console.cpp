@@ -116,6 +116,99 @@ void FlotsamCacheConsole::expire(const std::shared_ptr<Arguments>& args,
         write(output, "File cache not active, not clearing.");
     return;
 }
+void FlotsamCacheConsole::status(const std::shared_ptr<FlotsamInstanceConfig>& config,
+                                const std::shared_ptr<FlotsamCacheLifecycle>& life,
+                                const std::shared_ptr<FlotsamConsoleBackend>& b, const Output& output) {
+    if (!config || !life || !b || !b->post || !b->memory_count || !b->hit_report ||
+        (config->file && (!b->file_count || !b->status_files || !b->last_write || !b->format_date)))
+        throw std::invalid_argument("Incomplete Flotsam status dependencies");
+    b->post(
+        [b, config, life, output] {
+            if (config->memory)
+                write(output, "[FLOTSAM ASSET CACHE] Memory Cache: " +
+                                  std::to_string(b->memory_count()) + " assets");
+            else
+                write(output, "[FLOTSAM ASSET CACHE] Memory cache disabled");
+            if (config->file) {
+                bool scanning;
+                {
+                    std::lock_guard lock(life->timer_mutex);
+                    scanning = life->cleanup_running;
+                }
+                if (scanning)
+                    write(
+                        output,
+                        "[FLOTSAM ASSET CACHE] a deep scan is in progress, skipping file cache assets count");
+                else {
+                    write(output, "[FLOTSAM ASSET CACHE] counting file cache assets");
+                    auto count = b->file_count(config->directory);
+                    write(output,
+                          "[FLOTSAM ASSET CACHE]   File Cache: " + std::to_string(count) + " assets");
+                }
+            } else
+                write(output, "[FLOTSAM ASSET CACHE] File cache disabled");
+            for (const auto& line : b->hit_report())
+                write(output, line);
+            if (config->file) {
+                write(
+                    output,
+                    "[FLOTSAM ASSET CACHE] Deep scans have previously been performed on the following regions:");
+                for (const auto& entry : b->status_files(config->directory, "*.fac")) {
+                    if (!entry)
+                        null_reference();
+                    auto path = framework::utf16_replacing(*entry);
+                    auto start = path.find(u'_'), end = path.find(u'.');
+                    if (start != path.npos && end != path.npos && start > 0 && end > 0) {
+                        if (end < start) {
+                            auto length =
+                                static_cast<std::int64_t>(end) - static_cast<std::int64_t>(start);
+#ifdef _WIN32
+                            const char* newline = "\r\n";
+#else
+                            const char* newline = "\n";
+#endif
+                            throw FlotsamConsoleError(
+                                FlotsamConsoleError::Kind::ArgumentOutOfRange,
+                                "length ('" + std::to_string(length) +
+                                    "') must be a non-negative value. (Parameter 'length')" +
+                                    newline + "Actual value was " + std::to_string(length) + ".",
+                                "length", length);
+                        }
+                        auto region =
+                            framework::utf8(std::u16string_view(path).substr(start + 1, end - start));
+                        auto stamp = b->last_write(entry);
+                        write(output, "[FLOTSAM ASSET CACHE] Region: " + region + ", " +
+                                          b->format_date(stamp, "MM/dd/yyyy hh:mm:ss"));
+                    }
+                }
+            }
+        },
+        "CacheStatus");
+}
+void FlotsamCacheConsole::touch_assets(const std::shared_ptr<FlotsamCacheLifecycle>& life,
+                                      const std::shared_ptr<FlotsamConsoleBackend>& b, const Output& output) {
+    if (!life || !b || !b->post || !b->sleep || !b->touch)
+        throw std::invalid_argument("Incomplete Flotsam scene cache dependencies");
+    {
+        std::lock_guard lock(life->timer_mutex);
+        if (life->cleanup_running) {
+            write(output, "Flotsam assets check already running");
+            return;
+        }
+        life->cleanup_running = true;
+    }
+    write(output, "Flotsam Ensuring assets are cached for all scenes.");
+    b->post(
+        [b, life, output] {
+            bool was_running = stop_timer(life);
+            if (was_running)
+                b->sleep(120);
+            auto count = b->touch(true);
+            finish(life, was_running);
+            write(output, "Completed check with " + std::to_string(count) + " assets.");
+        },
+        "TouchAllSceneAssets");
+}
 void FlotsamCacheConsole::handle(const std::shared_ptr<Arguments>& args) {
     auto b = backend_;
     auto config = config_;
@@ -127,68 +220,7 @@ void FlotsamCacheConsole::handle(const std::shared_ptr<Arguments>& args) {
         const auto command = (*args)[1];
         const auto cmd = command.value_or("");
         if (command == "status") {
-            b->post(
-                [b, config, life, output] {
-                    if (config->memory)
-                        write(output, "[FLOTSAM ASSET CACHE] Memory Cache: " +
-                                          std::to_string(b->memory_count()) + " assets");
-                    else
-                        write(output, "[FLOTSAM ASSET CACHE] Memory cache disabled");
-                    if (config->file) {
-                        bool scanning;
-                        {
-                            std::lock_guard lock(life->timer_mutex);
-                            scanning = life->cleanup_running;
-                        }
-                        if (scanning)
-                            write(
-                                output,
-                                "[FLOTSAM ASSET CACHE] a deep scan is in progress, skipping file cache assets count");
-                        else {
-                            write(output, "[FLOTSAM ASSET CACHE] counting file cache assets");
-                            auto count = b->file_count(config->directory);
-                            write(output,
-                                  "[FLOTSAM ASSET CACHE]   File Cache: " + std::to_string(count) + " assets");
-                        }
-                    } else
-                        write(output, "[FLOTSAM ASSET CACHE] File cache disabled");
-                    for (const auto& line : b->hit_report())
-                        write(output, line);
-                    if (config->file) {
-                        write(
-                            output,
-                            "[FLOTSAM ASSET CACHE] Deep scans have previously been performed on the following regions:");
-                        for (const auto& entry : b->status_files(config->directory, "*.fac")) {
-                            if (!entry)
-                                null_reference();
-                            auto path = framework::utf16_replacing(*entry);
-                            auto start = path.find(u'_'), end = path.find(u'.');
-                            if (start != path.npos && end != path.npos && start > 0 && end > 0) {
-                                if (end < start) {
-                                    auto length =
-                                        static_cast<std::int64_t>(end) - static_cast<std::int64_t>(start);
-#ifdef _WIN32
-                                    const char* newline = "\r\n";
-#else
-                                    const char* newline = "\n";
-#endif
-                                    throw FlotsamConsoleError(
-                                        FlotsamConsoleError::Kind::ArgumentOutOfRange,
-                                        "length ('" + std::to_string(length) +
-                                            "') must be a non-negative value. (Parameter 'length')" +
-                                            newline + "Actual value was " + std::to_string(length) + ".",
-                                        "length", length);
-                                }
-                                auto region =
-                                    framework::utf8(std::u16string_view(path).substr(start + 1, end - start));
-                                auto stamp = b->last_write(entry);
-                                write(output, "[FLOTSAM ASSET CACHE] Region: " + region + ", " +
-                                                  b->format_date(stamp, "MM/dd/yyyy hh:mm:ss"));
-                            }
-                        }
-                    }
-                },
-                "CacheStatus");
+            status(config, life, b, output);
             return;
         }
         if (command == "clear") {
@@ -229,25 +261,7 @@ void FlotsamCacheConsole::handle(const std::shared_ptr<Arguments>& args) {
             return;
         }
         if (command == "assets") {
-            {
-                std::lock_guard lock(life->timer_mutex);
-                if (life->cleanup_running) {
-                    write(output, "Flotsam assets check already running");
-                    return;
-                }
-                life->cleanup_running = true;
-            }
-            write(output, "Flotsam Ensuring assets are cached for all scenes.");
-            b->post(
-                [b, life, output] {
-                    bool was_running = stop_timer(life);
-                    if (was_running)
-                        b->sleep(120);
-                    auto count = b->touch(true);
-                    finish(life, was_running);
-                    write(output, "Completed check with " + std::to_string(count) + " assets.");
-                },
-                "TouchAllSceneAssets");
+            touch_assets(life, b, output);
             return;
         }
         if (command == "expire") {

@@ -14,6 +14,9 @@
 namespace opensim::network {
 class WebHttpClients;
 }
+namespace opensim::scene {
+class UuidGatherer;
+}
 namespace opensim::services {
 class AssetService;
 std::shared_ptr<AssetService>
@@ -34,11 +37,12 @@ class RegionAssetRuntime {
   public:
     using AssetServerLookup = std::function<std::optional<std::string>(framework::Uuid)>;
     using StructuredLog = std::function<void(const std::string& level, const std::string& message)>;
+    using GatherSceneAssets = std::function<void(scene::UuidGatherer&)>;
     RegionAssetRuntime(const server::IniConfig&, std::shared_ptr<SceneCapabilityEvents>,
                        std::optional<std::string> region_name = {}, std::function<void(std::string)> log = {},
                        framework::Uuid region_id = {}, StructuredLog structured_log = {},
                        std::shared_ptr<network::WebHttpClients> http = {},
-                       AssetServerLookup foreign_server = {});
+                       AssetServerLookup foreign_server = {}, GatherSceneAssets gather_assets = {});
     ~RegionAssetRuntime();
     RegionAssetRuntime(const RegionAssetRuntime&) = delete;
     RegionAssetRuntime& operator=(const RegionAssetRuntime&) = delete;
@@ -55,6 +59,7 @@ class RegionAssetRuntime {
     std::vector<std::string> cache_command_names() const;
     std::vector<framework::ConsoleCommandDescription> cache_command_descriptions() const;
     bool cache_console(const std::vector<std::string>&, std::function<void(const std::string&)> output);
+    void quiesce_cache_cleanup();
     void stop();
 
   private:

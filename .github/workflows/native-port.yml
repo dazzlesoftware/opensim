@@ -17,6 +17,7 @@ on:
       - 'OpenSim/Region/CoreModules/World/Region/RestartModule.cs'
       - 'OpenSim/Region/CoreModules/Agent/Xfer/**'
       - 'OpenSim/Region/ScriptEngine/YEngine/**'
+      - 'OpenSim/Region/ScriptEngine/Shared/Api/**'
       - 'OpenSim/Region/ClientStack/Linden/UDP/**'
       - 'OpenSim/Server/Handlers/Login/**'
       - 'OpenSim/Server/Handlers/Authentication/**'
@@ -94,6 +95,7 @@ on:
       - 'OpenSim/Region/CoreModules/World/Region/RestartModule.cs'
       - 'OpenSim/Region/CoreModules/Agent/Xfer/**'
       - 'OpenSim/Region/ScriptEngine/YEngine/**'
+      - 'OpenSim/Region/ScriptEngine/Shared/Api/**'
       - 'OpenSim/Region/ClientStack/Linden/UDP/**'
       - 'OpenSim/Server/Handlers/Login/**'
       - 'OpenSim/Server/Handlers/Authentication/**'
@@ -213,7 +215,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libpq-dev libmariadb-dev libssl-dev libjpeg-dev libpng-dev libicu-dev libfreetype-dev fonts-liberation postgresql mariadb-server
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libpq-dev libmariadb-dev libssl-dev libjpeg-dev libpng-dev libicu-dev libfreetype-dev libkrb5-dev gss-ntlmssp krb5-kdc krb5-admin-server krb5-user fonts-liberation postgresql mariadb-server
           pg_bin="$(pg_config --bindir)"
           maria_bin="$(dirname "$(command -v mariadbd)")"
           test -x "$pg_bin/initdb"
@@ -221,6 +223,17 @@ jobs:
           cmake -S native-port -B native-port/build -DCMAKE_BUILD_TYPE=Release -DOPENSIM_DIFFERENTIAL_TESTS=ON \
             -DOPENSIM_REQUIRE_OFFLINE_IM_SQL=ON -DOPENSIM_REQUIRE_TLS=ON \
             "-DOPENSIM_POSTGRES_TEST_BIN=$pg_bin" "-DOPENSIM_MARIADB_TEST_BIN=$maria_bin"
+      - name: Check bundled macOS native libraries
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          architecture="$(uname -m)"
+          for library in bin/lib64/libubode.dylib bin/lib64/libopenjpeg-dotnet.dylib; do
+            if ! lipo -verify_arch "$architecture" "$library"; then
+              echo "::error file=$library::Missing macOS architecture $architecture"
+              exit 1
+            fi
+          done
       - name: Configure macOS with disposable SQL fixtures
         if: runner.os == 'macOS'
         run: |
@@ -236,7 +249,7 @@ jobs:
             "-DOPENSSL_ROOT_DIR=$(brew --prefix openssl@3)"
       - name: Build C++
         run: cmake --build native-port/build --config Release --parallel
-      - name: Verify Robust interoperability and region restart tests are enabled
+      - name: Verify native runtime and interoperability tests are enabled
         shell: bash
         run: |
           python - <<'PY'
@@ -247,6 +260,10 @@ jobs:
               "ctest", "--test-dir", "native-port/build", "-C", "Release", "--show-only=json-v1",
           ])
           tests = {test["name"]: test.get("command", []) for test in json.loads(listing)["tests"]}
+          for name in ("lsl_runtime_tests", "region_runtime_tests", "ubode_tests",
+                       "native_installed_startup_network"):
+              if not tests.get(name):
+                  raise SystemExit(f"{name} is missing its native test executable")
           required = ["managed_asset_wire_network", "mysql_asset_network", "pgsql_asset_network"]
           for name in required:
               if "--dotnet" not in tests.get(name, []):
@@ -263,6 +280,21 @@ jobs:
           PY
       - name: Test native behavior and compare original C#
         run: ctest --test-dir native-port/build -C Release -j2 --output-on-failure --output-junit ctest-results.xml
+      - name: Require macOS platform trust comparison to pass
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+
+          report = ET.parse("native-port/build/ctest-results.xml")
+          name = "web_http_platform_trust_source_parity"
+          result = report.find(f".//testcase[@name='{name}']")
+          if result is None or result.get("status") != "run" or any(
+              result.find(tag) is not None for tag in ("skipped", "failure", "error")
+          ):
+              raise SystemExit(f"macOS requires a passing result for {name}")
+          PY
       - name: Retain native compatibility results
         if: always()
         uses: actions/upload-artifact@v4

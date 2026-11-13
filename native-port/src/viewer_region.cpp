@@ -34,6 +34,15 @@ Vector3 camera_axis_normalized(Vector3 axis) {
         return {axis.x / length, axis.y / length, axis.z / length};
     return {};
 }
+Quaternion rotation_from_horizontal_look(Vector3 look_at) {
+    const float length_squared = look_at.x * look_at.x + look_at.y * look_at.y;
+    if (length_squared < 0.0001f)
+        return {0, 0, 0, 1};
+
+    const float half_yaw = 0.5f * std::acos(look_at.x / std::sqrt(length_squared));
+    const float yaw_sine = std::sin(half_yaw);
+    return {0, 0, look_at.y >= 0 ? yaw_sine : -yaw_sine, std::cos(half_yaw)};
+}
 Quaternion rotation_from_axes(Vector3 forward, Vector3 left, Vector3 up) {
     const float trace = forward.x + left.y + up.z + 1.f;
     if (trace >= 1.f) {
@@ -65,8 +74,15 @@ ViewerRegion::ViewerRegion(World& world, AgentCircuitManager& circuits, CircuitT
     : world_(world), circuits_(circuits), admission_(std::move(admission)), options_(std::move(options)),
       transport_(
           circuits, std::move(sender),
-          [this](const auto& c, const auto& l, const auto& e) { return admit(c, l, e); },
-          [this](const auto& c, const auto& p) { packet(c, p); }, [this](const auto& c) { closed(c); },
+          [this](const auto& circuit, const auto& login, const auto& endpoint) {
+              return admit(circuit, login, endpoint);
+          },
+          [this](const auto& circuit, const auto& incoming) {
+              packet(circuit, incoming);
+          },
+          [this](const auto& circuit) {
+              closed(circuit);
+          },
           transport_options) {}
 ViewerRegion::~ViewerRegion() {
     close();
@@ -490,10 +506,10 @@ lludp::Packet ViewerRegion::movement_complete(const ViewerAgent& a) const {
     p.block("SimData")["ChannelVersion"] = text(options_.channel_version, 65535);
     return p;
 }
-bool ViewerRegion::teleport_local(Uuid agent_id, Uuid session, const lludp::Packet& request) {
+bool ViewerRegion::request_teleport(Uuid agent_id, Uuid session, const lludp::Packet& request) {
     const auto connection = transport_.connection(agent_id);
     const auto viewer = agent(agent_id);
-    if (!connection || connection->session != session || !viewer || !viewer->root ||
+    if (!connection || connection->session != session || !viewer || !viewer->root || viewer->logout_requested ||
         viewer->circuit->session_id != session)
         return false;
     packet(*connection, request);
@@ -508,25 +524,10 @@ void ViewerRegion::packet(const CircuitConnection& connection, const lludp::Pack
         transport_.enqueue_if_session(connection.agent, connection.session, std::move(failure),
                                       ThrottleOutPacketType::Unknown);
     };
-    if (p.spec->name == "TeleportLocationRequest") {
-        if (options_.teleport_pending && options_.teleport_pending(connection.session)) {
-            teleport_failure("Previous teleport process incomplete.  Please retry shortly.");
-            return;
-        }
-        const auto requested = std::get<std::uint64_t>(p.block("Info").at("RegionHandle"));
-        const auto local = (std::uint64_t(options_.x) << 32) | options_.y;
-        const auto x = static_cast<std::uint32_t>(requested >> 32), y = static_cast<std::uint32_t>(requested);
-        if (requested != local && x >= options_.x && y >= options_.y &&
-            x - options_.x < world_.terrain().width() && y - options_.y < world_.terrain().height()) {
-            auto normalized = p;
-            auto& info = normalized.block("Info");
-            info["RegionHandle"] = local;
-            auto& position = std::get<std::vector<double>>(info.at("Position"));
-            position.at(0) += x - options_.x;
-            position.at(1) += y - options_.y;
-            packet(connection, normalized);
-            return;
-        }
+    if (p.spec->name == "TeleportLocationRequest" && options_.teleport_pending &&
+        options_.teleport_pending(connection.session)) {
+        teleport_failure("Previous teleport process incomplete.  Please retry shortly.");
+        return;
     }
     if (p.spec->name == "TeleportLandmarkRequest") {
         const auto viewer = agent(connection.agent);
@@ -558,8 +559,11 @@ void ViewerRegion::packet(const CircuitConnection& connection, const lludp::Pack
     auto a = *value;
     Event event;
     PacketSink other;
+    std::optional<lludp::Packet> normalized_teleport;
     std::optional<ViewerAgent> before_seat_exit;
-    bool move = false, logout = false, local_teleport = false, invalid_teleport = false;
+    bool move = false, logout = false, local_teleport_rejected = false;
+    std::optional<Vector3> local_teleport_reply;
+    const char* teleport_error = nullptr;
     {
         std::lock_guard lock(mutex_);
         auto i = agents_.find(connection.agent);
@@ -582,7 +586,7 @@ void ViewerRegion::packet(const CircuitConnection& connection, const lludp::Pack
             }
             restore_transferred_seat(current);
             if (options_.prepare_root)
-                options_.prepare_root(current);
+                options_.prepare_root(current, false);
             // Teleports reset the camera center after landing. Crossings retain the transferred center.
             if (current.circuit->teleport_flags != 0) {
                 current.camera_position = current.position;
@@ -595,33 +599,75 @@ void ViewerRegion::packet(const CircuitConnection& connection, const lludp::Pack
             move = true;
         } else if (p.spec->name == "TeleportLocationRequest") {
             const auto& info = p.block("Info");
-            const auto handle = (std::uint64_t(options_.x) << 32) | options_.y;
             if (!current.root)
                 return;
             const auto position = vector(info.at("Position"));
             const auto look_at = vector(info.at("LookAt"));
+            const auto handle = std::get<std::uint64_t>(info.at("RegionHandle"));
+            const double offset_x = double(static_cast<std::uint32_t>(handle >> 32)) - options_.x;
+            const double offset_y = double(static_cast<std::uint32_t>(handle)) - options_.y;
+            const auto inside = [&](double x, double y) {
+                return x >= 0 && x < world_.terrain().width() && y >= 0 && y < world_.terrain().height();
+            };
+            double target_x = offset_x + position.x;
+            double target_y = offset_y + position.y;
+            const auto base_handle = (std::uint64_t(options_.x) << 32) | options_.y;
+            const bool viewer_subregion =
+                !info.contains("RequestedFlags") && handle != base_handle && inside(offset_x, offset_y);
+            if (viewer_subregion) {
+                target_x = static_cast<float>(target_x);
+                target_y = static_cast<float>(target_y);
+            }
             if (!std::isfinite(position.x) || !std::isfinite(position.y) || !std::isfinite(position.z) ||
                 !std::isfinite(look_at.x) || !std::isfinite(look_at.y) || !std::isfinite(look_at.z)) {
-                invalid_teleport = true;
-            } else if (std::get<std::uint64_t>(info.at("RegionHandle")) != handle) {
+                teleport_error = "Invalid teleport coordinates";
+            } else if (!inside(target_x, target_y)) {
+                if (viewer_subregion) {
+                    normalized_teleport = p;
+                    auto& request = normalized_teleport->block("Info");
+                    request["RegionHandle"] = base_handle;
+                    request["Position"] = std::vector<double>{target_x, target_y, position.z};
+                }
                 other = other_;
+            } else if (options_.movement_frozen && options_.movement_frozen(current)) {
+                teleport_error = "You are frozen";
             } else {
-                if (current.seat || current.ground_sitting)
-                    before_seat_exit = current;
-                current.position = position;
-                current.camera_position = position;
-                current.seat.reset();
-                current.ground_sitting = false;
+                ViewerAgent landing = current;
+                landing.position = {static_cast<float>(target_x), static_cast<float>(target_y), position.z};
+                landing.camera_position = landing.position;
+                landing.seat.reset();
+                landing.ground_sitting = false;
+                if (options_.prepare_root)
+                    options_.prepare_root(landing, true);
+                local_teleport_reply = landing.position;
+                const auto flags =
+                    info.contains("RequestedFlags") ? std::get<std::uint64_t>(info.at("RequestedFlags")) : 16u;
+                const auto routed = options_.route_local_teleport
+                    ? options_.route_local_teleport(current, landing.position, flags)
+                    : local_teleport_reply;
                 current.look_at = look_at;
                 current.look_at.z = 0;
                 if (std::abs(look_at.x) < 0.01f && std::abs(look_at.y) < 0.01f)
                     current.look_at = {1, 0, 0};
+                if (!current.seat)
+                    current.rotation = rotation_from_horizontal_look(current.look_at);
                 current.velocity = {};
                 current.acceleration = {};
-                if (options_.prepare_root)
-                    options_.prepare_root(current);
-                local_teleport = true;
-                other = other_;
+                if (routed) {
+                    if (current.seat || current.ground_sitting)
+                        before_seat_exit = current;
+                    if (current.seat) {
+                        if (const auto root = world_.object(current.seat->parent_local))
+                            current.rotation = sdk_multiply_quaternion(root->rotation, current.seat->rotation);
+                    }
+                    current.position = *routed;
+                    current.camera_position = *routed;
+                    current.appearance_override = std::move(landing.appearance_override);
+                    current.seat.reset();
+                    current.ground_sitting = false;
+                } else {
+                    local_teleport_rejected = true;
+                }
             }
         } else if (p.spec->name == "AgentUpdate") {
             auto& b = p.block("AgentData");
@@ -677,14 +723,14 @@ void ViewerRegion::packet(const CircuitConnection& connection, const lludp::Pack
                                  std::get<std::vector<std::uint8_t>>(p.block("Throttle").at("Throttles")));
     if (move)
         transport_.send(connection.agent, movement_complete(a));
-    if (invalid_teleport) {
+    if (teleport_error) {
         auto failure = lludp::make_packet("TeleportFailed");
         auto& fields = failure.block("Info");
         fields["AgentID"] = connection.agent;
-        fields["Reason"] = text("Invalid teleport coordinates");
+        fields["Reason"] = text(teleport_error);
         transport_.send(connection.agent, std::move(failure));
     }
-    if (local_teleport) {
+    if (local_teleport_reply) {
         if (before_seat_exit && options_.local_seat_exit)
             options_.local_seat_exit(*before_seat_exit, a);
         const auto& request = p.block("Info");
@@ -698,10 +744,12 @@ void ViewerRegion::packet(const CircuitConnection& connection, const lludp::Pack
         auto& info = reply.block("Info");
         info["AgentID"] = connection.agent;
         info["LocationID"] = std::uint64_t{2};
-        info["Position"] = vector(a.position);
+        info["Position"] = vector(*local_teleport_reply);
         info["LookAt"] = vector(a.look_at);
         info["TeleportFlags"] = flags;
         transport_.send(connection.agent, std::move(reply));
+        if (options_.local_teleport_complete)
+            options_.local_teleport_complete(a, !local_teleport_rejected);
     }
     if (logout) {
         auto reply = lludp::make_packet("LogoutReply");
@@ -715,7 +763,7 @@ void ViewerRegion::packet(const CircuitConnection& connection, const lludp::Pack
     if (event)
         event(a);
     if (other)
-        other(a, p);
+        other(a, normalized_teleport ? *normalized_teleport : p);
 }
 void ViewerRegion::closed(const CircuitConnection& connection) {
     Event event;

@@ -29,6 +29,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <filesystem>
 #include <algorithm>
 #include <iostream>
+#include <memory>
+#include <sqlite3.h>
 using namespace opensim::services;
 using opensim::framework::Uuid;
 namespace {
@@ -59,6 +61,20 @@ void tests(const std::string &path) {
         check(service.for_type(owner, 0) && service.for_type(owner, 57) && !service.for_type(owner, 49),
               "folder type lookups preserve source default set");
         check(!service.skeleton(Uuid::random()), "inventory owner separation");
+        sqlite3* connection = nullptr;
+        const auto opened = sqlite3_open_v2(path.c_str(), &connection, SQLITE_OPEN_READWRITE, nullptr);
+        const std::unique_ptr<sqlite3, decltype(&sqlite3_close)> fixture(connection, sqlite3_close);
+        if (opened != SQLITE_OK ||
+            sqlite3_exec(fixture.get(),
+                         "CREATE TRIGGER ignore_fixture_folder BEFORE INSERT ON inventoryfolders "
+                         "WHEN NEW.folderName='Ignored fixture folder' BEGIN SELECT RAISE(IGNORE); END",
+                         nullptr, nullptr, nullptr) != SQLITE_OK)
+            throw std::runtime_error("Could not install ignored folder write fixture");
+        const auto version_before_ignored_write = service.root(owner)->version;
+        InventoryFolder ignored{"Ignored fixture folder", -1, 1, Uuid::random(), owner, root_id};
+        check(!store.store(ignored) && store.folders({{"folderID", ignored.id.str()}}).empty() &&
+                  service.root(owner)->version == version_before_ignored_write,
+              "ignored folder write reports failure and preserves the parent version");
         auto folder = InventoryFolder{std::string(70, 'x'), -1, 1, Uuid::random(), owner, root_id};
         store.store(folder);
         check(folder.name.size() == 64 &&
@@ -223,6 +239,35 @@ void service_tests() {
     check(service.item(owner, item.id)->asset_id == new_asset &&
               service.item(owner, item.id)->name == "Updated",
           "update permits mutable asset ID and name");
+    auto blank_description = item;
+    blank_description.id = Uuid::random();
+    blank_description.name = " \t ";
+    blank_description.description = " \t\xc2\x85\xe3\x80\x80";
+    check(service.add_item(blank_description), "service stores an item with whitespace metadata");
+    auto metadata = store.items({{"inventoryID", blank_description.id.str()}});
+    check(metadata.size() == 1 && metadata.front().description.empty() &&
+              metadata.front().name == blank_description.name,
+          "managed description normalization preserves whitespace names");
+    check(store.store(blank_description) && service.item(owner, blank_description.id)->description.empty(),
+          "service normalizes descriptions from existing inventory rows");
+    blank_description.description = " \ttext\xe3\x80\x80";
+    check(service.update_item(blank_description) &&
+              service.item(owner, blank_description.id)->description == blank_description.description,
+          "description normalization preserves whitespace around text");
+    blank_description.creator_id = "stored-creator";
+    check(store.store(blank_description), "seed an item with a plain creator ID");
+    blank_description.creator_id = "caller-creator;https://example.test/;Creator Name";
+    check(service.update_item(blank_description) &&
+              service.item(owner, blank_description.id)->creator_id ==
+                  "stored-creator;https://example.test/;Creator Name",
+          "restoring a plain creator ID preserves creator data on the caller item");
+    blank_description.creator_id.clear();
+    check(store.store(blank_description), "seed an item with an empty creator ID");
+    blank_description.creator_id = "caller-creator;https://example.test/;Creator Name";
+    check(service.update_item(blank_description) &&
+              service.item(owner, blank_description.id)->creator_id == "caller-creator",
+          "restoring an empty creator identification clears data and preserves the caller ID");
+    check(store.erase_items({{"inventoryID", blank_description.id.str()}}), "remove metadata test item");
     auto content = service.content(other, plain.id);
     check(content.owner == owner && content.folder == plain.id && content.items.size() == 1,
           "folder content resolves owner by folder ID");

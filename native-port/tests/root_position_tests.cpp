@@ -1,6 +1,7 @@
 #include "opensim/scene/root_position.hpp"
 #include <bit>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 using namespace opensim;
@@ -48,6 +49,30 @@ int main(int argc, char**) {
             checks++;
         };
         int calls = 0;
+        test(clamp_default_landing({-10, 900, 70000}, 256, 512) ==
+                 framework::Vector3{5, 507, 65536},
+             "default landing uses a five-meter border and caps altitude");
+        test(clamp_default_landing({150, 150, -101}, 256, 256) ==
+                 framework::Vector3{150, 150, -100},
+             "default landing preserves valid horizontal coordinates and caps minimum altitude");
+        framework::Vector3 teleport_sample;
+        const auto emergency = local_teleport_position({-1, 256, 0}, 256, 256, {}, [&](float x, float y) {
+            teleport_sample = {x, y, 0};
+            return 20.f;
+        });
+        test(emergency == framework::Vector3{128, 128, 128} &&
+                 teleport_sample == framework::Vector3{128, 128, 0},
+             "out-of-bounds local teleport samples the emergency destination");
+        const auto ground = [](float, float) { return 20.f; };
+        test(local_teleport_position({12, 16, 0}, 256, 256, 2.f, ground).z == 20.f + (1.f + .1f) &&
+                 local_teleport_position({12, 16, 0}, 256, 256, {}, ground).z == 20.f + (.8f + .1f) &&
+                 local_teleport_position({12, 16, 0}, 256, 256, 0.f, ground).z == 20.f + .1f,
+             "local teleport clearance uses the avatar appearance and the managed margin");
+        test(local_teleport_position({12, 16, 70000}, 256, 256, {}, ground).z == 65536.f &&
+                 local_teleport_position({12, 16, -500}, 256, 256, {}, [](float, float) {
+                     return std::numeric_limits<float>::infinity();
+                 }).z == -100.f,
+             "local teleport clamps altitude and ignores nonfinite terrain");
         framework::Vector3 sampled;
         auto p = root_landing_position({-1, 256, 0}, 256, 256, 1.9f, [&](float x, float y) {
             sampled = {x, y, 0};

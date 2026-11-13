@@ -6,7 +6,7 @@ struct Value;
 }
 namespace opensim::framework {
 struct EntityTransferContext {
-    float inbound_version=0.8f,outbound_version=0.8f;
+    float inbound_version = 0.8f, outbound_version = 0.8f;
     int wearables_count=-1;
     network::Value pack()const;
     void unpack(const network::Value& map);

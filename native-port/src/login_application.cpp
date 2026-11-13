@@ -28,31 +28,145 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/server/login_application.hpp"
 #include "opensim/framework/ip_address.hpp"
 #include "opensim/network/sdk_llsd_xml.hpp"
+#include "opensim/services/user_account.hpp"
+#include <chrono>
+#include <limits>
 #include <stdexcept>
 
 namespace opensim::server {
 using namespace network;
+namespace {
+void require_rpc_struct(const Value& data) {
+    if (data.view().kind != Value::Kind::Map)
+        throw std::invalid_argument("Hypergrid request requires an XML-RPC struct");
+}
+
+void check_rpc_string(const Value& data, std::string_view key) {
+    const auto kind = data.get(key).view().kind;
+    if (kind != Value::Kind::String && kind != Value::Kind::Undefined)
+        throw std::invalid_argument("Invalid Hypergrid XML-RPC field type");
+}
+}
+
 LoginApplication::LoginApplication(services::ILoginService& login, const IniConfig& config)
-    : handlers_(login), grid_info_(config.section("GridInfoService")) {
+    : grid_statistics_disabled_(config.boolean("GridInfoService", "DisableStatsEndpoint", false)),
+      handlers_(login), grid_info_(config.section("GridInfoService")) {
     if (!grid_info_.contains("platform"))
         grid_info_["platform"] = "OpenSim";
-    const auto home = config.get(
-        "Startup", "HomeURI", config.get("Hypergrid", "HomeURI", config.get("LoginService", "SRV_HomeURI")));
+    const auto discovery_uri = [&](const char* key, const std::string& fallback = {}) {
+        return config.get("Hypergrid", key, config.get("Startup", key, fallback));
+    };
+    const auto configured = [&](const char* key) {
+        const auto found = grid_info_.find(key);
+        return found != grid_info_.end() ? found->second : std::string{};
+    };
+    auto home = discovery_uri("HomeURI", configured("home"));
+    if (home.empty())
+        home = config.get("LoginService", "SRV_HomeURI");
     if (!home.empty())
         grid_info_["home"] = home;
-    for (const auto& [config_key, response_key] : {std::pair{"HomeURIAlias", "homealias"},
-                                                   std::pair{"GatekeeperURI", "gatekeeper"},
-                                                   std::pair{"GatekeeperURIAlias", "gatekeeperalias"}}) {
-        const auto value = config.get("Startup", config_key, config.get("Hypergrid", config_key));
+    const auto gatekeeper = discovery_uri("GatekeeperURI", configured("gatekeeper"));
+    if (!gatekeeper.empty())
+        grid_info_["gatekeeper"] = gatekeeper;
+    for (const auto& [config_key, response_key] :
+         {std::pair{"HomeURIAlias", "homealias"}, std::pair{"GatekeeperURIAlias", "gatekeeperalias"}}) {
+        const auto value = discovery_uri(config_key);
         if (!value.empty())
             grid_info_[response_key] = value;
     }
     grid_info_xml(grid_info_); // Reject invalid XML keys at startup, before accepting traffic.
 }
+HttpResponse LoginApplication::handle_grid_statistics(const HttpRequest& request) {
+    HttpResponse response;
+    if (grid_statistics_disabled_) {
+        response.status = 404;
+        return response;
+    }
+    if (request.method != "GET" || !statistics_grid_ || !statistics_users_) {
+        response.status = 405;
+        return response;
+    }
+
+    std::lock_guard lock(grid_statistics_mutex_);
+    const auto now = std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    if (grid_statistics_xml_.empty() || now - grid_statistics_updated_ > 900) {
+        std::int64_t region_count = 0, residents = 0, active_users = 0;
+        try {
+            for (const auto& region : statistics_grid_->online({}, 0, 0, std::numeric_limits<int>::max()))
+                region_count += (static_cast<std::int64_t>(region.size_x) * region.size_y) >> 16;
+            for (const auto& user : statistics_users_->get_all("")) {
+                if (!user || !user->user_id || !user->data)
+                    continue;
+                if (user->user_id->find(';') == std::string::npos)
+                    ++residents;
+                const auto login = user->data->find("Login");
+                std::int32_t last_login = 0;
+                if (login != user->data->end() && login->second &&
+                    services::parse_account_integer(*login->second, last_login) &&
+                    last_login != 0 && last_login > now - 2592000)
+                    ++active_users;
+            }
+        } catch (const std::exception&) {
+            // The managed endpoint publishes counts accumulated before a provider failure.
+        }
+        grid_statistics_xml_ = "<gridstats><residents>" + std::to_string(residents) +
+            "</residents><active_users>" + std::to_string(active_users) +
+            "</active_users><region_count>" + std::to_string(region_count) + "</region_count></gridstats>";
+        grid_statistics_updated_ = now;
+    }
+    response.content_type = "application/xml";
+    response.body = grid_statistics_xml_;
+    return response;
+}
 void LoginApplication::set_default_login_uri(const std::string& uri) {
+    std::lock_guard lock(grid_info_mutex_);
     if (!grid_info_.contains("login"))
         grid_info_["login"] = uri;
 }
+std::string LoginApplication::grid_discovery_rpc_response() const {
+    std::lock_guard lock(grid_info_mutex_);
+    std::map<std::string, Value> info;
+    for (const auto& [key, value] : grid_info_)
+        info[key] = Value(value);
+    return xml_rpc_response(Value::object(std::move(info)));
+}
+
+std::optional<HttpResponse> LoginApplication::handle_grid_discovery(const HttpRequest& request,
+                                                                   bool include_xml_rpc) {
+    if (request.path == "/get_grid_stats")
+        return handle_grid_statistics(request);
+    HttpResponse response;
+    response.headers["Cache-Control"] = "no-store";
+    if (request.path == "/get_grid_info" || request.path == "/json_grid_info") {
+        if (request.method != "GET") {
+            response.status = 405;
+            response.headers["Allow"] = "GET";
+        } else if (request.path == "/get_grid_info") {
+            std::lock_guard lock(grid_info_mutex_);
+            response.content_type = "application/xml";
+            response.body = grid_info_xml(grid_info_);
+        } else {
+            std::lock_guard lock(grid_info_mutex_);
+            response.content_type = "application/json";
+            response.body = json_strings(grid_info_);
+        }
+        return response;
+    }
+    if (!include_xml_rpc || request.method != "POST" || (request.path != "/" && request.path != "/login"))
+        return std::nullopt;
+    try {
+        if (parse_xml_rpc(request.body).method != "get_grid_info")
+            return std::nullopt;
+    } catch (const std::exception&) {
+        return std::nullopt;
+    }
+    response.content_type = "text/xml";
+    response.headers["Access-Control-Allow-Origin"] = "*";
+    response.body = grid_discovery_rpc_response();
+    return response;
+}
+
 HttpResponse LoginApplication::handle_gatekeeper(const HttpRequest& request) {
     HttpResponse response;
     response.status = 404;
@@ -73,13 +187,78 @@ HttpResponse LoginApplication::handle_gatekeeper(const HttpRequest& request) {
     try {
         const Value empty;
         response.body = xml_rpc_response(
-            gatekeeper_(call.method, call.parameters.empty() ? empty : call.parameters.front()));
+            gatekeeper_rpc(call.method, call.parameters.empty() ? empty : call.parameters.front()));
     } catch (const std::exception&) {
         response.body = xml_rpc_fault(-32603, "Error processing XML-RPC request");
     }
     return response;
 }
-HttpResponse LoginApplication::handle(const HttpRequest& request, bool allow_gatekeeper) {
+
+Value LoginApplication::gatekeeper_rpc(std::string_view method, const Value& data) {
+    require_rpc_struct(data);
+    if (method == "link_region") {
+        check_rpc_string(data, "region_name");
+    } else {
+        check_rpc_string(data, "region_uuid");
+        check_rpc_string(data, "agent_id");
+        check_rpc_string(data, "agent_home_uri");
+    }
+    return gatekeeper_(method, data);
+}
+
+std::optional<Value> LoginApplication::home_agent_rpc(std::string_view method, const Value& data,
+                                                     std::string_view caller) {
+    if (home_agent_verifier_ &&
+        (method == "verify_agent" || method == "verify_client" ||
+         method == "agent_is_coming_home" || method == "logout_agent")) {
+        require_rpc_struct(data);
+        check_rpc_string(data, "sessionID");
+        if (method == "logout_agent")
+            check_rpc_string(data, "userID");
+        else if (method == "agent_is_coming_home")
+            check_rpc_string(data, "externalName");
+        else
+            check_rpc_string(data, "token");
+        const auto success = home_agent_verifier_(method, data);
+        return Value::object({{"result", success ? (method == "logout_agent" ? "true" : "True") : "False"}});
+    }
+    if (method == "get_home_region" && home_region_lookup_)
+        return home_region_lookup_(data);
+    if (method == "get_online_friends" && home_user_lookup_)
+        return Value::object({});
+    if (home_user_lookup_ &&
+        (method == "get_uuid" || method == "locate_user" || method == "get_server_urls" ||
+         method == "get_user_info" || method == "get_uui" || method == "status_notification"))
+        return home_user_lookup_(method, data, caller);
+    return std::nullopt;
+}
+
+std::optional<HttpResponse> LoginApplication::handle_home_agent(const HttpRequest& request) {
+    if (request.method != "POST" || request.path != "/")
+        return std::nullopt;
+    RpcCall call;
+    try {
+        call = parse_xml_rpc(request.body);
+    } catch (const std::exception&) {
+        return std::nullopt;
+    }
+    HttpResponse response;
+    response.content_type = "text/xml";
+    try {
+        const Value empty;
+        const auto result = home_agent_rpc(call.method, call.parameters.empty() ? empty : call.parameters.front(),
+                                           request.remote_ip);
+        if (!result)
+            return std::nullopt;
+        response.body = xml_rpc_response(*result);
+    } catch (const std::exception&) {
+        response.body = xml_rpc_fault(-32603, "Error processing XML-RPC request");
+    }
+    return response;
+}
+
+HttpResponse LoginApplication::handle(const HttpRequest& request, bool allow_gatekeeper,
+                                      bool allow_grid_discovery, bool allow_home_agent) {
     if (request.path.starts_with("/auth") && authentication_)
         return authentication_->handle(request);
     if (request.path == "/friends" && friends_)
@@ -111,21 +290,9 @@ HttpResponse LoginApplication::handle(const HttpRequest& request, bool allow_gat
                         "\"login_success_available\":false}";
         return response;
     }
-    if (request.path == "/get_grid_info" || request.path == "/json_grid_info") {
-        if (request.method != "GET" && request.method != "HEAD") {
-            response.status = 405;
-            response.headers["Allow"] = "GET, HEAD";
-            return response;
-        }
-        if (request.path == "/get_grid_info") {
-            response.content_type = "application/xml";
-            response.body = grid_info_xml(grid_info_);
-        } else {
-            response.content_type = "application/json";
-            response.body = json_strings(grid_info_);
-        }
-        return response;
-    }
+    if (allow_grid_discovery)
+        if (auto discovery = handle_grid_discovery(request, false))
+            return std::move(*discovery);
     if (request.content_type == "application/json-rpc")
         return json_rpc_.handle(request);
     if (request.path != "/" && request.path != "/login") {
@@ -183,36 +350,19 @@ HttpResponse LoginApplication::handle(const HttpRequest& request, bool allow_gat
         } else if (call.method == "grid_instant_message" && grid_message_)
             response.body =
                 xml_rpc_response(Value::object({{"success", grid_message_(data) ? "TRUE" : "FALSE"}}));
-        else if (home_agent_verifier_ &&
-                 (call.method == "verify_agent" || call.method == "verify_client" ||
-                  call.method == "agent_is_coming_home" || call.method == "logout_agent"))
-            response.body = xml_rpc_response(
-                network::Value::object({{"result", home_agent_verifier_(call.method, data)
-                                                       ? (call.method == "logout_agent" ? "true" : "True")
-                                                       : "False"}}));
-        else if (call.method == "get_home_region" && home_region_lookup_)
-            response.body = xml_rpc_response(home_region_lookup_(data));
+        else if (const auto home = allow_home_agent ? home_agent_rpc(call.method, data, request.remote_ip)
+                                                    : std::nullopt; home)
+            response.body = xml_rpc_response(*home);
         else if (call.method == "land_data" && land_data_lookup_)
             response.body = xml_rpc_response(land_data_lookup_(data));
-        else if (call.method == "get_online_friends" && home_user_lookup_)
-            // The legacy XML-RPC method returns an empty map. Live presence uses HGFriends.
-            response.body = xml_rpc_response(Value::object({}));
-        else if ((call.method == "get_uuid" || call.method == "locate_user" ||
-                  call.method == "get_server_urls" || call.method == "get_user_info" ||
-                  call.method == "get_uui" || call.method == "status_notification") &&
-                 home_user_lookup_)
-            response.body = xml_rpc_response(home_user_lookup_(call.method, data, request.remote_ip));
         else if (allow_gatekeeper && (call.method == "link_region" || call.method == "get_region") &&
                  gatekeeper_)
-            response.body = xml_rpc_response(gatekeeper_(call.method, data));
+            response.body = xml_rpc_response(gatekeeper_rpc(call.method, data));
         else if (call.method == "set_login_level")
             response.body = xml_rpc_response(handlers_.set_level(data));
-        else if (call.method == "get_grid_info") {
-            std::map<std::string, Value> info;
-            for (const auto& [key, value] : grid_info_)
-                info[key] = Value(value);
-            response.body = xml_rpc_response(Value::object(std::move(info)));
-        } else
+        else if (allow_grid_discovery && call.method == "get_grid_info")
+            response.body = grid_discovery_rpc_response();
+        else
             response.body = xml_rpc_fault(-32601, "Requested method [" + call.method + "] not found");
     } catch (const std::exception&) {
         response.body = xml_rpc_fault(-32603, "Error processing XML-RPC request");

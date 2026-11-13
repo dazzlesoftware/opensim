@@ -5,7 +5,7 @@
 namespace opensim::services {
 struct AuthInfo {
  framework::Uuid principal;
- std::optional<std::string> account_type,password_hash,password_salt,web_login_key;
+ std::optional<std::string> account_type, password_hash, password_salt, web_login_key;
  framework::OrderedDictionary<std::string,std::any> to_key_value_pairs()const;
 };
 std::shared_ptr<AuthInfo> authentication_info(const std::shared_ptr<AuthenticationRecord>& record);

@@ -18,6 +18,9 @@ network::lludp::Packet task_inventory_reply(framework::Uuid part, std::int16_t s
                                             std::span<const std::uint8_t> filename);
 void inventory_item_details(framework::Uuid agent, std::span<const std::optional<services::InventoryItem>>,
                             const InventoryPacketSink&);
+void inventory_bulk_folder(framework::Uuid agent, const services::InventoryFolder& folder,
+                           const std::function<services::InventoryCollection(framework::Uuid)>& content,
+                           const InventoryPacketSink&, std::optional<framework::Uuid> transaction = {});
 void inventory_folder_details(framework::Uuid agent, framework::Uuid owner, framework::Uuid folder,
                               std::span<const std::optional<services::InventoryItem>> items,
                               std::span<const std::optional<services::InventoryFolder>> folders, int version,

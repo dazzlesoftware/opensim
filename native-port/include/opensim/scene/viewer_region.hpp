@@ -27,9 +27,13 @@ struct ViewerRegionOptions {
     std::function<bool(framework::Uuid)> estate_manager;
     std::function<std::uint32_t()> current_region_flags;
     std::function<std::uint8_t()> current_access;
-    std::function<void(ViewerAgent&)> prepare_root;
+    std::function<void(ViewerAgent&, bool local_teleport)> prepare_root;
+    std::function<std::optional<framework::Vector3>(const ViewerAgent&, framework::Vector3, std::uint64_t)>
+        route_local_teleport;
+    std::function<void(const ViewerAgent&, bool arrived)> local_teleport_complete;
     std::function<void(const ViewerAgent&, const ViewerAgent&)> local_seat_exit;
     std::function<bool(framework::Uuid)> teleport_pending;
+    std::function<bool(const ViewerAgent&)> movement_frozen;
     std::function<std::string(const ViewerAgent&, framework::Uuid, network::lludp::Packet&)> resolve_landmark;
 };
 struct ActiveViewerGroup {
@@ -100,7 +104,7 @@ class ViewerRegion {
     std::optional<ViewerAgent> update_appearance(framework::Uuid id, framework::Uuid session,
                                                  std::shared_ptr<framework::AvatarAppearance> appearance);
     void send_terrain(framework::Uuid agent);
-    bool teleport_local(framework::Uuid agent, framework::Uuid session, const network::lludp::Packet&);
+    bool request_teleport(framework::Uuid agent, framework::Uuid session, const network::lludp::Packet&);
     void broadcast_terrain_changes();
     std::optional<ViewerAgent> agent(framework::Uuid id) const;
     bool update_health(framework::Uuid id, framework::Uuid session, float health);

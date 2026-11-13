@@ -1,4 +1,5 @@
 #pragma once
+#include "opensim/framework/atomic_shared_ptr.hpp"
 #include "opensim/framework/config_http_multi_proxy.hpp"
 #include "opensim/framework/config_http_wininet_proxy_helper.hpp"
 #include "opensim/framework/config_http_windows_proxy_bypass.hpp"
@@ -13,8 +14,8 @@ struct ConfigHttpWindowsProxyOptions {
 struct ConfigHttpWindowsProxyFixture;
 class ConfigHttpWindowsProxy final : public ConfigHttpMultiWebProxy {
     std::shared_ptr<ConfigHttpWinInetProxyHelper> helper_;
-    std::atomic<std::shared_ptr<ConfigHttpWinHttpSession>> session_;
-    std::atomic<std::shared_ptr<ConfigXmlCredentials>> credentials_;
+    opensim::framework::AtomicSharedPtr<ConfigHttpWinHttpSession> session_;
+    opensim::framework::AtomicSharedPtr<ConfigXmlCredentials> credentials_;
     std::atomic<bool> disposed_{false};
     ConfigUriObjectBackend uris_;
     std::shared_ptr<ConfigHttpFailedProxyCache> cache_;

@@ -209,7 +209,8 @@ std::vector<network::lludp::Packet> object_terse_updates(
 }
 network::lludp::Packet object_update(const SceneObject& o, std::uint64_t region, float dilation,
                                      const ObjectUpdateOptions& options) {
-    if (o.shape.pcode != 9 || (o.is_attachment && o.parent_id == 0))
+    const bool vegetation = is_vegetation(o.shape.pcode);
+    if ((!vegetation && o.shape.pcode != 9) || (o.is_attachment && (vegetation || o.parent_id == 0)))
         throw std::invalid_argument("object_update requires a prim with a valid attachment parent");
     using namespace network;
     auto p = lludp::make_packet("ObjectUpdate");
@@ -236,6 +237,18 @@ network::lludp::Packet object_update(const SceneObject& o, std::uint64_t region,
     std::vector<std::uint8_t> data;
     data.reserve(60);
     vector(data, o.position);
+    if (vegetation) {
+        data.resize(36);
+        if (o.shape.pcode != grass_pcode)
+            quaternion(data, o.rotation);
+        data.resize(60);
+        b["ObjectData"] = std::move(data);
+        b["Material"] = std::uint64_t{0};
+        b["ClickAction"] = std::uint64_t{0};
+        b["Data"] = std::vector<std::uint8_t>{o.shape.state};
+        p.blocks["ObjectData"].push_back(std::move(b));
+        return p;
+    }
     vector(data, o.velocity);
     vector(data, o.acceleration);
     quaternion(data, o.rotation);
@@ -262,6 +275,8 @@ network::lludp::Packet object_update(const SceneObject& o, std::uint64_t region,
     b["ProfileHollow"] = std::uint64_t(s.profile_hollow);
     b["TextureEntry"] = o.texture_entry;
     b["TextureAnim"] = o.texture_animation;
+    if (!o.particle_system.empty())
+        b["PSBlock"] = o.particle_system;
     if (o.extra_params.size() > 1) {
         constexpr std::uint8_t left_hand = 5;
         constexpr std::uint8_t right_hand = 6;

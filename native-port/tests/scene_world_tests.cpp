@@ -144,6 +144,20 @@ void terrain_tests() {
     check(t.tainted(), "NaN assignment always marks source change");
 }
 void world_tests() {
+    {
+        scene::World clamped;
+        clamped.clamp_inserted_prim_sizes(0.125f, 64.f);
+        scene::SceneObject root;
+        root.id = framework::Uuid::random();
+        root.scale = {128.f, 0.0625f, 2.f};
+        scene::SceneObject child = root;
+        child.id = framework::Uuid::random();
+        child.scale = {2.f, 128.f, 0.0625f};
+        check(clamped.add_crossing_linkset({root, child}), "clamped linkset enters world");
+        check(clamped.object(root.id)->scale == framework::Vector3{64.f, 0.125f, 2.f} &&
+                  clamped.object(child.id)->scale == framework::Vector3{2.f, 64.f, 0.125f},
+              "scene insertion clamps each axis of every linkset part");
+    }
     framework::Uuid owner("00000000-0000-0000-0000-000000000007");
     scene::World world({}, 256, 256, 100);
     auto object = scene::SceneObject::primitive(owner, {128, 128, 25});

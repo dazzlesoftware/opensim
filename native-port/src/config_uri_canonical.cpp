@@ -91,9 +91,11 @@ ConfigUriCanonicalResult config_uri_check_canonical(std::u16string_view text, st
                 if (c != u'%')
                     continue;
                 flag2 = true;
-                int a = i + 2 < end ? hex(text[i + 1]) : -1, b = i + 2 < end ? hex(text[i + 2]) : -1;
-                if (a >= 0 && b >= 0) {
-                    c = static_cast<char16_t>((a << 4) | b);
+                const bool has_escape_digits = i + 2 < end;
+                const int high_digit = has_escape_digits ? hex(text[i + 1]) : -1;
+                const int low_digit = has_escape_digits ? hex(text[i + 2]) : -1;
+                if (high_digit >= 0 && low_digit >= 0) {
+                    c = static_cast<char16_t>((high_digit << 4) | low_digit);
                     if (c == u'.' || c == u'/' || c == u'\\')
                         check |= 128;
                     i += 2;

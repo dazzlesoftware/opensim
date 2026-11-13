@@ -1,26 +1,41 @@
 """Exercise Gatekeeper admission through the first viewer handshake."""
-from contextlib import closing
 import base64
-import urllib.parse
-import os
 import gzip
-from socketserver import ThreadingMixIn
+import http.client
+import json
+import os
+import queue
+import socket
+import sqlite3
+import struct
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+import urllib.parse
+import uuid
 import xml.etree.ElementTree as ET
-import http.client, sys, tempfile, json, subprocess, threading, xmlrpc.client, socket, struct, uuid, queue, sqlite3, time
-from xmlrpc.server import SimpleXMLRPCRequestHandler, SimpleXMLRPCServer
+import xmlrpc.client
+from contextlib import closing
 from pathlib import Path
+from socketserver import ThreadingMixIn
 from urllib.parse import urlsplit
+from xmlrpc.server import SimpleXMLRPCRequestHandler, SimpleXMLRPCServer
+
 from sql_offline_im_network import running_server
-calls=queue.Queue()
-kicks=queue.Queue()
-home_logouts=queue.Queue()
-access_queries=queue.Queue()
-hypergrid_queries=queue.Queue()
-resolve_hypergrid=threading.Event()
-allow_hypergrid_access=threading.Event()
-home_launches=queue.Queue()
-accept_home_launch=threading.Event()
-outbound_updates=queue.Queue()
+
+calls = queue.Queue()
+kicks = queue.Queue()
+home_logouts = queue.Queue()
+access_queries = queue.Queue()
+hypergrid_queries = queue.Queue()
+hypergrid_replies = queue.Queue()
+resolve_hypergrid = threading.Event()
+allow_hypergrid_access = threading.Event()
+home_launches = queue.Queue()
+accept_home_launch = threading.Event()
+outbound_updates = queue.Queue()
 remote_texture_id = uuid.UUID("809a479a-0ad8-4701-86df-469033210d4f")
 remote_texture = b"Hypergrid UDP texture fixture"
 discard_texture_id = uuid.UUID("0ce112f1-f249-431c-aa53-06a076593fa9")
@@ -137,6 +152,25 @@ deny_client = "--deny-client" in sys.argv[2:]
 telehub_denial = "--telehub-denial" in sys.argv[2:]
 
 
+def viewer_map_url(connection, seed_path):
+    def llsd_map(node):
+        children = list(node)
+        return dict(zip((key.text for key in children[::2]), children[1::2]))
+
+    connection.request(
+        "POST", seed_path, "<llsd><array><string>SimulatorFeatures</string></array></llsd>",
+        {"Content-Type": "application/llsd+xml"},
+    )
+    response = connection.getresponse()
+    assert response.status == 200, response.status
+    caps = llsd_map(ET.fromstring(response.read()).find("map"))
+    connection.request("GET", urlsplit(caps["SimulatorFeatures"].text).path)
+    response = connection.getresponse()
+    assert response.status == 200, response.status
+    features = llsd_map(ET.fromstring(response.read()).find("map"))
+    return llsd_map(features["OpenSimExtras"])["map-server-url"].text
+
+
 def seed_restricted_telehub(root, owner, blocked):
  region = "11111111-1111-4111-8111-111111111111"
  hub = str(uuid.uuid4())
@@ -189,16 +223,23 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
   return {"result":"true"}
  home.register_function(logout, "logout_agent")
  remote_id = str(uuid.uuid4())
+ malformed_link_id = str(uuid.uuid4())
  remote_calls = []
  def link_region(fields):
   remote_calls.append(("link", fields))
-  return {"result":"True", "uuid":remote_id, "handle":" +10995116282880 ", "size_x":"256", "size_y":" +512 ",
+  if fields["region_name"] == "Malformed Link":
+   return {"result": "True", "uuid": malformed_link_id, "handle": "10995116282880", "region_image": 1}
+  return {"result":" True ", "uuid":remote_id, "handle":" +10995116282880 ", "size_x":"256", "size_y":" +512 ",
           "external_name":f"http://127.0.0.1:{home.server_address[1]}/ Remote Region"}
  home.register_function(link_region, "link_region")
  def get_region(fields):
   hypergrid_queries.put(fields)
+  try:
+   return hypergrid_replies.get_nowait()
+  except queue.Empty:
+   pass
   if resolve_hypergrid.is_set():
-   return {"result":"true", "uuid":remote_id, "x":"76800", "y":"76800",
+   return {"result":" True ", "uuid":remote_id, "x":"76800", "y":"76800",
            "size_x":"256", "size_y":"512", "region_name":"Resolved Remote",
            "hostname":"127.0.0.1", "internal_port":"9000",
            "http_port":str(home.server_address[1]), "server_uri":home_uri}
@@ -217,8 +258,17 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
   fall_crossing = walk_crossing and "--fall" in sys.argv[2:]
   config.write_text(f"[NativeServer]\nEnableLocalRegion=true\nEnablePresenceEndpoint=true\nEnableGridUserEndpoint=true\nEnableGridEndpoint=true\nGridRegionProvider=SQLite\nGridRegionDatabase=regions.db\nEnableGatekeeperDiscovery=true\nEnableForeignAgentAdmission=true\nUserAccountDatabase=users.db\nAuthenticationDatabase=users.db\nInventoryDatabase=inventory.db\nGridUserDatabase=grid.db\n[Startup]\nGatekeeperURI=http://127.0.0.1:8002/\n[Network]\nhttp_listener_port=0\n[NativeRegion]\nUDPPort={udp}\nBindAddress=127.0.0.1\nExternalHost=127.0.0.1\nName=Foreign Test\n[GatekeeperService]\nForeignAgentsAllowed=false\nDisallowExcept={home_uri}\nDeniedMacs=abc123\nDeniedID0s=def456\nAllowedClients=^Fixture\nDeniedClients=Blocked$\n[Messaging]\nMessageKey=fixture-grid-key\n[GridService]\nAllowHypergridMapSearch=true\n")
   settings = config.read_text()
+  check_map_features = not sys.argv[2:]
+  if check_map_features:
+   settings += (
+       "\n[Map]\nWorldMapModule=WorldMap\n"
+       "[HGWorldMap]\nMapTileURL=https://hypergrid.example/map\n"
+       "[SimulatorFeatures]\nMapTileURL=https://visitors.example/map\n"
+   )
   config.write_text(settings.replace("[NativeServer]\n",
       "[NativeServer]\nEnableSimulationEndpoint=true\nEnableFriendsEndpoint=true\nFriendsDatabase=friends.db\n"))
+  if check_map_features:
+   config.write_text(config.read_text().replace("[Startup]\n", "[Startup]\nWorldMapModule=HGWorldMap\n", 1))
   if walk_crossing:
    library = sys.argv[sys.argv.index("--walk-crossing") + 1]
    config.write_text(config.read_text().replace("[NativeRegion]\n",
@@ -250,6 +300,8 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
   config.write_text(config.read_text().replace("[NativeServer]\n", travel_settings, 1))
   with config.open("a") as settings_file:
    settings_file.write("\n[LoginService]\nSRV_FriendsServerURI=http://127.0.0.1:8002/\n")
+   if check_map_features:
+    settings_file.write("MapTileURL=https://local.example/map\n")
   if deny_client:
    with config.open("a") as settings_file:
     settings_file.write("\n[UserAgentService]\nLevelOutsideContacts=1\nVerifyCallers=true\nAuthorizedCallers=192.0.2.1\nShowUserDetailsInHGProfile=false\n")
@@ -263,16 +315,16 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
    source_home = f"http://127.0.0.1:{source_port}/"
    config.write_text(config.read_text().replace("http_listener_port=0", f"http_listener_port={source_port}")
                      .replace("GatekeeperURI=http://127.0.0.1:8002/", f"GatekeeperURI={source_home}\nHomeURI={source_home}"))
+   if "--return-hypergrid" in sys.argv[2:]:
+    config.write_text(config.read_text().replace("[NativeServer]\n", "[NativeServer]\nHttpWorkers=1\n", 1))
   if "--native-home-launch" in sys.argv[2:]:
    config.write_text(config.read_text().replace("[Startup]\n", "[Startup]\nHomeURI=http://127.0.0.1:8002/\n", 1))
    with config.open("a") as policy:
-    policy.write("\n[UserAgentService]\nForeignTripsAllowed_Level_0=false\n")
-    if "--trusted-home-launch" in sys.argv[2:]:
-     policy.write("LoginServerIP=127.0.0.1\n")
-    else:
+    policy.write("\n[UserAgentService]\nForeignTripsAllowed_Level_+00=false\n")
+    if "--trusted-home-launch" not in sys.argv[2:]:
      policy.write("LoginServerIP=192.0.2.1\n")
-    if "--deny-native-trip" not in sys.argv[2:]:
-     policy.write(f"DisallowExcept_Level_0={home_uri}\n")
+    exception = home_uri.upper() if "--deny-native-trip" in sys.argv[2:] else home_uri
+    policy.write(f"DisallowExcept_Level_00={exception}\n")
   if not sys.argv[2:]:
    settings = config.read_text().replace("[Startup]\n",
        "[Startup]\nGatekeeperURIAlias=http://127.0.0.1:18003/\n", 1)
@@ -303,11 +355,19 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
    travel_user = str(uuid.uuid4())
    foreign_friend = str(uuid.uuid4())
    foreign_uui = f"{foreign_friend};http://friend.example/;Foreign Friend"
+   repeated_secret_friend = str(uuid.uuid4())
+   malformed_friend = str(uuid.uuid4())
+   missing_secret_friend = str(uuid.uuid4())
    with closing(sqlite3.connect(Path(d) / "friends.db")) as database:
     database.execute("INSERT INTO Friends (PrincipalID, Friend, Flags) VALUES (?, ?, ?)",
                      (travel_user, foreign_uui + ";fixture-secret", 1))
     database.execute("INSERT INTO Friends (PrincipalID, Friend, Flags) VALUES (?, ?, ?)",
                      (foreign_uui + ";fixture-secret", travel_user, 2))
+    database.executemany("INSERT INTO Friends (PrincipalID, Friend, Flags) VALUES (?, ?, ?)", (
+        (travel_user, f"{repeated_secret_friend};http://friend.example/;fixture-secret Friend;fixture-secret", 1),
+        (travel_user, f"{malformed_friend};http://friend.example/;   ;fixture-secret", 1),
+        (travel_user, f"{missing_secret_friend};http://friend.example/;Foreign Friend", 1),
+    ))
     database.commit()
    with closing(sqlite3.connect(Path(d) / "travel.db")) as database:
     database.execute(
@@ -388,6 +448,18 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
         "UUI":f"{local_agent};{home_agent_grid};Access Fixture"}
     assert home_agent.get_uui({"userID":travel_user, "targetUserID":str(uuid.uuid4())}) == {"result":"User unknown"}
     assert home_agent.get_uui({"userID":travel_user, "targetUserID":foreign_friend}) == {"UUI":foreign_uui + ";0"}
+    assert home_agent.get_uui({"userID": travel_user, "targetUserID": repeated_secret_friend}) == {
+        "UUI": f"{repeated_secret_friend};http://friend.example/;0 Friend;0",
+    }
+    assert home_agent.get_uui({"userID": travel_user, "targetUserID": malformed_friend}) == {
+        "result": "User unknown",
+    }
+    try:
+     home_agent.get_uui({"userID": travel_user, "targetUserID": missing_secret_friend})
+    except xmlrpc.client.Fault as error:
+     assert error.faultCode == -32603, error
+    else:
+     raise AssertionError("A friendship without a secret should fault during identity lookup")
     expected_location = {} if deny_client else {"URL":"http://home.example/"}
     assert home_agent.locate_user({"userID":travel_user}) == expected_location
     if not deny_client:
@@ -415,6 +487,21 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
     for grid, expected in (("HTTP://HOME.EXAMPLE/", "True"), ("http://other.example/", "False")):
      assert home_agent.agent_is_coming_home({"sessionID":travel_session, "externalName":grid}) == {"result":expected}
     credentials = {"sessionID":travel_session, "token":"fixture-travel-token"}
+    for method, fields in (
+        ("verify_agent", []),
+        ("verify_agent", {**credentials, "sessionID": 17}),
+        ("verify_agent", {**credentials, "token": True}),
+        ("verify_client", {**credentials, "token": ["127.0.0.1"]}),
+        ("agent_is_coming_home", {"sessionID": travel_session, "externalName": 1}),
+        ("logout_agent", {"sessionID": travel_session, "userID": 1}),
+    ):
+     try:
+      getattr(home_agent, method)(fields)
+     except xmlrpc.client.Fault as error:
+      assert error.faultCode == -32603, error
+     else:
+      raise AssertionError(f"{method} accepted a value with an invalid XML-RPC type")
+    assert home_agent.verify_agent({"sessionID": travel_session}) == {"result": "False"}
     assert home_agent.logout_agent({"sessionID":travel_session, "userID":str(uuid.uuid4())}) == {"result":"False"}
     assert home_agent.verify_agent(credentials) == {"result":"True"}
     assert home_agent.logout_agent({"sessionID":travel_session, "userID":travel_user}) == {"result":"true"}
@@ -525,6 +612,8 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
        break
      else:
       raise AssertionError("Source viewer did not enter the region")
+     if check_map_features:
+      assert viewer_map_url(c, urlsplit(login["seed_capability"]).path) == "https://local.example/map/"
      if walk_crossing:
       destination_config = Path(d) / "destination.ini"
       destination_id = str(uuid.uuid4())
@@ -788,6 +877,7 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
         with closing(sqlite3.connect(Path(d) / "presence.db")) as database:
          assert database.execute("SELECT RegionID FROM Presence WHERE SessionID = ?",
                                  (login["session_id"],)).fetchone() == ("11111111-1111-4111-8111-111111111111",)
+       home.shutdown()
        print("PASS: avatar crosses a region boundary through the viewer event queue")
        sys.exit(0)
      pending_messages = {b"Will you be my friend?": b"Offer Recipient",
@@ -978,7 +1068,9 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
                       "friend_0":f"{local_agent};{uui_grid};Access Fixture;fixture-status-secret"}
       bad_notification = {**notification, "friend_0":notification["friend_0"] + "-wrong"}
       assert proxy.status_notification(bad_notification) == {"result":"No Friends Online"}
-      assert proxy.status_notification(notification) == {"friend_0":str(local_agent)}
+      assert proxy.status_notification({**notification, "online": " True "}) == {
+          "result": "false", "friend_0": str(local_agent),
+      }
       for _ in range(64):
        packet = source_viewer.recv(4096)
        if packet[6:10] == bytes.fromhex("ffff0142"):
@@ -1390,7 +1482,7 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
          else:
           raise AssertionError("Destination presence was not available for notification forwarding")
         with xmlrpc.client.ServerProxy(f"http://127.0.0.1:{port}/") as proxy:
-         assert proxy.status_notification(notification) == {"friend_0":str(local_agent)}
+         assert proxy.status_notification(notification) == {"result": "false", "friend_0": str(local_agent)}
         for _ in range(64):
          packet = transfer_viewer.recv(4096)
          if packet[6:10] == bytes.fromhex("ffff0142"):
@@ -1612,15 +1704,17 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
          else:
           raise AssertionError("Visited grid did not release the returning viewer")
       destination_presence = "destination-presence.db" if live_hypergrid else "presence.db"
+      returned_home = "--return-hypergrid" in sys.argv[2:]
+      expected_presence = None if returned_home else (destination_id,)
       with closing(sqlite3.connect(Path(d) / destination_presence)) as database:
        deadline = time.monotonic() + 5
        while time.monotonic() < deadline:
         row = database.execute("SELECT RegionID FROM Presence WHERE SessionID = ?", (login["session_id"],)).fetchone()
-        if row == (destination_id,):
+        if row == expected_presence:
          break
         time.sleep(0.02)
        else:
-        raise AssertionError(f"Destination arrival was not recorded in shared presence: {row}")
+        raise AssertionError(f"Destination presence was {row}, expected {expected_presence}")
        deadline = time.monotonic() + 5
        while time.monotonic() < deadline:
         c.request("POST", urlsplit(login["seed_capability"]).path, "<llsd><array/></llsd>",
@@ -1634,7 +1728,7 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
         raise AssertionError("Source seed capability survived destination arrival")
        source_viewer.close()
        assert database.execute("SELECT RegionID FROM Presence WHERE SessionID = ?",
-                               (login["session_id"],)).fetchone() == (destination_id,)
+                               (login["session_id"],)).fetchone() == expected_presence
       if "--teleport-timeout" in sys.argv[2:]:
        with closing(http.client.HTTPConnection(seed_url.hostname, seed_url.port, timeout=5)) as destination:
         for token, expected in ((str(uuid.uuid4()), 200), (login["session_id"], 404)):
@@ -1647,6 +1741,17 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
          assert response.status == expected, (response.status, expected, response.read())
          response.read()
       if live_hypergrid:
+       expected_home_presence = (home_region_id,) if returned_home else None
+       with closing(sqlite3.connect(Path(d) / "presence.db")) as database:
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+         row = database.execute("SELECT RegionID FROM Presence WHERE SessionID = ?",
+                                (login["session_id"],)).fetchone()
+         if row == expected_home_presence:
+          break
+         time.sleep(0.02)
+        else:
+         raise AssertionError(f"Home grid presence was {row}, expected {expected_home_presence}")
        home.shutdown()
        sys.exit(0)
    def grid_user_status(connection, user):
@@ -1668,6 +1773,15 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
     assert 0 <= local_x <= 32766 * 256 and local_x % 256 == 0
     assert remote_region.findtext("locY") == "0"
     assert remote_calls == [("link", {"region_name":"Remote Region"})]
+    malformed_search = urllib.parse.urlencode({"METHOD": "get_region_by_name", "NAME": home_uri + "Malformed Link"})
+    c.request("POST", "/grid", malformed_search, {"Content-Type": "application/x-www-form-urlencoded"})
+    malformed = c.getresponse()
+    assert malformed.status == 200 and ET.fromstring(malformed.read()).findtext("result") == "null"
+    assert remote_calls[-1] == ("link", {"region_name": "Malformed Link"})
+    c.request("POST", "/grid", f"METHOD=get_region_by_uuid&REGIONID={malformed_link_id}",
+              {"Content-Type": "application/x-www-form-urlencoded"})
+    unregistered = c.getresponse()
+    assert unregistered.status == 200 and ET.fromstring(unregistered.read()).findtext("result") == "null"
     if "--native-home-launch" in sys.argv[2:]:
      created = subprocess.run(command + ["--create-user", "Travel", "Fixture"], input="fixture-password\n",
                               capture_output=True, text=True, check=True)
@@ -1738,6 +1852,15 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
       assert proxy.verify_agent({"sessionID":str(local_session), "token":launch["service_session_id"]}) == {"result":"True"}
      next_launch = {**launch, "gatekeeper_serveruri":home_uri.rstrip("/"), "destination_serveruri":home_uri.rstrip("/")}
      if "--trusted-home-launch" in sys.argv[2:]:
+      accept_home_launch.clear()
+      c.request("POST", f"/homeagent/{local_agent}/",
+                json.dumps({**next_launch, "client_ip": "192.0.2.91"}),
+                {"Content-Type": "application/json"})
+      reply = c.getresponse()
+      assert reply.status == 200 and json.loads(reply.read())["reason"] == "Fixture denied home-agent launch"
+      _, rejected_relaunch = home_launches.get(timeout=8)
+      assert rejected_relaunch["client_ip"] == launch["client_ip"], rejected_relaunch
+
       new_session = str(uuid.uuid4())
       next_launch.update(session_id=new_session, secure_session_id=str(uuid.uuid4()), service_session_id="")
       accept_home_launch.clear()
@@ -1751,7 +1874,9 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
        assert proxy.verify_agent({"sessionID":new_session, "token":rejected_launch["service_session_id"]}) == {"result":"False"}
        assert proxy.verify_agent({"sessionID":str(local_session), "token":launch["service_session_id"]}) == {"result":"True"}
       accept_home_launch.set()
-      c.request("POST", f"/homeagent/{local_agent}/", json.dumps(next_launch),
+      legacy_launch = {key: value for key, value in next_launch.items() if key != "gatekeeper_serveruri"}
+      legacy_launch.update(gatekeeper_host="127.0.0.1", gatekeeper_port=str(home.server_address[1]))
+      c.request("POST", f"/homeagent/{local_agent}/", json.dumps(legacy_launch),
                 {"Content-Type":"application/json"})
       reply = c.getresponse()
       result = json.loads(reply.read())
@@ -1933,6 +2058,18 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
       break
     else:
      raise AssertionError("Viewer did not complete region entry")
+    with closing(http.client.HTTPConnection("127.0.0.1", port, timeout=5)) as connection:
+     if check_map_features:
+      assert viewer_map_url(connection, "/CAPS/foreign-fixture0000/") == "https://visitors.example/map/"
+     deadline = time.monotonic() + 5
+     while True:
+      status = ET.fromstring(grid_user_status(connection, user))
+      if status.findtext("result/LastRegionID") == linked["uuid"]:
+       assert status.findtext("result/UserID") == user, ET.tostring(status)
+       break
+      if time.monotonic() >= deadline:
+       raise AssertionError("GridUser did not record the visitor's region under their Hypergrid identity")
+      time.sleep(0.02)
     if not sys.argv[2:]:
      def receive_image():
       wire = viewer.recv(4096)
@@ -2344,7 +2481,29 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
       break
     else:
      raise AssertionError("Viewer did not receive the Gatekeeper denial")
+    for sequence, remote_reply, message in (
+        (70, {"result": "False"}, b"The teleport destination could not be found."),
+        (71, {"result": "True", "uuid": remote_id, "internal_port": 9000}, b"Error parsing response from grid."),
+        (72, {"result": "True", "uuid": remote_id, "internal_port": "9000", "server_uri": home_uri},
+         b"Could not resolve destination Address"),
+    ):
+     hypergrid_replies.put(remote_reply)
+     viewer.sendto(struct.pack(">BIB", 0x40, sequence, 0) + bytes.fromhex("ffff003f") +
+                   agent.bytes + session.bytes + struct.pack("<Q6f", linked_handle, 120, 121, 45, 1, 0, 0),
+                   ("127.0.0.1", udp))
+     assert hypergrid_queries.get(timeout=5)["region_uuid"] == remote_id
+     for _ in range(64):
+      packet = viewer.recv(4096)
+      if packet[6:10] == bytes.fromhex("ffff004a"):
+       assert message in packet, packet
+       break
+     else:
+      raise AssertionError(f"Viewer did not receive the Gatekeeper failure {message!r}")
     resolve_hypergrid.set()
+    hypergrid_replies.put({
+        "result": " True ", "uuid": remote_id, "x": "unknown",
+        "hostname": "127.0.0.1", "internal_port": "9000", "server_uri": home_uri,
+    })
     viewer.sendto(struct.pack(">BIB", 0x40, 8, 0) + bytes.fromhex("ffff003f") +
                   agent.bytes + session.bytes + struct.pack("<Q6f", linked_handle, 120, 121, 45, 1, 0, 0),
                   ("127.0.0.1", udp))
@@ -2463,11 +2622,24 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
       else:
        raise AssertionError("Authenticated cross-grid release did not close the source viewer")
       with closing(sqlite3.connect(Path(d) / "presence.db")) as database:
-       assert database.execute("SELECT UserID FROM Presence WHERE SessionID = ?",
-                               (str(session),)).fetchone() == (str(agent),)
+       deadline = time.monotonic() + 5
+       while True:
+        row = database.execute("SELECT UserID FROM Presence WHERE SessionID = ?",
+                               (str(session),)).fetchone()
+        status = ET.fromstring(grid_user_status(c, user))
+        if row is None and status.findtext("result/Online") == "False":
+         assert status.findtext("result/LastRegionID") == linked["uuid"]
+         break
+        if time.monotonic() >= deadline:
+         raise AssertionError("Completed transfer did not clear the source grid's presence and online status")
+        time.sleep(0.02)
       assert home_logouts.empty(), "Completed transfer logged out the visitor from its home grid"
      else:
-      duplicate = {"session_id": str(uuid.uuid4()), "circuit_code": str(code + 1)}
+      duplicate = {
+          "session_id": str(uuid.uuid4()),
+          "circuit_code": str(code + 1),
+          "destination_uuid": str(uuid.uuid4()),
+      }
       c.request("POST", f"/foreignagent/{agent}/", json.dumps(admission_payload | duplicate),
                 {"Content-Type": "application/json"})
       response = c.getresponse()
@@ -2530,6 +2702,9 @@ with HomeServer(("127.0.0.1",0),requestHandler=HomeRequestHandler,logRequests=Fa
      c.request("POST", "/grid", remote_search, {"Content-Type": "application/x-www-form-urlencoded"})
      response = c.getresponse()
      assert response.status == 200 and remote_id.encode() in response.read()
-   assert len(remote_calls) == 1, remote_calls
+   assert remote_calls == [
+       ("link", {"region_name": "Remote Region"}),
+       ("link", {"region_name": "Malformed Link"}),
+   ], remote_calls
  home.shutdown()
 

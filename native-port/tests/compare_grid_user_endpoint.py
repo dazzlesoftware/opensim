@@ -75,6 +75,8 @@ def main():
     for method in ["loggedout", "sethome", "setposition"]:
         for suffix in ["", "&UserID="+user, "&UserID="+user+"&RegionID=bad", "&UserID="+user+"&RegionID="+region, "&UserID="+user+"&RegionID="+region+"&Position=<1,2,3>&LookAt=bad", "&UserID="+user+"&RegionID="+region+"&Position=bad&LookAt=<4,5,6>", "&UserID[]=list&RegionID="+region]:
             bodies.append("METHOD="+method+suffix)
+        for value in (" " + region + " ", region.replace("-", ""), "{" + region + "}", region + " extra"):
+            bodies.append(urllib.parse.urlencode({"METHOD": method, "UserID": user, "RegionID": value}))
     modes = [("none", "", False), ("basic", "", False), ("basic", "Basic "+base64.b64encode(b"u:p").decode(), False), ("basic", " Basic "+base64.b64encode(b"u:p:ignored").decode()+" ", False), ("basic", "basic dTpw", False), ("basic", "Basic invalid!", False), ("none", "", True), ("allow", "Basic dTpw", True)]
     encoded_lookup = "METHOD=getgriduserinfo&UserID=" + user
     bodies = [body.encode() for body in bodies]

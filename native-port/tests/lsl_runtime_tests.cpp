@@ -1,5 +1,16 @@
 #include "opensim/script/lsl_runtime.hpp"
+#include "opensim/scene/remote_data_channels.hpp"
+#include "opensim/framework/config_http_headers.hpp"
+#include "opensim/script/asset_text.hpp"
+#include "opensim/script/http_request_throttle.hpp"
 #include "opensim/scene/terrain.hpp"
+#include "opensim/scene/script_mailbox.hpp"
+#include "opensim/network/script_smtp.hpp"
+#include "opensim/network/script_http_transport.hpp"
+#include "opensim/framework/config_native_uri_object.hpp"
+#include "opensim/framework/config_http_environment_proxy.hpp"
+#include "opensim/framework/config_http_environment_proxy_native.hpp"
+#include "opensim/framework/text.hpp"
 #include "opensim/framework/primitive_base_shape.hpp"
 #include <fstream>
 #include <iostream>
@@ -7,6 +18,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <tuple>
+#include <thread>
+#include <future>
 using namespace opensim;
 using namespace script;
 static void check(bool b, const char* text) {
@@ -94,6 +107,266 @@ static std::string api_probe(int mode, int count, int channel, const std::string
 }
 int main(int argc, char** argv) {
     try {
+        {
+            auto service = std::make_shared<network::ScriptHttpService>(
+                std::make_shared<framework::OutboundUrlFilter>(""), 16384, 2000, 1);
+            for (const auto* name : {"Ho\xc2\xad" "st", "Pro\xc2\xad" "xy-Example", "Se\xc2\xad" "c-Example"}) {
+                network::ScriptHttpModule module(service, {0.f, 1.f, 0.f, 1.f});
+                const auto result = module.submit({}, 17, {}, {}, "http://127.0.0.1/",
+                                                  {{5, "5"}, {{}, name}, {{}, "fixture"}}, {}, {});
+                check(result.key.empty() && result.errors.size() == 1 &&
+                          result.errors.front().find("Name is invalid as a custom header") != std::string::npos,
+                      "script HTTP forbidden header names and prefixes use invariant collation");
+            }
+            check(service->active_workers() == 0, "invalid custom header must be rejected before enqueue");
+        }
+        if (argc == 1) {
+            const auto program = compile_lsl(R"LSL(
+                default {
+                    state_entry() {
+                        llOpenRemoteDataChannel();
+                        key request = llSendRemoteData("", "", 0, "");
+                        llRemoteDataReply("", "", "", 0);
+                        llCloseRemoteDataChannel("");
+                        llOwnerSay("result:" + (string)request);
+                    }
+                }
+            )LSL");
+            check(bool(program), "remote data APIs compile");
+            std::int64_t clock = 0;
+            std::vector<std::string> messages;
+            LslHost host;
+            host.clock_ticks = [&] { return clock; };
+            host.chat = [&](const LslChat& chat) { messages.push_back(chat.text); };
+            host.script_delay_factor = .5f;
+            LslInstance script(program.program, context(), host);
+            for (const int milliseconds : {500, 1500, 1500, 500}) {
+                check(script.run(100).status == LslRunStatus::Sleeping && messages.empty(),
+                      "remote data without XML-RPC observes the managed delay");
+                clock += std::int64_t(milliseconds) * 10000;
+            }
+            check(script.run(100).status == LslRunStatus::Idle && messages == std::vector<std::string>{"result:"},
+                  "remote data without XML-RPC returns an empty key");
+        }
+        if (argc == 3 && std::string_view(argv[1]) == "--shared-http-probe") {
+            auto service = std::make_shared<network::ScriptHttpService>(
+                std::make_shared<framework::OutboundUrlFilter>(""), 16384, 2000, 1);
+            check(service->active_workers() == 0, "script HTTP should start without worker threads");
+            const HttpRequestThrottleSettings throttle{0.f, 1.f, 0.f, 1.f};
+            network::ScriptHttpModule first(service, throttle), second(service, throttle), removed(service, throttle);
+            const auto part = framework::Uuid::random();
+            const auto item = framework::Uuid::random();
+            const auto owner = framework::Uuid::random();
+            constexpr std::uint32_t local_id = 17;
+            const auto submit = [&](network::ScriptHttpModule& module, framework::Uuid script, std::string_view path) {
+                return module.submit(part, local_id, owner, script, argv[2] + std::string(path), {}, {}, {}).key;
+            };
+            const auto first_key = submit(first, item, "/shared-first");
+            const auto removed_key = submit(removed, item, "/shared-cancelled");
+            const auto second_key = submit(second, item, "/shared-second");
+            removed.stop_all();
+            std::cout << "queued" << std::endl;
+            check(!first_key.empty() && !removed_key.empty() && !second_key.empty() &&
+                      first_key != framework::Uuid{}.str() && second_key != framework::Uuid{}.str() &&
+                      removed_key != framework::Uuid{}.str(),
+                  "regional script HTTP throttles should remain independent");
+            const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(4);
+            bool first_done = false, second_done = false;
+            while ((!first_done || !second_done) && std::chrono::steady_clock::now() < deadline) {
+                const auto check_reply = [&](network::ScriptHttpModule& module, const std::string& key,
+                                             std::string_view body, bool& done) {
+                    const auto replies = module.take_completed();
+                    for (const auto& reply : replies) {
+                        check(!done && reply.request.str() == key && reply.part == part && reply.local_id == local_id &&
+                                  reply.reply.status == 200 && reply.reply.body == body,
+                              "shared HTTP worker delivered a reply to the wrong region");
+                        done = true;
+                    }
+                };
+                check_reply(first, first_key, "first", first_done);
+                check_reply(second, second_key, "second", second_done);
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            }
+            check(first_done && second_done && removed.take_completed().empty(),
+                  "shared HTTP workers must deliver both regional replies and suppress cancelled requests");
+            const auto retirement_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(4);
+            while (service->active_workers() && std::chrono::steady_clock::now() < retirement_deadline)
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            check(service->active_workers() == 0, "idle script HTTP worker did not retire");
+            auto& restarted = removed;
+            const auto restarted_key = submit(restarted, item, "/shared-restart");
+            const auto restart_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+            while (std::chrono::steady_clock::now() < restart_deadline) {
+                const auto replies = restarted.take_completed();
+                if (!replies.empty()) {
+                    check(replies.size() == 1 && replies.front().request.str() == restarted_key &&
+                              replies.front().reply.status == 200 && replies.front().reply.body == "restarted",
+                          "script HTTP worker returned the wrong reply after restarting");
+                    network::ScriptHttpModule stopped(service, throttle);
+                    const auto stopped_key = submit(stopped, item, "/shared-restart");
+                    check(!stopped_key.empty() && stopped_key != framework::Uuid{}.str(),
+                          "queue a second response for teardown");
+                    const auto idle_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(4);
+                    while (service->active_workers() && std::chrono::steady_clock::now() < idle_deadline)
+                        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+                    check(service->active_workers() == 0, "response finishes before script teardown");
+                    stopped.stop(local_id, item);
+                    check(stopped.take_completed().empty(), "script teardown discards its queued HTTP reply");
+                    return 0;
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            }
+            throw std::runtime_error("script HTTP worker did not restart for a new request");
+        }
+        if (argc == 5 && std::string_view(argv[1]) == "--http-proxy-bypass-probe") {
+            const auto uris = framework::native_config_uri_object_backend();
+            const auto uri = uris->create(std::make_shared<const std::u16string>(framework::utf16(argv[2])),
+                                          framework::ConfigUriObjectKind::Absolute);
+            const auto proxy = std::dynamic_pointer_cast<framework::ConfigHttpProxy>(
+                network::make_script_http_proxy(argv[3], argv[4]));
+            std::cout << (proxy && proxy->is_bypassed(uri)) << '\n';
+            return 0;
+        }
+        const auto probe = argc > 1 ? std::string_view(argv[1]) : std::string_view{};
+        const bool custom_content_type = argc == 5 && std::string_view(argv[4]) == "--custom-content-type";
+        const bool invalid_header_name = argc == 5 && std::string_view(argv[4]) == "--invalid-header-name";
+        const bool custom_content_length = argc == 5 && std::string_view(argv[4]).starts_with("--content-length=");
+        constexpr std::string_view method_option = "--method=";
+        const bool custom_method = argc == 5 && std::string_view(argv[4]).starts_with(method_option);
+        if (argc >= 4 && argc <= 8 &&
+            (probe == "--http-transport-probe" || probe == "--http-transport-insecure-probe")) {
+            const auto uris = framework::native_config_uri_object_backend();
+            network::ScriptHttpRequest request;
+            request.uri = uris->create(std::make_shared<const std::u16string>(framework::utf16(argv[2])),
+                                       framework::ConfigUriObjectKind::Absolute);
+            request.max_body_bytes = std::stoi(argv[3]);
+            request.method = "POST";
+            request.body = "payload";
+            if (custom_method)
+                request.method = std::string_view(argv[4]).substr(method_option.size());
+            if (request.method == "CONNECT") {
+                request.headers.emplace_back("Host", "fixture.invalid:443");
+                request.body.clear();
+            }
+            if (custom_content_type)
+                request.headers.emplace_back("Content-Type", "text/custom");
+            if (invalid_header_name)
+                request.headers.emplace_back("Bad Header", "ignored");
+            if (invalid_header_name) {
+                request.headers.emplace_back("X-Fixture", "first");
+                request.headers.emplace_back("user-agent", "one");
+                request.headers.emplace_back("User-Agent", "two");
+                request.headers.emplace_back("Cookie", "one");
+                request.headers.emplace_back("cookie", "two");
+                request.headers.emplace_back("Transfer-Encoding", "gzip;level=\"a,b\", ChUnKeD");
+                request.headers.emplace_back("aLLoW", "GET");
+                request.headers.emplace_back("ETag", "\"fixture\"");
+            }
+            if (custom_content_length)
+                request.headers.emplace_back("Content-Length", std::string_view(argv[4]).substr(17));
+            if (argc == 8) {
+                const std::string_view encoding = argv[7];
+                if (encoding == "latin1") {
+                    request.body = "caf\xe9";
+                    request.mime_type = "text/plain; charset=\"iso-8859-1\"";
+                } else if (encoding == "utf16-bom") {
+                    request.body = std::string("\xff\xfe" "c\0a\0f\0\xe9\0", 10);
+                    request.mime_type = "text/plain";
+                } else if (encoding == "utf32be") {
+                    request.body = std::string("\0\0\xfe\xff\0\0\0c\0\0\0a\0\0\0f\0\0\0\xe9", 20);
+                    request.mime_type = "text/plain; charset=utf-32BE";
+                } else if (encoding == "utf8-bom") {
+                    request.body = "\xef\xbb\xbf" "caf\xc3\xa9";
+                } else if (encoding == "invalid") {
+                    request.mime_type = "text/plain; charset=unsupported-fixture-encoding";
+                } else {
+                    throw std::invalid_argument("Unknown Digest fixture encoding");
+                }
+            }
+            request.verify_certificate = probe == "--http-transport-probe";
+            request.pragma_no_cache = true;
+            request.headers.emplace_back("X-Fixture", "kept");
+            const auto initial = request.uri->http_components();
+            auto filter = std::make_shared<framework::OutboundUrlFilter>(
+                framework::OutboundUrlFilter::default_disallow, "127.0.0.1:" + std::to_string(initial->port()));
+            const auto proxy = argc >= 6 ? network::make_script_http_proxy(argv[4], argv[5]) : nullptr;
+            if (argc >= 7) {
+                const auto concrete = std::dynamic_pointer_cast<framework::ConfigHttpProxy>(proxy);
+                check(bool(concrete), "script HTTP credential probe requires a proxy");
+                if (std::string_view(argv[6]) == "--environment-credentials") {
+                    std::string proxy_url = argv[4];
+                    proxy_url.insert(proxy_url.find("://") + 3, "f%C3%AFxture:p%C3%A4ss@");
+                    const auto backend = framework::native_config_http_environment_proxy_backend();
+                    const auto create = [&](std::string_view value) {
+                        return framework::config_http_environment_proxy_uri(
+                            std::make_shared<const std::u16string>(framework::utf16(value)), backend);
+                    };
+                    concrete->credentials(framework::ConfigHttpEnvironmentProxyCredentials::try_create(
+                        create("socks4://other:secret@127.0.0.1:1"), create(proxy_url), backend));
+                } else if (std::string_view(argv[6]) == "--kerberos-default-credentials") {
+                    concrete->credentials(framework::config_http_default_network_credentials());
+                } else if (std::string_view(argv[6]) == "--kerberos-credentials") {
+                    concrete->credentials(std::make_shared<framework::ConfigHttpNetworkCredential>(
+                        std::make_shared<const std::u16string>(u"fixture"),
+                        std::make_shared<const std::u16string>(u"fixture-password"),
+                        std::make_shared<const std::u16string>(u"OPENSIM.TEST")));
+                } else {
+                    concrete->credentials(std::make_shared<framework::ConfigHttpNetworkCredential>(
+                        std::make_shared<const std::u16string>(u"f\u00efxture"),
+                        std::make_shared<const std::u16string>(u"p\u00e4ss"), nullptr));
+                }
+            }
+            if (argc == 7 && std::string_view(argv[6]) == "--pooled-credentials") {
+                network::WebHttpHandlerSettings settings;
+                settings.use_proxy = true;
+                settings.proxy = proxy;
+                settings.no_verify_cert_chain = true;
+                settings.no_verify_cert_hostname = true;
+                network::WebHttpClient client(network::native_web_http_handler_factory()(settings), 1500, 32768);
+                for (int index = 0; index < 2; ++index) {
+                    framework::ConfigXmlHttpOperation operation;
+                    operation.method = "GET";
+                    operation.response_headers = [](const auto& response) {
+                        check(response.status == 200, "authenticated SOCKS pool response status");
+                    };
+                    const auto body = client.send_headers(request.uri, operation);
+                    std::array<std::uint8_t, 8> buffer{};
+                    check(body && body->read(buffer) == 2, "authenticated SOCKS pool response body");
+                    body->close();
+                }
+                return 0;
+            }
+            network::ScriptHttpTransport transport(filter, network::native_web_http_handler_factory(), 1500, 8, proxy);
+            const auto cancel_after = argc == 5 && !custom_content_type && !custom_content_length &&
+                                      !custom_method && !invalid_header_name
+                ? std::stoi(argv[4]) : -1;
+            const auto started = std::chrono::steady_clock::now();
+            const auto reply = transport.send(request, [&] {
+                return cancel_after >= 0 &&
+                    std::chrono::steady_clock::now() - started >= std::chrono::milliseconds(cancel_after);
+            });
+            if (reply)
+                std::cout << reply->status << ' ' << hex(reply->body) << '\n';
+            else
+                std::cout << "cancelled\n";
+            return 0;
+        }
+        if (argc == 7 && std::string_view(argv[1]) == "--smtp-probe") {
+            const std::string_view mode = argv[4];
+            const auto tls = mode == "implicit" ? network::ScriptSmtpTls::Implicit :
+                mode == "1" || mode == "required-legacy" ? network::ScriptSmtpTls::StartTls :
+                                                          network::ScriptSmtpTls::Automatic;
+            const bool legacy = mode == "legacy" || mode == "required-legacy";
+            network::ScriptSmtpSecurity security{tls, std::string_view(argv[5]) == "1",
+                std::string_view(argv[6]) == "1", legacy ? "" : "fixture-user",
+                legacy ? "" : "fixture-password"};
+            const auto body = mode == "eight-bit" || mode == "encoded" ? "first\n.café\nlast" :
+                                                                        "first\n.second\nlast";
+            network::send_script_smtp(argv[2], std::stoi(argv[3]), "\"Simulátor, Native\" <from@example.invalid>",
+                "Fixture Recipient <to@example.invalid>", "Fixture", body,
+                "fixture-owner", "fixture-object", security);
+            return 0;
+        }
         if (argc > 1 && std::string(argv[1]) == "--api-probe") {
             int mode, count, channel;
             std::string text;
@@ -101,11 +374,44 @@ int main(int argc, char** argv) {
                 std::cout << api_probe(mode, count, channel, unhex(text == "-" ? "" : text)) << "\n";
             return 0;
         }
+        if (argc == 2 && std::string_view(argv[1]) == "--http-throttle-probe") {
+            HttpRequestThrottleSettings settings;
+            std::cin >> settings.prim_rate >> settings.prim_burst >> settings.owner_rate >> settings.owner_burst;
+            HttpRequestThrottle throttle(settings);
+            char operation;
+            std::uint32_t prim;
+            std::string owner;
+            double time;
+            while (std::cin >> operation >> prim >> owner >> time) {
+                if (operation == 'S')
+                    throttle.stop(prim, time);
+                else
+                    std::cout << throttle.allow(prim, framework::Uuid(owner), time) << '\n';
+            }
+            return 0;
+        }
         int checks = 0;
         auto test = [&](bool b, const char* what) {
             check(b, what);
             checks++;
         };
+        {
+            const auto owner = context().owner;
+            const auto other = context().object;
+            HttpRequestThrottle throttle;
+            test(throttle.allow(1, owner, 0) && throttle.allow(1, owner, 0) &&
+                     throttle.allow(2, owner, 0) && !throttle.allow(3, owner, 0),
+                 "script HTTP initializes the shared owner bucket with the prim burst");
+            test(throttle.allow(3, other, 0) && throttle.allow(3, other, 0) &&
+                     !throttle.allow(3, other, 0) && throttle.allow(3, other, .01),
+                 "owner rejection still consumes prim credit and fractional refill permits a request");
+            HttpRequestThrottle stopped;
+            test(stopped.allow(7, owner, 0) && stopped.allow(7, owner, 0) && stopped.allow(7, owner, 0),
+                 "new prim and owner buckets grant the first request");
+            stopped.stop(7, .125);
+            test(stopped.allow(7, other, .125) && stopped.allow(7, other, .125),
+                 "script HTTP stop uses the owner refill rate to expire a prim bucket");
+        }
         {
             const std::string source = R"LSL(
                 integer counter = 40;
@@ -204,6 +510,21 @@ int main(int argc, char** argv) {
                  "version four preserves start parameters without changing older checkpoint layouts");
             test(!decode_lsl_checkpoint(std::span(parameter_wire).first(parameter_wire.size() - 1)),
                  "reject checkpoint truncated inside the start parameter");
+            auto with_sensors = with_start_parameter;
+            with_sensors.sensors = {{"Nearest", detector.key, 4, 40., 1.5, .25},
+                                    {"Once", {}, 1, 20., 3., std::nullopt}};
+            const auto sensor_wire = encode_lsl_checkpoint(with_sensors, false);
+            const auto crossing_sensors = decode_lsl_checkpoint(sensor_wire);
+            test(sensor_wire[3] == 5 && crossing_sensors && crossing_sensors->sensors.size() == 2 &&
+                     crossing_sensors->sensors[0].name == "Nearest" &&
+                     crossing_sensors->sensors[0].key == detector.key &&
+                     crossing_sensors->sensors[0].type == 4 && crossing_sensors->sensors[0].range == 40. &&
+                     crossing_sensors->sensors[0].arc == 1.5 && crossing_sensors->sensors[0].interval == .25 &&
+                     !crossing_sensors->sensors[1].interval && crossing_sensors->start_parameter == -73 &&
+                     encode_lsl_checkpoint(*crossing_sensors, false) == sensor_wire && decoded->sensors.empty(),
+                 "version five preserves repeat and one-shot sensors in crossing checkpoints");
+            test(!decode_lsl_checkpoint(std::span(sensor_wire).first(sensor_wire.size() - 1)),
+                 "reject checkpoint truncated inside a sensor record");
             auto invalid = *decoded;
             invalid.instruction = std::numeric_limits<std::size_t>::max();
             test(!receiver.restore_checkpoint(invalid), "reject checkpoint with invalid instruction");
@@ -436,6 +757,40 @@ int main(int argc, char** argv) {
             const auto program = compile_lsl(R"LSL(
                 default {
                     state_entry() {
+                        key target = "12345678-1234-1234-1234-123456789abc";
+                        vector angular = ZERO_VECTOR;
+                        llPushObject(target, <2, 3, 4>, (angular = <8, 9, 10>), TRUE);
+                        if (angular == <8, 9, 10>)
+                            llSay(0, "angular evaluated");
+                        llPushObject("invalid", <1, 1, 1>, ZERO_VECTOR, FALSE);
+                        llPushObject(NULL_KEY, <1, 1, 1>, ZERO_VECTOR, FALSE);
+                    }
+                }
+            )LSL");
+            if (!program)
+                throw std::runtime_error("llPushObject compile failed: " + program.diagnostics.front().message);
+            const auto script_context = context();
+            auto push_host = host;
+            bool angular_evaluated = false;
+            push_host.chat = [&](const LslChat& chat) {
+                angular_evaluated = chat.text == "angular evaluated";
+            };
+            int pushes = 0;
+            push_host.push_object = [&](auto source, auto target, auto impulse, bool local) {
+                ++pushes;
+                test(source == script_context.object &&
+                         target.str() == "12345678-1234-1234-1234-123456789abc" &&
+                         impulse == opensim::framework::Vector3{2, 3, 4} && local,
+                     "llPushObject forwards the linear impulse and local flag");
+            };
+            LslInstance instance(program.program, script_context, push_host);
+            test(instance.run(100).status == LslRunStatus::Idle && pushes == 1 && angular_evaluated,
+                 "llPushObject evaluates the angular argument and skips invalid and zero target keys");
+        }
+        {
+            const auto program = compile_lsl(R"LSL(
+                default {
+                    state_entry() {
                         llLookAt(llGetPos() + <1, 0, 0>, 2, 3);
                         llRotLookAt(ZERO_ROTATION, 4, 5);
                         llStopLookAt();
@@ -652,6 +1007,541 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + dataserver_start, messages.end()) ==
                      std::vector<std::string>{query + ":first", query + ":second"},
              "queued dataserver replies preserve key type, data, and event order");
+        {
+            const auto response_program = compile_lsl(R"LSL(
+                default {
+                    http_response(key request, integer status, list metadata, string body) {
+                        llSay(0, (string)request + ":" + (string)status + ":" +
+                                 (string)llGetListLength(metadata) + ":" + body);
+                    }
+                }
+            )LSL");
+            if (!response_program)
+                throw std::runtime_error("http_response compile failed: " + response_program.diagnostics.front().message);
+            LslInstance receiver(response_program.program, context(), host);
+            const auto metadata = std::make_shared<const LslList>();
+            test((receiver.event_mask() & (1ull << 10)) != 0 &&
+                     !receiver.post_event({"http_response", {query, 200, std::string{}, std::string{}}, {}}) &&
+                     receiver.post_event({"http_response", {query, 200, metadata, std::string("reply")}, {}}),
+                 "http_response exposes the managed event bit and validates metadata");
+            const auto checkpoint = receiver.checkpoint();
+            test(bool(checkpoint), "queued http_response can be saved");
+            const auto restored_checkpoint = decode_lsl_checkpoint(encode_lsl_checkpoint(*checkpoint));
+            LslInstance restored(response_program.program, context(), host);
+            const auto message_count = messages.size();
+            test(restored_checkpoint && restored.restore_checkpoint(*restored_checkpoint) &&
+                     restored.run(100).status == LslRunStatus::Idle &&
+                     messages.size() == message_count + 1 && messages.back() == query + ":200:0:reply",
+                 "http_response preserves its key, status, metadata and body through checkpoint restore");
+        }
+        {
+            const auto program = compile_lsl(R"LSL(
+                default {
+                    remote_data(integer kind, key channel, key request, string sender, integer number, string data) {
+                        if (kind == REMOTE_DATA_REPLY)
+                            llSay(0, (string)channel + ":" + (string)request + ":" + sender + ":" +
+                                     (string)number + ":" + data);
+                    }
+                }
+            )LSL");
+            check(bool(program), "remote_data handler compiles");
+            LslInstance receiver(program.program, context(), host);
+            const auto channel = framework::Uuid::random().str();
+            LslEvent reply{"remote_data", {3, channel, query, std::string("sender"), 42, std::string("reply")}, {}};
+            auto malformed = reply;
+            malformed.arguments[4] = std::string("42");
+            check(receiver.event_mask() == (1ull << 23) && !receiver.post_event(std::move(malformed)) &&
+                      receiver.post_event(std::move(reply)), "remote_data validates six arguments and exposes bit 23");
+            const auto checkpoint = receiver.checkpoint();
+            check(bool(checkpoint), "queued remote_data can be saved");
+            const auto saved = decode_lsl_checkpoint(encode_lsl_checkpoint(*checkpoint));
+            LslInstance restored(program.program, context(), host);
+            const auto before = messages.size();
+            check(saved && restored.restore_checkpoint(*saved) && restored.run(100).status == LslRunStatus::Idle &&
+                      messages.size() == before + 1 && messages.back() == channel + ":" + query + ":sender:42:reply",
+                  "remote_data preserves its arguments through checkpoint restore");
+        }
+        {
+            const auto program = compile_lsl(R"LSL(
+                default {
+                    state_entry() { llOpenRemoteDataChannel(); }
+                    remote_data(integer kind, key channel, key request, string sender, integer number, string data) {
+                        if (kind == REMOTE_DATA_CHANNEL && request == NULL_KEY && sender == "" && number == 0 && data == "") {
+                            llSay(0, (string)channel);
+                            llCloseRemoteDataChannel(channel);
+                        }
+                    }
+                }
+            )LSL");
+            check(bool(program), "remote data channel script compiles");
+            auto channel_host = host;
+            const auto script_context = context();
+            const auto channel = framework::Uuid::random();
+            scene::RemoteDataChannels channels;
+            std::int64_t channel_clock = 0;
+            channel_host.clock_ticks = [&] { return channel_clock; };
+            channel_host.script_delay_factor = 1;
+            channel_host.open_remote_data_channel = [&](auto object, auto item) {
+                check(object == script_context.object && item == script_context.item,
+                      "remote data provider receives the running script identity");
+                return channels.open(17, item, channel);
+            };
+            channel_host.close_remote_data_channel = [&](auto item, auto value) {
+                check(item == script_context.item && value == channel.str(), "remote data close identity");
+                channels.close(channel);
+            };
+            LslInstance instance(program.program, script_context, channel_host);
+            const auto before = messages.size();
+            check(instance.run(100).status == LslRunStatus::Sleeping && messages.size() == before,
+                  "remote data channel event waits for the opening delay");
+            channel_clock += 10000000;
+            const auto receiver = channels.find(channel);
+            check(receiver && receiver->local_id == 17 && receiver->item == script_context.item &&
+                      channels.open(18, script_context.item) == channel, "remote data reuses the existing item channel");
+            check(instance.run(100).status == LslRunStatus::Sleeping && messages.size() == before + 1 &&
+                      messages.back() == channel.str(), "remote data channel event delivers the provider channel");
+            check(!channels.find(channel), "closed remote data channel is removed");
+            const auto reopened = channels.open(17, script_context.item);
+            const auto other_region = framework::Uuid::random();
+            const auto other_channel = channels.open(17, script_context.item, {}, other_region);
+            check(other_channel != reopened, "regions can host the same script item independently");
+            using namespace std::chrono_literals;
+            auto pending = std::async(std::launch::async, [&] {
+                return channels.request(reopened, {42, "request"}, 2s);
+            });
+            std::vector<scene::RemoteDataChannels::Request> requests;
+            const auto deadline = std::chrono::steady_clock::now() + 1s;
+            while (requests.empty() && std::chrono::steady_clock::now() < deadline) {
+                check(channels.take_requests(other_region).empty(),
+                      "a region cannot drain another region's remote data requests");
+                requests = channels.take_requests();
+                if (requests.empty())
+                    std::this_thread::sleep_for(1ms);
+            }
+            check(requests.size() == 1 && requests.front().receiver.item == script_context.item &&
+                      requests.front().data.integer == 42 && requests.front().data.text == "request",
+                  "remote data request queues the receiver and payload");
+            check(channels.reply(reopened, requests.front().message, {43, "response"}),
+                  "remote data reply correlates with the pending message");
+            const auto response = pending.get();
+            check(response.data && response.data->integer == 43 && response.data->text == "response",
+                  "remote data request returns the correlated response");
+            channels.cancel_script(script_context.item, other_region);
+            check(!channels.find(other_channel) && channels.find(reopened),
+                  "cancelling a script in one region preserves its counterpart");
+            const auto closing_channel = channels.open(17, script_context.item, {}, other_region);
+            auto closing_request = std::async(std::launch::async, [&] {
+                return channels.request(closing_channel, {0, "shutdown"}, 3s);
+            });
+            std::vector<scene::RemoteDataChannels::Request> closing_events;
+            const auto closing_deadline = std::chrono::steady_clock::now() + 1s;
+            while (closing_events.empty() && std::chrono::steady_clock::now() < closing_deadline) {
+                closing_events = channels.take_requests(other_region);
+                if (closing_events.empty())
+                    std::this_thread::sleep_for(1ms);
+            }
+            check(closing_events.size() == 1, "request is waiting for a reply before shutdown");
+            channels.cancel_region(other_region);
+            check(closing_request.wait_for(1s) == std::future_status::ready &&
+                      closing_request.get().status == scene::RemoteDataChannels::Status::TimedOut &&
+                      !channels.find(closing_channel) && channels.find(reopened),
+                  "region shutdown wakes pending callers and preserves channels in other regions");
+            check(channels.request(reopened, {0, ""}, 0ms).status == scene::RemoteDataChannels::Status::TimedOut &&
+                      channels.take_requests().empty(), "remote data timeout removes undelivered requests");
+            std::promise<void> release_slow;
+            auto release = release_slow.get_future();
+            scene::RemoteDataChannels outbound([&](auto, auto destination, auto& data, std::stop_token) {
+                if (destination == "slow")
+                    release.wait_for(3s);
+                data.text = std::string(destination);
+            });
+            const auto slow = outbound.send(script_context.item, "", "slow", {0, ""});
+            const auto fast = outbound.send(script_context.item, "", "fast", {0, ""});
+            std::vector<scene::RemoteDataChannels::Completion> completions;
+            const auto fast_deadline = std::chrono::steady_clock::now() + 1s;
+            while (completions.empty() && std::chrono::steady_clock::now() < fast_deadline) {
+                completions = outbound.take_completed();
+                if (completions.empty())
+                    std::this_thread::sleep_for(1ms);
+            }
+            release_slow.set_value();
+            check(slow != fast && completions.size() == 1 && completions.front().message == fast &&
+                      completions.front().data.text == "fast", "slow remote data sends do not block other requests");
+            std::promise<void> started;
+            std::promise<void> stopped;
+            auto started_signal = started.get_future();
+            auto stopped_signal = stopped.get_future();
+            scene::RemoteDataChannels cancellable([&](auto, auto, auto&, std::stop_token stop) {
+                started.set_value();
+                const auto deadline = std::chrono::steady_clock::now() + 2s;
+                while (!stop.stop_requested() && std::chrono::steady_clock::now() < deadline)
+                    std::this_thread::sleep_for(1ms);
+                if (stop.stop_requested())
+                    stopped.set_value();
+            });
+            const auto cancelled_channel = cancellable.open(17, script_context.item);
+            cancellable.send(script_context.item, "", "pending", {0, ""});
+            check(started_signal.wait_for(1s) == std::future_status::ready, "remote data send starts");
+            cancellable.cancel_script(script_context.item);
+            check(stopped_signal.wait_for(1s) == std::future_status::ready &&
+                      !cancellable.find(cancelled_channel) && cancellable.take_completed().empty(),
+                  "script cancellation closes its channel and suppresses the outbound reply");
+            channel_clock += 10000000;
+            check(instance.run(100).status == LslRunStatus::Idle, "remote data close observes its delay");
+        }
+        scene::ScriptMailbox limited_mailbox(1, 1);
+        const auto throttle_start = scene::ScriptMailbox::Clock::now();
+        const auto sender_id = context().owner;
+        test(limited_mailbox.allow_owner(sender_id, throttle_start) &&
+                 limited_mailbox.allow_owner(sender_id, throttle_start) &&
+                 !limited_mailbox.allow_owner(sender_id, throttle_start) &&
+                 limited_mailbox.allow_owner(sender_id, throttle_start + std::chrono::hours(1)),
+             "script mail owner throttle preserves the original first-send allowance and refill");
+        test(limited_mailbox.allow_recipient("prim", throttle_start) &&
+                 limited_mailbox.allow_recipient("prim", throttle_start) &&
+                 !limited_mailbox.allow_recipient("prim", throttle_start) &&
+                 limited_mailbox.allow_recipient("other", throttle_start),
+             "script mail recipient limits are independent");
+        scene::ScriptMailbox smtp_mailbox(500, 50, 4, 1);
+        const auto smtp_start = scene::ScriptMailbox::Clock::now();
+        test(smtp_mailbox.allow_smtp("recipient", smtp_start) &&
+                 smtp_mailbox.allow_smtp("recipient", smtp_start) &&
+                 !smtp_mailbox.allow_smtp("recipient", smtp_start) &&
+                 smtp_mailbox.allow_smtp("second recipient", smtp_start) &&
+                 !smtp_mailbox.allow_smtp("third recipient", smtp_start + std::chrono::hours(24)),
+             "SMTP charges the daily limit before the recipient limit and preserves elapsed-time arithmetic");
+        const auto email_program = compile_lsl(R"LSL(
+            default {
+                state_entry() { llGetNextEmail("sender", "subject"); }
+                email(string stamp, string sender, string subject, string body, integer remaining) {
+                    llSay(0, stamp + ":" + sender + ":" + subject + ":" + body + ":" + (string)remaining);
+                }
+            }
+        )LSL");
+        test(bool(email_program), "typed email handler compiles");
+        const auto email_context = context();
+        auto email_host = host;
+        bool mailbox_requested = false;
+        email_host.request_email = [&](auto object, std::string address, std::string subject) {
+            mailbox_requested = object == email_context.object && address == "sender" && subject == "subject";
+        };
+        LslInstance email_script(email_program.program, email_context, email_host);
+        test((email_script.event_mask() & (1ull << 9)) != 0 &&
+                 !email_script.post_event({"email", {"123", "sender", "subject", "body", "2"}, {}}) &&
+                 email_script.post_event({"email", {"123", "sender", "subject", "body", std::int32_t{2}}, {}}),
+             "email exposes its source event bit and validates its typed arguments");
+        test(email_script.run(100).status == LslRunStatus::Idle && mailbox_requested &&
+                 messages.back() == "123:sender:subject:body:2",
+             "email dispatch preserves all five fields");
+        const auto email_send_program = compile_lsl(
+            "default{state_entry(){llEmail(\"sender\",\"subject\",\"body\");}}");
+        test(bool(email_send_program), "llEmail compiles");
+        bool email_queued = false;
+        email_host.send_email = [&](auto object, auto item, auto recipient, std::string subject,
+                                    std::string body) {
+            email_queued = object == email_context.object && item == email_context.item &&
+                           recipient == decltype(recipient){"sender"} && subject == "subject" && body == "body";
+        };
+        LslInstance email_sender(email_send_program.program, email_context, email_host);
+        test(email_sender.run(100).status == LslRunStatus::Sleeping && email_queued,
+             "llEmail schedules delivery and sleeps");
+        constexpr std::string_view idle_source = R"lsl(
+            integer counter = 1;
+            default {
+                state_entry() { llSay(0, "startup"); }
+            }
+            state zed {
+                timer() { llSay(0, (string)counter); }
+            }
+            state alpha {
+                timer() { llSay(0, "wrong"); }
+            }
+        )lsl";
+        const auto idle_program = compile_lsl(idle_source);
+        const auto idle_wire = unhex(
+            "0c10000001000000ffffffff090278610000000009026368000000000902646f000000000902696e"
+            "010000000c2a00000009026c690000000009026f62000000000902726f000000000902737400000000"
+            "09027665000000000902736300000000090464655b5d0000000000");
+        const auto idle_bytes = std::span(reinterpret_cast<const std::uint8_t*>(idle_wire.data()), idle_wire.size());
+        const auto idle_snapshot = decode_yengine_snapshot(idle_bytes);
+        test(bool(idle_program) && idle_snapshot && idle_snapshot->state_index == 1 &&
+                 !decode_yengine_snapshot(idle_bytes.first(idle_bytes.size() - 1)),
+             "YEngine v12 idle snapshot decodes and rejects truncated state");
+        LslInstance idle_script(idle_program.program, email_context, email_host);
+        test(!idle_script.restore_yengine_snapshot(*idle_snapshot, "00000000000000000000000000000000", idle_source) &&
+                 idle_script.restore_yengine_snapshot(*idle_snapshot, "9403F8233FCB2421F4E7983DA100DCC2", idle_source) &&
+                 idle_script.queued_events() == 0 && idle_script.post_event({"timer", {}, {}}) &&
+                 idle_script.run(100).status == LslRunStatus::Idle && messages.back() == "42",
+             "YEngine idle restore verifies source and resumes the saved named state and globals without startup");
+
+        constexpr std::string_view frame_free_source = R"lsl(
+            integer counter = 1;
+            default {
+                state_entry() { llSay(0, "unexpected startup"); }
+                state_exit() { llSay(0, "exit:" + (string)counter); }
+            }
+            state zed {
+                state_entry() { llSay(0, "entered"); }
+                dataserver(key query, string data) { llSay(0, data + (string)counter); }
+            }
+        )lsl";
+        constexpr std::string_view frame_free_hash = "D7DA66FCE9F3A2DE17A0F666DC0EBBA7";
+        const auto frame_free_program = compile_lsl(frame_free_source);
+        const auto decode_snapshot = [](std::string_view hex_snapshot) {
+            const auto wire = unhex(hex_snapshot);
+            return decode_yengine_snapshot(
+                {reinterpret_cast<const std::uint8_t*>(wire.data()), wire.size()});
+        };
+        const auto transition = decode_snapshot(
+            "0c1000000000000001000000090278610000000009026368000000000902646f000000000902696e"
+            "010000000c2a00000009026c690000000009026f62000000000902726f000000000902737400000000"
+            "09027665000000000902736300000000090464655b5d00000000102a2a6e65775374617465436f6465"
+            "2a2a0100000000");
+        const auto active_reply = decode_snapshot(
+            "0c1009026f62020000000d2463666162313233342d313233342d343332312d313233342d3132333435"
+            "363738396162630d07616e737765723a00010000000800000009027861000000000902636800000000"
+            "0902646f000000000902696e010000000c2a00000009026c690000000009026f62000000000902726f"
+            "00000000090273740000000009027665000000000902736300000000090464655b5d0000000000");
+        test(bool(frame_free_program) && transition && active_reply,
+             "YEngine frame-free event and transition snapshots decode");
+        LslInstance changing_state(frame_free_program.program, email_context, email_host);
+        const auto previous_messages = messages.size();
+        test(changing_state.restore_yengine_snapshot(*transition, frame_free_hash, frame_free_source) &&
+                 changing_state.run(100).status == LslRunStatus::Idle &&
+                 messages.size() == previous_messages + 2 &&
+                 messages[previous_messages] == "exit:42" && messages.back() == "entered" &&
+                 changing_state.checkpoint()->state == "zed",
+             "YEngine state transition runs state_exit and enters the saved destination");
+        LslInstance receiving_reply(frame_free_program.program, email_context, email_host);
+        test(receiving_reply.restore_yengine_snapshot(*active_reply, frame_free_hash, frame_free_source) &&
+                 receiving_reply.run(100).status == LslRunStatus::Idle && messages.back() == "answer:42",
+             "YEngine frame-free dataserver resumes with its saved arguments and globals");
+
+        constexpr std::string_view reset_source = R"lsl(
+            integer counter = 1;
+            list values = [3, 4];
+            default {
+                state_entry() { llSay(0, (string)counter + ":" + (string)llGetListLength(values)); }
+            }
+        )lsl";
+        constexpr std::string_view reset_hash = "8379A48ED4C8EF7B6498C7E6011BCB86";
+        const auto reset_snapshot_program = compile_lsl(reset_source);
+        const auto reset_snapshot = decode_snapshot(
+            "0c100001000000001e000000090278610000000009026368000000000902646f000000000902696e"
+            "010000000c2a00000009026c69010000000009026f62000000000902726f0000000009027374000000"
+            "0009027665000000000902736300000000090464655b5d0000000000");
+        test(bool(reset_snapshot_program) && reset_snapshot && reset_snapshot->initialize_globals,
+             "YEngine reset snapshot preserves pending global initialization and null list slots");
+        for (const bool active_entry : {true, false}) {
+            auto saved = *reset_snapshot;
+            if (!active_entry)
+                saved.event_code = -1;
+            LslInstance resetting(reset_snapshot_program.program, email_context, email_host);
+            test(resetting.restore_yengine_snapshot(saved, reset_hash, reset_source),
+                 "YEngine reset snapshot restores before startup");
+            if (!active_entry)
+                resetting.restore_queued_events({{"state_entry", {}, {}}});
+            const auto before = messages.size();
+            test(resetting.run(1).status == LslRunStatus::BudgetExhausted &&
+                     resetting.checkpoint()->initialized_globals == 1 && messages.size() == before &&
+                     resetting.run(100).status == LslRunStatus::Idle && messages.size() == before + 1 &&
+                     messages.back() == "1:2",
+                 "YEngine globals initialize once before the active or queued startup event");
+        }
+
+        const auto listen_control = compile_lsl(R"lsl(
+            default {
+                state_entry() {
+                    llListenControl(19, TRUE);
+                    llListenRemove(19);
+                }
+            }
+        )lsl");
+        const auto region_size_query = compile_lsl(R"lsl(
+            default {
+                state_entry() {
+                    vector size = osGetRegionSize();
+                    llSay(0, (string)((size.x == 512) && (size.y == 768) && (size.z == 0)));
+                }
+            }
+        )lsl");
+        test(bool(region_size_query), "osGetRegionSize compiles as a vector query");
+        auto size_context = email_context;
+        size_context.region_size = {512., 768., 0.};
+        auto size_host = email_host;
+        size_host.ossl_enabled = true;
+        LslInstance varregion_size(region_size_query.program, size_context, size_host);
+        test(varregion_size.run(100).status == LslRunStatus::Idle && messages.back() == "1",
+             "osGetRegionSize reports independent horizontal axes");
+        size_host.ossl_enabled = false;
+        LslInstance disabled_region_size(region_size_query.program, size_context, size_host);
+        test(disabled_region_size.run(100).status == LslRunStatus::Faulted,
+             "osGetRegionSize honors the global OSSL switch");
+        const auto discarded_queries = compile_lsl(R"lsl(
+            default {
+                state_entry() {
+                    integer count;
+                    osGetRegionSize();
+                    osGetScriptEngineName();
+                    osGetGridName();
+                    osGetGridNick();
+                    osSHA256((string)++count);
+                    (count += 2);
+                    llGetPos();
+                    llSay(0, (string)count);
+                }
+            }
+        )lsl");
+        test(bool(discarded_queries) &&
+                 !compile_lsl("default { state_entry() { missingFunction(); } }"),
+             "discarded expressions accept known functions and reject unknown calls");
+        size_host.ossl_enabled = true;
+        size_host.ossl_permission_error = [](auto, auto, auto) { return std::string{}; };
+        LslInstance discard_results(discarded_queries.program, size_context, size_host);
+        test(discard_results.run(100).status == LslRunStatus::Idle && messages.back() == "3",
+             "discarded return values preserve expression side effects");
+        size_host.ossl_permission_error = [](auto, auto, std::string_view function) {
+            return function == "osGetScriptEngineName" ? std::string("permission denied") : std::string{};
+        };
+        LslInstance discard_denied(discarded_queries.program, size_context, size_host);
+        test(discard_denied.run(100).status == LslRunStatus::Faulted,
+             "discarded OSSL calls still enforce permissions");
+        test(bool(listen_control), "listener control and removal compile");
+        std::vector<std::optional<bool>> listener_actions;
+        email_host.change_listener = [&](auto item, std::int32_t handle, std::optional<bool> active) {
+            if (item == email_context.item && handle == 19)
+                listener_actions.push_back(active);
+        };
+        LslInstance listener_script(listen_control.program, email_context, email_host);
+        test(listener_script.run(100).status == LslRunStatus::Idle &&
+                 listener_actions == std::vector<std::optional<bool>>{true, std::nullopt},
+             "listener control enables the handle and removal closes it");
+
+        const auto regex_listener = compile_lsl(R"lsl(
+            default {
+                state_entry() {
+                    integer handle = osListenRegex(19, "^Speaker$", NULL_KEY, "[0-9]+",
+                        OS_LISTEN_REGEX_NAME | OS_LISTEN_REGEX_MESSAGE);
+                    llSay(0, (string)handle);
+                    llSay(0, (string)osListenRegex(19, "", "invalid UUID", "", 0));
+                    osListenRegex(19, "[", NULL_KEY, "", OS_LISTEN_REGEX_NAME);
+                }
+            }
+        )lsl");
+        test(bool(regex_listener), "osListenRegex compiles with both flag constants");
+        auto regex_host = host;
+        std::vector<std::string> regex_messages;
+        regex_host.chat = [&](const auto& chat) { regex_messages.push_back(chat.text); };
+        int regex_registrations = 0;
+        regex_host.add_listener = [&](auto item, auto part, int channel, std::string name,
+                                      auto sender, std::string message, int flags) {
+            ++regex_registrations;
+            test(item == email_context.item && part == email_context.object && channel == 19 &&
+                     name == "^Speaker$" && sender.is_zero() && message == "[0-9]+" && flags == 3,
+                 "osListenRegex preserves listener filters and flags");
+            return 42;
+        };
+        regex_host.ossl_permission_error = [](auto, auto, auto) { return std::string{}; };
+        LslInstance regex_script(regex_listener.program, email_context, regex_host);
+        test(regex_script.run(100).status == LslRunStatus::Sleeping && regex_registrations == 1 &&
+                 regex_messages == std::vector<std::string>{"42", "-1", "Name regex is invalid."},
+             "osListenRegex returns its handle and rejects invalid keys and patterns");
+        regex_host.ossl_permission_error = [](auto, auto, auto function) {
+            return std::string(function) + " permission denied";
+        };
+        LslInstance denied_listener(regex_listener.program, email_context, regex_host);
+        const auto denied_result = denied_listener.run(100);
+        test(denied_result.status == LslRunStatus::Faulted && regex_registrations == 1,
+             "osListenRegex applies OSSL permissions before registering");
+
+        const auto regex_match = compile_lsl(R"lsl(
+            default {
+                state_entry() {
+                    llSay(0, (string)osRegexIsMatch("prefix 42", "(?<=prefix )[0-9]+"));
+                    llSay(0, (string)osRegexIsMatch("prefix 42", "^[0-9]+$"));
+                    llSay(0, (string)osRegexIsMatch("", "^$"));
+                    integer invalid = osRegexIsMatch("text", "[");
+                    llSay(0, (string)invalid);
+                }
+            }
+        )lsl");
+        test(bool(regex_match), "osRegexIsMatch compiles");
+        std::int64_t regex_clock = 0;
+        regex_host.clock_ticks = [&] { return regex_clock; };
+        regex_host.ossl_permission_error = [&](auto, auto, std::string_view function) {
+            test(function == "osRegexIsMatch", "osRegexIsMatch uses its own OSSL permission");
+            return std::string{};
+        };
+        regex_messages.clear();
+        LslInstance regex_match_script(regex_match.program, email_context, regex_host);
+        test(regex_match_script.run(100).status == LslRunStatus::Sleeping &&
+                 regex_messages == std::vector<std::string>{
+                     "1", "0", "1", "Possible invalid regular expression detected."},
+             "osRegexIsMatch searches, handles empty input, and reports invalid patterns");
+        regex_clock += 10000000;
+        test(regex_match_script.run(100).status == LslRunStatus::Idle && regex_messages.back() == "0",
+             "osRegexIsMatch returns false for an invalid pattern");
+
+        const auto regex_strings = compile_lsl(R"lsl(
+            default {
+                state_entry() {
+                    string source = llChar(128512) + "a1 a2";
+                    llSay(0, llDumpList2String(osMatchString(source, "(a)([0-9])", -2), "|"));
+                    llSay(0, llDumpList2String(osMatchString("a", "(b)?(a)", 0), "|"));
+                    llSay(0, llDumpList2String(osMatchString("ab", "(?=.)", 0), "|"));
+                    llSay(0, (string)llGetListLength(osMatchString("ab", "[", 2)));
+                    llSay(0, osReplaceString("a1 a2", "(?<n>[0-9])", "<${n}>", 1, -2));
+                    llSay(0, osReplaceString("a1 a2", "[0-9]", "x", -1, 0));
+                    llSay(0, osReplaceString("ab", "", "-", -1, 0));
+                    llSay(0, osReplaceString("ab", ".", "x", 0, 0));
+                    llSay(0, osReplaceString("ab", "[", "x", 2, 2));
+                }
+            }
+        )lsl");
+        test(bool(regex_strings), "OSSL regex matching and replacement compile");
+        regex_host.ossl_permission_error = [&](auto, auto, std::string_view function) {
+            test(function == "osMatchString" || function == "osReplaceString",
+                 "OSSL regex string operations use their own permission rules");
+            return std::string{};
+        };
+        regex_messages.clear();
+        LslInstance regex_strings_script(regex_strings.program, email_context, regex_host);
+        test(regex_strings_script.run(100).status == LslRunStatus::Idle &&
+                 regex_messages == std::vector<std::string>{
+                     "a2|5|a|5|2|6", "a|0|a|0", "|0||1", "0",
+                     "a1 a<2>", "ax ax", "-a-b-", "ab", "ab"},
+             "OSSL regex string operations preserve captures, UTF-16 offsets, zero-width matches, and counts");
+
+        const auto remote_load = compile_lsl(R"lsl(
+            default {
+                state_entry() {
+                    llSetRemoteScriptAccessPin(-17);
+                    llRemoteLoadScriptPin(llGetKey(), "Payload", -17, TRUE, 22);
+                    llRemoteLoadScriptPin((key)"01234567-89ab-cdef-0123-456789abcdef", "Payload", -17, FALSE, 42);
+                }
+            }
+        )lsl");
+        test(bool(remote_load), "remote script loading accepts a key and signed PIN");
+        auto remote_host = host;
+        std::vector<std::int32_t> remote_delays;
+        remote_host.request_sleep = [&](auto delay) { remote_delays.push_back(delay); };
+        bool pin_set = false;
+        remote_host.set_remote_script_pin = [&](auto object, auto pin) {
+            pin_set = object == email_context.object && pin == -17;
+        };
+        int remote_attempts = 0;
+        remote_host.remote_load_script = [&](auto source, auto target, const auto& name, auto pin,
+                                             bool running, auto start_parameter) {
+            ++remote_attempts;
+            test(source == email_context.object && target.str() == "01234567-89ab-cdef-0123-456789abcdef" &&
+                     name == "Payload" && pin == -17 && !running && start_parameter == 42,
+                 "remote load passes the destination, PIN, running flag and start parameter");
+            return LslRemoteScriptLoad::Attempted;
+        };
+        LslInstance remote_script(remote_load.program, email_context, remote_host);
+        test(remote_script.run(100).status == LslRunStatus::Sleeping && pin_set && remote_attempts == 1 &&
+                 remote_delays == std::vector<std::int32_t>{3000},
+             "remote load ignores the same prim and applies a three-second delay to an attempt");
         const auto control_event_program = compile_lsl(R"LSL(
             default {
                 control(key avatar, integer held, integer changed) {
@@ -676,11 +1566,22 @@ int main(int argc, char** argv) {
         test(cloud_script.run(100).status == LslRunStatus::Idle && messages.back() == "0.000000",
              "cloud query returns the source zero for both offset forms");
         auto ground = compile_lsl(
-            "default{state_entry(){vector offset=<1,-2,999>;llSay(0,(string)llGround(offset+<.5,0,0>));llSay(0,(string)llGround(ZERO_VECTOR));}}");
+            R"LSL(
+                default {
+                    state_entry() {
+                        vector offset = <1, -2, 999>;
+                        llSay(0, (string)llGround(offset + <.5, 0, 0>));
+                        llSay(0, (string)llGround(ZERO_VECTOR));
+                    }
+                }
+            )LSL");
         test(bool(ground), "ground query with numeric offsets compiles");
         auto terrain_context = context();
-        terrain_context.position = {20.f, 30.f, 40.f};
+        terrain_context.position = {1.f, 2.f, 3.f};
         auto terrain_host = host;
+        terrain_host.object_position = [](auto, bool, bool) {
+            return std::optional{framework::Vector3{20.f, 30.f, 40.f}};
+        };
         std::vector<std::pair<float, float>> sampled;
         terrain_host.ground_height = [&](float x, float y) {
             sampled.emplace_back(x, y);
@@ -693,6 +1594,81 @@ int main(int argc, char** argv) {
                  messages.size() == messages_before_ground + 2 &&
                  messages[messages_before_ground] == "49.500000" && messages.back() == "50.000000",
              "ground query samples object position plus XY offsets and ignores Z");
+        const auto modify_land = compile_lsl(R"lsl(
+            default {
+                state_entry() {
+                    llModifyLand(LAND_RAISE, LAND_SMALL_BRUSH);
+                    llModifyLand(256 + LAND_REVERT, 256 + LAND_LARGE_BRUSH);
+                }
+            }
+        )lsl");
+        test(bool(modify_land), "terrain edits compile with standard action and brush constants");
+        std::vector<std::tuple<framework::Uuid, std::uint8_t, std::uint8_t>> terrain_edits;
+        terrain_host.modify_land = [&](auto object, auto action, auto brush) {
+            terrain_edits.emplace_back(object, action, brush);
+        };
+        LslInstance modify_land_script(modify_land.program, terrain_context, terrain_host);
+        test(modify_land_script.run(100).status == LslRunStatus::Idle &&
+                 terrain_edits == decltype(terrain_edits){{terrain_context.object, 1, 1},
+                                                        {terrain_context.object, 5, 3}},
+             "terrain edits pass the host object and narrow action and brush to bytes");
+        auto targets = compile_lsl(
+            "default{state_entry(){integer id=llTarget(<10,20,30>,2);llTargetRemove(id);state next;}}"
+            "state next{state_entry(){}}");
+        test(bool(targets), "position target calls compile");
+        auto target_host = host;
+        const auto waypoint_context = context();
+        bool registered = false;
+        bool removed = false;
+        int target_clears = 0;
+        target_host.register_position_target = [&](auto object, auto item, auto target, float range) {
+            registered = object == waypoint_context.object && item == waypoint_context.item &&
+                         target == framework::Vector3{10, 20, 30} && range == 2.f;
+            return 71;
+        };
+        target_host.remove_position_target = [&](auto object, std::int32_t id) {
+            removed = registered && object == waypoint_context.object && id == 71;
+        };
+        target_host.clear_targets = [&](auto item) {
+            if (item == waypoint_context.item)
+                ++target_clears;
+        };
+        LslInstance waypoint_script(targets.program, waypoint_context, target_host);
+        test(waypoint_script.run(100).status == LslRunStatus::Idle && removed && target_clears == 1,
+             "position target calls pass script identity and state change clears registrations");
+        waypoint_script.reset();
+        test(target_clears == 2, "script reset clears target registrations");
+        auto wind = compile_lsl(
+            "default{state_entry(){llSay(0,(string)(llWind(<-1.75,2.75,999>) == <14,257,0>));}}");
+        test(bool(wind), "wind query compiles");
+        auto wind_host = host;
+        wind_host.object_position = [](auto, bool, bool) {
+            return std::optional{framework::Vector3{16.f, 255.f, 40.f}};
+        };
+        wind_host.wind = [](std::int32_t x, std::int32_t y) {
+            return framework::Vector3{static_cast<float>(x), static_cast<float>(y), 7.f};
+        };
+        LslInstance wind_script(wind.program, terrain_context, wind_host);
+        test(wind_script.run(100).status == LslRunStatus::Idle && messages.back() == "1",
+             "wind query uses live world position, truncates XY, and ignores Z");
+        auto environment = compile_lsl(
+            "default{state_entry(){llSay(0,(string)(llGetDayLength() == 9000 && "
+            "llGetRegionMoonRotation() == <0,0,1,0> && "
+            "llGetSunDirection() == <1,0,0>));}}");
+        test(bool(environment), "environment queries compile");
+        auto environment_host = terrain_host;
+        environment_host.environment_timing = [](framework::Vector3 position, bool region) {
+            return std::pair{!region && position.x == 20.f && position.y == 30.f ? 9000 : 0, 0};
+        };
+        environment_host.environment_rotation = [](framework::Vector3 position, bool region, bool moon) {
+            if (!region && !moon)
+                return std::optional{LslRotation{0, 0.0009, 0, 0}};
+            return std::optional{region && moon && position.z == 40.f
+                                     ? LslRotation{0, 0, 1, 0} : LslRotation{}};
+        };
+        LslInstance environment_script(environment.program, terrain_context, environment_host);
+        test(environment_script.run(100).status == LslRunStatus::Idle && messages.back() == "1",
+             "environment queries use live parcel position and live altitude for region rotation");
         scene::Terrain terrain(32, 32);
         terrain.set(20, 30, 10.f);
         terrain.set(22, 29, 12.f);
@@ -1105,8 +2081,16 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + short_start, messages.end()) ==
                      std::vector<std::string>{"1", "0", "1.000000", "0"},
              "short-circuit expressions honor precedence, skip operands, and evaluate left first");
-        auto flags = compile_lsl(
-            "default{state_entry(){llSay(1,(string)(1|2^3&1));llSay(1,(string)(-8>>33));llSay(1,(string)(1<<-1));llSay(1,(string)~0);}}");
+        auto flags = compile_lsl(R"LSL(
+            default {
+                state_entry() {
+                    llSay(1, (string)(1 | 2 ^ 3 & 1));
+                    llSay(1, (string)(-8 >> 33));
+                    llSay(1, (string)(1 << -1));
+                    llSay(1, (string)~0);
+                }
+            }
+        )LSL");
         test(bool(flags), "bitwise expressions compile");
         LslInstance flag_script(flags.program, context(), host);
         const auto flag_start = messages.size();
@@ -1114,8 +2098,21 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + flag_start, messages.end()) ==
                      std::vector<std::string>{"3", "-4", "-2147483648", "-1"},
              "bitwise precedence, masked shifts, arithmetic right shift, and complement");
-        auto early_return = compile_lsl(
-            "default{state_entry(){while(1){return;} llSay(1,\"skipped\");}touch_start(integer n){if(n) return;llSay(1,\"handled\");}}");
+        auto early_return = compile_lsl(R"LSL(
+            default {
+                state_entry() {
+                    while (1) {
+                        return;
+                    }
+                    llSay(1, "skipped");
+                }
+                touch_start(integer n) {
+                    if (n)
+                        return;
+                    llSay(1, "handled");
+                }
+            }
+        )LSL");
         test(bool(early_return), "event return compiles in loops and branches");
         LslInstance return_script(early_return.program, context(), host);
         const auto return_start = messages.size();
@@ -1235,7 +2232,20 @@ int main(int argc, char** argv) {
                  std::vector<std::string>{"3.000000", "5", "6", "3.000000", "5", "6"},
              "globals initialize in order, persist across events, and reinitialize on reset");
         auto explicit_sleep_program = compile_lsl(
-            "default{state_entry(){llSleep(.0259);llSay(1,\"awake\");llSleep(0);llSay(1,\"resumed\");}touch_start(integer n){llSay(1,\"touch\");}}");
+            R"LSL(
+                default {
+                    state_entry() {
+                        llSleep(.0259);
+                        llSay(1, "awake");
+                        llSleep(0);
+                        llSay(1, "resumed");
+                    }
+
+                    touch_start(integer n) {
+                        llSay(1, "touch");
+                    }
+                }
+            )LSL");
         test(bool(explicit_sleep_program), "llSleep compiles");
         std::int64_t explicit_sleep_clock = 0;
         std::vector<std::int32_t> explicit_delays;
@@ -1390,32 +2400,41 @@ int main(int argc, char** argv) {
                  std::vector<std::string>(messages.begin() + control_start, messages.end()) ==
                      std::vector<std::string>{"1", "0", "0", "1", "target entry"},
              "named reset preserves stopped state and restarting runs the new default entry");
-        auto states = compile_lsl(
-            "integer count;"
-            "default{"
-                "state_entry(){"
-                    "state active;"
-                "}"
-                "state_exit(){"
-                    "count++;"
-                    "llSay(1,\"exit\");"
-                "}"
-            "}"
-            "state active{"
-                "state_entry(){"
-                    "llSay(1,(string)count);"
-                    "state active;"
-                    "llSay(1,\"skipped\");"
-                "}"
-                "touch_start(integer n){"
-                    "llSay(1,\"touch\");"
-                "}"
-            "}");
+        const auto states = compile_lsl(R"LSL(
+            integer count;
+            default {
+                state_entry() {
+                    state active;
+                }
+                state_exit() {
+                    count++;
+                    llSay(1, "exit");
+                }
+            }
+            state active {
+                state_entry() {
+                    llSay(1, (string)count);
+                    state active;
+                    llSay(1, "skipped");
+                }
+                touch_start(integer n) {
+                    llSay(1, "touch");
+                }
+            }
+        )LSL");
         test(bool(states), "named states compile");
-        LslInstance state_script(states.program, context(), host);
+        const auto state_context = context();
+        auto state_host = host;
+        std::vector<framework::Uuid> cancelled_scripts;
+        state_host.cancel_remote_data = [&](framework::Uuid item) {
+            cancelled_scripts.push_back(item);
+        };
+        LslInstance state_script(states.program, state_context, state_host);
         const auto state_start = messages.size();
         test(state_script.run(100).status == LslRunStatus::Idle && state_script.handles_event("touch_start"),
              "state transition updates active handler lookup");
+        test(cancelled_scripts == std::vector{state_context.item},
+             "only a transition to a different state cancels pending remote data");
         test(std::vector<std::string>(messages.begin() + state_start, messages.end()) ==
                  std::vector<std::string>{"exit", "1"},
              "exit precedes entry, globals survive, and same-state transitions exit the event");
@@ -1813,6 +2832,111 @@ int main(int argc, char** argv) {
                  animations[1] == std::pair{child_b, expected_animation} &&
                  animations[2].first == source_part && animations[2].second.empty(),
              "texture animation packs the managed byte layout and clears on mode zero");
+        const auto particle_program = compile_lsl(R"(
+            default {
+                state_entry() {
+                    llParticleSystem([PSYS_PART_FLAGS, 0]);
+                    llLinkParticleSystem(LINK_ALL_OTHERS, [
+                        PSYS_SRC_TEXTURE, "Particle Texture",
+                        PSYS_SRC_TARGET_KEY, "10213243-5465-7687-98a9-bacbdcedfe0f",
+                        PSYS_SRC_PATTERN, PSYS_SRC_PATTERN_ANGLE_CONE,
+                        PSYS_PART_FLAGS, PSYS_PART_EMISSIVE_MASK | PSYS_PART_INTERP_COLOR_MASK |
+                            PSYS_PART_INTERP_SCALE_MASK,
+                        PSYS_SRC_ANGLE_BEGIN, 1.25, PSYS_SRC_BURST_PART_COUNT, 255,
+                        PSYS_SRC_ACCEL, <-2, 3, 0.5>,
+                        PSYS_PART_START_COLOR, <0.5, 0.25, 1>, PSYS_PART_START_ALPHA, 0.8,
+                        PSYS_PART_START_SCALE, <9, 0.5, 0>,
+                        PSYS_PART_END_GLOW, 0.5, PSYS_PART_BLEND_FUNC_SOURCE, PSYS_PART_BF_ONE
+                    ]);
+                    llParticleSystem([]);
+                    osParticleSystem([PSYS_SRC_MAX_AGE, 0.75]);
+                    osLinkParticleSystem(LINK_ALL_OTHERS, [PSYS_SRC_MAX_AGE, 0]);
+                }
+            }
+        )");
+        test(bool(particle_program), "particle system setters compile");
+        std::vector<std::pair<framework::Uuid, std::string>> particle_updates;
+        std::vector<std::optional<float>> particle_ages;
+        linked_host.particle_inventory_asset = [&](auto part, const std::string& name) {
+            test(part == source_part && name == "Particle Texture", "particle texture resolves on the hosting prim");
+            return framework::Uuid("00112233-4455-6677-8899-aabbccddeeff");
+        };
+        linked_host.set_particle_system = [&](auto part, std::vector<std::uint8_t> bytes, std::optional<float> age) {
+            particle_updates.emplace_back(part, std::string(bytes.begin(), bytes.end()));
+            particle_ages.push_back(age);
+        };
+        LslInstance particle_script(particle_program.program, context(), linked_host);
+        const auto default_particles = unhex(
+            "010000000000000000000000000000190000000001000101008000800080008000800080000000000000000000000000"
+            "000000000000000000000000000000000000000000000000000AFFFFFFFFFFFFFFFF20202020");
+        const auto extended_particles = unhex(
+            "440000000100000002000000080000000028001900000000010001FF008000800080007F808140800011223344556677"
+            "8899AABBCCDDEEFF102132435465768798A9BACBDCEDFE0F1600000003010300000A7F3FFFCCFFFFFFFFFE102020007F0009");
+        test(particle_script.run(100).status == LslRunStatus::Idle && particle_updates.size() == 7 &&
+                 particle_updates[0] == std::pair{source_part, default_particles} &&
+                 particle_updates[1] == std::pair{child_a, extended_particles} &&
+                 particle_updates[2] == std::pair{child_b, extended_particles} &&
+                 particle_updates[3] == std::pair{source_part, std::string{}},
+             "particle rules match bundled SDK legacy and extended bytes and clear on an empty list");
+        test(particle_updates[4].first == source_part &&
+                 particle_updates[5] == std::pair{child_a, default_particles} &&
+                 particle_updates[6] == std::pair{child_b, default_particles} &&
+                 particle_ages == std::vector<std::optional<float>>{{}, {}, {}, {}, .75f, 0.f, 0.f},
+             "OSSL particle calls forward source ages for the host and each linked prim");
+        const auto aliased_particle_key = compile_lsl(R"LSL(
+            default {
+                state_entry() {
+                    key count = (key)"1";
+                    llParticleSystem([PSYS_SRC_BURST_PART_COUNT, count]);
+                }
+            }
+        )LSL");
+        test(bool(aliased_particle_key), "particle rule using a YEngine key alias compiles");
+        LslInstance aliased_particle_script(aliased_particle_key.program, context(), linked_host);
+        test(aliased_particle_script.run(100).status == LslRunStatus::Idle && particle_updates.size() == 8 &&
+                 particle_updates.back() == std::pair{source_part, default_particles},
+             "YEngine boxes a key expression as LSLString and accepts numeric text in a particle rule");
+        particle_updates.pop_back();
+        auto diagnostic_host = linked_host;
+        std::vector<LslChat> particle_chat, particle_listeners;
+        std::vector<std::int32_t> particle_delays;
+        diagnostic_host.chat = [&](const auto& message) { particle_chat.push_back(message); };
+        diagnostic_host.listener = [&](const auto& message) { particle_listeners.push_back(message); };
+        diagnostic_host.request_sleep = [&](auto delay) { particle_delays.push_back(delay); };
+        diagnostic_host.script_delay_factor = 1;
+        const auto verify_particle_error = [&](std::string_view command, std::string_view expected) {
+            particle_chat.clear();
+            particle_listeners.clear();
+            particle_delays.clear();
+            const auto program = compile_lsl("default{state_entry(){" + std::string(command) + ";}}");
+            test(bool(program), "invalid particle rules compile for runtime diagnostics");
+            LslInstance instance(program.program, context(), diagnostic_host);
+            test(instance.run(100).status == LslRunStatus::Sleeping && particle_chat.size() == 1 &&
+                     particle_chat[0].type == LslChatType::Debug && particle_chat[0].text == expected &&
+                     particle_chat[0].channel == INT32_MAX && particle_listeners.size() == 1 &&
+                     particle_listeners[0].type == LslChatType::Shout && particle_listeners[0].text == expected &&
+                     particle_delays == std::vector<std::int32_t>{1000} && particle_updates.size() == 7,
+                 "particle type errors use managed debug text, listener delivery and delay without replacing the emitter");
+        };
+        verify_particle_error("llParticleSystem([<1,2,3>,0])",
+            "llParticleSystem: Error running particle system params index #0: particle system parameter type must be integer");
+        verify_particle_error("osParticleSystem([PSYS_PART_FLAGS,0,PSYS_PART_END_COLOR,7])",
+            "osParticleSystem: Error running rule PSYS_PART_END_COLOR: arg #3 - parameter 1 must be vector");
+        verify_particle_error("llParticleSystem([PSYS_SRC_TEXTURE,7])",
+            "llParticleSystem: Error running rule PSYS_SRC_TEXTURE: arg #1 - parameter 1 must be string or key");
+        for (const auto& [command, expected] : std::array{
+                 std::pair{"llParticleSystem([PSYS_SRC_BURST_RATE])", "Index was outside the bounds of the array."},
+                 std::pair{"llParticleSystem([PSYS_SRC_BURST_RATE,\"invalid\"])",
+                           "The input string 'invalid' was not in a correct format."}}) {
+            particle_chat.clear();
+            const auto program = compile_lsl("default{state_entry(){" + std::string(command) + ";}}");
+            test(bool(program), "particle rule fault fixture compiles");
+            LslInstance instance(program.program, context(), diagnostic_host);
+            const auto fault = instance.run(100);
+            test(fault.status == LslRunStatus::Faulted && fault.error == expected && particle_chat.empty() &&
+                     particle_updates.size() == 7,
+                 "particle bounds and numeric format failures propagate without a type diagnostic");
+        }
         const auto link_messages = compile_lsl(R"(
             default {
                 link_message(integer sender, integer number, string message, key id) {
@@ -2180,6 +3304,78 @@ int main(int argc, char** argv) {
                          {seated_avatar, explicit_seat},
                      },
              "forced sit uses the host prim or explicit target and ignores malformed keys");
+        const auto scripted_teleport = compile_lsl(R"LSL(
+            default {
+                state_entry() {
+                    osTeleportAgent("12345678-1234-4234-8234-123456789abc", <1, 2, 3>, ZERO_VECTOR);
+                    osTeleportOwner("Destination", <4, 5, 6>, ZERO_VECTOR);
+                    osTeleportAgent("12345678-1234-4234-8234-123456789abc", 17, 23, <7, 8, 9>, ZERO_VECTOR);
+                }
+            }
+        )LSL");
+        test(bool(scripted_teleport), "scripted teleport overloads compile");
+        auto teleport_host = host;
+        std::vector<std::string> teleport_permission_checks;
+        std::vector<std::pair<framework::Uuid, LslTeleport>> teleport_requests;
+        teleport_host.ossl_permission_error = [&](auto, auto, std::string_view function) {
+            teleport_permission_checks.emplace_back(function);
+            return std::string{};
+        };
+        teleport_host.teleport_agent = [&](auto, auto, auto agent, const LslTeleport& request) {
+            teleport_requests.emplace_back(agent, request);
+            return 0;
+        };
+        const auto teleport_context = context();
+        LslInstance teleport_script(scripted_teleport.program, teleport_context, teleport_host);
+        test(teleport_script.run(100).status == LslRunStatus::Idle && teleport_requests.size() == 3 &&
+                 teleport_requests[0].first == seated_avatar &&
+                 std::holds_alternative<std::monostate>(teleport_requests[0].second.destination) &&
+                 teleport_requests[1].first == teleport_context.owner &&
+                 std::get<std::string>(teleport_requests[1].second.destination) == "Destination" &&
+                 std::get<std::array<std::int32_t, 2>>(teleport_requests[2].second.destination) ==
+                     std::array<std::int32_t, 2>{17, 23} &&
+                 teleport_permission_checks == std::vector<std::string>{"osTeleportOwner", "osTeleportAgent"},
+             "teleport overloads pass destinations and check their original OSSL permissions");
+        const auto viewer_teleport = compile_lsl(R"LSL(
+            default {
+                state_entry() {
+                    llTeleportAgent("12345678-1234-4234-8234-123456789abc", "Landmark", ZERO_VECTOR, <0, 1, 0>);
+                    llTeleportAgentGlobalCoords("12345678-1234-4234-8234-123456789abc",
+                                                <1287, 778, 0>, <27, 38, 45>, <0, 1, 0>);
+                    llTeleportAgent("invalid", "Landmark", ZERO_VECTOR, ZERO_VECTOR);
+                }
+            }
+        )LSL");
+        test(bool(viewer_teleport), "both LSL viewer teleport calls compile");
+        std::vector<LslViewerTeleport> viewer_teleport_requests;
+        unsigned viewer_teleport_invocations = 0;
+        teleport_host.teleport_viewer = [&](auto, auto, auto agent, const LslViewerTeleport& request) {
+            ++viewer_teleport_invocations;
+            if (agent == seated_avatar)
+                viewer_teleport_requests.push_back(request);
+        };
+        LslInstance viewer_teleport_script(viewer_teleport.program, teleport_context, teleport_host);
+        test(viewer_teleport_script.run(100).status == LslRunStatus::Idle &&
+                 viewer_teleport_invocations == 2 && viewer_teleport_requests.size() == 2 &&
+                 std::get<std::string>(viewer_teleport_requests[0].destination) == "Landmark" &&
+                 std::get<framework::Vector3d>(viewer_teleport_requests[1].destination) ==
+                     framework::Vector3d{1287, 778, 0} &&
+                 viewer_teleport_requests[1].position == framework::Vector3d{27, 38, 45},
+             "LSL viewer teleports dispatch their destination and ignore malformed avatar keys");
+        constexpr auto landmark_handle = (std::uint64_t{256004} << 32) | 256008;
+        const std::string landmark_text =
+            " \tLandmark version 2\r\n"
+            "region_id 12345678-1234-4234-8234-123456789abc\r\n"
+            "local_pos 121.5 invalid 30\r\n"
+            "region_handle +" + std::to_string(landmark_handle) + "\r\n";
+        const auto landmark_bytes = std::make_shared<std::vector<std::uint8_t>>(
+            landmark_text.begin(), landmark_text.end());
+        const auto landmark = parse_landmark(landmark_bytes);
+        test(landmark.region == seated_avatar && landmark.position == framework::Vector3{121.5f, 0, 30} &&
+                 landmark.handle == landmark_handle &&
+                 landmark_position_relative_to(landmark_bytes, 256000, 256000) ==
+                     framework::Vector3d{125.5, 8, 30},
+             "landmarks accept signed handles and CRLF while invalid coordinates default to zero");
         const auto agent_ip = compile_lsl(R"LSL(
             default {
                 state_entry() {
@@ -2284,8 +3480,11 @@ int main(int argc, char** argv) {
         apparent_time_host.region_day_fraction = [] {
             return 0.75f;
         };
-        apparent_time_host.environment_timing = [](auto, bool) {
-            return std::pair{36000, 3600};
+        apparent_time_host.object_position = [](auto, bool, bool) {
+            return std::optional{framework::Vector3{200.f, 150.f, 40.f}};
+        };
+        apparent_time_host.environment_timing = [](framework::Vector3 position, bool region) {
+            return std::pair{!region && position.x == 200.f && position.y == 150.f ? 36000 : 14400, 3600};
         };
         LslInstance with_environment(apparent_time.program, context(), apparent_time_host);
         test(with_environment.run(100).status == LslRunStatus::Idle && time_messages ==
@@ -2298,6 +3497,13 @@ int main(int argc, char** argv) {
                                                                                "36000.000000",
                                                                            },
              "apparent time uses the live day fraction and preserves both clock formats");
+        auto clock = compile_lsl("default{state_entry(){llSay(0,osGetApparentTimeString(TRUE));}}");
+        test(bool(clock), "apparent clock compiles");
+        apparent_time_host.region_day_fraction = [] { return 1e10f; };
+        LslInstance out_of_range_clock(clock.program, context(), apparent_time_host);
+        test(out_of_range_clock.run(100).status == LslRunStatus::Idle &&
+                 time_messages.back() == "-2147483648:-2147483648:-2147483648",
+             "apparent clock handles out-of-range integer conversion deterministically");
         const auto drawing = compile_lsl(R"LSL(
             default {
                 state_entry() {
@@ -2790,7 +3996,12 @@ int main(int argc, char** argv) {
             "default{"
                 "state_entry(){"
                     "list a=[1,2.0,\"text\",(string)NULL_KEY,ZERO_VECTOR];"
-                    "if(llGetListEntryType(a,0)==TYPE_INTEGER&&llGetListEntryType(a,1)==TYPE_FLOAT&&llGetListEntryType(a,2)==TYPE_STRING&&llGetListEntryType(a,-2)==TYPE_KEY&&llGetListEntryType(a,-1)==TYPE_VECTOR&&llGetListEntryType(a,5)==TYPE_INVALID)llSay(1,\"typed\");"
+                    "if(llGetListEntryType(a,0)==TYPE_INTEGER&&"
+                    "llGetListEntryType(a,1)==TYPE_FLOAT&&"
+                    "llGetListEntryType(a,2)==TYPE_STRING&&"
+                    "llGetListEntryType(a,-2)==TYPE_KEY&&"
+                    "llGetListEntryType(a,-1)==TYPE_VECTOR&&"
+                    "llGetListEntryType(a,5)==TYPE_INVALID)llSay(1,\"typed\");"
                 "}"
             "}");
         test(bool(entry_type), "list entry type queries compile");
@@ -3137,7 +4348,15 @@ int main(int argc, char** argv) {
                      std::vector<std::string>{"1", "0", "3", "0"},
              "list occurrence search handles overlapping matches, reverse search and empty lists");
         auto find_strided = compile_lsl(
-            "default{state_entry(){list a=[0,1,0,1,2,1];llSay(1,(string)llListFindStrided(a,[1,2],1,-1,2));llSay(1,(string)llListFindStrided(a,[1,2],0,-1,2));}}");
+            R"LSL(
+                default {
+                    state_entry() {
+                        list a = [0, 1, 0, 1, 2, 1];
+                        llSay(1, (string)llListFindStrided(a, [1, 2], 1, -1, 2));
+                        llSay(1, (string)llListFindStrided(a, [1, 2], 0, -1, 2));
+                    }
+                }
+            )LSL");
         test(bool(find_strided), "strided list search compiles");
         LslInstance find_strided_script(find_strided.program, context(), host);
         const auto find_strided_start = messages.size();

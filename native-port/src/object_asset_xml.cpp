@@ -8,12 +8,281 @@
 #include <algorithm>
 #include <charconv>
 #include <cmath>
+#include <fstream>
 #include <limits>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <pugixml.hpp>
 
 namespace opensim::scene {
+namespace {
+template <class Number>
+bool read_script_number(std::string_view text, Number& value) {
+    const auto first = text.find_first_not_of(" \t\r\n");
+    if (first == std::string_view::npos)
+        return false;
+    text = text.substr(first, text.find_last_not_of(" \t\r\n") - first + 1);
+    if (text.starts_with('+'))
+        text.remove_prefix(1);
+    const auto [end, error] = std::from_chars(text.data(), text.data() + text.size(), value);
+    return error == std::errc{} && end == text.data() + text.size();
+}
+
+bool read_script_rotation(std::string_view text, script::LslRotation& rotation) {
+    if (!text.starts_with('<') || !text.ends_with('>'))
+        return false;
+    text.remove_prefix(1);
+    text.remove_suffix(1);
+    for (auto* component : {&rotation.x, &rotation.y, &rotation.z}) {
+        const auto comma = text.find(',');
+        if (comma == std::string_view::npos || !read_script_number(text.substr(0, comma), *component))
+            return false;
+        text.remove_prefix(comma + 1);
+    }
+    return read_script_number(text, rotation.w);
+}
+
+std::optional<script::LslValue> read_event_argument(pugi::xml_node argument, unsigned depth = 0) {
+    const std::string_view text = argument.child_value();
+    std::string_view type = argument.attribute("type").value();
+    constexpr std::string_view lsl_type = "OpenSim.Region.ScriptEngine.Shared.LSL_Types+";
+    if (type.starts_with(lsl_type))
+        type.remove_prefix(lsl_type.size());
+
+    if (type == "System.String" || type == "LSLString" || type == "key")
+        return std::string(text);
+    if (type == "OpenMetaverse.UUID") {
+        framework::Uuid id;
+        if (framework::try_parse_sdk_uuid(text, id))
+            return id.str();
+    } else if (type == "System.Int32" || type == "LSLInteger") {
+        std::int32_t value{};
+        if (read_script_number(text, value))
+            return value;
+    } else if (type == "System.Double" || type == "System.Single" || type == "LSLFloat") {
+        double value{};
+        if (read_script_number(text, value))
+            return value;
+    } else if (type == "Vector3") {
+        framework::Vector3d value;
+        if (framework::try_parse_sdk_vector3d(framework::utf16_replacing(text), value))
+            return value;
+    } else if (type == "Quaternion") {
+        script::LslRotation value;
+        if (read_script_rotation(text, value))
+            return value;
+    } else if (type == "list" && depth < 64) {
+        auto list = std::make_shared<script::LslList>();
+        for (const auto item : argument.children("item")) {
+            auto value = read_event_argument(item, depth + 1);
+            if (!value)
+                return std::nullopt;
+            list->items.push_back(std::move(*value));
+        }
+        return std::shared_ptr<const script::LslList>(std::move(list));
+    }
+    return std::nullopt;
+}
+
+std::optional<script::LslDetector> read_event_detector(pugi::xml_node element) {
+    script::LslDetector detector;
+    const auto vector = [&](const char* name, framework::Vector3d& value) {
+        return framework::try_parse_sdk_vector3d(framework::utf16_replacing(element.attribute(name).value()), value);
+    };
+    if (!framework::try_parse_sdk_uuid(element.attribute("key").value(), detector.key) ||
+        !framework::try_parse_sdk_uuid(element.attribute("owner").value(), detector.owner) ||
+        !framework::try_parse_sdk_uuid(element.attribute("group").value(), detector.group) ||
+        !read_script_number(element.attribute("type").value(), detector.type) ||
+        !read_script_number(element.attribute("linkNum").value(), detector.link_number) ||
+        !vector("pos", detector.grab) || !vector("position", detector.position) ||
+        !vector("velocity", detector.velocity) ||
+        !read_script_rotation(element.attribute("rotation").value(), detector.rotation))
+        return std::nullopt;
+    detector.name = element.attribute("name").value();
+    return detector;
+}
+
+std::optional<script::LslEvent> read_queued_script_event(pugi::xml_node element) {
+    script::LslEvent event{element.attribute("Name").value(), {}, {}};
+    if (event.name.empty())
+        return std::nullopt;
+    for (const auto argument : element.children("param")) {
+        auto value = read_event_argument(argument);
+        if (!value)
+            return std::nullopt;
+        event.arguments.push_back(std::move(*value));
+    }
+    for (const auto detector : element.children("DetectParams"))
+        if (auto value = read_event_detector(detector))
+            event.detectors.push_back(std::move(*value));
+    return event;
+}
+}
+
+ManagedScriptState read_managed_script_state(const pugi::xml_node& state) {
+    std::vector<pugi::xml_node> fields;
+    for (const auto field : state.child("Plugins").children("plugin"))
+        fields.push_back(field);
+    const auto has_type = [](pugi::xml_node field, std::string_view type) {
+        return field.attribute("type").value() == type;
+    };
+    const auto number = [](pugi::xml_node field, auto& value) {
+        return read_script_number(field.child_value(), value);
+    };
+
+    ManagedScriptState saved;
+    const std::string_view running = state.child_value("Running");
+    if (running == "True" || running == "true" || running == "1")
+        saved.running = true;
+    else if (running == "False" || running == "false" || running == "0")
+        saved.running = false;
+    saved.source_hash = state.attribute("SourceHash").value();
+    const std::string_view snapshot = state.child_value("Snapshot");
+    if (saved.source_hash.size() == 32 && !snapshot.empty() && snapshot.size() <= 6 * 1024 * 1024) {
+        network::Value binary;
+        binary.kind = network::Value::Kind::Binary;
+        binary.text = snapshot;
+        try {
+            saved.snapshot = script::decode_yengine_snapshot(*network::osd_binary(binary));
+            if (saved.snapshot && saved.snapshot->event_code >= 0)
+                for (const auto detector : state.child("DetectArray").children("DetectParams"))
+                    if (auto value = read_event_detector(detector))
+                        saved.snapshot->event_detectors.push_back(std::move(*value));
+        } catch (const std::invalid_argument&) {
+            // A malformed snapshot can still carry usable XML plugin state.
+        }
+    }
+    double elapsed_ms{};
+    if (number(state.child("scrpTime"), elapsed_ms)) {
+        const auto elapsed_ticks = elapsed_ms * 10000.;
+        if (elapsed_ticks >= 0. && elapsed_ticks < 9223372036854775808.)
+            saved.elapsed_ticks = static_cast<std::int64_t>(elapsed_ticks);
+    }
+    double delay{};
+    if (number(state.child("mEvtDly"), delay) && std::isfinite(delay))
+        saved.minimum_event_delay = delay;
+    for (const auto event : state.child("EventQueue").children("Event"))
+        if (auto value = read_queued_script_event(event))
+            saved.events.push_back(std::move(*value));
+
+    std::set<std::int32_t> listener_handles;
+    for (std::size_t offset = 0; fields.size() - offset >= 2;) {
+        const auto label = fields[offset++];
+        const auto size = fields[offset++];
+        int count{};
+        if (!has_type(label, "System.String") || !has_type(size, "System.Int32") ||
+            !number(size, count) || count < 0 || static_cast<std::size_t>(count) > fields.size() - offset)
+            break;
+        const auto end = offset + count;
+        const std::string_view plugin_name = label.child_value();
+        if (plugin_name == "timer" && count == 2) {
+            const auto interval = fields[offset];
+            const auto remaining = fields[offset + 1];
+            ManagedScriptState::Timer timer{};
+            if (has_type(interval, "System.Int64") && has_type(remaining, "System.Int64") &&
+                number(interval, timer.interval_ticks) && number(remaining, timer.remaining_ticks) &&
+                timer.interval_ticks > 0)
+                saved.timer = timer;
+        } else if (plugin_name == "listener") {
+            while (end - offset >= 6) {
+                const auto* record = fields.data() + offset;
+                const bool has_regex = end - offset >= 7 && has_type(record[6], "System.Int32");
+                offset += has_regex ? 7 : 6;
+
+                script::LslListenerCheckpoint listener{};
+                const std::string_view active = record[0].child_value();
+                if (!has_type(record[0], "System.Boolean") || (active != "True" && active != "False") ||
+                    !has_type(record[1], "System.Int32") || !number(record[1], listener.handle) ||
+                    listener.handle <= 0 ||
+                    !has_type(record[2], "System.Int32") || !number(record[2], listener.channel) ||
+                    !has_type(record[3], "System.String") ||
+                    !has_type(record[4], "OpenMetaverse.UUID") ||
+                    !framework::try_parse_sdk_uuid(record[4].child_value(), listener.sender) ||
+                    !has_type(record[5], "System.String") ||
+                    (has_regex && !number(record[6], listener.regex_flags)) ||
+                    !listener_handles.insert(listener.handle).second)
+                    continue;
+                listener.active = active == "True";
+                listener.name = record[3].child_value();
+                listener.message = record[5].child_value();
+                saved.listeners.push_back(std::move(listener));
+            }
+        } else if (plugin_name == "sensor" && count % 6 == 0) {
+            for (; offset < end; offset += 6) {
+                const auto* record = fields.data() + offset;
+                script::LslSensorQuery sensor{};
+                double interval{};
+                float range{}, arc{};
+                if (!has_type(record[0], "System.Double") || !number(record[0], interval) ||
+                    !std::isfinite(interval) || !has_type(record[1], "System.String") ||
+                    !has_type(record[2], "OpenMetaverse.UUID") ||
+                    !framework::try_parse_sdk_uuid(record[2].child_value(), sensor.key) ||
+                    !has_type(record[3], "System.Int32") || !number(record[3], sensor.type) ||
+                    !has_type(record[4], "System.Single") ||
+                    !framework::parse_invariant_float(record[4].child_value(), range) ||
+                    !has_type(record[5], "System.Single") ||
+                    !framework::parse_invariant_float(record[5].child_value(), arc))
+                    continue;
+                sensor.name = record[1].child_value();
+                sensor.range = range;
+                sensor.arc = arc;
+                if (interval != 0.)
+                    sensor.interval = interval;
+                saved.sensors.push_back(std::move(sensor));
+            }
+        }
+        offset = end;
+    }
+    return saved;
+}
+
+std::optional<ManagedScriptState> read_yengine_state_file(const std::filesystem::path& directory,
+                                                        framework::Uuid item, framework::Uuid asset) {
+    if (directory.empty() || item.is_zero() || asset.is_zero())
+        return std::nullopt;
+    const auto name = item.str() + ".state";
+    auto path = directory / name.substr(0, 1) / name.substr(1);
+    std::error_code error;
+    if (!std::filesystem::exists(path, error)) {
+        if (error)
+            return std::nullopt;
+        path = directory / name;
+    }
+    if (!std::filesystem::is_regular_file(path, error))
+        return std::nullopt;
+
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    const auto length = file.tellg();
+    constexpr std::streamoff maximum_file_size = 16 * 1024 * 1024;
+    if (length <= 0 || length > maximum_file_size)
+        return std::nullopt;
+    std::string xml(static_cast<std::size_t>(length), '\0');
+    file.seekg(0);
+    if (!file.read(xml.data(), static_cast<std::streamsize>(xml.size())))
+        return std::nullopt;
+
+    pugi::xml_document document;
+    if (!document.load_buffer(xml.data(), xml.size()))
+        return std::nullopt;
+    const auto state = document.document_element();
+    framework::Uuid saved_asset;
+    if (std::string_view(state.name()) != "ScriptState" ||
+        std::string_view(state.attribute("Engine").value()) != "YEngine" ||
+        !framework::try_parse_sdk_uuid(state.attribute("Asset").value(), saved_asset) ||
+        saved_asset != asset || std::string_view(state.attribute("SourceHash").value()).size() != 32)
+        return std::nullopt;
+    auto saved = read_managed_script_state(state);
+    if (!saved.running)
+        return std::nullopt;
+    const auto permissions = state.child("Permissions");
+    ManagedScriptState::PermissionGrant grant{};
+    if (framework::try_parse_sdk_uuid(permissions.attribute("granter").value(), grant.granter) &&
+        read_script_number(permissions.attribute("mask").value(), grant.mask))
+        saved.local_permission_grant = grant;
+    return saved;
+}
+
 namespace {
 void start(framework::NativeXmlTextWriter &writer, const char16_t *name) {
     writer.write_start_element({}, std::u16string(name), {});
@@ -37,6 +306,53 @@ void read_binary_element(pugi::xml_node field, std::vector<std::uint8_t> &bytes)
     value.text = field.child_value();
     bytes = *network::osd_binary(value);
 }
+void attribute(framework::NativeXmlTextWriter& writer, const char16_t* name, const std::string& value) {
+    writer.write_start_attribute({}, std::u16string(name), {});
+    writer.write_string(framework::utf16(value));
+    writer.write_end_attribute();
+}
+
+void write_inventory_script_states(framework::NativeXmlTextWriter& writer, const ObjectAssetPart& root,
+                                   std::span<const ObjectAssetPart> children) {
+    bool started = false;
+    const auto write_part_states = [&](const ObjectAssetPart& part) {
+        for (const auto& item : part.inventory) {
+            const auto checkpoint = part.native_script_checkpoints.find(item.item_id);
+            if (checkpoint == part.native_script_checkpoints.end())
+                continue;
+
+            std::vector<std::uint8_t> encoded;
+            try {
+                encoded = script::encode_lsl_checkpoint(checkpoint->second);
+            } catch (const std::length_error&) {
+                // Preserve the running flag even when the checkpoint exceeds the format limit.
+            }
+            if (!started) {
+                start(writer, u"GroupScriptStates");
+                started = true;
+            }
+            start(writer, u"SavedScriptState");
+            attribute(writer, u"UUID", item.item_id.str());
+            start(writer, u"State");
+            attribute(writer, u"Engine", "NativeLSL");
+            attribute(writer, u"UUID", item.item_id.str());
+            attribute(writer, u"Asset", item.asset_id.str());
+            start(writer, u"ScriptState");
+            element(writer, u"Running", checkpoint->second.running ? "True" : "False");
+            if (!encoded.empty())
+                binary_element(writer, u"NativeCheckpoint", encoded);
+            writer.write_end_element();
+            writer.write_end_element();
+            writer.write_end_element();
+        }
+    };
+    write_part_states(root);
+    for (const auto& child : children)
+        write_part_states(child);
+    if (started)
+        writer.write_end_element();
+}
+
 void write_object_asset_shape(framework::NativeXmlTextWriter &writer, const ObjectAssetPart &snapshot) {
     const auto number = [&](const char16_t *name, int value) {
         element(writer, name, std::to_string(value));
@@ -191,6 +507,7 @@ void write_part(framework::NativeXmlTextWriter &writer, const ObjectAssetPart &s
     number(u"GroupMask", part.group_mask);
     number(u"EveryoneMask", part.everyone_mask);
     number(u"NextOwnerMask", part.next_mask);
+    number(u"ScriptAccessPin", part.script_access_pin);
     element(writer, u"AllowedDrop", (part.flags & 0x10000u) ? "true" : "false");
     number(u"Flags", part.flags & ~0x10000u);
     if (const auto& inertia = part.inertia_override) {
@@ -229,6 +546,8 @@ void write_part(framework::NativeXmlTextWriter &writer, const ObjectAssetPart &s
     number(u"SoundRadius", part.sound_radius);
     if (!part.texture_animation.empty())
         binary_element(writer, u"TextureAnimation", part.texture_animation);
+    if (!part.particle_system.empty())
+        binary_element(writer, u"ParticleSystem", part.particle_system);
     if (!part.dynamic_attributes_xml.empty()) {
         pugi::xml_document document;
         if (document.load_string(part.dynamic_attributes_xml.c_str()) && document.child("llsd")) {
@@ -268,6 +587,7 @@ void write_object_asset_xml(framework::NativeXmlTextWriter &writer, const Object
     }
     if (root.object.rez_start_string)
         element(writer, u"StartStr", *root.object.rez_start_string);
+    write_inventory_script_states(writer, root, children);
     writer.write_end_element();
 }
 void write_crossing_object_xml(framework::NativeXmlTextWriter& writer, const ObjectAssetPart& root,
@@ -555,11 +875,13 @@ ObjectAssetPart read_part(pugi::xml_node node, bool root) {
     read_number(node, "EveryoneMask", part.everyone_mask);
     read_number(node, "NextOwnerMask", part.next_mask);
     read_prim_flags(node, part.flags);
+    read_number(node, "ScriptAccessPin", part.script_access_pin);
     if (const auto allowed_drop = node.child("AllowedDrop"))
         part.flags = allowed_drop.text().as_bool() ? part.flags | 0x10000u : part.flags & ~0x10000u;
     read_number(node, "CollisionSoundVolume", part.collision_sound_volume);
     read_number(node, "SoundGain", part.looped_sound_gain);
     read_binary_element(node.child("TextureAnimation"), part.texture_animation);
+    read_binary_element(node.child("ParticleSystem"), part.particle_system);
     read_number(node, "SoundFlags", part.sound_flags);
     read_number(node, "SoundRadius", part.sound_radius);
     part.sound_queueing = std::string_view(node.child_value("SoundQueueing")) == "true";
@@ -648,16 +970,58 @@ bool read_linkset(pugi::xml_node group, ObjectAssetLinkset &linkset) {
         framework::Uuid item_id;
         if (!framework::try_parse_sdk_uuid(saved.attribute("UUID").value(), item_id) || item_id.is_zero())
             continue;
-        const auto running = saved.child("ScriptState").child("Running");
+        const auto wrapper = saved.child("State");
+        const auto state = wrapper ? wrapper.child("ScriptState") : saved.child("ScriptState");
+        const auto metadata = wrapper ? wrapper : state;
+        const std::string_view engine = metadata.attribute("Engine").value();
+        const bool native = engine == "NativeLSL";
+        if (wrapper && engine != "YEngine" && engine != "XEngine" && !native)
+            continue;
+        const auto running = state.child("Running");
         if (!running)
             continue;
         const std::string_view value = running.child_value();
-        if (value != "False" && value != "false" && value != "0")
+        const bool stopped = value == "False" || value == "false" || value == "0";
+        if (native && !stopped && value != "True" && value != "true" && value != "1")
             continue;
-        for (auto &part : parts)
-            for (auto &item : part.inventory)
-                if (item.item_id == item_id && item.inventory_type == 10)
+        framework::Uuid asset;
+        const bool managed = engine == "YEngine";
+        if ((managed || native) &&
+            (!framework::try_parse_sdk_uuid(metadata.attribute("Asset").value(), asset) || asset.is_zero()))
+            continue;
+        for (auto& part : parts) {
+            for (auto& item : part.inventory) {
+                if (item.item_id != item_id || item.inventory_type != 10)
+                    continue;
+                if (native) {
+                    if (item.asset_id != asset)
+                        continue;
+                    item.script_running = !stopped;
+                    const auto encoded = state.child("NativeCheckpoint");
+                    if (std::string_view(encoded.child_value()).size() > 6 * 1024 * 1024)
+                        continue;
+                    std::vector<std::uint8_t> bytes;
+                    read_binary_element(encoded, bytes);
+                    if (auto checkpoint = script::decode_lsl_checkpoint(bytes);
+                        checkpoint && checkpoint->running == item.script_running) {
+                        // Inventory permissions come from the task item and rez ownership rules.
+                        checkpoint->permissions_granter = {};
+                        checkpoint->permissions_mask = 0;
+                        part.native_script_checkpoints.insert_or_assign(item_id, std::move(*checkpoint));
+                    }
+                    continue;
+                }
+                if (!managed && stopped)
                     item.script_running = false;
+                if (managed && item.asset_id == asset) {
+                    auto plugins = read_managed_script_state(state);
+                    if (plugins.source_hash.empty() && stopped)
+                        item.script_running = false;
+                    if (!plugins.empty())
+                        part.managed_script_states.insert_or_assign(item_id, std::move(plugins));
+                }
+            }
+        }
     }
     std::stable_sort(parts.begin() + 1, parts.end(), [](const auto &left, const auto &right) {
         return left.object.link_order < right.object.link_order;

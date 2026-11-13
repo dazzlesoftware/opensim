@@ -29,7 +29,23 @@ add_library(opensim_framework
     src/lludp.cpp
     src/packet_history.cpp
     src/sdk_uuid.cpp src/uuid.cpp
-    src/text.cpp src/culture_prefix.cpp src/console_parser.cpp src/console_prompts.cpp src/console_appender.cpp src/time_span.cpp src/full_path.cpp src/invariant_datetime_parse.cpp src/invariant_number_parse.cpp src/nini_reader.cpp src/nini_writer.cpp src/nini_document.cpp src/nini_streams.cpp src/directory_entries.cpp src/file_system_name.cpp src/glob.cpp src/stream_reader_text.cpp
+    src/text.cpp
+    src/culture_prefix.cpp
+    src/console_parser.cpp
+    src/console_prompts.cpp
+    src/console_appender.cpp
+    src/time_span.cpp
+    src/full_path.cpp
+    src/invariant_datetime_parse.cpp
+    src/invariant_number_parse.cpp
+    src/nini_reader.cpp
+    src/nini_writer.cpp
+    src/nini_document.cpp
+    src/nini_streams.cpp
+    src/directory_entries.cpp
+    src/file_system_name.cpp
+    src/glob.cpp
+    src/stream_reader_text.cpp
     src/time_zone.cpp
     src/invariant_datetime_context.cpp src/invariant_datetime_context_clock.cpp
     src/invariant_datetime_context_native.cpp src/invariant_datetime_context_unix.cpp
@@ -45,10 +61,17 @@ add_library(opensim_framework
     src/nini_xml_reader.cpp
     src/nini_xml_reader_encoding.cpp
     src/nini_xml_native_document.cpp
-    src/nini_xml_dtd_parser.cpp src/nini_xml_uri_reader.cpp src/nini_xml_document_save.cpp src/nini_xml_file_input.cpp src/nini_xml_resolver_policy.cpp
+    src/nini_xml_dtd_parser.cpp
+    src/nini_xml_uri_reader.cpp
+    src/nini_xml_document_save.cpp
+    src/nini_xml_file_input.cpp
+    src/nini_xml_resolver_policy.cpp
     src/config_xml_transport.cpp src/config_xml_typed_http_services.cpp
     src/config_xml_uri_object.cpp src/config_xml_reader_stream.cpp
-    src/config_http_headers.cpp src/config_http_headers_body.cpp src/config_http_location.cpp src/config_http_windows_certificate.cpp
+    src/config_http_headers.cpp
+    src/config_http_headers_body.cpp
+    src/config_http_location.cpp
+    src/config_http_windows_certificate.cpp
     src/configuration_loader.cpp src/native_configuration_loader.cpp
     src/config_uri.cpp src/config_uri_components.cpp src/config_uri_components_unicode.cpp
     src/config_native_uri_object.cpp src/config_generic_uri_object.cpp src/config_http_uri_object.cpp
@@ -58,8 +81,30 @@ add_library(opensim_framework
     src/config_file_uri_path.cpp src/nini_xml_resolver.cpp
     src/configuration_culture.cpp src/network_servers_info.cpp
     src/runtime_environment.cpp src/environment_config.cpp src/file_stream_policy.cpp
-    src/config_xml_native_proxy.cpp src/config_http_windows_proxy.cpp src/config_uri_network_identity.cpp src/config_http_windows_proxy_bypass.cpp src/config_http_windows_local_addresses.cpp src/config_http_wininet_proxy_helper.cpp src/config_http_winhttp_native.cpp src/config_xml_http_multi_proxy.cpp src/config_http_failed_proxy_cache.cpp src/config_http_multi_proxy.cpp src/config_http_multi_proxy_candidates.cpp src/config_http_proxy_resolution.cpp src/config_http_default_proxy.cpp src/config_http_environment_proxy.cpp src/config_http_environment_proxy_native.cpp src/config_http_cookies.cpp src/config_http_cookies_native.cpp src/config_cookie_uri.cpp src/config_http_write_error.cpp src/config_http_read_error.cpp src/config_http_connect_error.cpp src/config_http_dns_error.cpp
-    src/ip_address.cpp src/host_resolver.cpp
+    src/config_xml_native_proxy.cpp
+    src/config_http_windows_proxy.cpp
+    src/config_uri_network_identity.cpp
+    src/config_http_windows_proxy_bypass.cpp
+    src/config_http_windows_local_addresses.cpp
+    src/config_http_wininet_proxy_helper.cpp
+    src/config_http_winhttp_native.cpp
+    src/config_xml_http_multi_proxy.cpp
+    src/config_http_failed_proxy_cache.cpp
+    src/config_http_multi_proxy.cpp
+    src/config_http_multi_proxy_candidates.cpp
+    src/config_http_proxy_resolution.cpp
+    src/config_http_default_proxy.cpp
+    src/config_http_environment_proxy.cpp
+    src/config_http_environment_proxy_native.cpp
+    src/config_http_credential_cache.cpp
+    src/config_http_cookies.cpp
+    src/config_http_cookies_native.cpp
+    src/config_cookie_uri.cpp
+    src/config_http_write_error.cpp
+    src/config_http_read_error.cpp
+    src/config_http_connect_error.cpp
+    src/config_http_dns_error.cpp
+    src/ip_address.cpp src/host_resolver.cpp src/outbound_url_filter.cpp
     src/http_uri.cpp
     src/invariant_case.cpp
     src/http_host.cpp
@@ -103,7 +148,19 @@ else()
     target_compile_options(opensim_config_http PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 if(WIN32)
-    target_link_libraries(opensim_config_http PRIVATE crypt32)
+    target_link_libraries(opensim_config_http PRIVATE crypt32 secur32)
+elseif(APPLE)
+    find_library(OPENSIM_GSS_FRAMEWORK GSS REQUIRED)
+    target_link_libraries(opensim_config_http PRIVATE ${OPENSIM_GSS_FRAMEWORK})
+    target_compile_definitions(opensim_config_http PRIVATE OPENSIM_HTTP_GSSAPI)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_path(OPENSIM_GSSAPI_INCLUDE_DIR gssapi/gssapi_ext.h)
+    find_library(OPENSIM_GSSAPI_LIBRARY gssapi_krb5)
+    if(OPENSIM_GSSAPI_INCLUDE_DIR AND OPENSIM_GSSAPI_LIBRARY)
+        target_include_directories(opensim_config_http SYSTEM PRIVATE ${OPENSIM_GSSAPI_INCLUDE_DIR})
+        target_link_libraries(opensim_config_http PRIVATE ${OPENSIM_GSSAPI_LIBRARY})
+        target_compile_definitions(opensim_config_http PRIVATE OPENSIM_HTTP_GSSAPI)
+    endif()
 endif()
 
 add_library(native_sqlite STATIC third_party/sqlite/sqlite3.c)
@@ -112,7 +169,16 @@ target_link_libraries(native_sqlite PUBLIC Threads::Threads ${CMAKE_DL_LIBS})
 if(UNIX)
     target_link_libraries(native_sqlite PUBLIC m)
 endif()
-add_library(native_inflate STATIC third_party/zlib/adler32.c third_party/zlib/crc32.c third_party/zlib/inffast.c third_party/zlib/inflate.c third_party/zlib/inftrees.c third_party/zlib/zutil.c third_party/zlib/deflate.c third_party/zlib/trees.c)
+add_library(native_inflate STATIC
+    third_party/zlib/adler32.c
+    third_party/zlib/crc32.c
+    third_party/zlib/inffast.c
+    third_party/zlib/inflate.c
+    third_party/zlib/inftrees.c
+    third_party/zlib/zutil.c
+    third_party/zlib/deflate.c
+    third_party/zlib/trees.c
+)
 target_compile_definitions(native_inflate PRIVATE Z_PREFIX)
 # Windows .NET 8 x86/x64 uses the pinned Intel zlib profile. Keep it isolated
 # from the newer prefixed decoder and optional system-zlib HTTP dependency.
@@ -153,15 +219,79 @@ add_library(opensim_server_core
     src/avatar_appearance.cpp src/avatar_appearance_osd.cpp
     src/wearable_cache_item.cpp
     src/avatar_attachment.cpp src/entity_transfer_context.cpp
-    src/login_response.cpp src/login_response_assembly.cpp src/login_completion.cpp src/friends_service.cpp src/friends_connector.cpp src/sqlite_friends_store.cpp src/friends_endpoint.cpp src/offline_im_endpoint.cpp src/sqlite_offline_im_store.cpp src/offline_im_record.cpp
+    src/login_response.cpp
+    src/login_response_assembly.cpp
+    src/login_completion.cpp
+    src/friends_service.cpp
+    src/friends_connector.cpp
+    src/sqlite_friends_store.cpp
+    src/friends_endpoint.cpp
+    src/offline_im_endpoint.cpp
+    src/sqlite_offline_im_store.cpp
+    src/offline_im_record.cpp
     src/mute_list_endpoint.cpp
-    src/simulation_connector.cpp src/local_simulation.cpp src/scene_access.cpp src/scene_admission.cpp src/scene_client_verification.cpp src/capabilities_module.cpp src/caps_handlers.cpp src/caps.cpp src/http_route_registry.cpp src/poll_request.cpp src/poll_manager.cpp src/seed_caps.cpp src/seed_caps_xml.cpp src/presence_state.cpp src/viewer_name.cpp src/simulation_position_connector.cpp src/osd_request.cpp src/agent_access.cpp src/agent_delete.cpp src/agent_update.cpp src/object_handler.cpp
+    src/simulation_connector.cpp
+    src/local_simulation.cpp
+    src/scene_access.cpp
+    src/scene_admission.cpp
+    src/scene_client_verification.cpp
+    src/capabilities_module.cpp
+    src/caps_handlers.cpp
+    src/caps.cpp
+    src/http_route_registry.cpp
+    src/poll_request.cpp
+    src/poll_manager.cpp
+    src/seed_caps.cpp
+    src/seed_caps_xml.cpp
+    src/presence_state.cpp
+    src/viewer_name.cpp
+    src/simulation_position_connector.cpp
+    src/osd_request.cpp
+    src/agent_access.cpp
+    src/agent_delete.cpp
+    src/agent_update.cpp
+    src/object_handler.cpp
     src/sdk_json_reader.cpp src/osd_json.cpp
     src/osd_value.cpp
     src/avatar_wearable_osd.cpp
-    src/account_store.cpp src/config_xml_startup.cpp src/config.cpp src/rpc.cpp src/sdk_osd_stream.cpp src/sdk_llsd_notation.cpp src/sdk_llsd_binary.cpp src/sdk_llsd_xml.cpp src/login_service.cpp src/login_orchestration.cpp src/login_recovery.cpp src/agent_launch.cpp
+    src/account_store.cpp
+    src/config_xml_startup.cpp
+    src/config.cpp
+    src/rpc.cpp
+    src/sdk_osd_stream.cpp
+    src/sdk_llsd_notation.cpp
+    src/sdk_llsd_binary.cpp
+    src/sdk_llsd_xml.cpp
+    src/login_service.cpp
+    src/login_orchestration.cpp
+    src/login_recovery.cpp
+    src/agent_launch.cpp
     src/remote_console.cpp
-    src/osd_service_http.cpp src/osd_service_requester.cpp src/user_agent_connector.cpp src/xml_rpc_diagnostics.cpp src/xml_rpc_requester.cpp src/nwc_http.cpp src/nwc_xml_rpc_serializer.cpp src/nwc_xml_rpc.cpp src/open_profile_client.cpp src/profile_user_agent.cpp src/profile_requests.cpp src/advanced_profile.cpp src/basic_profile_runtime.cpp src/profile_packets.cpp src/basic_profile.cpp src/local_profiles_connector.cpp src/sqlite_profiles_data.cpp src/profiles_configuration.cpp src/profiles_service.cpp src/profile_handlers.cpp src/json_rpc_request.cpp src/json_rpc.cpp src/login_application.cpp src/http_server.cpp)
+    src/osd_service_http.cpp
+    src/osd_service_requester.cpp
+    src/user_agent_connector.cpp
+    src/xml_rpc_diagnostics.cpp
+    src/xml_rpc_requester.cpp
+    src/nwc_http.cpp
+    src/nwc_xml_rpc_serializer.cpp
+    src/nwc_xml_rpc.cpp
+    src/open_profile_client.cpp
+    src/profile_user_agent.cpp
+    src/profile_requests.cpp
+    src/advanced_profile.cpp
+    src/basic_profile_runtime.cpp
+    src/profile_packets.cpp
+    src/basic_profile.cpp
+    src/local_profiles_connector.cpp
+    src/sqlite_profiles_data.cpp
+    src/profiles_configuration.cpp
+    src/profiles_service.cpp
+    src/profile_handlers.cpp
+    src/json_rpc_request.cpp
+    src/json_rpc.cpp
+    src/login_application.cpp
+    src/http_server.cpp
+    )
 target_sources(opensim_server_core PRIVATE src/inventory_store.cpp)
 target_sources(opensim_server_core PRIVATE src/poll_runtime.cpp)
 target_sources(opensim_server_core PRIVATE src/async_http_server.cpp)
@@ -169,18 +299,109 @@ target_sources(opensim_server_core PRIVATE src/poll_http_service.cpp)
 target_sources(opensim_server_core PRIVATE src/http_response.cpp src/http_cookies.cpp)
 target_sources(opensim_server_core PRIVATE src/event_queue.cpp src/event_queue_messages.cpp)
 target_sources(opensim_server_core PRIVATE src/scene_capabilities.cpp)
-target_sources(opensim_server_core PRIVATE src/terrain.cpp src/terrain_layer.cpp src/world.cpp src/avatar_update.cpp src/avatar_packets.cpp src/object_add.cpp src/object_update.cpp src/rez_location.cpp src/pos_physics.cpp src/viewer_region.cpp src/region_runtime.cpp)
+target_sources(opensim_server_core PRIVATE
+    src/terrain.cpp
+    src/terrain_layer.cpp
+    src/world.cpp
+    src/avatar_update.cpp
+    src/avatar_packets.cpp
+    src/object_add.cpp
+    src/object_update.cpp
+    src/particle_system.cpp
+    src/rez_location.cpp
+    src/pos_physics.cpp
+    src/viewer_region.cpp
+    src/region_runtime.cpp
+)
 target_sources(opensim_server_core PRIVATE src/object_asset_xml.cpp)
-target_sources(opensim_server_core PRIVATE src/chat_packet.cpp src/lsl_runtime.cpp src/lsl_checkpoint.cpp)
+target_sources(opensim_server_core PRIVATE
+    src/chat_packet.cpp
+    src/lsl_runtime.cpp
+    src/http_request_throttle.cpp
+    src/script_http_transport.cpp
+    src/script_http_proxy.cpp
+    src/script_http_module.cpp
+    src/lsl_checkpoint.cpp
+    src/yengine_snapshot.cpp
+)
 target_sources(opensim_server_core PRIVATE src/movement.cpp)
-target_sources(opensim_server_core PRIVATE src/default_animations.cpp src/movement_animation.cpp src/mesh_asset.cpp src/ubode.cpp src/viewer_physics.cpp)
+target_sources(opensim_server_core PRIVATE
+    src/default_animations.cpp
+    src/movement_animation.cpp
+    src/mesh_asset.cpp
+    src/ubode.cpp
+    src/viewer_physics.cpp
+)
 target_sources(opensim_server_core PRIVATE
     src/texture_layers.cpp src/map_tile.cpp src/warp_terrain_splat.cpp src/warp_terrain_mesh.cpp
     src/warp_map_raster.cpp src/warp_prim_mesh.cpp)
-target_sources(opensim_server_core PRIVATE src/nini_config_view.cpp src/native_flotsam_datetime.cpp src/primitive_base_shape.cpp src/prim_geometry.cpp src/status_date_format.cpp src/root_position.cpp src/region_asset_runtime.cpp src/inventory_caps.cpp src/inventory_descendents.cpp src/region_inventory_runtime.cpp src/region_inventory_descendents_runtime.cpp src/library_inventory_caps.cpp src/library_descendents.cpp src/region_library_descendents_runtime.cpp src/inventory_packets.cpp src/legacy_inventory_requests.cpp src/xfer_download.cpp src/task_inventory_file.cpp src/script_running.cpp src/script_task_caps.cpp src/inventory_asset_caps.cpp src/baked_texture_caps.cpp src/flotsam_memory_cache.cpp src/flotsam_expiring_entries.cpp src/flotsam_console_files.cpp src/flotsam_file_access.cpp src/flotsam_cache_files.cpp src/flotsam_cache_module.cpp src/flotsam_cache_cleanup.cpp src/flotsam_cache_maintenance.cpp src/flotsam_cache_config.cpp src/native_flotsam_config.cpp src/flotsam_cache_console.cpp src/hg_uuid_gatherer.cpp src/uuid_gatherer.cpp src/uuid_asset_formats.cpp src/live_asset_gather.cpp src/flotsam_file_store.cpp src/region_baked_texture_runtime.cpp src/region_inventory_asset_runtime.cpp src/script_task_update.cpp src/region_script_task_runtime.cpp src/object_properties.cpp src/script_control.cpp src/script_asset_text.cpp src/task_inventory_registry.cpp src/inventory_script_rez.cpp src/script_instance_create.cpp)
-target_sources(opensim_server_core PRIVATE src/task_inventory_move.cpp src/task_inventory_remove.cpp src/agent_inventory_add.cpp src/inventory_notifications.cpp src/inventory_item_create.cpp)
+target_sources(opensim_server_core PRIVATE
+    src/nini_config_view.cpp
+    src/native_flotsam_datetime.cpp
+    src/primitive_base_shape.cpp
+    src/prim_geometry.cpp
+    src/status_date_format.cpp
+    src/root_position.cpp
+    src/region_asset_runtime.cpp
+    src/inventory_caps.cpp
+    src/inventory_descendents.cpp
+    src/region_inventory_runtime.cpp
+    src/region_inventory_descendents_runtime.cpp
+    src/library_inventory_caps.cpp
+    src/library_descendents.cpp
+    src/region_library_descendents_runtime.cpp
+    src/inventory_packets.cpp
+    src/legacy_inventory_requests.cpp
+    src/xfer_download.cpp
+    src/task_inventory_file.cpp
+    src/script_running.cpp
+    src/script_task_caps.cpp
+    src/inventory_asset_caps.cpp
+    src/baked_texture_caps.cpp
+    src/flotsam_memory_cache.cpp
+    src/flotsam_expiring_entries.cpp
+    src/flotsam_console_files.cpp
+    src/flotsam_file_access.cpp
+    src/flotsam_cache_files.cpp
+    src/flotsam_cache_module.cpp
+    src/flotsam_cache_cleanup.cpp
+    src/flotsam_cache_maintenance.cpp
+    src/flotsam_cache_config.cpp
+    src/native_flotsam_config.cpp
+    src/flotsam_cache_console.cpp
+    src/hg_uuid_gatherer.cpp
+    src/uuid_gatherer.cpp
+    src/uuid_asset_formats.cpp
+    src/live_asset_gather.cpp
+    src/flotsam_file_store.cpp
+    src/region_baked_texture_runtime.cpp
+    src/region_inventory_asset_runtime.cpp
+    src/script_task_update.cpp
+    src/region_script_task_runtime.cpp
+    src/object_properties.cpp
+    src/script_control.cpp
+    src/script_asset_text.cpp
+    src/task_inventory_registry.cpp
+    src/inventory_script_rez.cpp
+    src/script_instance_create.cpp
+)
+target_sources(opensim_server_core PRIVATE
+    src/task_inventory_move.cpp
+    src/task_inventory_remove.cpp
+    src/agent_inventory_add.cpp
+    src/inventory_notifications.cpp
+    src/inventory_item_create.cpp
+)
 target_sources(opensim_server_core PRIVATE src/task_inventory_update.cpp src/inventory_drop_permission.cpp)
-target_sources(opensim_server_core PRIVATE src/user_inventory_operations.cpp src/inventory_copy.cpp src/part_script_events.cpp src/inventory_new.cpp src/inventory_asset_update.cpp src/scene_inventory_asset_update.cpp)
+target_sources(opensim_server_core PRIVATE
+    src/user_inventory_operations.cpp
+    src/inventory_copy.cpp
+    src/part_script_events.cpp
+    src/inventory_new.cpp
+    src/inventory_asset_update.cpp
+    src/scene_inventory_asset_update.cpp
+)
+target_sources(opensim_server_core PRIVATE src/script_mailbox.cpp src/script_smtp.cpp src/remote_data_channels.cpp)
 target_sources(opensim_server_core PRIVATE src/simulator_features.cpp)
 target_sources(opensim_server_core PRIVATE src/http_range.cpp src/get_assets.cpp)
 target_sources(opensim_server_core PRIVATE src/object_job_engine.cpp src/get_assets_module.cpp)
@@ -243,22 +464,51 @@ target_sources(opensim_server_core PRIVATE src/inventory_tree.cpp src/library_se
 target_sources(opensim_server_core PRIVATE src/inventory_login.cpp)
 target_sources(opensim_server_core PRIVATE src/presence_service.cpp src/presence_connector.cpp)
 target_sources(opensim_server_core PRIVATE src/grid_user_connector.cpp)
-target_sources(opensim_server_core PRIVATE src/login_destination.cpp src/grid_identity.cpp src/grid_user_store.cpp src/grid_user_service.cpp src/grid_region.cpp src/region_store.cpp src/sqlite_region_store.cpp src/grid_service.cpp)
-target_sources(opensim_server_core PRIVATE src/gzip_inflate.cpp src/gzip_deflate.cpp src/simulation_body.cpp src/service_protocol.cpp src/service_xml_reader.cpp src/presence_endpoint.cpp src/grid_user_endpoint.cpp src/grid_endpoint.cpp src/account_endpoint.cpp src/avatar_endpoint.cpp)
+target_sources(opensim_server_core PRIVATE
+    src/login_destination.cpp
+    src/grid_identity.cpp
+    src/grid_user_store.cpp
+    src/grid_user_service.cpp
+    src/grid_region.cpp
+    src/region_store.cpp
+    src/sqlite_region_store.cpp
+    src/grid_service.cpp
+)
+target_sources(opensim_server_core PRIVATE
+    src/gzip_inflate.cpp
+    src/gzip_deflate.cpp
+    src/simulation_body.cpp
+    src/service_protocol.cpp
+    src/service_xml_reader.cpp
+    src/presence_endpoint.cpp
+    src/grid_user_endpoint.cpp
+    src/grid_endpoint.cpp
+    src/account_endpoint.cpp
+    src/avatar_endpoint.cpp
+)
 target_sources(opensim_server_core PRIVATE src/asset_endpoint.cpp src/asset_console.cpp src/hg_asset_service.cpp)
 target_link_libraries(opensim_server_core PUBLIC opensim_framework PRIVATE opensim_config_http native_sqlite native_xml native_inflate)
 find_package(PostgreSQL QUIET)
 find_package(unofficial-libmariadb CONFIG QUIET)
 if(TARGET unofficial::libmariadb)
     set(OPENSIM_MYSQL_TARGET "$<LINK_ONLY:unofficial::libmariadb>")
-    set_source_files_properties(src/mysql_connection.cpp src/mysql_mute_list_store.cpp src/mysql_offline_im_store.cpp src/sql_service_connection.cpp PROPERTIES
+    set_source_files_properties(
+        src/mysql_connection.cpp
+        src/mysql_mute_list_store.cpp
+        src/mysql_offline_im_store.cpp
+        src/sql_service_connection.cpp PROPERTIES
         INCLUDE_DIRECTORIES "$<TARGET_PROPERTY:unofficial::libmariadb,INTERFACE_INCLUDE_DIRECTORIES>")
 else()
     find_path(OPENSIM_MYSQL_INCLUDE_DIR mysql.h PATH_SUFFIXES mariadb mysql)
     find_library(OPENSIM_MYSQL_LIBRARY NAMES mariadb libmariadb mysqlclient libmysql)
     if(OPENSIM_MYSQL_INCLUDE_DIR AND OPENSIM_MYSQL_LIBRARY)
         set(OPENSIM_MYSQL_TARGET "${OPENSIM_MYSQL_LIBRARY}")
-        set_source_files_properties(src/mysql_connection.cpp src/mysql_mute_list_store.cpp src/mysql_offline_im_store.cpp src/mysql_asset_store.cpp src/sql_service_connection.cpp
+        set_source_files_properties(
+            src/mysql_connection.cpp
+            src/mysql_mute_list_store.cpp
+            src/mysql_offline_im_store.cpp
+            src/mysql_asset_store.cpp
+            src/sql_service_connection.cpp
             PROPERTIES INCLUDE_DIRECTORIES "${OPENSIM_MYSQL_INCLUDE_DIR}")
     endif()
 endif()
@@ -295,14 +545,15 @@ if(PostgreSQL_FOUND)
     set(OPENSIM_POSTGRES_TEST_BIN "" CACHE PATH "PostgreSQL server tools for disposable integration clusters")
 endif()
 if(OPENSIM_MYSQL_TARGET OR PostgreSQL_FOUND)
-    target_sources(opensim_server_core PRIVATE src/sql_service_connection.cpp src/sql_presence_store.cpp src/sql_grid_user_store.cpp)
+    target_sources(opensim_server_core PRIVATE src/sql_service_connection.cpp src/sql_presence_store.cpp
+        src/sql_grid_user_store.cpp src/sql_travel_store.cpp)
 endif()
 if(OPENSIM_MYSQL_TARGET)
-    set_property(SOURCE src/sql_service_connection.cpp src/sql_presence_store.cpp src/sql_grid_user_store.cpp
+    set_property(SOURCE src/sql_service_connection.cpp src/sql_presence_store.cpp src/sql_grid_user_store.cpp src/sql_travel_store.cpp
         APPEND PROPERTY COMPILE_DEFINITIONS OPENSIM_HAVE_MYSQL)
 endif()
 if(PostgreSQL_FOUND)
-    set_property(SOURCE src/sql_service_connection.cpp src/sql_presence_store.cpp src/sql_grid_user_store.cpp
+    set_property(SOURCE src/sql_service_connection.cpp src/sql_presence_store.cpp src/sql_grid_user_store.cpp src/sql_travel_store.cpp
         APPEND PROPERTY COMPILE_DEFINITIONS OPENSIM_HAVE_POSTGRESQL)
 endif()
 option(OPENSIM_REQUIRE_OFFLINE_IM_SQL "Require PostgreSQL and MariaDB OfflineIM clients" OFF)
@@ -331,13 +582,31 @@ else()
     find_package(OpenSSL 3.0 QUIET)
 endif()
 if(OpenSSL_FOUND)
+    set(OPENSIM_HTTP_TLS_LIBRARIES OpenSSL::SSL OpenSSL::Crypto)
+    if(APPLE)
+        # cpp-httplib loads the default trusted roots from the macOS Keychain.
+        find_library(OPENSIM_SECURITY_FRAMEWORK Security REQUIRED)
+        find_library(OPENSIM_COREFOUNDATION_FRAMEWORK CoreFoundation REQUIRED)
+        list(APPEND OPENSIM_HTTP_TLS_LIBRARIES
+            "${OPENSIM_SECURITY_FRAMEWORK}" "${OPENSIM_COREFOUNDATION_FRAMEWORK}")
+    endif()
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        target_sources(opensim_config_http PRIVATE src/config_http_linux_certificate_name.cpp src/config_http_linux_certificate.cpp src/config_http_linux_user_store.cpp src/config_http_linux_x500_name.cpp src/config_http_linux_system_store.cpp src/config_http_linux_trust_stores.cpp src/config_http_linux_aia.cpp src/config_http_linux_certificate_download.cpp src/config_http_linux_certificate_persistence.cpp)
+        target_sources(opensim_config_http PRIVATE
+            src/config_http_linux_certificate_name.cpp
+            src/config_http_linux_certificate.cpp
+            src/config_http_linux_user_store.cpp
+            src/config_http_linux_x500_name.cpp
+            src/config_http_linux_system_store.cpp
+            src/config_http_linux_trust_stores.cpp
+            src/config_http_linux_aia.cpp
+            src/config_http_linux_certificate_download.cpp
+            src/config_http_linux_certificate_persistence.cpp
+        )
     endif()
     target_compile_definitions(opensim_config_http PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
-    target_link_libraries(opensim_config_http PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+    target_link_libraries(opensim_config_http PRIVATE ${OPENSIM_HTTP_TLS_LIBRARIES})
     target_compile_definitions(opensim_server_core PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
-    target_link_libraries(opensim_server_core PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+    target_link_libraries(opensim_server_core PRIVATE ${OPENSIM_HTTP_TLS_LIBRARIES})
 else()
     message(STATUS "OpenSSL not found: native HTTP is enabled; TLS configuration will fail explicitly")
 endif()
@@ -392,21 +661,29 @@ if(MINGW)
 endif()
 install(TARGETS opensim-native RUNTIME DESTINATION bin)
 if(WIN32)
-    find_package(libjpeg-turbo CONFIG QUIET)
-    if(TARGET libjpeg-turbo::jpeg)
-        install(FILES "$<TARGET_FILE:libjpeg-turbo::jpeg>" DESTINATION bin)
-    endif()
-    foreach(image_dependency PNG::png_shared ZLIB::ZLIB freetype)
-        if(TARGET "${image_dependency}")
-            get_target_property(image_dependency_type "${image_dependency}" TYPE)
-            if(image_dependency_type STREQUAL "SHARED_LIBRARY")
-                install(FILES "$<TARGET_FILE:${image_dependency}>" DESTINATION bin)
-            endif()
+    # Resolve the executable's imports from the build output, including transitive DLLs.
+    install(CODE "
+        if(POLICY CMP0207)
+            cmake_policy(SET CMP0207 NEW)
         endif()
-    endforeach()
+        set(runtime_dir [==[$<TARGET_FILE_DIR:opensim-native>]==])
+        foreach(metacharacter IN ITEMS \".\" \"+\" \"*\" \"?\" \"^\" \"$\" \"(\" \")\" \"[\" \"]\" \"|\")
+            string(REPLACE \"\${metacharacter}\" \"\\\\\${metacharacter}\" runtime_dir \"\${runtime_dir}\")
+        endforeach()
+        file(GET_RUNTIME_DEPENDENCIES
+            EXECUTABLES \"$<TARGET_FILE:opensim-native>\"
+            RESOLVED_DEPENDENCIES_VAR runtime_dlls
+            PRE_EXCLUDE_REGEXES \"^api-ms-\" \"^ext-ms-\"
+            POST_INCLUDE_REGEXES \"^\${runtime_dir}/\"
+            POST_EXCLUDE_REGEXES \".*\")
+        if(runtime_dlls)
+            file(INSTALL DESTINATION \"\${CMAKE_INSTALL_PREFIX}/bin\" TYPE SHARED_LIBRARY FILES \${runtime_dlls})
+        endif()
+    ")
 endif()
 install(FILES native-server.ini.example LICENSE.txt CONTRIBUTORS.txt BUILDING.txt DESTINATION share/opensim-native)
-install(FILES native-region.ini.example ../bin/data/avataranimations.xml DESTINATION share/opensim-native)
+set(OPENSIM_DEFAULT_ANIMATIONS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/data/avataranimations.xml")
+install(FILES native-region.ini.example "${OPENSIM_DEFAULT_ANIMATIONS}" DESTINATION share/opensim-native)
 install(FILES ../ThirdPartyLicenses/ODE.txt DESTINATION share/opensim-native/licenses)
 install(FILES ../ThirdPartyLicenses/OpenJpeg.txt DESTINATION share/opensim-native/licenses)
 if(WIN32)
@@ -423,6 +700,24 @@ else()
     set(OPENSIM_OPENJPEG_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/../bin/lib64/libopenjpeg-dotnet-x86_64.so")
 endif()
 install(FILES "${OPENSIM_UBODE_LIBRARY}" "${OPENSIM_OPENJPEG_LIBRARY}" DESTINATION lib/opensim-native)
+# Stage independently of the link step so resource edits and missing copies are picked up.
+add_custom_target(opensim-native-runtime-files
+    COMMAND "${CMAKE_COMMAND}" -E make_directory
+        "$<TARGET_FILE_DIR:opensim-native>/share/opensim-native"
+        "$<TARGET_FILE_DIR:opensim-native>/lib/opensim-native"
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${OPENSIM_DEFAULT_ANIMATIONS}"
+        "$<TARGET_FILE_DIR:opensim-native>/share/opensim-native"
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/../bin/inventory"
+        "$<TARGET_FILE_DIR:opensim-native>/share/opensim-native/inventory"
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/../bin/assets"
+        "$<TARGET_FILE_DIR:opensim-native>/share/opensim-native/assets"
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+        "${OPENSIM_UBODE_LIBRARY}" "${OPENSIM_OPENJPEG_LIBRARY}"
+        "$<TARGET_FILE_DIR:opensim-native>/lib/opensim-native"
+    VERBATIM)
+add_dependencies(opensim-native opensim-native-runtime-files)
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../bin/assets/" DESTINATION share/opensim-native/assets)
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../bin/inventory/" DESTINATION share/opensim-native/inventory)
 install(FILES third_party/httplib/LICENSE DESTINATION share/opensim-native/licenses RENAME cpp-httplib-LICENSE)
@@ -745,6 +1040,9 @@ if(BUILD_TESTING)
     set_tests_properties(region_script_owner_tests PROPERTIES TIMEOUT 20)
     add_executable(region_inventory_asset_owner_tests tests/region_inventory_asset_owner_tests.cpp)
     target_link_libraries(region_inventory_asset_owner_tests PRIVATE opensim_server_core)
+    if(MSVC)
+        target_link_options(region_inventory_asset_owner_tests PRIVATE /STACK:2097152)
+    endif()
     add_test(NAME region_inventory_asset_owner_tests COMMAND region_inventory_asset_owner_tests)
     set_tests_properties(region_inventory_asset_owner_tests PROPERTIES TIMEOUT 30)
     add_executable(object_properties_tests tests/object_properties_tests.cpp)
@@ -821,6 +1119,7 @@ if(BUILD_TESTING)
     add_executable(ubode_tests tests/ubode_tests.cpp)
     target_link_libraries(ubode_tests PRIVATE opensim_server_core)
     add_test(NAME ubode_tests COMMAND ubode_tests "${OPENSIM_UBODE_LIBRARY}")
+    add_test(NAME warp_render_mesh_tests COMMAND ubode_tests --render-mesh)
     target_link_libraries(movement_tests PRIVATE opensim_server_core)
     add_test(NAME movement_tests COMMAND movement_tests)
     target_link_libraries(region_runtime_tests PRIVATE opensim_server_core)
@@ -1129,7 +1428,7 @@ if(BUILD_TESTING)
     add_executable(grid_user_probe tests/grid_user_probe.cpp)
     target_link_libraries(grid_user_probe PRIVATE opensim_server_core)
     add_executable(inventory_tests tests/inventory_tests.cpp)
-    target_link_libraries(inventory_tests PRIVATE opensim_server_core)
+    target_link_libraries(inventory_tests PRIVATE opensim_server_core native_sqlite)
     add_test(NAME inventory_tests COMMAND inventory_tests)
     add_executable(inventory_probe tests/inventory_probe.cpp)
     target_link_libraries(inventory_probe PRIVATE opensim_server_core)
@@ -1282,7 +1581,7 @@ if(BUILD_TESTING)
     if(OpenSSL_FOUND)
         target_include_directories(web_http_network_probe SYSTEM PRIVATE third_party/httplib)
         target_compile_definitions(web_http_network_probe PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
-        target_link_libraries(web_http_network_probe PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+        target_link_libraries(web_http_network_probe PRIVATE ${OPENSIM_HTTP_TLS_LIBRARIES})
         if(ZLIB_FOUND)
             target_compile_definitions(web_http_network_probe PRIVATE CPPHTTPLIB_ZLIB_SUPPORT)
             target_link_libraries(web_http_network_probe PRIVATE ZLIB::ZLIB)
@@ -1355,6 +1654,46 @@ if(BUILD_TESTING)
     add_executable(remote_console_http_server tests/remote_console_http_server.cpp)
     target_link_libraries(remote_console_http_server PRIVATE opensim_server_core)
     if(Python3_Interpreter_FOUND)
+        add_test(NAME script_http_transport_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/script_http_transport_network.py" "$<TARGET_FILE:lsl_runtime_tests>")
+        set_tests_properties(script_http_transport_network PROPERTIES TIMEOUT 30)
+        if(OpenSSL_FOUND)
+            set(OPENSIM_SCRIPT_HTTP_TLS_TEST_ARGS --tls)
+            if(OPENSIM_GSSAPI_INCLUDE_DIR AND OPENSIM_GSSAPI_LIBRARY
+               AND EXISTS "/etc/gss/mech.d/mech.ntlmssp.conf")
+                list(APPEND OPENSIM_SCRIPT_HTTP_TLS_TEST_ARGS --integrated-proxy)
+            endif()
+            add_test(NAME script_http_tls_network COMMAND "${Python3_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/script_http_transport_network.py" "$<TARGET_FILE:lsl_runtime_tests>"
+                ${OPENSIM_SCRIPT_HTTP_TLS_TEST_ARGS})
+            set_tests_properties(script_http_tls_network PROPERTIES TIMEOUT 30)
+            if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND OPENSIM_GSSAPI_INCLUDE_DIR AND OPENSIM_GSSAPI_LIBRARY)
+                find_program(OPENSIM_KERBEROS_DATABASE_TOOL kdb5_util)
+                find_program(OPENSIM_KERBEROS_ADMIN kadmin.local)
+                find_program(OPENSIM_KERBEROS_KDC krb5kdc)
+                find_program(OPENSIM_KERBEROS_KINIT kinit)
+                if(OPENSIM_KERBEROS_DATABASE_TOOL AND OPENSIM_KERBEROS_ADMIN
+                   AND OPENSIM_KERBEROS_KDC AND OPENSIM_KERBEROS_KINIT)
+                    find_program(OPENSIM_KERBEROS_TEST_OPENSSL openssl)
+                    if(OPENSIM_KERBEROS_TEST_OPENSSL)
+                        add_test(NAME config_xml_kerberos_origin_network COMMAND "${Python3_EXECUTABLE}"
+                            "${CMAKE_CURRENT_SOURCE_DIR}/tests/kerberos_proxy_network.py"
+                            "$<TARGET_FILE:config_xml_transport_network_tests>" "${OPENSIM_KERBEROS_DATABASE_TOOL}"
+                            "${OPENSIM_KERBEROS_ADMIN}" "${OPENSIM_KERBEROS_KDC}" "${OPENSIM_KERBEROS_KINIT}"
+                            "${OPENSIM_KERBEROS_TEST_OPENSSL}")
+                        set_tests_properties(config_xml_kerberos_origin_network PROPERTIES TIMEOUT 40)
+                    endif()
+                    add_test(NAME script_http_kerberos_network COMMAND "${Python3_EXECUTABLE}"
+                        "${CMAKE_CURRENT_SOURCE_DIR}/tests/kerberos_proxy_network.py"
+                        "$<TARGET_FILE:lsl_runtime_tests>" "${OPENSIM_KERBEROS_DATABASE_TOOL}"
+                        "${OPENSIM_KERBEROS_ADMIN}" "${OPENSIM_KERBEROS_KDC}" "${OPENSIM_KERBEROS_KINIT}")
+                    set_tests_properties(script_http_kerberos_network PROPERTIES TIMEOUT 65)
+                endif()
+            endif()
+            add_test(NAME script_smtp_tls_network COMMAND "${Python3_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/script_smtp_tls_network.py" "$<TARGET_FILE:lsl_runtime_tests>")
+            set_tests_properties(script_smtp_tls_network PROPERTIES TIMEOUT 35)
+        endif()
         add_test(NAME remote_console_http COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/remote_console_http.py" --native "$<TARGET_FILE:remote_console_http_server>")
         set_tests_properties(remote_console_http PROPERTIES TIMEOUT 90 PASS_REGULAR_EXPRESSION "PASS: remote console HTTP")
         add_test(NAME remote_console_application COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/remote_console_application.py" --native "$<TARGET_FILE:opensim-native>" --work "${CMAKE_CURRENT_BINARY_DIR}/remote-console-application")
@@ -1491,7 +1830,7 @@ if(BUILD_TESTING)
             set_tests_properties(web_http_tls_certificate_name_source_parity PROPERTIES TIMEOUT 240)
         endif()
         if(OpenSSL_FOUND)
-            if(WIN32)
+            if(WIN32 OR APPLE)
                 add_test(NAME web_http_platform_trust_source_parity COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_web_http_network.py" --native "$<TARGET_FILE:web_http_network_probe>" --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/web-http-platform-trust-reference" --platform-trust)
                 set_tests_properties(web_http_platform_trust_source_parity PROPERTIES TIMEOUT 240 SKIP_RETURN_CODE 77)
             endif()
@@ -2128,6 +2467,10 @@ if(BUILD_TESTING)
         set_tests_properties(server_http_network PROPERTIES TIMEOUT 90)
     endif()
     if(Python3_EXECUTABLE)
+        add_test(NAME sqlite_offline_im_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/sql_offline_im_network.py"
+            --native "$<TARGET_FILE:opensim-native>" --provider SQLite)
+        set_tests_properties(sqlite_offline_im_network PROPERTIES TIMEOUT 90)
         add_test(NAME darwin_file_lock_policy_source_parity COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_darwin_file_lock_policy.py"
             --native "$<TARGET_FILE:posix_io_retry_tests>"
@@ -2149,6 +2492,11 @@ if(BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/native_startup_network.py" --native "$<TARGET_FILE:opensim-native>"
             --work "${CMAKE_CURRENT_BINARY_DIR}/native-startup-network")
         set_tests_properties(native_startup_network PROPERTIES TIMEOUT 180)
+        add_test(NAME native_installed_startup_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/native_startup_network.py" --native "$<TARGET_FILE:opensim-native>"
+            --work "${CMAKE_CURRENT_BINARY_DIR}/native-installed-startup-network"
+            --install "${CMAKE_COMMAND}" "${CMAKE_CURRENT_BINARY_DIR}" "$<CONFIG>")
+        set_tests_properties(native_installed_startup_network PROPERTIES TIMEOUT 240)
         add_test(NAME basic_profile_disabled_network COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>" --viewer "$<TARGET_FILE:viewer_session_probe>" --profiles-disabled --work "${CMAKE_CURRENT_BINARY_DIR}/basic-profile-disabled-network")
         add_test(NAME remote_asset_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/remote_asset_network.py" "$<TARGET_FILE:asset_service_probe>")
@@ -2192,6 +2540,15 @@ if(BUILD_TESTING)
             set_tests_properties(mysql_asset_network PROPERTIES TIMEOUT 240)
         endif()
         if(OPENSIM_DIFFERENTIAL_TESTS
+           AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/OpenSim.Data.SQLite.dll"
+           AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/OpenSim.Data.dll"
+           AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/OpenMetaverseTypes.dll")
+            add_test(NAME managed_travel_network COMMAND "${Python3_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/managed_travel_network.py"
+                --native "$<TARGET_FILE:opensim-native>" --dotnet "${DOTNET_EXECUTABLE}")
+            set_tests_properties(managed_travel_network PROPERTIES TIMEOUT 150)
+        endif()
+        if(OPENSIM_DIFFERENTIAL_TESTS
            AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/OpenSim.Framework.dll"
            AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/OpenSim.Services.Interfaces.dll"
            AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/Robust.dll"
@@ -2226,10 +2583,25 @@ if(BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/remote_presence_network.py" --local-grid-user
             --native "$<TARGET_FILE:opensim-native>" --work "${CMAKE_CURRENT_BINARY_DIR}/local-viewer-home-network")
         set_tests_properties(local_viewer_home_network PROPERTIES TIMEOUT 90)
+        set(OPENSIM_SCRIPT_SMTP_TEST_ARGS)
+        if(OpenSSL_FOUND)
+            list(APPEND OPENSIM_SCRIPT_SMTP_TEST_ARGS --script-smtp-tls)
+        endif()
         add_test(NAME connected_region_touch_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
-            --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --work "${CMAKE_CURRENT_BINARY_DIR}/connected-region-touch-network")
+            --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --script-email ${OPENSIM_SCRIPT_SMTP_TEST_ARGS}
+            --work "${CMAKE_CURRENT_BINARY_DIR}/connected-region-touch-network")
         set_tests_properties(connected_region_touch_network PROPERTIES TIMEOUT 180)
+        add_test(NAME connected_region_remote_data_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
+            --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --remote-data
+            --work "${CMAKE_CURRENT_BINARY_DIR}/connected-region-remote-data-network")
+        set_tests_properties(connected_region_remote_data_network PROPERTIES TIMEOUT 90)
+        add_test(NAME web_region_config_network COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
+            --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --remote-data --web-region-config
+            --work "${CMAKE_CURRENT_BINARY_DIR}/web-region-config-network")
+        set_tests_properties(web_region_config_network PROPERTIES TIMEOUT 90)
         add_test(NAME connected_region_script_url_denied_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
             --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --script-url-denied
@@ -2364,12 +2736,12 @@ if(BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
             --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --map-tile-refresh
             --work "${CMAKE_CURRENT_BINARY_DIR}/map-tile-refresh-network")
-        set_tests_properties(map_tile_refresh_network PROPERTIES TIMEOUT 30)
+        set_tests_properties(map_tile_refresh_network PROPERTIES TIMEOUT 90)
         add_test(NAME static_map_file_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
             --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --static-map-file
             --work "${CMAKE_CURRENT_BINARY_DIR}/static-map-file-network")
-        set_tests_properties(static_map_file_network PROPERTIES TIMEOUT 60)
+        set_tests_properties(static_map_file_network PROPERTIES TIMEOUT 90)
         add_test(NAME warp_map_network COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/connected_region_network.py" --native "$<TARGET_FILE:opensim-native>"
             --viewer "$<TARGET_FILE:viewer_session_probe>" --touch --warp-map
@@ -2554,10 +2926,15 @@ if(BUILD_TESTING)
             --native "$<TARGET_FILE:config_xml_stream_metadata_tests>" --dotnet "${DOTNET_EXECUTABLE}"
             --work "${CMAKE_CURRENT_BINARY_DIR}/config-xml-stream-metadata-reference")
         set_tests_properties(config_xml_stream_metadata_source_parity PROPERTIES TIMEOUT 180)
+        set(OPENSIM_XML_TRANSPORT_NETWORK_TEST_ARGS)
+        if(OpenSSL_FOUND)
+            list(APPEND OPENSIM_XML_TRANSPORT_NETWORK_TEST_ARGS --tls-origin)
+        endif()
         add_test(NAME config_xml_transport_network_source_parity COMMAND "${Python3_EXECUTABLE}"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_config_xml_transport_network.py"
             --native "$<TARGET_FILE:config_xml_transport_network_tests>" --dotnet "${DOTNET_EXECUTABLE}"
-            --work "${CMAKE_CURRENT_BINARY_DIR}/config-xml-transport-network-reference")
+            --work "${CMAKE_CURRENT_BINARY_DIR}/config-xml-transport-network-reference"
+            ${OPENSIM_XML_TRANSPORT_NETWORK_TEST_ARGS})
         set_tests_properties(config_xml_transport_network_source_parity PROPERTIES TIMEOUT 180)
         if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../bin/Nini.dll")
             add_test(NAME config_xml_startup_network_source_parity COMMAND "${Python3_EXECUTABLE}"
@@ -2690,6 +3067,10 @@ if(BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_lsl_runtime_api.py" --native "$<TARGET_FILE:lsl_runtime_tests>"
             --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/lsl-runtime-reference")
         set_tests_properties(lsl_runtime_api_source_parity PROPERTIES TIMEOUT 120)
+        add_test(NAME script_http_throttle_source_parity COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare_script_http_throttle.py" --native "$<TARGET_FILE:lsl_runtime_tests>"
+            --dotnet "${DOTNET_EXECUTABLE}" --work "${CMAKE_CURRENT_BINARY_DIR}/script-http-throttle-reference")
+        set_tests_properties(script_http_throttle_source_parity PROPERTIES TIMEOUT 120)
     endif()
     get_property(native_registered_tests DIRECTORY PROPERTY TESTS)
     if(native_registered_tests)

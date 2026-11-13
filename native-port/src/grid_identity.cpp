@@ -26,10 +26,39 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "opensim/server/grid_identity.hpp"
+#include "opensim/framework/config_native_uri_object.hpp"
+#include "opensim/network/osd_json.hpp"
+#include "opensim/network/osd_value.hpp"
+#include "opensim/network/web_http_clients.hpp"
 #include "opensim/framework/text.hpp"
 #include <algorithm>
 #include <stdexcept>
 namespace opensim::server {
+std::string script_grid_service_value(const IniConfig& config, const network::WebHttpClients& clients,
+                                      std::string_view key) {
+    const auto configured = config.get("GridInfoService", std::string(key));
+    if (!configured.empty())
+        return configured;
+    const auto base_uri = config.get("GridInfo", "GridInfoURI");
+    if (base_uri.empty())
+        return "Configuration Error!";
+
+    try {
+        const auto uri = framework::native_config_uri_object_backend()->create(
+            framework::nini_writer_text(framework::utf16_replacing(base_uri + "/json_grid_info")),
+            framework::ConfigUriObjectKind::Absolute);
+        auto stream = clients.get_new_global_client(3000)->send_headers(uri, {}, true);
+        const auto body = stream->copy_to_memory();
+        stream->close();
+        const auto result = network::parse_osd_json(
+            {reinterpret_cast<const char*>(body.data()), body.size()});
+        if (result.kind == network::Value::Kind::Map)
+            return network::osd_string(result.get(key));
+    } catch (const std::exception&) {
+        return "Get GridInfo Failed!";
+    }
+    return "Get GridInfo Failed!";
+}
 namespace {
 std::vector<std::string> split(const std::string& value) {
     std::vector<std::string> result;

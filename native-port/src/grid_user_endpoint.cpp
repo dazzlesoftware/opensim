@@ -26,6 +26,7 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "opensim/server/grid_user_endpoint.hpp"
+#include "opensim/framework/sdk_uuid.hpp"
 #include "opensim/framework/text.hpp"
 #include "opensim/framework/vector_text.hpp"
 #include <chrono>
@@ -72,11 +73,8 @@ bool unpack(const Form& fields, std::string& user, framework::Uuid& region, fram
     if (!fields.contains("UserID") || !fields.contains("RegionID"))
         return false;
     user = text(fields.at("UserID"));
-    try {
-        region = framework::Uuid(text(fields.at("RegionID")));
-    } catch (...) {
+    if (!framework::try_parse_sdk_uuid(framework::utf16(text(fields.at("RegionID"))), region))
         return false;
-    }
     position = {128, 128, 70};
     look = {};
     if (fields.contains("Position"))

@@ -67,17 +67,33 @@ struct TravelRecord {
     framework::Uuid session_id, user_id;
     std::string grid, service_token, client_ip, external_ip;
 };
-class SqliteTravelStore {
+class TravelStore {
   public:
-    explicit SqliteTravelStore(const std::string& path);
-    std::optional<TravelRecord> get(const framework::Uuid& session);
-    std::optional<TravelRecord> get_by_user(const framework::Uuid& user);
-    void store(const TravelRecord& record);
-    void erase(const framework::Uuid& session);
+    virtual ~TravelStore() = default;
+    virtual std::optional<TravelRecord> get(const framework::Uuid& session) = 0;
+    virtual std::optional<TravelRecord> replaced_by(const framework::Uuid& session,
+                                                   const framework::Uuid& user) = 0;
+    virtual std::optional<TravelRecord> locate(const framework::Uuid& user, std::string_view home) = 0;
+    virtual void store(const TravelRecord& record) = 0;
+    virtual void erase(const framework::Uuid& session) = 0;
+};
+class SqliteTravelStore final : public TravelStore {
+  public:
+    explicit SqliteTravelStore(const std::string& path, std::string_view realm = "hg_traveling_data");
+    std::optional<TravelRecord> get(const framework::Uuid& session) override;
+    std::optional<TravelRecord> replaced_by(const framework::Uuid& session,
+                                          const framework::Uuid& user) override;
+    std::optional<TravelRecord> locate(const framework::Uuid& user, std::string_view home) override;
+    void store(const TravelRecord& record) override;
+    void erase(const framework::Uuid& session) override;
 
   private:
+    std::optional<TravelRecord> get_by_user(const framework::Uuid& user);
     std::shared_ptr<SqliteDatabase> database_;
+    std::string table_;
 };
+std::shared_ptr<TravelStore> mysql_travel_store(const std::string& connection, const std::string& realm);
+std::shared_ptr<TravelStore> postgres_travel_store(const std::string& connection, const std::string& realm);
 class SqlitePresenceStore final : public PresenceStore {
   public:
     explicit SqlitePresenceStore(const std::string& path);

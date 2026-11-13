@@ -14,6 +14,11 @@
 #include "opensim/services/native_asset_storage.hpp"
 #include "opensim/services/flotsam_memory_cache.hpp"
 #include "opensim/services/flotsam_cache_module.hpp"
+#include "opensim/services/flotsam_cache_files.hpp"
+#include "opensim/services/flotsam_cache_cleanup.hpp"
+#include "opensim/services/flotsam_cache_maintenance.hpp"
+#include "opensim/services/flotsam_console_files.hpp"
+#include "opensim/framework/status_date_format.hpp"
 #include "opensim/services/flotsam_file_access.hpp"
 #include "opensim/services/native_flotsam_config.hpp"
 #include "opensim/services/native_flotsam_datetime.hpp"
@@ -35,6 +40,11 @@
 #include <chrono>
 #include <cstdio>
 #include <thread>
+#if defined(__APPLE__)
+#include <malloc/malloc.h>
+#elif defined(_WIN32) || defined(__GLIBC__)
+#include <malloc.h>
+#endif
 namespace opensim::services {
 std::string serialize_baked_appearance(const framework::WearableCacheItems &cache) {
     pugi::xml_document document;
@@ -744,14 +754,85 @@ struct Backend final : AssetsModuleBackend, AssetConnectorBackend {
 };
 struct CacheBackend final : FlotsamCacheModuleBackend {
     std::shared_ptr<NativeAssetStorageBackend> storage;
+    std::shared_ptr<FlotsamCacheCleaner> cleaner;
+    std::function<void(const std::string&)> cleanup_warning;
+    std::mutex cleanup_mutex;
+    std::atomic<bool> stopping = false;
     explicit CacheBackend(std::shared_ptr<NativeAssetStorageBackend> value) : storage(std::move(value)) {}
     std::shared_ptr<DefaultAssetLoader> load_loader(const std::string &name) override {
         return storage->load_loader(name);
     }
-    void cleanup_elapsed(std::shared_ptr<FlotsamCacheLifecycle>) override {
-        throw std::runtime_error("Native protected file-cache cleanup is not implemented");
+    void cleanup_elapsed(std::shared_ptr<FlotsamCacheLifecycle> life) override {
+        std::lock_guard lock(cleanup_mutex);
+        if (stopping || !cleaner)
+            return;
+        try {
+            cleaner->elapsed();
+        } catch (const std::exception& error) {
+            if (cleanup_warning)
+                cleanup_warning(std::string("[FLOTSAM ASSET CACHE] Cleanup failed: ") + error.what());
+            std::lock_guard timer_lock(life->timer_mutex);
+            life->cleanup_running = false;
+            if (!stopping && life->timer_running)
+                life->timer->start();
+        }
+    }
+    void expire(framework::AssetDateTime date) {
+        std::lock_guard lock(cleanup_mutex);
+        if (!stopping && cleaner)
+            cleaner->clean_all(date);
+    }
+    std::int32_t touch(FlotsamCacheMaintenance& maintenance, bool fetch_uncached) {
+        std::lock_guard lock(cleanup_mutex);
+        return stopping ? 0 : maintenance.touch(fetch_uncached);
+    }
+    void quiesce(const std::shared_ptr<FlotsamCacheLifecycle>& life) {
+        stopping = true;
+        life->cleanup_running = false;
+        std::lock_guard lock(cleanup_mutex);
     }
 };
+class LiveCacheAccessEntries final : public FlotsamAccessEntries {
+    std::function<std::shared_ptr<FlotsamKeyEntries>()> tracker_;
+
+  public:
+    explicit LiveCacheAccessEntries(std::function<std::shared_ptr<FlotsamKeyEntries>()> tracker)
+        : tracker_(std::move(tracker)) {}
+    bool contains(const std::filesystem::path& path) override {
+        const auto entries = tracker_();
+        return !entries || entries->contains(framework::utf8(path.u16string()));
+    }
+    void add(const std::filesystem::path& path, int duration) override {
+        if (const auto entries = tracker_())
+            entries->add(framework::utf8(path.u16string()), duration);
+    }
+    void pump() override {
+        if (const auto entries = tracker_())
+            entries->pump();
+    }
+};
+std::int64_t cache_heap_bytes() {
+#if defined(__APPLE__)
+    malloc_statistics_t statistics{};
+    malloc_zone_statistics(nullptr, &statistics);
+    return static_cast<std::int64_t>(statistics.size_in_use);
+#elif defined(_MSC_VER)
+    _HEAPINFO entry{};
+    std::int64_t bytes = 0;
+    while (_heapwalk(&entry) == _HEAPOK)
+        if (entry._useflag == _USEDENTRY)
+            bytes += static_cast<std::int64_t>(entry._size);
+    return bytes;
+#elif defined(__GLIBC__)
+#if __GLIBC_PREREQ(2, 33)
+    return static_cast<std::int64_t>(mallinfo2().uordblks);
+#else
+    return 0;
+#endif
+#else
+    return 0;
+#endif
+}
 struct AssetCircuitDirectory final : AssetsUserManagement {
     RegionAssetRuntime::AssetServerLookup lookup;
     explicit AssetCircuitDirectory(RegionAssetRuntime::AssetServerLookup value) : lookup(std::move(value)) {}
@@ -817,6 +898,8 @@ make_grid_asset_service(const server::IniConfig &config, std::shared_ptr<network
 
 struct RegionAssetRuntime::State {
     std::shared_ptr<FlotsamConsoleBackend> cache_dates;
+    std::shared_ptr<framework::ObjectJobEngine> cache_console_jobs;
+    std::shared_ptr<FlotsamCacheMaintenance> cache_maintenance;
     std::shared_ptr<Backend> backend;
     std::shared_ptr<Scene> scene;
     std::shared_ptr<LocalAssetConnector> connector;
@@ -831,6 +914,15 @@ struct RegionAssetRuntime::State {
     std::shared_ptr<network::WebHttpClients> foreign_http;
     AssetExchangePermissions exchange_permissions;
     std::atomic<bool> stopped = false;
+    void quiesce_cache_cleanup() {
+        if (cache_console_jobs)
+            cache_console_jobs->dispose();
+        if (cache_backend && cache_module)
+            cache_backend->quiesce(cache_module->lifecycle());
+        if (cache_console_jobs)
+            while (cache_console_jobs->active_threads() != 0)
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
     void stop() {
         if (stopped.exchange(true))
             return;
@@ -845,6 +937,7 @@ struct RegionAssetRuntime::State {
         };
         if (scene)
             scene->stopping = true;
+        quiesce_cache_cleanup();
         if (module && scene && int32_t(module_state->scenes) > 0)
             attempt([&] { module->remove_region(scene); });
         // Handler waits for connector callbacks: callback pool and database stay live
@@ -910,11 +1003,13 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
                                        std::function<void(std::string)> log, framework::Uuid region_id,
                                        StructuredLog structured_log,
                                        std::shared_ptr<network::WebHttpClients> http,
-                                       AssetServerLookup foreign_server)
+                                       AssetServerLookup foreign_server, GatherSceneAssets gather_assets)
     : state_(std::make_unique<State>()) {
     if (!events)
         throw std::invalid_argument("Null region asset capability events");
     std::shared_ptr<framework::IAssetCache> cache;
+    std::shared_ptr<FlotsamFileStore> file_store;
+    std::shared_ptr<FlotsamFileAccess> file_access;
     FlotsamCacheModule::Options cache_options;
     if (config.get("Modules", "AssetCaching") == "FlotsamAssetCache") {
         auto typed_source = native_flotsam_config_source(
@@ -936,54 +1031,58 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
         std::lock_guard configuration_lock(*state_->cache_containers.gate);
         FlotsamCacheConfig initializer(state_->cache_config, common, state_->cache_containers.backend);
         initializer.initialise(typed_source);
-        if (state_->cache_config->file)
+        const auto& cache_config = *state_->cache_config;
+        if (cache_config.file && cache_config.expiration_ticks > 0 && cache_config.cleanup_ticks > 0 &&
+            !gather_assets)
             throw std::invalid_argument(
-                "Native Flotsam file cache is not implemented; production hosting remains unavailable");
+                "Native Flotsam automatic file expiration requires live scene asset gathering");
         auto settings = state_->cache_containers.entries->live_options();
-        auto files = std::make_shared<FlotsamMemoryCache::FileOperations>();
-        files->debug = logger;
-        files->warn = [log, structured_log](const auto &text) {
+        auto warn = [log, structured_log](const auto &text) {
             if (structured_log)
                 structured_log("warn", text);
             else if (log)
                 log(text);
         };
-        // Static access settings can be changed by another initialization. Resolve
-        // the current tracker on every touch; even a memory-only instance must keep
-        // the original caught-error timestamp behavior when that static flag changes.
-        files->touch = [instance = state_->cache_config, common,
-                        gate = state_->cache_containers.gate](const std::string &id) {
-            FlotsamFileStore::Options paths;
-            {
-                std::lock_guard lock(*gate);
-                paths.directory =
-                    std::filesystem::path(framework::utf16_replacing(instance->directory.value_or("")));
-                paths.tiers = common->tiers;
-                paths.tier_length = common->tier_length;
-            }
-            FlotsamFileStore names(paths, native_flotsam_file_backend({}));
-            auto name = names.file_name(id);
-            auto key = framework::utf8(name.u16string());
-            try {
-                std::shared_ptr<FlotsamKeyEntries> tracker;
-                {
-                    std::lock_guard lock(*gate);
-                    tracker = std::static_pointer_cast<FlotsamKeyEntries>(common->access_entries);
-                }
-                if (!tracker)
-                    return;
-                if (!tracker->contains(key)) {
-                    native_flotsam_set_access_time(name);
-                    {
-                        std::lock_guard lock(*gate);
-                        tracker = std::static_pointer_cast<FlotsamKeyEntries>(common->access_entries);
-                    }
-                    if (tracker)
-                        tracker->add(key, 900000);
-                }
-            } catch (...) {
-            }
+        const auto access_tracker = [common, gate = state_->cache_containers.gate] {
+            std::lock_guard lock(*gate);
+            return std::static_pointer_cast<FlotsamKeyEntries>(common->access_entries);
         };
+        file_access = std::make_shared<FlotsamFileAccess>(
+            std::make_shared<LiveCacheAccessEntries>(access_tracker), native_flotsam_access_time_setter());
+        const auto file_options = [instance = state_->cache_config, common,
+                                   gate = state_->cache_containers.gate] {
+            std::lock_guard lock(*gate);
+            return FlotsamFileStore::Options{
+                std::filesystem::path(framework::utf16_replacing(instance->directory.value_or(""))),
+                common->tiers, common->tier_length, common->update_access};
+        };
+        std::shared_ptr<FlotsamMemoryCache::FileOperations> files;
+        if (cache_config.file) {
+            const auto shared = shared_flotsam_cache_state();
+            const auto disk = native_flotsam_shared_file_backend(shared, warn);
+            attach_flotsam_file_access(disk, file_access);
+            FlotsamFileStore::Options paths{
+                std::filesystem::path(framework::utf16_replacing(cache_config.directory.value_or(""))),
+                common->tiers, common->tier_length, common->update_access};
+            state_->cache_maintenance = std::make_shared<FlotsamCacheMaintenance>(
+                paths.directory, [logger, warn](const std::string& level, const std::string& message) {
+                    if (level == "warn")
+                        warn(message);
+                    else
+                        logger(message);
+                });
+            file_store = std::make_shared<FlotsamFileStore>(std::move(paths), disk, shared->files, file_options);
+            files = flotsam_cache_files(file_store, disk, logger, warn);
+        } else {
+            files = std::make_shared<FlotsamMemoryCache::FileOperations>();
+            files->debug = logger;
+            files->warn = warn;
+            // Another initialization can enable the static access tracker.
+            files->touch = [file_options, file_access](const std::string& id) {
+                FlotsamFileStore names(file_options(), native_flotsam_file_backend({}));
+                file_access->touch(names.file_name(id));
+            };
+        }
         cache = std::make_shared<FlotsamMemoryCache>(settings, state_->cache_containers.entries, files);
         cache_options.enabled = state_->cache_config->enabled;
         cache_options.file = state_->cache_config->file;
@@ -1084,6 +1183,95 @@ RegionAssetRuntime::RegionAssetRuntime(const server::IniConfig &config,
         throw std::invalid_argument(
             "Region assets require configured LocalAssetServicesConnector and local AssetService");
     state_->connector->region_loaded(state_->scene);
+    if (state_->cache_module) {
+        const auto life = state_->cache_module->lifecycle();
+        state_->cache_console_jobs = std::make_shared<framework::ObjectJobEngine>(
+            [](std::any work) { std::any_cast<std::function<void()>>(std::move(work))(); },
+            "FlotsamConsole", 1000, 1,
+            [backend = state_->backend](const auto& job, const auto& error) { backend->job_error(job, error); });
+        state_->cache_dates->post = [queue = std::weak_ptr(state_->cache_console_jobs),
+                                     cache = std::weak_ptr(state_->cache_backend), life](
+                                        std::function<void()> operation, const std::string& name) {
+            const auto worker = queue.lock();
+            const bool scan = name == "TouchAllSceneAssets" || name == "ExpireSceneAssets";
+            if (!worker || !worker->enqueue(std::function<void()>(
+                    [operation = std::move(operation), cache, life, scan] {
+                        const bool resume_timer = scan && life->timer_running;
+                        try {
+                            operation();
+                        } catch (...) {
+                            if (scan) {
+                                const auto owner = cache.lock();
+                                std::lock_guard lock(life->timer_mutex);
+                                life->cleanup_running = false;
+                                if (owner && !owner->stopping && resume_timer && !life->timer_running) {
+                                    life->timer->start();
+                                    life->timer_running = true;
+                                }
+                            }
+                            throw;
+                        }
+                    })))
+                throw std::runtime_error("Flotsam console is stopping");
+        };
+    }
+    if (gather_assets && state_->cache_maintenance) {
+        const auto life = state_->cache_module->lifecycle();
+        const auto log_cache = [backend = state_->backend](const std::string& level, const std::string& message) {
+            backend->emit(level, message);
+        };
+        state_->cache_backend->cleanup_warning = [log_cache](const auto& message) { log_cache("warn", message); };
+        const auto inspectors = scene::native_uuid_gatherer_backend(
+            state_->scene->registered, [log_cache](const auto& message) { log_cache("error", message); },
+            [log_cache](const auto& message) { log_cache("debug", message); });
+        auto gather_scene = [gather = std::move(gather_assets), inspectors,
+                             maintenance = state_->cache_maintenance, region_id] {
+            scene::UuidGatherer gatherer(inspectors);
+            gather(gatherer);
+            gatherer.gather_all();
+            maintenance->stamp(region_id);
+            return gatherer.state();
+        };
+        auto protected_assets = [gather_scene] {
+            FlotsamProtectedAssets assets;
+            const auto gathered = gather_scene();
+            for (const auto& [id, type] : gathered->gathered)
+                assets.insert(id);
+            return assets;
+        };
+        const auto memory_cache = std::static_pointer_cast<FlotsamMemoryCache>(state_->scene->cache);
+        const auto& settings = *state_->cache_config;
+        const auto common = shared_cache_configuration();
+        int warn_at;
+        {
+            std::lock_guard lock(*state_->cache_containers.gate);
+            warn_at = common->warn_at;
+        }
+        state_->cache_backend->cleaner = std::make_shared<FlotsamCacheCleaner>(
+            FlotsamCacheCleaner::Options{
+                std::filesystem::path(framework::utf16_replacing(settings.directory.value_or(""))),
+                settings.expiration_ticks, warn_at},
+            life, state_->cache_module->shared_state(),
+            FlotsamCacheCleaner::native_backend(memory_cache, std::move(protected_assets), cache_heap_bytes,
+                                                log_cache));
+        state_->cache_dates->sleep = [](int ms) { std::this_thread::sleep_for(std::chrono::milliseconds(ms)); };
+        state_->cache_dates->clean = [backend = std::weak_ptr(state_->cache_backend)](auto date) {
+            if (const auto owner = backend.lock())
+                owner->expire(date);
+        };
+        auto maintenance = std::make_shared<FlotsamCacheMaintenance>(
+            file_store->directory(), FlotsamCacheMaintenance::native_backend(
+                file_store, file_access, state_->scene->registered, std::move(gather_scene),
+                [life = std::weak_ptr(life)] {
+                    const auto active = life.lock();
+                    return active && active->cleanup_running;
+                }, log_cache));
+        state_->cache_dates->touch = [backend = std::weak_ptr(state_->cache_backend), maintenance](bool fetch) {
+            if (const auto owner = backend.lock())
+                return owner->touch(*maintenance, fetch);
+            return std::int32_t{0};
+        };
+    }
     if (state_->cache_module)
         state_->cache_module->region_loaded(state_->scene);
     state_->module = std::make_shared<GetAssetsModule>(state_->backend, state_->module_state);
@@ -1182,18 +1370,24 @@ bool RegionAssetRuntime::cache_console(const std::vector<std::string> &args,
     if (!cache)
         throw std::runtime_error("Flotsam cache unavailable");
     auto settings = cache->settings();
+    struct Output final : FlotsamConsoleOutput {
+        std::function<void(const std::string &)> sink;
+        explicit Output(std::function<void(const std::string &)> value) : sink(std::move(value)) {}
+        void output(const std::string &value) override {
+            sink(value);
+        }
+    };
+    if (action == "assets") {
+        if (!state_->cache_dates->touch)
+            return false;
+        FlotsamCacheConsole::touch_assets(state_->cache_module->lifecycle(), state_->cache_dates,
+                                          std::make_shared<Output>(std::move(output)));
+        return true;
+    }
     if (action == "expire") {
-        // File-enabled construction is guarded above until scene gathering and heap
-        // providers exist. Use the same source expire operation for memory-only hosts.
-        if (settings.file)
-            throw std::runtime_error("File cache console hosting incomplete");
-        struct Output final : FlotsamConsoleOutput {
-            std::function<void(const std::string &)> sink;
-            explicit Output(std::function<void(const std::string &)> value) : sink(std::move(value)) {}
-            void output(const std::string &value) override {
-                sink(value);
-            }
-        };
+        // Manual expiration also requires live scene asset gathering.
+        if (settings.file && !state_->cache_backend->cleaner)
+            throw std::runtime_error("Flotsam file expiration requires live scene asset gathering");
         auto arguments = std::make_shared<FlotsamCacheConsole::Arguments>();
         for (const auto &value : args)
             arguments->emplace_back(value);
@@ -1202,18 +1396,21 @@ bool RegionAssetRuntime::cache_console(const std::vector<std::string> &args,
         return true;
     }
     if (action == "status") {
-        if (settings.memory)
-            output("[FLOTSAM ASSET CACHE] Memory Cache: " + std::to_string(cache->status().memory_entries) +
-                   " assets");
-        else
-            output("[FLOTSAM ASSET CACHE] Memory cache disabled");
-        // File-enabled startup remains rejected until the complete maintenance host
-        // and scene/environment providers are connected.
-        if (settings.file)
-            throw std::runtime_error("File cache console hosting incomplete");
-        output("[FLOTSAM ASSET CACHE] File cache disabled");
-        for (const auto &line : cache->hit_report())
-            output(line);
+        auto backend = std::make_shared<FlotsamConsoleBackend>();
+        backend->post = state_->cache_dates->post;
+        backend->memory_count = [cache] { return cache->status().memory_entries; };
+        backend->hit_report = [cache] { return cache->hit_report(); };
+        if (settings.file) {
+            backend->file_count = [maintenance = state_->cache_maintenance](const auto& directory) {
+                return maintenance->count(std::filesystem::path(framework::utf16_replacing(directory.value_or(""))));
+            };
+            bind_flotsam_console_files(*backend);
+            backend->format_date = [](auto date, const std::string&) {
+                return framework::format_invariant_status_date(date);
+            };
+        }
+        FlotsamCacheConsole::status(state_->cache_config, state_->cache_module->lifecycle(), backend,
+                                    std::make_shared<Output>(std::move(output)));
         return true;
     }
     if (action == "clearnegatives") {
@@ -1243,10 +1440,12 @@ bool RegionAssetRuntime::cache_console(const std::vector<std::string> &args,
                 output("Memory cache not enabled.");
         }
         if (file) {
-            if (settings.file)
-                throw std::runtime_error("File cache console hosting incomplete");
-            else
+            if (settings.file) {
+                state_->cache_maintenance->clear_files();
+                output("File cache cleared.");
+            } else {
                 output("File cache not enabled.");
+            }
         }
         if (settings.negative)
             cache->clear_negatives();
@@ -1260,5 +1459,8 @@ std::shared_ptr<framework::IAssetCache> RegionAssetRuntime::asset_cache() const 
 }
 void RegionAssetRuntime::stop() {
     state_->stop();
+}
+void RegionAssetRuntime::quiesce_cache_cleanup() {
+    state_->quiesce_cache_cleanup();
 }
 }

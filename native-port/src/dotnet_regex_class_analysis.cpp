@@ -1,5 +1,6 @@
 // Copyright (c) .NET Foundation and Contributors.
 // Port of .NET8.0.31 RegexCharClass analysis methods; MIT third_party/dotnet_collation/LICENSE.
+#include "opensim/framework/atomic_shared_ptr.hpp"
 #include "opensim/framework/dotnet_regex_class_analysis.hpp"
 #include <map>
 #include <mutex>
@@ -284,11 +285,11 @@ std::optional<std::vector<DotnetRegexRange>> dotnet_regex_compute_ranges(std::sp
 }
 std::shared_ptr<const std::u16string> dotnet_regex_chars_to_string_class(std::span<const char16_t> chars) {
     static const auto empty = std::make_shared<const std::u16string>(std::u16string{0, 0, 0});
-    static std::array<std::atomic<std::shared_ptr<const std::u16string>>, 128> ascii;
-    static std::array<std::atomic<std::shared_ptr<const std::u16string>>, 26> letters;
+    static std::array<opensim::framework::AtomicSharedPtr<const std::u16string>, 128> ascii;
+    static std::array<opensim::framework::AtomicSharedPtr<const std::u16string>, 26> letters;
     if (chars.empty())
         return empty;
-    std::atomic<std::shared_ptr<const std::u16string>>* cache = nullptr;
+    opensim::framework::AtomicSharedPtr<const std::u16string>* cache = nullptr;
     std::u16string text;
     if (chars.size() == 1 && chars[0] < 128) {
         cache = &ascii[chars[0]];

@@ -4,7 +4,7 @@
 #include "opensim/framework/nini_writer.hpp"
 namespace opensim::framework {
 struct ConfigSettings {
- NiniWriterText PhysicsEngine,MeshEngineName,ClientstackDll,LibrariesXMLFile;
- static constexpr std::uint32_t DefaultRegionHttpPort=9000;
+    NiniWriterText PhysicsEngine, MeshEngineName, ClientstackDll, LibrariesXMLFile;
+    static constexpr std::uint32_t DefaultRegionHttpPort = 9000;
 };
 }

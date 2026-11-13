@@ -157,7 +157,10 @@ void Migration::update() {
                 std::replace(message.begin(), message.end(), '\n', ' ');
                 log_.debug("[MIGRATIONS]: Cmd was " + message);
                 log_.debug(
-                    "[MIGRATIONS]: An error has occurred in the migration.  If you're running OpenSim for the first time then you can probably safely ignore this, since certain migration commands attempt to fetch data out of old tables.  However, if you're using an existing database and you see database related errors while running OpenSim then you will need to fix these problems manually. Continuing.");
+                    "[MIGRATIONS]: An error has occurred in the migration.  If you're running OpenSim for the first time "
+                    "then you can probably safely ignore this, since certain migration commands attempt to fetch data "
+                    "out of old tables.  However, if you're using an existing database and you see database related "
+                    "errors while running OpenSim then you will need to fix these problems manually. Continuing.");
             }
             execute("ROLLBACK;");
         }

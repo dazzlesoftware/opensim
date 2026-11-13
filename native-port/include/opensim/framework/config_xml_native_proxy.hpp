@@ -8,5 +8,6 @@ struct ConfigXmlNativeProxyOptions {
  std::shared_ptr<ConfigXmlCredentials> default_proxy_credentials;
 
 };
-ConfigXmlNativeHttpServices config_xml_bind_native_proxy(ConfigXmlNativeHttpServices,ConfigXmlUriObjects,ConfigXmlNativeProxyOptions={});
+ConfigXmlNativeHttpServices config_xml_bind_native_proxy(ConfigXmlNativeHttpServices, ConfigXmlUriObjects,
+                                                         ConfigXmlNativeProxyOptions = {});
 }

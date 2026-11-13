@@ -15,6 +15,7 @@ class GatherTexture {
     virtual std::shared_ptr<std::vector<std::shared_ptr<framework::TextureFace>>> faces() = 0;
 };
 std::shared_ptr<GatherTexture> gather_texture(std::shared_ptr<framework::TextureEntry>);
+void gather_baked_textures(UuidGatherer&, std::span<const std::shared_ptr<framework::TextureFace>>);
 struct GatherRenderMaterials {
     struct Override {
         std::optional<std::u16string> data;
@@ -70,6 +71,8 @@ class GatherObject : public GatherEntity {
     virtual std::optional<std::string> name() = 0;
     virtual framework::Uuid id() = 0;
 };
+struct ObjectAssetLinkset;
+std::shared_ptr<GatherObject> gather_object_snapshot(ObjectAssetLinkset object);
 // Only the SDK texture result and constructor success used by the gatherer.
 // This does not implement the complete ParticleSystem public model.
 framework::Uuid gather_particle_texture(std::span<const std::uint8_t>);

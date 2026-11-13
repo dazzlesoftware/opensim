@@ -241,7 +241,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(b'HTTP/1.1 200 Connection Established\r\n\r\n')
             self.wfile.flush()
             while True:
-                ready, _, _ = select.select([self.connection, peer], [], [], 10)
+                ready = [self.connection] if (
+                    isinstance(self.connection, ssl.SSLSocket) and self.connection.pending()
+                ) else []
+                if not ready:
+                    ready, _, _ = select.select([self.connection, peer], [], [], 10)
                 if not ready:
                     return
                 for current in ready:
@@ -741,6 +745,29 @@ elif a.tunnel:
         prefix = ['P {proxy}', setup(limit=1), client('c')]
         tls = ('valid', version)
         add(
+            f'CONNECT-{version.name}-https-proxy-reuse',
+            prefix + [op('a'), read('a'), op('b'), read('b')],
+            tls,
+            True,
+        )
+        cases[-1]['proxy_tls'] = tls
+        add(
+            f'CONNECT-{version.name}-https-proxy-rejection',
+            prefix + [op('a')],
+            tls,
+            False,
+        )
+        cases[-1].update(proxy_tls=tls, tunnel_status=403)
+        for invalid_peer in ('proxy', 'origin'):
+            wrong_name = ('wrong-name', version)
+            add(
+                f'CONNECT-{version.name}-https-proxy-invalid-{invalid_peer}',
+                prefix + [op('a')],
+                wrong_name if invalid_peer == 'origin' else tls,
+                False,
+            )
+            cases[-1]['proxy_tls'] = wrong_name if invalid_peer == 'proxy' else tls
+        add(
             f'CONNECT-{version.name}-user-agent',
             prefix + [op('a') + ' Fixture-Agent/1.0', read('a'), op('b'), read('b')],
             tls,
@@ -890,6 +917,20 @@ else:
                 )
         tls = ('valid', version)
         add(
+            f'{version.name}-https-forward-proxy-reuse',
+            [
+                'P {endpoint}',
+                setup(limit=1),
+                client('c'),
+                op('a', path='http://first.invalid/ok'),
+                read('a'),
+                op('b', path='http://second.invalid:81/ok'),
+                read('b'),
+            ],
+            tls,
+            True,
+        )
+        add(
             f'{version.name}-shared-wrapper-pool',
             [
                 setup(),
@@ -990,18 +1031,23 @@ for case in cases:
         proxy = None
         proxy_worker = None
         if a.tunnel or case.get('tunnel', False):
-            proxy = Server()
+            proxy = Server(case.get('proxy_tls'))
             proxy.tunnel_port = server.server_port
             proxy.tunnel_status = case.get('tunnel_status', 200)
             proxy_worker = threading.Thread(target=proxy.serve_forever, daemon=True)
             proxy_worker.start()
         try:
             endpoint = f'{"https" if a.tls else "http"}://127.0.0.1:{server.server_port}'
+            proxy_endpoint = (
+                f'{"https" if case.get("proxy_tls") else "http"}://127.0.0.1:{proxy.server_port}'
+                if proxy else ''
+            )
             root = str(certs / 'root.pem') if a.tls and not a.platform_trust else '-'
             commands = [
                 c.replace('{plain}', f'http://127.0.0.1:{server.server_port}')
                 .replace('{other}', f'https://localhost:{server.server_port}')
-                .replace('{proxy}', f'http://127.0.0.1:{proxy.server_port}' if proxy else '')
+                .replace('{endpoint}', endpoint)
+                .replace('{proxy}', proxy_endpoint)
                 for c in case['commands']
             ]
             env = None
@@ -1029,18 +1075,23 @@ for case in cases:
                 timeout=30,
             )
             if a.tls and label == 'source':
-                pem = (certs / (case['tls'][0] + '.pem')).read_text().split(
-                    '-----END CERTIFICATE-----', 1
-                )[0] + '-----END CERTIFICATE-----\n'
-                expected = hashlib.sha256(ssl.PEM_cert_to_DER_cert(pem)).hexdigest()
+                expected = []
+                for certificate, _ in (case['tls'], case.get('proxy_tls', case['tls'])):
+                    pem = (certs / (certificate + '.pem')).read_text().split(
+                        '-----END CERTIFICATE-----', 1
+                    )[0] + '-----END CERTIFICATE-----\n'
+                    fingerprint = hashlib.sha256(ssl.PEM_cert_to_DER_cert(pem)).hexdigest()
+                    if fingerprint not in expected:
+                        expected.append(fingerprint)
                 peers = re.findall(r'PEER_CERT:([A-Fa-f0-9]{64}):([^\r\n]+)', r.stderr)
-                if peers and any(h.lower() != expected for h, issuer in peers):
+                if peers and any(h.lower() not in expected for h, issuer in peers):
                     unavailable = dict(
                         passed=False,
                         status='unavailable',
                         environmentInterceptionDetected=True,
                         case=case['name'],
-                        expectedPeerCertificateSHA256=expected,
+                        expectedPeerCertificateSHA256=expected[0],
+                        expectedPeerCertificatesSHA256=expected,
                         observedPeerCertificates=peers,
                         sourceOutput=r.stdout,
                         sourceError=r.stderr,
@@ -1090,8 +1141,8 @@ for case in cases:
                             bytes.fromhex(encoded)
                             .decode('utf-8')
                             .replace(
-                                f'http://127.0.0.1:{proxy.server_port}/',
-                                'http://127.0.0.1:<proxy>/',
+                                f'{proxy_endpoint}/',
+                                f'{urlsplit(proxy_endpoint).scheme}://127.0.0.1:<proxy>/',
                             )
                         )
                         results[label]['output'][index] = prefix + ' ' + message.encode().hex()
@@ -1127,8 +1178,9 @@ report['scope'] = (
     'Unchanged original global WebUtil factory and actual BCL/native sockets. Selected HTTP proxy and HTTPS CONNECT cases compare complete request headers, connection IDs and exception messages. TLS uses isolated custom roots and observed peer fingerprints; platform default trust, general authenticated/SOCKS/TLS-proxy transports, inner exceptions and full simulator parity remain unverified.'
 )
 if a.platform_trust:
+    trust_provider = 'macOS Keychain-backed OpenSSL verification' if sys.platform == 'darwin' else 'Windows Crypt32 current-user/system server-auth/NoCheck policy'
     report['scope'] = (
-        'Original WebUtil factory using platform default trust versus native Windows Crypt32 current-user/system server-auth/NoCheck policy over actual peer chains, TLS1.2/1.3 direct+CONNECT, independent chain/name flags and retained connections. Generated issuers remain untrusted; no machine/user trust-store changes. Controlled peer fingerprints are mandatory; interception reports unavailable. This does not prove live trusted public roots, revocation or complete TLS/inner-error parity.'
+        f'Original WebUtil factory using platform default trust versus native {trust_provider} over actual peer chains, TLS1.2/1.3 direct+CONNECT, independent chain/name flags and retained connections. Generated issuers remain untrusted; no machine/user trust-store changes. Controlled peer fingerprints are mandatory; interception reports unavailable. This does not prove live trusted public roots, revocation or complete TLS/inner-error parity.'
     )
 if a.linux_platform_trust:
     report['scope'] = (

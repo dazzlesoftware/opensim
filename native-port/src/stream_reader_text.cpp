@@ -146,16 +146,15 @@ StreamReaderText decode_stream_reader_text(std::span<const std::uint8_t> bytes) 
         result.encoding = StreamReaderEncoding::Utf8;
         result.bom_bytes = 3;
     }
-    bytes = bytes.subspan(result.bom_bytes);
-    if (result.encoding == StreamReaderEncoding::Utf8) {
-        result.text =
-            utf16_replacing(std::string_view(reinterpret_cast<const char*>(bytes.data()), bytes.size()));
-        return result;
-    }
-    bool little =
-        result.encoding == StreamReaderEncoding::Utf16LE || result.encoding == StreamReaderEncoding::Utf32LE;
-    if (result.encoding == StreamReaderEncoding::Utf16LE ||
-        result.encoding == StreamReaderEncoding::Utf16BE) {
+    result.text = decode_unicode_text(bytes.subspan(result.bom_bytes), result.encoding);
+    return result;
+}
+std::u16string decode_unicode_text(std::span<const std::uint8_t> bytes, StreamReaderEncoding encoding) {
+    if (encoding == StreamReaderEncoding::Utf8)
+        return utf16_replacing(std::string_view(reinterpret_cast<const char*>(bytes.data()), bytes.size()));
+    std::u16string result;
+    const bool little = encoding == StreamReaderEncoding::Utf16LE || encoding == StreamReaderEncoding::Utf32LE;
+    if (encoding == StreamReaderEncoding::Utf16LE || encoding == StreamReaderEncoding::Utf16BE) {
         char16_t pending = 0;
         std::size_t index = 0;
         for (; index + 1 < bytes.size(); index += 2) {
@@ -164,25 +163,25 @@ StreamReaderText decode_stream_reader_text(std::span<const std::uint8_t> bytes) 
                        : (std::uint32_t(bytes[index]) << 8) | bytes[index + 1]);
             if (pending) {
                 if (value >= 0xdc00 && value <= 0xdfff) {
-                    result.text += pending;
-                    result.text += value;
+                    result += pending;
+                    result += value;
                     pending = 0;
                     continue;
                 }
-                result.text += u'\ufffd';
+                result += u'\ufffd';
                 pending = 0;
             }
             if (value >= 0xd800 && value <= 0xdbff)
                 pending = value;
             else if (value >= 0xdc00 && value <= 0xdfff)
-                result.text += u'\ufffd';
+                result += u'\ufffd';
             else
-                result.text += value;
+                result += value;
         }
         if (pending)
-            result.text += u'\ufffd';
+            result += u'\ufffd';
         if (index < bytes.size())
-            result.text += u'\ufffd';
+            result += u'\ufffd';
         return result;
     }
     std::size_t index = 0;
@@ -190,10 +189,10 @@ StreamReaderText decode_stream_reader_text(std::span<const std::uint8_t> bytes) 
         std::uint32_t value = 0;
         for (std::size_t n = 0; n < 4; ++n)
             value |= std::uint32_t(bytes[index + n]) << ((little ? n : 3 - n) * 8);
-        append(result.text, value);
+        append(result, value);
     }
     if (index < bytes.size())
-        result.text += u'\ufffd';
+        result += u'\ufffd';
     return result;
 }
 std::vector<std::u16string> stream_reader_lines(std::u16string_view text) {

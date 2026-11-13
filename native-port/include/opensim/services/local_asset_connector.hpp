@@ -1,6 +1,7 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #pragma once
+#include "opensim/framework/atomic_shared_ptr.hpp"
 #include <mutex>
 #include <unordered_map>
 #include "opensim/services/asset_service.hpp"
@@ -90,8 +91,8 @@ class LocalAssetConnector : public AssetService, public std::enable_shared_from_
     void deliver_reads(const std::vector<Complete>&, const Asset&);
     void complete_read(const std::string&, const Asset&);
     void queue_read(const std::string&, const std::optional<std::string>&, bool, bool, Complete);
-    std::atomic<std::shared_ptr<AssetService>> service_;
-    std::atomic<std::shared_ptr<framework::IAssetCache>> cache_;
+    opensim::framework::AtomicSharedPtr<AssetService> service_;
+    opensim::framework::AtomicSharedPtr<framework::IAssetCache> cache_;
     bool enabled_ = false;
 };
 }

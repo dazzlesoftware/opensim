@@ -1,11 +1,12 @@
 // Source SystemProxyInfo/Lazy<IWebProxy> and HttpClient.DefaultProxy, .NET8.0.31.
 #pragma once
+#include "opensim/framework/atomic_shared_ptr.hpp"
 #include "opensim/framework/config_http_environment_proxy_native.hpp"
 #include <mutex>
 namespace opensim::framework {
 enum class ConfigHttpSystemProxyPlatform { Windows, Linux, MacOS };
 class ConfigHttpNoProxy final : public ConfigHttpProxy {
-    std::atomic<std::shared_ptr<ConfigXmlCredentials>> credentials_;
+    opensim::framework::AtomicSharedPtr<ConfigXmlCredentials> credentials_;
 
   public:
     ConfigUriObjectPtr get_proxy(ConfigUriObjectPtr) const override {
@@ -39,7 +40,7 @@ std::shared_ptr<ConfigHttpProxy> config_http_construct_default_proxy(const Confi
 class ConfigHttpDefaultProxy final {
     ConfigHttpDefaultProxyOptions options_;
     std::mutex mutex_;
-    std::atomic<std::shared_ptr<ConfigHttpProxy>> value_;
+    opensim::framework::AtomicSharedPtr<ConfigHttpProxy> value_;
     std::shared_ptr<ConfigHttpProxy> system_value_;
     bool attempted_ = false;
     std::exception_ptr failure_;

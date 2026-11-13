@@ -11,7 +11,8 @@ public:
     void sleep(std::int32_t milliseconds)override;
     void watchdog_update()override;
     void error(const std::exception& error)override;
-    std::shared_ptr<PollJobEngine> make_pool(Worker worker,const std::string& name,std::int32_t hold_ms,std::int32_t concurrency)override;
+    std::shared_ptr<PollJobEngine> make_pool(Worker worker, const std::string& name, std::int32_t hold_ms,
+                                             std::int32_t concurrency) override;
     std::shared_ptr<PollWatcher> start_watcher(std::function<void()> watcher)override;
 private:
     Error error_;

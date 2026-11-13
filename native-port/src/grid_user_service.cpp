@@ -26,10 +26,12 @@ OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "opensim/services/grid_user_service.hpp"
+#include "opensim/framework/culture_prefix.hpp"
+#include "opensim/framework/sdk_uuid.hpp"
 #include "opensim/framework/text.hpp"
 #include "opensim/framework/vector_text.hpp"
+#include "opensim/services/user_account.hpp"
 #include <bit>
-#include <charconv>
 #include <chrono>
 #include <condition_variable>
 #include <limits>
@@ -54,33 +56,21 @@ std::int32_t integer(double value) {
     return value >= -2147483648.0 && value < 2147483648.0 ? static_cast<std::int32_t>(value)
                                                           : std::numeric_limits<std::int32_t>::min();
 }
-std::string trimmed(const std::string& value) {
-    auto text = framework::utf16(value);
-    std::u16string_view view = text;
-    while (!view.empty() && framework::unicode_whitespace(view.front()))
-        view.remove_prefix(1);
-    while (!view.empty() && framework::unicode_whitespace(view.back()))
-        view.remove_suffix(1);
-    return framework::utf8(view);
-}
 std::int32_t parsed_int(const std::optional<std::string>& value) {
-    auto text = trimmed(value.value());
-    if (!text.empty() && text.front() == '+')
-        text.erase(0, 1);
-    std::int32_t result = 0;
-    auto parsed = std::from_chars(text.data(), text.data() + text.size(), result);
-    if (parsed.ec != std::errc{} || parsed.ptr != text.data() + text.size())
-        throw std::invalid_argument("Invalid grid-user Int32");
-    return result;
+    return account_integer(value.value());
 }
 bool parsed_bool(const std::optional<std::string>& value) {
-    auto text = trimmed(value.value());
-    for (auto& c : text)
-        if (c >= 'A' && c <= 'Z')
-            c = static_cast<char>(c + 32);
-    if (text == "true")
+    const auto text = framework::utf16(value.value());
+    std::u16string_view token = text;
+    const auto padding = [](char16_t c) { return c == 0 || framework::unicode_whitespace(c); };
+    while (!token.empty() && padding(token.front()))
+        token.remove_prefix(1);
+    while (!token.empty() && padding(token.back()))
+        token.remove_suffix(1);
+    const auto name = framework::utf8(token);
+    if (framework::ordinal_equals_ignore_case(name, "True"))
         return true;
-    if (text == "false")
+    if (framework::ordinal_equals_ignore_case(name, "False"))
         return false;
     throw std::invalid_argument("Invalid grid-user Boolean");
 }
@@ -201,12 +191,8 @@ GridUserInfo GridUserService::to_info(const GridUserData& row) {
     result.user_id = row.user_id.value_or("");
     const auto uuid = [&](const std::string& key, Uuid& target) {
         const auto found = fields(row.data).find(key);
-        if (found != fields(row.data).end())
-            try {
-                target = Uuid(found->second.value());
-            } catch (...) {
-                target = {};
-            }
+        if (found != fields(row.data).end() && found->second)
+            framework::try_parse_sdk_uuid(framework::utf16_replacing(*found->second), target);
     };
     const auto vector = [&](const std::string& key, Vector3& target) {
         const auto found = fields(row.data).find(key);

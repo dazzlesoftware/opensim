@@ -1,6 +1,7 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #pragma once
+#include "opensim/network/script_http_module.hpp"
 #include "opensim/framework/uuid.hpp"
 #include "opensim/framework/prim_geometry.hpp"
 #include "opensim/framework/vector3d_text.hpp"
@@ -84,14 +85,26 @@ struct LslEvent {
     std::vector<LslValue> arguments;
     std::vector<LslDetector> detectors;
 };
-// An instruction-boundary snapshot. Clock fields are relative to the source
-// clock so a receiver can restore them in its own clock domain.
+inline constexpr std::int32_t listen_regex_name = 1;
+inline constexpr std::int32_t listen_regex_message = 2;
+
 struct LslListenerCheckpoint {
     framework::Uuid sender;
     std::int32_t handle, channel;
     std::string name, message;
     bool active = true;
+    std::int32_t regex_flags = 0;
 };
+struct LslSensorQuery {
+    std::string name;
+    framework::Uuid key;
+    std::int32_t type;
+    double range;
+    double arc;
+    std::optional<double> interval;
+};
+
+// Clock fields are relative to the source clock.
 struct LslCheckpoint {
     std::string program_hash;
     std::string state, next_state;
@@ -107,14 +120,39 @@ struct LslCheckpoint {
     bool running = true;
     bool sleep_requested = false;
     std::vector<LslListenerCheckpoint> listeners;
+    std::vector<LslSensorQuery> sensors;
     framework::Uuid permissions_granter;
     std::int32_t permissions_mask = 0;
     std::int32_t start_parameter = 0;
 };
 std::vector<std::uint8_t> encode_lsl_checkpoint(const LslCheckpoint&, bool include_extensions = true);
 std::optional<LslCheckpoint> decode_lsl_checkpoint(std::span<const std::uint8_t>);
+struct YEngineSnapshot {
+    std::size_t state_index;
+    // The managed VM stores globals in separate arrays for each LSL type.
+    std::array<std::vector<LslValue>, 11> globals;
+    std::optional<std::size_t> next_state_index;
+    std::int32_t event_code = -1;
+    bool initialize_globals = false;
+    std::vector<LslValue> event_arguments;
+    std::vector<LslDetector> event_detectors;
+};
+std::optional<YEngineSnapshot> decode_yengine_snapshot(std::span<const std::uint8_t>);
+bool yengine_source_matches(std::string_view source, std::string_view expected_hash);
 std::vector<std::uint8_t> encode_lsl_listeners(const std::vector<LslListenerCheckpoint>&);
 std::optional<std::vector<LslListenerCheckpoint>> decode_lsl_listeners(std::span<const std::uint8_t>);
+struct LslLocalTeleport {
+    framework::Vector3d position, velocity, look_at;
+    std::int32_t flags = 0;
+};
+struct LslTeleport {
+    std::variant<std::monostate, std::string, std::array<std::int32_t, 2>> destination;
+    framework::Vector3d position, look_at;
+};
+struct LslViewerTeleport {
+    std::variant<std::string, framework::Vector3d> destination;
+    framework::Vector3d position, look_at;
+};
 struct LslContext {
     framework::Uuid object, owner, group, item;
     std::string object_name;
@@ -136,8 +174,15 @@ struct LslContext {
     std::string start_string;
     std::int32_t start_parameter = 0;
     std::optional<LslRotation> world_rotation;
+    framework::Vector3d region_size{256., 256., 0.};
 };
 enum class LslChatType { Say, Owner, Debug, Whisper, Shout, Region };
+enum class LslGridQuery { Login, Home, Gatekeeper, Custom };
+enum class LslInventoryGiveStatus { Done, AvatarOffer, ObjectList, MissingItem, MissingRecipient, TransferFailed };
+struct LslInventoryGiveResult {
+    LslInventoryGiveStatus status;
+    std::string message;
+};
 enum class LslTextureProperty { Name, Color, Alpha, Offset, Repeat, Rotation };
 struct LslChat {
     LslChatType type;
@@ -173,12 +218,41 @@ inline constexpr std::int32_t cast_shadows = 512;
 inline constexpr std::int32_t block_grab_object = 1024;
 }
 
+enum class LslRemoteScriptLoad { Attempted, MissingScript, NoCopy };
+
+enum class LslLinkResult { Ignored, Completed, MissingPermission, WrongGranter };
+
 struct LslHost {
-    std::function<int(framework::Uuid, framework::Uuid, int, std::string, framework::Uuid, std::string)> add_listener;
+    // An absent channel means XML-RPC remote data is disabled for this script.
+    std::function<std::optional<framework::Uuid>(framework::Uuid object, framework::Uuid item)>
+        open_remote_data_channel;
+    std::function<void(framework::Uuid item, std::string_view channel)> close_remote_data_channel;
+    std::function<void(framework::Uuid item)> cancel_remote_data;
+    std::function<void(std::string_view channel, std::string_view message, std::string, std::int32_t)>
+        reply_remote_data;
+    std::function<framework::Uuid(framework::Uuid item, std::string channel, std::string destination,
+                                  std::int32_t, std::string)> send_remote_data;
+    std::string grid_name, grid_nick;
+    std::function<std::string(LslGridQuery, std::string_view)> grid_info;
+    std::function<void(framework::Uuid, std::string, std::string)> request_email;
+    std::function<void(framework::Uuid, framework::Uuid, std::variant<std::string, std::int32_t>,
+                       std::string, std::string)> send_email;
+    std::int32_t email_delay_ms = 20000;
+    std::function<std::int32_t(framework::Uuid, framework::Uuid, framework::Vector3, float)> register_position_target;
+    std::function<void(framework::Uuid, std::int32_t)> remove_position_target;
+    std::function<std::int32_t(framework::Uuid, framework::Uuid, LslRotation, float)> register_rotation_target;
+    std::function<void(framework::Uuid, std::int32_t)> remove_rotation_target;
+    std::function<void(framework::Uuid)> clear_targets;
+    std::function<void(framework::Uuid, framework::Uuid, LslSensorQuery)> sensor;
+    std::function<void(framework::Uuid)> clear_sensors;
+    std::function<int(framework::Uuid, framework::Uuid, int, std::string,
+                      framework::Uuid, std::string, std::int32_t)> add_listener;
     std::function<void(framework::Uuid, int, std::optional<bool>)> change_listener;
     std::function<void(framework::Uuid)> clear_listeners;
     std::function<void(framework::Uuid, framework::Uuid, std::int32_t, std::string)> direct_chat;
+    std::function<void(framework::Uuid, std::uint8_t action, std::uint8_t brush)> modify_land;
     std::function<float(float, float)> ground_height;
+    std::function<framework::Vector3(std::int32_t, std::int32_t)> wind;
     std::function<framework::Vector3(float, float, float, float)> ground_normal;
     std::function<std::int32_t()> unix_time;
     // Time in 100ns ticks. Defaults to a steady clock; tests/hosts can inject time.
@@ -214,6 +288,8 @@ struct LslHost {
     std::function<std::string(std::string_view)> region_environment_value;
     std::function<std::string(framework::Uuid, framework::Uuid, const std::string&)> http_header;
     std::function<void(framework::Uuid, framework::Uuid, std::int32_t, std::string)> http_response;
+    std::function<network::ScriptHttpSubmission(framework::Uuid, framework::Uuid, std::string,
+        const std::vector<network::ScriptHttpOption>&, std::string)> http_request;
     std::function<void(framework::Uuid, framework::Uuid, framework::Uuid, std::int32_t)> http_content_type;
     float min_timer_interval = 0.5f;
     std::int32_t heap_limit_bytes = 1024 * 1024;
@@ -244,9 +320,16 @@ struct LslHost {
     std::function<void(framework::Uuid, std::int32_t, bool)> set_object_status;
     std::function<void(framework::Uuid, float)> set_damage;
     std::function<bool(framework::Uuid, framework::Uuid)> teleport_agent_home;
+    std::function<void(framework::Uuid, framework::Uuid, framework::Uuid, const LslLocalTeleport&)>
+        local_teleport_agent;
+    std::function<std::int32_t(framework::Uuid, framework::Uuid, framework::Uuid, const LslTeleport&)>
+        teleport_agent;
+    std::function<void(framework::Uuid, framework::Uuid, framework::Uuid, const LslViewerTeleport&)>
+        teleport_viewer;
     std::function<bool(framework::Uuid, framework::Uuid)> eject_from_land;
     std::function<bool(framework::Uuid, std::int32_t)> has_render_material;
     std::function<std::string(framework::Uuid, std::int32_t)> render_material;
+    std::function<bool(framework::Uuid, const std::string&, std::int32_t)> set_render_material;
     std::function<bool(framework::Uuid, std::int32_t)> object_status;
     std::function<void(framework::Uuid, std::int32_t, framework::Vector3d, LslRotation)> set_sit_target;
     std::function<bool(framework::Uuid, framework::Vector3d, bool)> set_object_position;
@@ -256,6 +339,10 @@ struct LslHost {
     std::function<void(framework::Uuid, framework::Uuid, const std::string&, framework::Vector3d, std::uint32_t)>
         map_destination;
     std::function<void(framework::Uuid, framework::Uuid, const std::string&, const std::string&)> load_url;
+    std::function<void(framework::Uuid, framework::Uuid, const std::string&)> instant_message;
+    std::function<LslInventoryGiveResult(framework::Uuid, framework::Uuid, const std::string&)> give_inventory;
+    std::function<LslInventoryGiveStatus(framework::Uuid, framework::Uuid, const std::string&,
+                                         const std::vector<std::string>&)> give_inventory_list;
     std::function<std::optional<LslAvatarName>(framework::Uuid)> dialog_owner_name;
     std::function<void(framework::Uuid, framework::Uuid, const LslAvatarName&, const std::string&,
                        const std::vector<std::string>&, std::int32_t, bool text_box)> dialog;
@@ -264,6 +351,7 @@ struct LslHost {
     std::function<std::optional<framework::Vector3>(framework::Uuid)> object_scale;
     std::function<bool(framework::Uuid, const std::string&, framework::Vector3d, framework::Vector3d,
                        LslRotation, std::int32_t, bool)> rez_object;
+    std::function<bool(framework::Uuid, framework::Uuid, bool)> derez_object;
     std::function<std::optional<framework::Vector3>(framework::Uuid, bool, bool)> object_position;
     std::function<void(framework::Uuid, std::int32_t, float)> set_sit_active_range;
     std::function<float(framework::Uuid, std::int32_t)> sit_active_range;
@@ -272,6 +360,9 @@ struct LslHost {
     std::function<void(framework::Uuid, std::int32_t, std::optional<framework::Vector3d>,
                        std::optional<framework::Vector3d>, std::optional<bool>)> set_seat_camera;
     std::function<void(framework::Uuid, bool)> allow_inventory_drop;
+    std::function<void(framework::Uuid, std::int32_t)> set_remote_script_pin;
+    std::function<LslRemoteScriptLoad(framework::Uuid source, framework::Uuid target, const std::string& name,
+                                      std::int32_t pin, bool running, std::int32_t start_parameter)> remote_load_script;
     std::function<std::int32_t(framework::Uuid, const std::string &)> inventory_type;
     std::function<std::optional<framework::Uuid>(framework::Uuid, const std::string&, bool)> notecard_asset;
     std::function<std::string(framework::Uuid, std::int32_t)> cached_notecard_line;
@@ -298,6 +389,8 @@ struct LslHost {
     std::function<void(framework::Uuid, std::int32_t, std::int32_t, std::int32_t)> take_controls;
     std::function<void(framework::Uuid)> release_controls;
     std::function<void(framework::Uuid)> clear_script_permissions;
+    std::function<void(framework::Uuid, framework::Uuid, std::int32_t, bool temporary)> attach_to_avatar;
+    std::function<void(framework::Uuid, framework::Uuid)> detach_from_avatar;
     std::function<void(framework::Uuid)> release_script_urls;
     std::function<framework::Uuid(framework::Uuid, const std::string&)> find_script;
     std::function<bool(framework::Uuid)> script_running;
@@ -321,6 +414,9 @@ struct LslHost {
     std::function<std::optional<bool>(framework::Uuid, framework::Uuid)> object_friendship;
     std::function<LslList(framework::Uuid)> attached_list;
     std::function<std::int32_t(framework::Uuid)> link_number;
+    std::function<LslLinkResult(framework::Uuid, framework::Uuid, std::string_view, bool)> create_link;
+    std::function<LslLinkResult(framework::Uuid, framework::Uuid, std::optional<std::int32_t>)> break_link;
+    std::function<std::int32_t(framework::Uuid)> attachment_point;
     std::function<framework::Uuid(framework::Uuid, std::int32_t)> link_key;
     std::function<std::shared_ptr<const framework::ShapeMediaEntry>(
         framework::Uuid, std::int32_t, std::int32_t)> prim_media;
@@ -362,6 +458,8 @@ struct LslHost {
     std::function<void(framework::Uuid, framework::Uuid, std::int32_t, const std::string&, const std::string&)>
         link_message;
     std::function<void(framework::Uuid, const std::vector<std::uint8_t>&)> set_texture_animation;
+    std::function<void(framework::Uuid, std::vector<std::uint8_t>, std::optional<float>)> set_particle_system;
+    std::function<framework::Uuid(framework::Uuid, const std::string&)> particle_inventory_asset;
     std::function<std::array<float, 4>(framework::Uuid)> physics_material;
     std::function<void(framework::Uuid, std::int32_t, const std::array<float, 4>&)> set_physics_material;
     std::function<void(framework::Uuid, float)> set_buoyancy;
@@ -371,6 +469,7 @@ struct LslHost {
     std::function<framework::Vector3(framework::Uuid)> get_torque;
     std::function<void(framework::Uuid, framework::Vector3, bool local, bool angular)> set_velocity;
     std::function<void(framework::Uuid, framework::Vector3, bool local, bool angular)> apply_impulse;
+    std::function<void(framework::Uuid source, framework::Uuid target, framework::Vector3, bool local)> push_object;
     std::function<void(framework::Uuid, framework::PrimHover)> set_hover;
     std::function<void(framework::Uuid, double, bool, float)> ground_repel;
     std::function<void(framework::Uuid, framework::PrimMoveTarget)> move_to_target;
@@ -389,6 +488,7 @@ struct LslHost {
     std::function<std::string(framework::Uuid)> agent_language;
     std::function<std::int32_t()> region_flags;
     std::function<std::int32_t(framework::Vector3)> parcel_flags;
+    std::function<bool(framework::Uuid source, std::int32_t action, framework::Uuid target)> manage_estate_access;
     std::function<std::int32_t(framework::Vector3, bool)> parcel_max_prims;
     std::function<std::int32_t(framework::Vector3, std::int32_t, bool)> parcel_prim_count;
     std::function<LslList(framework::Vector3)> parcel_prim_owners;
@@ -430,6 +530,11 @@ class LslInstance {
     void set_context(LslContext);
     std::optional<LslCheckpoint> checkpoint() const;
     bool restore_checkpoint(const LslCheckpoint&);
+    void restore_timer(std::int64_t interval_ticks, std::int64_t remaining_ticks);
+    void restore_script_clock(std::optional<std::int64_t> elapsed_ticks, std::optional<double> minimum_event_delay);
+    void restore_queued_events(std::vector<LslEvent> events);
+    bool restore_yengine_snapshot(const YEngineSnapshot&, std::string_view source_hash,
+                                       std::string_view source);
 
   private:
     struct Impl;

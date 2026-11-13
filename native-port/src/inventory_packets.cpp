@@ -3,6 +3,7 @@
 #include "opensim/scene/inventory_packets.hpp"
 #include "opensim/framework/text.hpp"
 #include <bit>
+#include <set>
 namespace opensim::scene {
 namespace {
 using namespace network::lludp;
@@ -41,7 +42,8 @@ Block block(const Packet &packet, const char *name) {
             return make_block(spec);
     throw std::invalid_argument("Missing inventory block schema");
 }
-Block item_block(const Packet &packet, const char *group, const InventoryItem &item, bool fetch) {
+Block item_block(const Packet &packet, const char *group, const InventoryItem &item, bool fetch,
+                 bool bulk = false) {
     auto b = block(packet, group);
     Uuid creator;
     framework::try_parse_sdk_uuid(item.creator_id.substr(0, item.creator_id.find(';')), creator);
@@ -58,7 +60,7 @@ Block item_block(const Packet &packet, const char *group, const InventoryItem &i
     b["NextOwnerMask"] = std::uint64_t(static_cast<std::uint32_t>(item.next_permissions));
     b["Name"] = text(item.name);
     b["Description"] =
-        text(framework::trim_utf8(item.description).empty() ? std::string{} : item.description);
+        text(!bulk && framework::trim_utf8(item.description).empty() ? std::string{} : item.description);
     b["Type"] = sbyte(item.asset_type);
     b["InvType"] = sbyte(item.inventory_type);
     b["GroupOwned"] = item.group_owned != 0;
@@ -71,7 +73,9 @@ Block item_block(const Packet &packet, const char *group, const InventoryItem &i
                              crc(item.owner) + crc(item.group_id);
     checksum += static_cast<std::uint32_t>(sbyte(item.asset_type)) +
                 static_cast<std::uint32_t>(sbyte(item.inventory_type));
-    if (fetch)
+    if (bulk)
+        checksum += 1000u + 100u + 1u + 4u * 0x8e000u;
+    else if (fetch)
         checksum += 1000u + 100u + 1u + 4u * 0x7fffffffu;
     else
         checksum += static_cast<std::uint32_t>(item.current_permissions) +
@@ -84,6 +88,46 @@ Block item_block(const Packet &packet, const char *group, const InventoryItem &i
     b["CRC"] = std::uint64_t(checksum);
     return b;
 }
+}
+void inventory_bulk_folder(Uuid agent, const services::InventoryFolder& folder,
+                           const std::function<services::InventoryCollection(Uuid)>& content,
+                           const InventoryPacketSink& emit, std::optional<Uuid> transaction) {
+    auto packet = make_packet("BulkUpdateInventory");
+    packet.zerocoded = true;
+    packet.block("AgentData")["AgentID"] = agent;
+    packet.block("AgentData")["TransactionID"] = transaction ? *transaction : Uuid::random();
+    auto& folders = packet.blocks["FolderData"];
+    auto& items = packet.blocks["ItemData"];
+    const auto flush = [&] {
+        emit(packet, true);
+        folders.clear();
+        items.clear();
+    };
+    std::set<Uuid> visited;
+    const auto visit = [&](auto&& self, const services::InventoryFolder& current) -> void {
+        if (!visited.insert(current.id).second)
+            return;
+        if (folders.size() == 255)
+            flush();
+        const Block row{{"FolderID", current.id}, {"ParentID", current.parent},
+                        {"Type", sbyte(current.type)}, {"Name", text(current.name)}};
+        folders.push_back(row);
+        auto collection = content(current.id);
+        while (!collection.items.empty()) {
+            items.push_back(item_block(packet, "ItemData", collection.items.back(), false, true));
+            collection.items.pop_back();
+            if (items.size() == 5 || collection.items.empty()) {
+                flush();
+                if (!collection.items.empty())
+                    folders.push_back(row);
+            }
+        }
+        for (const auto& child : collection.folders)
+            self(self, child);
+    };
+    visit(visit, folder);
+    if (!folders.empty())
+        flush();
 }
 network::lludp::Packet task_inventory_reply(Uuid part, std::int16_t serial,
                                             std::span<const std::uint8_t> filename) {

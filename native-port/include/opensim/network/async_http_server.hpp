@@ -7,7 +7,7 @@ namespace opensim::network {
 struct RawHttpResponse {
     std::string headers;
     std::shared_ptr<const std::vector<std::uint8_t>> body;
-    std::size_t start=0,length=0;
+    std::size_t start = 0, length = 0;
     bool keep_alive=false;
 };
 class HttpResponseChannel {
@@ -21,7 +21,8 @@ public:
     virtual int requests_remaining()const=0;
     virtual int idle_timeout_ms()const=0;
     virtual void idle_timeout_ms(int value)=0;
-    virtual bool send_chunk(std::shared_ptr<const std::vector<std::uint8_t>> bytes,std::size_t start,std::size_t length,std::function<void()> complete)=0;
+    virtual bool send_chunk(std::shared_ptr<const std::vector<std::uint8_t>> bytes, std::size_t start,
+                            std::size_t length, std::function<void()> complete) = 0;
     virtual void finish_response(bool keep_alive)=0;
     virtual void on_disconnect(std::function<void()> callback)=0;
     virtual void cancel()=0;

@@ -2,391 +2,4831 @@
 // Source and dependency provenance: protocol/provenance.json.
 // Protocol license and copyright: protocol/LIBOPENMETAVERSE-LICENSE.txt.
 static const std::vector<PacketSpec> schemas = {
-{"TestMessage",65537,Frequency::Low,1,true,true,false,{{"TestBlock1",1,false,{{"Test1",FieldType::U32,0}}},{"NeighborBlock",4,false,{{"Test0",FieldType::U32,0},{"Test1",FieldType::U32,0},{"Test2",FieldType::U32,0}}}}},
-{"UseCircuitCode",65539,Frequency::Low,3,true,false,false,{{"CircuitCode",1,false,{{"Code",FieldType::U32,0},{"SessionID",FieldType::LLUUID,0},{"ID",FieldType::LLUUID,0}}}}},
-{"TelehubInfo",65546,Frequency::Low,10,true,false,false,{{"TelehubBlock",1,false,{{"ObjectID",FieldType::LLUUID,0},{"ObjectName",FieldType::Variable,1},{"TelehubPos",FieldType::LLVector3,0},{"TelehubRot",FieldType::LLQuaternion,0}}},{"SpawnPointBlock",0,true,{{"SpawnPointPos",FieldType::LLVector3,0}}}}},
-{"EconomyDataRequest",65560,Frequency::Low,24,true,false,false,{}},
-{"EconomyData",65561,Frequency::Low,25,true,true,false,{{"Info",1,false,{{"ObjectCapacity",FieldType::S32,0},{"ObjectCount",FieldType::S32,0},{"PriceEnergyUnit",FieldType::S32,0},{"PriceObjectClaim",FieldType::S32,0},{"PricePublicObjectDecay",FieldType::S32,0},{"PricePublicObjectDelete",FieldType::S32,0},{"PriceParcelClaim",FieldType::S32,0},{"PriceParcelClaimFactor",FieldType::F32,0},{"PriceUpload",FieldType::S32,0},{"PriceRentLight",FieldType::S32,0},{"TeleportMinPrice",FieldType::S32,0},{"TeleportPriceExponent",FieldType::F32,0},{"EnergyEfficiency",FieldType::F32,0},{"PriceObjectRent",FieldType::F32,0},{"PriceObjectScaleFactor",FieldType::F32,0},{"PriceParcelRent",FieldType::S32,0},{"PriceGroupCreate",FieldType::S32,0}}}}},
-{"AvatarPickerRequest",65562,Frequency::Low,26,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"QueryID",FieldType::LLUUID,0}}},{"Data",1,false,{{"Name",FieldType::Variable,1}}}}},
-{"AvatarPickerReply",65564,Frequency::Low,28,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"QueryID",FieldType::LLUUID,0}}},{"Data",0,true,{{"AvatarID",FieldType::LLUUID,0},{"FirstName",FieldType::Variable,1},{"LastName",FieldType::Variable,1}}}}},
-{"PlacesQuery",65565,Frequency::Low,29,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"QueryID",FieldType::LLUUID,0}}},{"TransactionData",1,false,{{"TransactionID",FieldType::LLUUID,0}}},{"QueryData",1,false,{{"QueryText",FieldType::Variable,1},{"QueryFlags",FieldType::U32,0},{"Category",FieldType::S8,0},{"SimName",FieldType::Variable,1}}}}},
-{"PlacesReply",65566,Frequency::Low,30,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"QueryID",FieldType::LLUUID,0}}},{"TransactionData",1,false,{{"TransactionID",FieldType::LLUUID,0}}},{"QueryData",0,true,{{"OwnerID",FieldType::LLUUID,0},{"Name",FieldType::Variable,1},{"Desc",FieldType::Variable,1},{"ActualArea",FieldType::S32,0},{"BillableArea",FieldType::S32,0},{"Flags",FieldType::U8,0},{"GlobalX",FieldType::F32,0},{"GlobalY",FieldType::F32,0},{"GlobalZ",FieldType::F32,0},{"SimName",FieldType::Variable,1},{"SnapshotID",FieldType::LLUUID,0},{"Dwell",FieldType::F32,0},{"Price",FieldType::S32,0}}}}},
-{"DirFindQuery",65567,Frequency::Low,31,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"QueryData",1,false,{{"QueryID",FieldType::LLUUID,0},{"QueryText",FieldType::Variable,1},{"QueryFlags",FieldType::U32,0},{"QueryStart",FieldType::S32,0}}}}},
-{"DirPlacesQuery",65569,Frequency::Low,33,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"QueryData",1,false,{{"QueryID",FieldType::LLUUID,0},{"QueryText",FieldType::Variable,1},{"QueryFlags",FieldType::U32,0},{"Category",FieldType::S8,0},{"SimName",FieldType::Variable,1},{"QueryStart",FieldType::S32,0}}}}},
-{"DirPlacesReply",65571,Frequency::Low,35,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"QueryData",0,true,{{"QueryID",FieldType::LLUUID,0}}},{"QueryReplies",0,true,{{"ParcelID",FieldType::LLUUID,0},{"Name",FieldType::Variable,1},{"ForSale",FieldType::BOOL,0},{"Auction",FieldType::BOOL,0},{"Dwell",FieldType::F32,0}}},{"StatusData",0,true,{{"Status",FieldType::U32,0}}}}},
-{"DirPeopleReply",65572,Frequency::Low,36,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"QueryData",1,false,{{"QueryID",FieldType::LLUUID,0}}},{"QueryReplies",0,true,{{"AgentID",FieldType::LLUUID,0},{"FirstName",FieldType::Variable,1},{"LastName",FieldType::Variable,1},{"Group",FieldType::Variable,1},{"Online",FieldType::BOOL,0},{"Reputation",FieldType::S32,0}}}}},
-{"DirEventsReply",65573,Frequency::Low,37,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"QueryData",1,false,{{"QueryID",FieldType::LLUUID,0}}},{"QueryReplies",0,true,{{"OwnerID",FieldType::LLUUID,0},{"Name",FieldType::Variable,1},{"EventID",FieldType::U32,0},{"Date",FieldType::Variable,1},{"UnixTime",FieldType::U32,0},{"EventFlags",FieldType::U32,0}}},{"StatusData",0,true,{{"Status",FieldType::U32,0}}}}},
-{"DirGroupsReply",65574,Frequency::Low,38,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"QueryData",1,false,{{"QueryID",FieldType::LLUUID,0}}},{"QueryReplies",0,true,{{"GroupID",FieldType::LLUUID,0},{"GroupName",FieldType::Variable,1},{"Members",FieldType::S32,0},{"SearchOrder",FieldType::F32,0}}}}},
-{"DirClassifiedQuery",65575,Frequency::Low,39,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"QueryData",1,false,{{"QueryID",FieldType::LLUUID,0},{"QueryText",FieldType::Variable,1},{"QueryFlags",FieldType::U32,0},{"Category",FieldType::U32,0},{"QueryStart",FieldType::S32,0}}}}},
-{"DirClassifiedReply",65577,Frequency::Low,41,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"QueryData",1,false,{{"QueryID",FieldType::LLUUID,0}}},{"QueryReplies",0,true,{{"ClassifiedID",FieldType::LLUUID,0},{"Name",FieldType::Variable,1},{"ClassifiedFlags",FieldType::U8,0},{"CreationDate",FieldType::U32,0},{"ExpirationDate",FieldType::U32,0},{"PriceForListing",FieldType::S32,0}}},{"StatusData",0,true,{{"Status",FieldType::U32,0}}}}},
-{"AvatarClassifiedReply",65578,Frequency::Low,42,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"TargetID",FieldType::LLUUID,0}}},{"Data",0,true,{{"ClassifiedID",FieldType::LLUUID,0},{"Name",FieldType::Variable,1}}}}},
-{"ClassifiedInfoRequest",65579,Frequency::Low,43,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"ClassifiedID",FieldType::LLUUID,0}}}}},
-{"ClassifiedInfoReply",65580,Frequency::Low,44,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"Data",1,false,{{"ClassifiedID",FieldType::LLUUID,0},{"CreatorID",FieldType::LLUUID,0},{"CreationDate",FieldType::U32,0},{"ExpirationDate",FieldType::U32,0},{"Category",FieldType::U32,0},{"Name",FieldType::Variable,1},{"Desc",FieldType::Variable,2},{"ParcelID",FieldType::LLUUID,0},{"ParentEstate",FieldType::U32,0},{"SnapshotID",FieldType::LLUUID,0},{"SimName",FieldType::Variable,1},{"PosGlobal",FieldType::LLVector3d,0},{"ParcelName",FieldType::Variable,1},{"ClassifiedFlags",FieldType::U8,0},{"PriceForListing",FieldType::S32,0}}}}},
-{"ClassifiedInfoUpdate",65581,Frequency::Low,45,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"ClassifiedID",FieldType::LLUUID,0},{"Category",FieldType::U32,0},{"Name",FieldType::Variable,1},{"Desc",FieldType::Variable,2},{"ParcelID",FieldType::LLUUID,0},{"ParentEstate",FieldType::U32,0},{"SnapshotID",FieldType::LLUUID,0},{"PosGlobal",FieldType::LLVector3d,0},{"ClassifiedFlags",FieldType::U8,0},{"PriceForListing",FieldType::S32,0}}}}},
-{"ClassifiedDelete",65582,Frequency::Low,46,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"ClassifiedID",FieldType::LLUUID,0}}}}},
-{"ClassifiedGodDelete",65583,Frequency::Low,47,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"ClassifiedID",FieldType::LLUUID,0},{"QueryID",FieldType::LLUUID,0}}}}},
-{"DirLandQuery",65584,Frequency::Low,48,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"QueryData",1,false,{{"QueryID",FieldType::LLUUID,0},{"QueryFlags",FieldType::U32,0},{"SearchType",FieldType::U32,0},{"Price",FieldType::S32,0},{"Area",FieldType::S32,0},{"QueryStart",FieldType::S32,0}}}}},
-{"DirLandReply",65586,Frequency::Low,50,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"QueryData",1,false,{{"QueryID",FieldType::LLUUID,0}}},{"QueryReplies",0,true,{{"ParcelID",FieldType::LLUUID,0},{"Name",FieldType::Variable,1},{"Auction",FieldType::BOOL,0},{"ForSale",FieldType::BOOL,0},{"SalePrice",FieldType::S32,0},{"ActualArea",FieldType::S32,0}}}}},
-{"DirPopularQuery",65587,Frequency::Low,51,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"QueryData",1,false,{{"QueryID",FieldType::LLUUID,0},{"QueryFlags",FieldType::U32,0}}}}},
-{"DirPopularReply",65589,Frequency::Low,53,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"QueryData",1,false,{{"QueryID",FieldType::LLUUID,0}}},{"QueryReplies",0,true,{{"ParcelID",FieldType::LLUUID,0},{"Name",FieldType::Variable,1},{"Dwell",FieldType::F32,0}}}}},
-{"ParcelInfoRequest",65590,Frequency::Low,54,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"ParcelID",FieldType::LLUUID,0}}}}},
-{"ParcelInfoReply",65591,Frequency::Low,55,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"Data",1,false,{{"ParcelID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"Name",FieldType::Variable,1},{"Desc",FieldType::Variable,1},{"ActualArea",FieldType::S32,0},{"BillableArea",FieldType::S32,0},{"Flags",FieldType::U8,0},{"GlobalX",FieldType::F32,0},{"GlobalY",FieldType::F32,0},{"GlobalZ",FieldType::F32,0},{"SimName",FieldType::Variable,1},{"SnapshotID",FieldType::LLUUID,0},{"Dwell",FieldType::F32,0},{"SalePrice",FieldType::S32,0},{"AuctionID",FieldType::S32,0}}}}},
-{"ParcelObjectOwnersRequest",65592,Frequency::Low,56,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ParcelData",1,false,{{"LocalID",FieldType::S32,0}}}}},
-{"ParcelObjectOwnersReply",65593,Frequency::Low,57,true,true,false,{{"Data",0,true,{{"OwnerID",FieldType::LLUUID,0},{"IsGroupOwned",FieldType::BOOL,0},{"Count",FieldType::S32,0},{"OnlineStatus",FieldType::BOOL,0}}}}},
-{"GroupNoticesListRequest",65594,Frequency::Low,58,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"GroupID",FieldType::LLUUID,0}}}}},
-{"GroupNoticesListReply",65595,Frequency::Low,59,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"Data",0,true,{{"NoticeID",FieldType::LLUUID,0},{"Timestamp",FieldType::U32,0},{"FromName",FieldType::Variable,2},{"Subject",FieldType::Variable,2},{"HasAttachment",FieldType::BOOL,0},{"AssetType",FieldType::U8,0}}}}},
-{"GroupNoticeRequest",65596,Frequency::Low,60,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"GroupNoticeID",FieldType::LLUUID,0}}}}},
-{"TeleportRequest",65598,Frequency::Low,62,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Info",1,false,{{"RegionID",FieldType::LLUUID,0},{"Position",FieldType::LLVector3,0},{"LookAt",FieldType::LLVector3,0}}}}},
-{"TeleportLocationRequest",65599,Frequency::Low,63,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Info",1,false,{{"RegionHandle",FieldType::U64,0},{"Position",FieldType::LLVector3,0},{"LookAt",FieldType::LLVector3,0}}}}},
-{"TeleportLocal",65600,Frequency::Low,64,true,false,false,{{"Info",1,false,{{"AgentID",FieldType::LLUUID,0},{"LocationID",FieldType::U32,0},{"Position",FieldType::LLVector3,0},{"LookAt",FieldType::LLVector3,0},{"TeleportFlags",FieldType::U32,0}}}}},
-{"TeleportLandmarkRequest",65601,Frequency::Low,65,true,true,false,{{"Info",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"LandmarkID",FieldType::LLUUID,0}}}}},
-{"TeleportProgress",65602,Frequency::Low,66,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"Info",1,false,{{"TeleportFlags",FieldType::U32,0},{"Message",FieldType::Variable,1}}}}},
-{"TeleportFinish",65605,Frequency::Low,69,true,false,false,{{"Info",1,false,{{"AgentID",FieldType::LLUUID,0},{"LocationID",FieldType::U32,0},{"SimIP",FieldType::IPADDR,0},{"SimPort",FieldType::IPPORT,0},{"RegionHandle",FieldType::U64,0},{"SeedCapability",FieldType::Variable,2},{"SimAccess",FieldType::U8,0},{"TeleportFlags",FieldType::U32,0}}}}},
-{"StartLure",65606,Frequency::Low,70,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Info",1,false,{{"LureType",FieldType::U8,0},{"Message",FieldType::Variable,1}}},{"TargetData",0,true,{{"TargetID",FieldType::LLUUID,0}}}}},
-{"TeleportLureRequest",65607,Frequency::Low,71,true,false,false,{{"Info",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"LureID",FieldType::LLUUID,0},{"TeleportFlags",FieldType::U32,0}}}}},
-{"TeleportCancel",65608,Frequency::Low,72,true,false,false,{{"Info",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}}}},
-{"TeleportStart",65609,Frequency::Low,73,true,false,false,{{"Info",1,false,{{"TeleportFlags",FieldType::U32,0}}}}},
-{"TeleportFailed",65610,Frequency::Low,74,true,false,false,{{"Info",1,false,{{"AgentID",FieldType::LLUUID,0},{"Reason",FieldType::Variable,1}}},{"AlertInfo",0,true,{{"Message",FieldType::Variable,1},{"ExtraParams",FieldType::Variable,1}}}}},
-{"Undo",65611,Frequency::Low,75,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectID",FieldType::LLUUID,0}}}}},
-{"Redo",65612,Frequency::Low,76,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectID",FieldType::LLUUID,0}}}}},
-{"UndoLand",65613,Frequency::Low,77,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}}}},
-{"AgentPause",65614,Frequency::Low,78,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"SerialNum",FieldType::U32,0}}}}},
-{"AgentResume",65615,Frequency::Low,79,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"SerialNum",FieldType::U32,0}}}}},
-{"ChatFromViewer",65616,Frequency::Low,80,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ChatData",1,false,{{"Message",FieldType::Variable,2},{"Type",FieldType::U8,0},{"Channel",FieldType::S32,0}}}}},
-{"AgentThrottle",65617,Frequency::Low,81,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"CircuitCode",FieldType::U32,0}}},{"Throttle",1,false,{{"GenCounter",FieldType::U32,0},{"Throttles",FieldType::Variable,1}}}}},
-{"AgentFOV",65618,Frequency::Low,82,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"CircuitCode",FieldType::U32,0}}},{"FOVBlock",1,false,{{"GenCounter",FieldType::U32,0},{"VerticalAngle",FieldType::F32,0}}}}},
-{"AgentHeightWidth",65619,Frequency::Low,83,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"CircuitCode",FieldType::U32,0}}},{"HeightWidthBlock",1,false,{{"GenCounter",FieldType::U32,0},{"Height",FieldType::U16,0},{"Width",FieldType::U16,0}}}}},
-{"AgentSetAppearance",65620,Frequency::Low,84,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"SerialNum",FieldType::U32,0},{"Size",FieldType::LLVector3,0}}},{"WearableData",0,true,{{"CacheID",FieldType::LLUUID,0},{"TextureIndex",FieldType::U8,0}}},{"ObjectData",1,false,{{"TextureEntry",FieldType::Variable,2}}},{"VisualParam",0,true,{{"ParamValue",FieldType::U8,0}}}}},
-{"AgentQuitCopy",65621,Frequency::Low,85,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"FuseBlock",1,false,{{"ViewerCircuitCode",FieldType::U32,0}}}}},
-{"ImageNotInDatabase",65622,Frequency::Low,86,true,false,false,{{"ImageID",1,false,{{"ID",FieldType::LLUUID,0}}}}},
-{"RebakeAvatarTextures",65623,Frequency::Low,87,true,false,false,{{"TextureData",1,false,{{"TextureID",FieldType::LLUUID,0}}}}},
-{"SetAlwaysRun",65624,Frequency::Low,88,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"AlwaysRun",FieldType::BOOL,0}}}}},
-{"ObjectDelete",65625,Frequency::Low,89,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"Force",FieldType::BOOL,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0}}}}},
-{"ObjectDuplicate",65626,Frequency::Low,90,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"SharedData",1,false,{{"Offset",FieldType::LLVector3,0},{"DuplicateFlags",FieldType::U32,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0}}}}},
-{"ObjectDuplicateOnRay",65627,Frequency::Low,91,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"RayStart",FieldType::LLVector3,0},{"RayEnd",FieldType::LLVector3,0},{"BypassRaycast",FieldType::BOOL,0},{"RayEndIsIntersection",FieldType::BOOL,0},{"CopyCenters",FieldType::BOOL,0},{"CopyRotates",FieldType::BOOL,0},{"RayTargetID",FieldType::LLUUID,0},{"DuplicateFlags",FieldType::U32,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0}}}}},
-{"ObjectScale",65628,Frequency::Low,92,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0},{"Scale",FieldType::LLVector3,0}}}}},
-{"ObjectRotation",65629,Frequency::Low,93,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0},{"Rotation",FieldType::LLQuaternion,0}}}}},
-{"ObjectFlagUpdate",65630,Frequency::Low,94,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"ObjectLocalID",FieldType::U32,0},{"UsePhysics",FieldType::BOOL,0},{"IsTemporary",FieldType::BOOL,0},{"IsPhantom",FieldType::BOOL,0},{"CastsShadows",FieldType::BOOL,0}}},{"ExtraPhysics",0,true,{{"PhysicsShapeType",FieldType::U8,0},{"Density",FieldType::F32,0},{"Friction",FieldType::F32,0},{"Restitution",FieldType::F32,0},{"GravityMultiplier",FieldType::F32,0}}}}},
-{"ObjectClickAction",65631,Frequency::Low,95,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0},{"ClickAction",FieldType::U8,0}}}}},
-{"ObjectImage",65632,Frequency::Low,96,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0},{"MediaURL",FieldType::Variable,1},{"TextureEntry",FieldType::Variable,2}}}}},
-{"ObjectMaterial",65633,Frequency::Low,97,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0},{"Material",FieldType::U8,0}}}}},
-{"ObjectShape",65634,Frequency::Low,98,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0},{"PathCurve",FieldType::U8,0},{"ProfileCurve",FieldType::U8,0},{"PathBegin",FieldType::U16,0},{"PathEnd",FieldType::U16,0},{"PathScaleX",FieldType::U8,0},{"PathScaleY",FieldType::U8,0},{"PathShearX",FieldType::U8,0},{"PathShearY",FieldType::U8,0},{"PathTwist",FieldType::S8,0},{"PathTwistBegin",FieldType::S8,0},{"PathRadiusOffset",FieldType::S8,0},{"PathTaperX",FieldType::S8,0},{"PathTaperY",FieldType::S8,0},{"PathRevolutions",FieldType::U8,0},{"PathSkew",FieldType::S8,0},{"ProfileBegin",FieldType::U16,0},{"ProfileEnd",FieldType::U16,0},{"ProfileHollow",FieldType::U16,0}}}}},
-{"ObjectExtraParams",65635,Frequency::Low,99,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0},{"ParamType",FieldType::U16,0},{"ParamInUse",FieldType::BOOL,0},{"ParamSize",FieldType::U32,0},{"ParamData",FieldType::Variable,1}}}}},
-{"ObjectOwner",65636,Frequency::Low,100,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"HeaderData",1,false,{{"Override",FieldType::BOOL,0},{"OwnerID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0}}}}},
-{"ObjectGroup",65637,Frequency::Low,101,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0}}}}},
-{"ObjectBuy",65638,Frequency::Low,102,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"CategoryID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0},{"SaleType",FieldType::U8,0},{"SalePrice",FieldType::S32,0}}}}},
-{"BuyObjectInventory",65639,Frequency::Low,103,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"ObjectID",FieldType::LLUUID,0},{"ItemID",FieldType::LLUUID,0},{"FolderID",FieldType::LLUUID,0}}}}},
-{"DerezContainer",65640,Frequency::Low,104,true,true,false,{{"Data",1,false,{{"ObjectID",FieldType::LLUUID,0},{"Delete",FieldType::BOOL,0}}}}},
-{"ObjectPermissions",65641,Frequency::Low,105,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"HeaderData",1,false,{{"Override",FieldType::BOOL,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0},{"Field",FieldType::U8,0},{"Set",FieldType::U8,0},{"Mask",FieldType::U32,0}}}}},
-{"ObjectSaleInfo",65642,Frequency::Low,106,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"LocalID",FieldType::U32,0},{"SaleType",FieldType::U8,0},{"SalePrice",FieldType::S32,0}}}}},
-{"ObjectName",65643,Frequency::Low,107,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"LocalID",FieldType::U32,0},{"Name",FieldType::Variable,1}}}}},
-{"ObjectDescription",65644,Frequency::Low,108,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"LocalID",FieldType::U32,0},{"Description",FieldType::Variable,1}}}}},
-{"ObjectCategory",65645,Frequency::Low,109,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"LocalID",FieldType::U32,0},{"Category",FieldType::U32,0}}}}},
-{"ObjectSelect",65646,Frequency::Low,110,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0}}}}},
-{"ObjectDeselect",65647,Frequency::Low,111,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0}}}}},
-{"ObjectAttach",65648,Frequency::Low,112,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"AttachmentPoint",FieldType::U8,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0},{"Rotation",FieldType::LLQuaternion,0}}}}},
-{"ObjectDetach",65649,Frequency::Low,113,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0}}}}},
-{"ObjectDrop",65650,Frequency::Low,114,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0}}}}},
-{"ObjectLink",65651,Frequency::Low,115,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0}}}}},
-{"ObjectDelink",65652,Frequency::Low,116,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0}}}}},
-{"ObjectGrab",65653,Frequency::Low,117,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",1,false,{{"LocalID",FieldType::U32,0},{"GrabOffset",FieldType::LLVector3,0}}},{"SurfaceInfo",0,true,{{"UVCoord",FieldType::LLVector3,0},{"STCoord",FieldType::LLVector3,0},{"FaceIndex",FieldType::S32,0},{"Position",FieldType::LLVector3,0},{"Normal",FieldType::LLVector3,0},{"Binormal",FieldType::LLVector3,0}}}}},
-{"ObjectGrabUpdate",65654,Frequency::Low,118,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",1,false,{{"ObjectID",FieldType::LLUUID,0},{"GrabOffsetInitial",FieldType::LLVector3,0},{"GrabPosition",FieldType::LLVector3,0},{"TimeSinceLast",FieldType::U32,0}}},{"SurfaceInfo",0,true,{{"UVCoord",FieldType::LLVector3,0},{"STCoord",FieldType::LLVector3,0},{"FaceIndex",FieldType::S32,0},{"Position",FieldType::LLVector3,0},{"Normal",FieldType::LLVector3,0},{"Binormal",FieldType::LLVector3,0}}}}},
-{"ObjectDeGrab",65655,Frequency::Low,119,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",1,false,{{"LocalID",FieldType::U32,0}}},{"SurfaceInfo",0,true,{{"UVCoord",FieldType::LLVector3,0},{"STCoord",FieldType::LLVector3,0},{"FaceIndex",FieldType::S32,0},{"Position",FieldType::LLVector3,0},{"Normal",FieldType::LLVector3,0},{"Binormal",FieldType::LLVector3,0}}}}},
-{"ObjectSpinStart",65656,Frequency::Low,120,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",1,false,{{"ObjectID",FieldType::LLUUID,0}}}}},
-{"ObjectSpinUpdate",65657,Frequency::Low,121,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",1,false,{{"ObjectID",FieldType::LLUUID,0},{"Rotation",FieldType::LLQuaternion,0}}}}},
-{"ObjectSpinStop",65658,Frequency::Low,122,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",1,false,{{"ObjectID",FieldType::LLUUID,0}}}}},
-{"ObjectExportSelected",65659,Frequency::Low,123,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"RequestID",FieldType::LLUUID,0},{"VolumeDetail",FieldType::S16,0}}},{"ObjectData",0,true,{{"ObjectID",FieldType::LLUUID,0}}}}},
-{"ModifyLand",65660,Frequency::Low,124,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ModifyBlock",1,false,{{"Action",FieldType::U8,0},{"BrushSize",FieldType::U8,0},{"Seconds",FieldType::F32,0},{"Height",FieldType::F32,0}}},{"ParcelData",0,true,{{"LocalID",FieldType::S32,0},{"West",FieldType::F32,0},{"South",FieldType::F32,0},{"East",FieldType::F32,0},{"North",FieldType::F32,0}}},{"ModifyBlockExtended",0,true,{{"BrushSize",FieldType::F32,0}}}}},
-{"VelocityInterpolateOn",65661,Frequency::Low,125,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}}}},
-{"VelocityInterpolateOff",65662,Frequency::Low,126,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}}}},
-{"StateSave",65663,Frequency::Low,127,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"DataBlock",1,false,{{"Filename",FieldType::Variable,1}}}}},
-{"ReportAutosaveCrash",65664,Frequency::Low,128,true,false,false,{{"AutosaveData",1,false,{{"PID",FieldType::S32,0},{"Status",FieldType::S32,0}}}}},
-{"SimWideDeletes",65665,Frequency::Low,129,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"DataBlock",1,false,{{"TargetID",FieldType::LLUUID,0},{"Flags",FieldType::U32,0}}}}},
-{"TrackAgent",65666,Frequency::Low,130,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"TargetData",1,false,{{"PreyID",FieldType::LLUUID,0}}}}},
-{"ViewerStats",65667,Frequency::Low,131,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"IP",FieldType::IPADDR,0},{"StartTime",FieldType::U32,0},{"RunTime",FieldType::F32,0},{"SimFPS",FieldType::F32,0},{"FPS",FieldType::F32,0},{"AgentsInView",FieldType::U8,0},{"Ping",FieldType::F32,0},{"MetersTraveled",FieldType::F64,0},{"RegionsVisited",FieldType::S32,0},{"SysRAM",FieldType::U32,0},{"SysOS",FieldType::Variable,1},{"SysCPU",FieldType::Variable,1},{"SysGPU",FieldType::Variable,1}}},{"DownloadTotals",1,false,{{"World",FieldType::U32,0},{"Objects",FieldType::U32,0},{"Textures",FieldType::U32,0}}},{"NetStats",2,false,{{"Bytes",FieldType::U32,0},{"Packets",FieldType::U32,0},{"Compressed",FieldType::U32,0},{"Savings",FieldType::U32,0}}},{"FailStats",1,false,{{"SendPacket",FieldType::U32,0},{"Dropped",FieldType::U32,0},{"Resent",FieldType::U32,0},{"FailedResends",FieldType::U32,0},{"OffCircuit",FieldType::U32,0},{"Invalid",FieldType::U32,0}}},{"MiscStats",0,true,{{"Type",FieldType::U32,0},{"Value",FieldType::F64,0}}}}},
-{"ScriptAnswerYes",65668,Frequency::Low,132,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"TaskID",FieldType::LLUUID,0},{"ItemID",FieldType::LLUUID,0},{"Questions",FieldType::S32,0}}}}},
-{"UserReport",65669,Frequency::Low,133,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ReportData",1,false,{{"ReportType",FieldType::U8,0},{"Category",FieldType::U8,0},{"Position",FieldType::LLVector3,0},{"CheckFlags",FieldType::U8,0},{"ScreenshotID",FieldType::LLUUID,0},{"ObjectID",FieldType::LLUUID,0},{"AbuserID",FieldType::LLUUID,0},{"AbuseRegionName",FieldType::Variable,1},{"AbuseRegionID",FieldType::LLUUID,0},{"Summary",FieldType::Variable,1},{"Details",FieldType::Variable,2},{"VersionString",FieldType::Variable,1}}}}},
-{"AlertMessage",65670,Frequency::Low,134,true,false,false,{{"AlertData",1,false,{{"Message",FieldType::Variable,1}}},{"AlertInfo",0,true,{{"Message",FieldType::Variable,1},{"ExtraParams",FieldType::Variable,1}}}}},
-{"AgentAlertMessage",65671,Frequency::Low,135,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"AlertData",1,false,{{"Modal",FieldType::BOOL,0},{"Message",FieldType::Variable,1}}}}},
-{"MeanCollisionAlert",65672,Frequency::Low,136,true,true,false,{{"MeanCollision",0,true,{{"Victim",FieldType::LLUUID,0},{"Perp",FieldType::LLUUID,0},{"Time",FieldType::U32,0},{"Mag",FieldType::F32,0},{"Type",FieldType::U8,0}}}}},
-{"ViewerFrozenMessage",65673,Frequency::Low,137,true,false,false,{{"FrozenData",1,false,{{"Data",FieldType::BOOL,0}}}}},
-{"HealthMessage",65674,Frequency::Low,138,true,true,false,{{"HealthData",1,false,{{"Health",FieldType::F32,0}}}}},
-{"ChatFromSimulator",65675,Frequency::Low,139,true,false,false,{{"ChatData",1,false,{{"FromName",FieldType::Variable,1},{"SourceID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"SourceType",FieldType::U8,0},{"ChatType",FieldType::U8,0},{"Audible",FieldType::U8,0},{"Position",FieldType::LLVector3,0},{"Message",FieldType::Variable,2}}}}},
-{"SimStats",65676,Frequency::Low,140,true,false,false,{{"Region",1,false,{{"RegionX",FieldType::U32,0},{"RegionY",FieldType::U32,0},{"RegionFlags",FieldType::U32,0},{"ObjectCapacity",FieldType::U32,0}}},{"Stat",0,true,{{"StatID",FieldType::U32,0},{"StatValue",FieldType::F32,0}}},{"PidStat",1,false,{{"PID",FieldType::S32,0}}},{"RegionInfo",0,true,{{"RegionFlagsExtended",FieldType::U64,0}}}}},
-{"RequestRegionInfo",65677,Frequency::Low,141,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}}}},
-{"RegionInfo",65678,Frequency::Low,142,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"RegionInfo",1,false,{{"SimName",FieldType::Variable,1},{"EstateID",FieldType::U32,0},{"ParentEstateID",FieldType::U32,0},{"RegionFlags",FieldType::U32,0},{"SimAccess",FieldType::U8,0},{"MaxAgents",FieldType::U8,0},{"BillableFactor",FieldType::F32,0},{"ObjectBonusFactor",FieldType::F32,0},{"WaterHeight",FieldType::F32,0},{"TerrainRaiseLimit",FieldType::F32,0},{"TerrainLowerLimit",FieldType::F32,0},{"PricePerMeter",FieldType::S32,0},{"RedirectGridX",FieldType::S32,0},{"RedirectGridY",FieldType::S32,0},{"UseEstateSun",FieldType::BOOL,0},{"SunHour",FieldType::F32,0}}},{"RegionInfo2",1,false,{{"ProductSKU",FieldType::Variable,1},{"ProductName",FieldType::Variable,1},{"MaxAgents32",FieldType::U32,0},{"HardMaxAgents",FieldType::U32,0},{"HardMaxObjects",FieldType::U32,0}}},{"RegionInfo3",0,true,{{"RegionFlagsExtended",FieldType::U64,0}}}}},
-{"GodUpdateRegionInfo",65679,Frequency::Low,143,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"RegionInfo",1,false,{{"SimName",FieldType::Variable,1},{"EstateID",FieldType::U32,0},{"ParentEstateID",FieldType::U32,0},{"RegionFlags",FieldType::U32,0},{"BillableFactor",FieldType::F32,0},{"PricePerMeter",FieldType::S32,0},{"RedirectGridX",FieldType::S32,0},{"RedirectGridY",FieldType::S32,0}}},{"RegionInfo2",0,true,{{"RegionFlagsExtended",FieldType::U64,0}}}}},
-{"RegionHandshake",65684,Frequency::Low,148,true,true,false,{{"RegionInfo",1,false,{{"RegionFlags",FieldType::U32,0},{"SimAccess",FieldType::U8,0},{"SimName",FieldType::Variable,1},{"SimOwner",FieldType::LLUUID,0},{"IsEstateManager",FieldType::BOOL,0},{"WaterHeight",FieldType::F32,0},{"BillableFactor",FieldType::F32,0},{"CacheID",FieldType::LLUUID,0},{"TerrainBase0",FieldType::LLUUID,0},{"TerrainBase1",FieldType::LLUUID,0},{"TerrainBase2",FieldType::LLUUID,0},{"TerrainBase3",FieldType::LLUUID,0},{"TerrainDetail0",FieldType::LLUUID,0},{"TerrainDetail1",FieldType::LLUUID,0},{"TerrainDetail2",FieldType::LLUUID,0},{"TerrainDetail3",FieldType::LLUUID,0},{"TerrainStartHeight00",FieldType::F32,0},{"TerrainStartHeight01",FieldType::F32,0},{"TerrainStartHeight10",FieldType::F32,0},{"TerrainStartHeight11",FieldType::F32,0},{"TerrainHeightRange00",FieldType::F32,0},{"TerrainHeightRange01",FieldType::F32,0},{"TerrainHeightRange10",FieldType::F32,0},{"TerrainHeightRange11",FieldType::F32,0}}},{"RegionInfo2",1,false,{{"RegionID",FieldType::LLUUID,0}}},{"RegionInfo3",1,false,{{"CPUClassID",FieldType::S32,0},{"CPURatio",FieldType::S32,0},{"ColoName",FieldType::Variable,1},{"ProductSKU",FieldType::Variable,1},{"ProductName",FieldType::Variable,1}}},{"RegionInfo4",0,true,{{"RegionFlagsExtended",FieldType::U64,0},{"RegionProtocols",FieldType::U64,0}}}}},
-{"RegionHandshakeReply",65685,Frequency::Low,149,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"RegionInfo",1,false,{{"Flags",FieldType::U32,0}}}}},
-{"SimulatorViewerTimeMessage",65686,Frequency::Low,150,true,false,false,{{"TimeInfo",1,false,{{"UsecSinceStart",FieldType::U64,0},{"SecPerDay",FieldType::U32,0},{"SecPerYear",FieldType::U32,0},{"SunDirection",FieldType::LLVector3,0},{"SunPhase",FieldType::F32,0},{"SunAngVelocity",FieldType::LLVector3,0}}}}},
-{"EnableSimulator",65687,Frequency::Low,151,true,false,false,{{"SimulatorInfo",1,false,{{"Handle",FieldType::U64,0},{"IP",FieldType::IPADDR,0},{"Port",FieldType::IPPORT,0}}}}},
-{"DisableSimulator",65688,Frequency::Low,152,true,false,false,{}},
-{"TransferRequest",65689,Frequency::Low,153,true,true,false,{{"TransferInfo",1,false,{{"TransferID",FieldType::LLUUID,0},{"ChannelType",FieldType::S32,0},{"SourceType",FieldType::S32,0},{"Priority",FieldType::F32,0},{"Params",FieldType::Variable,2}}}}},
-{"TransferInfo",65690,Frequency::Low,154,true,true,false,{{"TransferInfo",1,false,{{"TransferID",FieldType::LLUUID,0},{"ChannelType",FieldType::S32,0},{"TargetType",FieldType::S32,0},{"Status",FieldType::S32,0},{"Size",FieldType::S32,0},{"Params",FieldType::Variable,2}}}}},
-{"TransferAbort",65691,Frequency::Low,155,true,true,false,{{"TransferInfo",1,false,{{"TransferID",FieldType::LLUUID,0},{"ChannelType",FieldType::S32,0}}}}},
-{"RequestXfer",65692,Frequency::Low,156,true,true,false,{{"XferID",1,false,{{"ID",FieldType::U64,0},{"Filename",FieldType::Variable,1},{"FilePath",FieldType::U8,0},{"DeleteOnCompletion",FieldType::BOOL,0},{"UseBigPackets",FieldType::BOOL,0},{"VFileID",FieldType::LLUUID,0},{"VFileType",FieldType::S16,0}}}}},
-{"AbortXfer",65693,Frequency::Low,157,true,false,false,{{"XferID",1,false,{{"ID",FieldType::U64,0},{"Result",FieldType::S32,0}}}}},
-{"AvatarAppearance",65694,Frequency::Low,158,true,true,false,{{"Sender",1,false,{{"ID",FieldType::LLUUID,0},{"IsTrial",FieldType::BOOL,0}}},{"ObjectData",1,false,{{"TextureEntry",FieldType::Variable,2}}},{"VisualParam",0,true,{{"ParamValue",FieldType::U8,0}}},{"AppearanceData",0,true,{{"AppearanceVersion",FieldType::U8,0},{"CofVersion",FieldType::S32,0},{"Flags",FieldType::U32,0}}},{"AppearanceHover",0,true,{{"HoverHeight",FieldType::LLVector3,0}}}}},
-{"SetFollowCamProperties",65695,Frequency::Low,159,true,false,false,{{"ObjectData",1,false,{{"ObjectID",FieldType::LLUUID,0}}},{"CameraProperty",0,true,{{"Type",FieldType::S32,0},{"Value",FieldType::F32,0}}}}},
-{"ClearFollowCamProperties",65696,Frequency::Low,160,true,false,false,{{"ObjectData",1,false,{{"ObjectID",FieldType::LLUUID,0}}}}},
-{"RequestPayPrice",65697,Frequency::Low,161,true,false,false,{{"ObjectData",1,false,{{"ObjectID",FieldType::LLUUID,0}}}}},
-{"PayPriceReply",65698,Frequency::Low,162,true,false,false,{{"ObjectData",1,false,{{"ObjectID",FieldType::LLUUID,0},{"DefaultPayPrice",FieldType::S32,0}}},{"ButtonData",0,true,{{"PayButton",FieldType::S32,0}}}}},
-{"KickUser",65699,Frequency::Low,163,true,false,false,{{"TargetBlock",1,false,{{"TargetIP",FieldType::IPADDR,0},{"TargetPort",FieldType::IPPORT,0}}},{"UserInfo",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"Reason",FieldType::Variable,2}}}}},
-{"GodKickUser",65701,Frequency::Low,165,true,false,false,{{"UserInfo",1,false,{{"GodID",FieldType::LLUUID,0},{"GodSessionID",FieldType::LLUUID,0},{"AgentID",FieldType::LLUUID,0},{"KickFlags",FieldType::U32,0},{"Reason",FieldType::Variable,2}}}}},
-{"EjectUser",65703,Frequency::Low,167,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"TargetID",FieldType::LLUUID,0},{"Flags",FieldType::U32,0}}}}},
-{"FreezeUser",65704,Frequency::Low,168,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"TargetID",FieldType::LLUUID,0},{"Flags",FieldType::U32,0}}}}},
-{"AvatarPropertiesRequest",65705,Frequency::Low,169,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"AvatarID",FieldType::LLUUID,0}}}}},
-{"AvatarPropertiesReply",65707,Frequency::Low,171,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"AvatarID",FieldType::LLUUID,0}}},{"PropertiesData",1,false,{{"ImageID",FieldType::LLUUID,0},{"FLImageID",FieldType::LLUUID,0},{"PartnerID",FieldType::LLUUID,0},{"AboutText",FieldType::Variable,2},{"FLAboutText",FieldType::Variable,1},{"BornOn",FieldType::Variable,1},{"ProfileURL",FieldType::Variable,1},{"CharterMember",FieldType::Variable,1},{"Flags",FieldType::U32,0}}}}},
-{"AvatarInterestsReply",65708,Frequency::Low,172,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"AvatarID",FieldType::LLUUID,0}}},{"PropertiesData",1,false,{{"WantToMask",FieldType::U32,0},{"WantToText",FieldType::Variable,1},{"SkillsMask",FieldType::U32,0},{"SkillsText",FieldType::Variable,1},{"LanguagesText",FieldType::Variable,1}}}}},
-{"AvatarGroupsReply",65709,Frequency::Low,173,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"AvatarID",FieldType::LLUUID,0}}},{"GroupData",0,true,{{"GroupPowers",FieldType::U64,0},{"AcceptNotices",FieldType::BOOL,0},{"GroupTitle",FieldType::Variable,1},{"GroupID",FieldType::LLUUID,0},{"GroupName",FieldType::Variable,1},{"GroupInsigniaID",FieldType::LLUUID,0}}},{"NewGroupData",1,false,{{"ListInProfile",FieldType::BOOL,0}}}}},
-{"AvatarPropertiesUpdate",65710,Frequency::Low,174,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"PropertiesData",1,false,{{"ImageID",FieldType::LLUUID,0},{"FLImageID",FieldType::LLUUID,0},{"AboutText",FieldType::Variable,2},{"FLAboutText",FieldType::Variable,1},{"AllowPublish",FieldType::BOOL,0},{"MaturePublish",FieldType::BOOL,0},{"ProfileURL",FieldType::Variable,1}}}}},
-{"AvatarInterestsUpdate",65711,Frequency::Low,175,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"PropertiesData",1,false,{{"WantToMask",FieldType::U32,0},{"WantToText",FieldType::Variable,1},{"SkillsMask",FieldType::U32,0},{"SkillsText",FieldType::Variable,1},{"LanguagesText",FieldType::Variable,1}}}}},
-{"AvatarNotesReply",65712,Frequency::Low,176,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"Data",1,false,{{"TargetID",FieldType::LLUUID,0},{"Notes",FieldType::Variable,2}}}}},
-{"AvatarNotesUpdate",65713,Frequency::Low,177,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"TargetID",FieldType::LLUUID,0},{"Notes",FieldType::Variable,2}}}}},
-{"AvatarPicksReply",65714,Frequency::Low,178,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"TargetID",FieldType::LLUUID,0}}},{"Data",0,true,{{"PickID",FieldType::LLUUID,0},{"PickName",FieldType::Variable,1}}}}},
-{"EventInfoRequest",65715,Frequency::Low,179,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"EventData",1,false,{{"EventID",FieldType::U32,0}}}}},
-{"EventInfoReply",65716,Frequency::Low,180,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"EventData",1,false,{{"EventID",FieldType::U32,0},{"Creator",FieldType::Variable,1},{"Name",FieldType::Variable,1},{"Category",FieldType::Variable,1},{"Desc",FieldType::Variable,2},{"Date",FieldType::Variable,1},{"DateUTC",FieldType::U32,0},{"Duration",FieldType::U32,0},{"Cover",FieldType::U32,0},{"Amount",FieldType::U32,0},{"SimName",FieldType::Variable,1},{"GlobalPos",FieldType::LLVector3d,0},{"EventFlags",FieldType::U32,0}}}}},
-{"EventNotificationAddRequest",65717,Frequency::Low,181,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"EventData",1,false,{{"EventID",FieldType::U32,0}}}}},
-{"EventNotificationRemoveRequest",65718,Frequency::Low,182,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"EventData",1,false,{{"EventID",FieldType::U32,0}}}}},
-{"EventGodDelete",65719,Frequency::Low,183,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"EventData",1,false,{{"EventID",FieldType::U32,0}}},{"QueryData",1,false,{{"QueryID",FieldType::LLUUID,0},{"QueryText",FieldType::Variable,1},{"QueryFlags",FieldType::U32,0},{"QueryStart",FieldType::S32,0}}}}},
-{"PickInfoReply",65720,Frequency::Low,184,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"Data",1,false,{{"PickID",FieldType::LLUUID,0},{"CreatorID",FieldType::LLUUID,0},{"TopPick",FieldType::BOOL,0},{"ParcelID",FieldType::LLUUID,0},{"Name",FieldType::Variable,1},{"Desc",FieldType::Variable,2},{"SnapshotID",FieldType::LLUUID,0},{"User",FieldType::Variable,1},{"OriginalName",FieldType::Variable,1},{"SimName",FieldType::Variable,1},{"PosGlobal",FieldType::LLVector3d,0},{"SortOrder",FieldType::S32,0},{"Enabled",FieldType::BOOL,0}}}}},
-{"PickInfoUpdate",65721,Frequency::Low,185,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"PickID",FieldType::LLUUID,0},{"CreatorID",FieldType::LLUUID,0},{"TopPick",FieldType::BOOL,0},{"ParcelID",FieldType::LLUUID,0},{"Name",FieldType::Variable,1},{"Desc",FieldType::Variable,2},{"SnapshotID",FieldType::LLUUID,0},{"PosGlobal",FieldType::LLVector3d,0},{"SortOrder",FieldType::S32,0},{"Enabled",FieldType::BOOL,0}}}}},
-{"PickDelete",65722,Frequency::Low,186,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"PickID",FieldType::LLUUID,0}}}}},
-{"PickGodDelete",65723,Frequency::Low,187,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"PickID",FieldType::LLUUID,0},{"QueryID",FieldType::LLUUID,0}}}}},
-{"ScriptQuestion",65724,Frequency::Low,188,true,false,false,{{"Data",1,false,{{"TaskID",FieldType::LLUUID,0},{"ItemID",FieldType::LLUUID,0},{"ObjectName",FieldType::Variable,1},{"ObjectOwner",FieldType::Variable,1},{"Questions",FieldType::S32,0}}},{"Experience",1,false,{{"ExperienceID",FieldType::LLUUID,0}}}}},
-{"ScriptControlChange",65725,Frequency::Low,189,true,false,false,{{"Data",0,true,{{"TakeControls",FieldType::BOOL,0},{"Controls",FieldType::U32,0},{"PassToAgent",FieldType::BOOL,0}}}}},
-{"ScriptDialog",65726,Frequency::Low,190,true,true,false,{{"Data",1,false,{{"ObjectID",FieldType::LLUUID,0},{"FirstName",FieldType::Variable,1},{"LastName",FieldType::Variable,1},{"ObjectName",FieldType::Variable,1},{"Message",FieldType::Variable,2},{"ChatChannel",FieldType::S32,0},{"ImageID",FieldType::LLUUID,0}}},{"Buttons",0,true,{{"ButtonLabel",FieldType::Variable,1}}},{"OwnerData",0,true,{{"OwnerID",FieldType::LLUUID,0}}}}},
-{"ScriptDialogReply",65727,Frequency::Low,191,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"ObjectID",FieldType::LLUUID,0},{"ChatChannel",FieldType::S32,0},{"ButtonIndex",FieldType::S32,0},{"ButtonLabel",FieldType::Variable,1}}}}},
-{"ForceScriptControlRelease",65728,Frequency::Low,192,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}}}},
-{"RevokePermissions",65729,Frequency::Low,193,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"ObjectID",FieldType::LLUUID,0},{"ObjectPermissions",FieldType::U32,0}}}}},
-{"LoadURL",65730,Frequency::Low,194,true,false,false,{{"Data",1,false,{{"ObjectName",FieldType::Variable,1},{"ObjectID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"OwnerIsGroup",FieldType::BOOL,0},{"Message",FieldType::Variable,1},{"URL",FieldType::Variable,1}}}}},
-{"ScriptTeleportRequest",65731,Frequency::Low,195,true,false,false,{{"Data",1,false,{{"ObjectName",FieldType::Variable,1},{"SimName",FieldType::Variable,1},{"SimPosition",FieldType::LLVector3,0},{"LookAt",FieldType::LLVector3,0}}},{"Options",0,true,{{"Flags",FieldType::U32,0}}}}},
-{"ParcelOverlay",65732,Frequency::Low,196,true,true,false,{{"ParcelData",1,false,{{"SequenceID",FieldType::S32,0},{"Data",FieldType::Variable,2}}}}},
-{"ParcelPropertiesRequestByID",65733,Frequency::Low,197,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ParcelData",1,false,{{"SequenceID",FieldType::S32,0},{"LocalID",FieldType::S32,0}}}}},
-{"ParcelPropertiesUpdate",65734,Frequency::Low,198,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ParcelData",1,false,{{"LocalID",FieldType::S32,0},{"Flags",FieldType::U32,0},{"ParcelFlags",FieldType::U32,0},{"SalePrice",FieldType::S32,0},{"Name",FieldType::Variable,1},{"Desc",FieldType::Variable,1},{"MusicURL",FieldType::Variable,1},{"MediaURL",FieldType::Variable,1},{"MediaID",FieldType::LLUUID,0},{"MediaAutoScale",FieldType::U8,0},{"GroupID",FieldType::LLUUID,0},{"PassPrice",FieldType::S32,0},{"PassHours",FieldType::F32,0},{"Category",FieldType::U8,0},{"AuthBuyerID",FieldType::LLUUID,0},{"SnapshotID",FieldType::LLUUID,0},{"UserLocation",FieldType::LLVector3,0},{"UserLookAt",FieldType::LLVector3,0},{"LandingType",FieldType::U8,0}}}}},
-{"ParcelReturnObjects",65735,Frequency::Low,199,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ParcelData",1,false,{{"LocalID",FieldType::S32,0},{"ReturnType",FieldType::U32,0}}},{"TaskIDs",0,true,{{"TaskID",FieldType::LLUUID,0}}},{"OwnerIDs",0,true,{{"OwnerID",FieldType::LLUUID,0}}}}},
-{"ParcelSetOtherCleanTime",65736,Frequency::Low,200,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ParcelData",1,false,{{"LocalID",FieldType::S32,0},{"OtherCleanTime",FieldType::S32,0}}}}},
-{"ParcelDisableObjects",65737,Frequency::Low,201,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ParcelData",1,false,{{"LocalID",FieldType::S32,0},{"ReturnType",FieldType::U32,0}}},{"TaskIDs",0,true,{{"TaskID",FieldType::LLUUID,0}}},{"OwnerIDs",0,true,{{"OwnerID",FieldType::LLUUID,0}}}}},
-{"ParcelSelectObjects",65738,Frequency::Low,202,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ParcelData",1,false,{{"LocalID",FieldType::S32,0},{"ReturnType",FieldType::U32,0}}},{"ReturnIDs",0,true,{{"ReturnID",FieldType::LLUUID,0}}}}},
-{"EstateCovenantRequest",65739,Frequency::Low,203,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}}}},
-{"EstateCovenantReply",65740,Frequency::Low,204,true,false,false,{{"Data",1,false,{{"CovenantID",FieldType::LLUUID,0},{"CovenantTimestamp",FieldType::U32,0},{"EstateName",FieldType::Variable,1},{"EstateOwnerID",FieldType::LLUUID,0}}}}},
-{"ForceObjectSelect",65741,Frequency::Low,205,true,false,false,{{"_Header",1,false,{{"ResetList",FieldType::BOOL,0}}},{"Data",0,true,{{"LocalID",FieldType::U32,0}}}}},
-{"ParcelBuyPass",65742,Frequency::Low,206,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ParcelData",1,false,{{"LocalID",FieldType::S32,0}}}}},
-{"ParcelDeedToGroup",65743,Frequency::Low,207,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"GroupID",FieldType::LLUUID,0},{"LocalID",FieldType::S32,0}}}}},
-{"ParcelReclaim",65744,Frequency::Low,208,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"LocalID",FieldType::S32,0}}}}},
-{"ParcelClaim",65745,Frequency::Low,209,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"GroupID",FieldType::LLUUID,0},{"IsGroupOwned",FieldType::BOOL,0},{"Final",FieldType::BOOL,0}}},{"ParcelData",0,true,{{"West",FieldType::F32,0},{"South",FieldType::F32,0},{"East",FieldType::F32,0},{"North",FieldType::F32,0}}}}},
-{"ParcelJoin",65746,Frequency::Low,210,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ParcelData",1,false,{{"West",FieldType::F32,0},{"South",FieldType::F32,0},{"East",FieldType::F32,0},{"North",FieldType::F32,0}}}}},
-{"ParcelDivide",65747,Frequency::Low,211,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ParcelData",1,false,{{"West",FieldType::F32,0},{"South",FieldType::F32,0},{"East",FieldType::F32,0},{"North",FieldType::F32,0}}}}},
-{"ParcelRelease",65748,Frequency::Low,212,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"LocalID",FieldType::S32,0}}}}},
-{"ParcelBuy",65749,Frequency::Low,213,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"GroupID",FieldType::LLUUID,0},{"IsGroupOwned",FieldType::BOOL,0},{"RemoveContribution",FieldType::BOOL,0},{"LocalID",FieldType::S32,0},{"Final",FieldType::BOOL,0}}},{"ParcelData",1,false,{{"Price",FieldType::S32,0},{"Area",FieldType::S32,0}}}}},
-{"ParcelGodForceOwner",65750,Frequency::Low,214,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"OwnerID",FieldType::LLUUID,0},{"LocalID",FieldType::S32,0}}}}},
-{"ParcelAccessListRequest",65751,Frequency::Low,215,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"SequenceID",FieldType::S32,0},{"Flags",FieldType::U32,0},{"LocalID",FieldType::S32,0}}}}},
-{"ParcelAccessListReply",65752,Frequency::Low,216,true,true,false,{{"Data",1,false,{{"AgentID",FieldType::LLUUID,0},{"SequenceID",FieldType::S32,0},{"Flags",FieldType::U32,0},{"LocalID",FieldType::S32,0}}},{"List",0,true,{{"ID",FieldType::LLUUID,0},{"Time",FieldType::S32,0},{"Flags",FieldType::U32,0}}}}},
-{"ParcelAccessListUpdate",65753,Frequency::Low,217,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"Flags",FieldType::U32,0},{"LocalID",FieldType::S32,0},{"TransactionID",FieldType::LLUUID,0},{"SequenceID",FieldType::S32,0},{"Sections",FieldType::S32,0}}},{"List",0,true,{{"ID",FieldType::LLUUID,0},{"Time",FieldType::S32,0},{"Flags",FieldType::U32,0}}}}},
-{"ParcelDwellRequest",65754,Frequency::Low,218,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"LocalID",FieldType::S32,0},{"ParcelID",FieldType::LLUUID,0}}}}},
-{"ParcelDwellReply",65755,Frequency::Low,219,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"Data",1,false,{{"LocalID",FieldType::S32,0},{"ParcelID",FieldType::LLUUID,0},{"Dwell",FieldType::F32,0}}}}},
-{"ParcelGodMarkAsContent",65763,Frequency::Low,227,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ParcelData",1,false,{{"LocalID",FieldType::S32,0}}}}},
-{"ViewerStartAuction",65764,Frequency::Low,228,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ParcelData",1,false,{{"LocalID",FieldType::S32,0},{"SnapshotID",FieldType::LLUUID,0}}}}},
-{"UUIDNameRequest",65771,Frequency::Low,235,true,false,false,{{"UUIDNameBlock",0,true,{{"ID",FieldType::LLUUID,0}}}}},
-{"UUIDNameReply",65772,Frequency::Low,236,true,false,false,{{"UUIDNameBlock",0,true,{{"ID",FieldType::LLUUID,0},{"FirstName",FieldType::Variable,1},{"LastName",FieldType::Variable,1}}}}},
-{"UUIDGroupNameRequest",65773,Frequency::Low,237,true,false,false,{{"UUIDNameBlock",0,true,{{"ID",FieldType::LLUUID,0}}}}},
-{"UUIDGroupNameReply",65774,Frequency::Low,238,true,false,false,{{"UUIDNameBlock",0,true,{{"ID",FieldType::LLUUID,0},{"GroupName",FieldType::Variable,1}}}}},
-{"ChildAgentDying",65776,Frequency::Low,240,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}}}},
-{"ChildAgentUnknown",65777,Frequency::Low,241,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}}}},
-{"GetScriptRunning",65779,Frequency::Low,243,true,false,false,{{"Script",1,false,{{"ObjectID",FieldType::LLUUID,0},{"ItemID",FieldType::LLUUID,0}}}}},
-{"ScriptRunningReply",65780,Frequency::Low,244,true,false,false,{{"Script",1,false,{{"ObjectID",FieldType::LLUUID,0},{"ItemID",FieldType::LLUUID,0},{"Running",FieldType::BOOL,0}}}}},
-{"SetScriptRunning",65781,Frequency::Low,245,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Script",1,false,{{"ObjectID",FieldType::LLUUID,0},{"ItemID",FieldType::LLUUID,0},{"Running",FieldType::BOOL,0}}}}},
-{"ScriptReset",65782,Frequency::Low,246,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Script",1,false,{{"ObjectID",FieldType::LLUUID,0},{"ItemID",FieldType::LLUUID,0}}}}},
-{"ScriptSensorRequest",65783,Frequency::Low,247,true,true,false,{{"Requester",1,false,{{"SourceID",FieldType::LLUUID,0},{"RequestID",FieldType::LLUUID,0},{"SearchID",FieldType::LLUUID,0},{"SearchPos",FieldType::LLVector3,0},{"SearchDir",FieldType::LLQuaternion,0},{"SearchName",FieldType::Variable,1},{"Type",FieldType::S32,0},{"Range",FieldType::F32,0},{"Arc",FieldType::F32,0},{"RegionHandle",FieldType::U64,0},{"SearchRegions",FieldType::U8,0}}}}},
-{"ScriptSensorReply",65784,Frequency::Low,248,true,true,false,{{"Requester",1,false,{{"SourceID",FieldType::LLUUID,0}}},{"SensedData",0,true,{{"ObjectID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"Position",FieldType::LLVector3,0},{"Velocity",FieldType::LLVector3,0},{"Rotation",FieldType::LLQuaternion,0},{"Name",FieldType::Variable,1},{"Type",FieldType::S32,0},{"Range",FieldType::F32,0}}}}},
-{"CompleteAgentMovement",65785,Frequency::Low,249,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"CircuitCode",FieldType::U32,0}}}}},
-{"AgentMovementComplete",65786,Frequency::Low,250,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"Position",FieldType::LLVector3,0},{"LookAt",FieldType::LLVector3,0},{"RegionHandle",FieldType::U64,0},{"Timestamp",FieldType::U32,0}}},{"SimData",1,false,{{"ChannelVersion",FieldType::Variable,2}}}}},
-{"LogoutRequest",65788,Frequency::Low,252,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}}}},
-{"LogoutReply",65789,Frequency::Low,253,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"InventoryData",0,true,{{"ItemID",FieldType::LLUUID,0}}}}},
-{"ImprovedInstantMessage",65790,Frequency::Low,254,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"MessageBlock",1,false,{{"FromGroup",FieldType::BOOL,0},{"ToAgentID",FieldType::LLUUID,0},{"ParentEstateID",FieldType::U32,0},{"RegionID",FieldType::LLUUID,0},{"Position",FieldType::LLVector3,0},{"Offline",FieldType::U8,0},{"Dialog",FieldType::U8,0},{"ID",FieldType::LLUUID,0},{"Timestamp",FieldType::U32,0},{"FromAgentName",FieldType::Variable,1},{"Message",FieldType::Variable,2},{"BinaryBucket",FieldType::Variable,2}}}}},
-{"RetrieveInstantMessages",65791,Frequency::Low,255,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}}}},
-{"FindAgent",65792,Frequency::Low,256,true,false,false,{{"AgentBlock",1,false,{{"Hunter",FieldType::LLUUID,0},{"Prey",FieldType::LLUUID,0},{"SpaceIP",FieldType::IPADDR,0}}},{"LocationBlock",0,true,{{"GlobalX",FieldType::F64,0},{"GlobalY",FieldType::F64,0}}}}},
-{"RequestGodlikePowers",65793,Frequency::Low,257,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"RequestBlock",1,false,{{"Godlike",FieldType::BOOL,0},{"Token",FieldType::LLUUID,0}}}}},
-{"GrantGodlikePowers",65794,Frequency::Low,258,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"GrantData",1,false,{{"GodLevel",FieldType::U8,0},{"Token",FieldType::LLUUID,0}}}}},
-{"GodlikeMessage",65795,Frequency::Low,259,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"TransactionID",FieldType::LLUUID,0}}},{"MethodData",1,false,{{"Method",FieldType::Variable,1},{"Invoice",FieldType::LLUUID,0}}},{"ParamList",0,true,{{"Parameter",FieldType::Variable,1}}}}},
-{"EstateOwnerMessage",65796,Frequency::Low,260,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"TransactionID",FieldType::LLUUID,0}}},{"MethodData",1,false,{{"Method",FieldType::Variable,1},{"Invoice",FieldType::LLUUID,0}}},{"ParamList",0,true,{{"Parameter",FieldType::Variable,1}}}}},
-{"GenericMessage",65797,Frequency::Low,261,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"TransactionID",FieldType::LLUUID,0}}},{"MethodData",1,false,{{"Method",FieldType::Variable,1},{"Invoice",FieldType::LLUUID,0}}},{"ParamList",0,true,{{"Parameter",FieldType::Variable,1}}}}},
-{"MuteListRequest",65798,Frequency::Low,262,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"MuteData",1,false,{{"MuteCRC",FieldType::U32,0}}}}},
-{"UpdateMuteListEntry",65799,Frequency::Low,263,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"MuteData",1,false,{{"MuteID",FieldType::LLUUID,0},{"MuteName",FieldType::Variable,1},{"MuteType",FieldType::S32,0},{"MuteFlags",FieldType::U32,0}}}}},
-{"RemoveMuteListEntry",65800,Frequency::Low,264,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"MuteData",1,false,{{"MuteID",FieldType::LLUUID,0},{"MuteName",FieldType::Variable,1}}}}},
-{"CopyInventoryFromNotecard",65801,Frequency::Low,265,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"NotecardData",1,false,{{"NotecardItemID",FieldType::LLUUID,0},{"ObjectID",FieldType::LLUUID,0}}},{"InventoryData",0,true,{{"ItemID",FieldType::LLUUID,0},{"FolderID",FieldType::LLUUID,0}}}}},
-{"UpdateInventoryItem",65802,Frequency::Low,266,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"TransactionID",FieldType::LLUUID,0}}},{"InventoryData",0,true,{{"ItemID",FieldType::LLUUID,0},{"FolderID",FieldType::LLUUID,0},{"CallbackID",FieldType::U32,0},{"CreatorID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"BaseMask",FieldType::U32,0},{"OwnerMask",FieldType::U32,0},{"GroupMask",FieldType::U32,0},{"EveryoneMask",FieldType::U32,0},{"NextOwnerMask",FieldType::U32,0},{"GroupOwned",FieldType::BOOL,0},{"TransactionID",FieldType::LLUUID,0},{"Type",FieldType::S8,0},{"InvType",FieldType::S8,0},{"Flags",FieldType::U32,0},{"SaleType",FieldType::U8,0},{"SalePrice",FieldType::S32,0},{"Name",FieldType::Variable,1},{"Description",FieldType::Variable,1},{"CreationDate",FieldType::S32,0},{"CRC",FieldType::U32,0}}}}},
-{"UpdateCreateInventoryItem",65803,Frequency::Low,267,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SimApproved",FieldType::BOOL,0},{"TransactionID",FieldType::LLUUID,0}}},{"InventoryData",0,true,{{"ItemID",FieldType::LLUUID,0},{"FolderID",FieldType::LLUUID,0},{"CallbackID",FieldType::U32,0},{"CreatorID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"BaseMask",FieldType::U32,0},{"OwnerMask",FieldType::U32,0},{"GroupMask",FieldType::U32,0},{"EveryoneMask",FieldType::U32,0},{"NextOwnerMask",FieldType::U32,0},{"GroupOwned",FieldType::BOOL,0},{"AssetID",FieldType::LLUUID,0},{"Type",FieldType::S8,0},{"InvType",FieldType::S8,0},{"Flags",FieldType::U32,0},{"SaleType",FieldType::U8,0},{"SalePrice",FieldType::S32,0},{"Name",FieldType::Variable,1},{"Description",FieldType::Variable,1},{"CreationDate",FieldType::S32,0},{"CRC",FieldType::U32,0}}}}},
-{"MoveInventoryItem",65804,Frequency::Low,268,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"Stamp",FieldType::BOOL,0}}},{"InventoryData",0,true,{{"ItemID",FieldType::LLUUID,0},{"FolderID",FieldType::LLUUID,0},{"NewName",FieldType::Variable,1}}}}},
-{"CopyInventoryItem",65805,Frequency::Low,269,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"InventoryData",0,true,{{"CallbackID",FieldType::U32,0},{"OldAgentID",FieldType::LLUUID,0},{"OldItemID",FieldType::LLUUID,0},{"NewFolderID",FieldType::LLUUID,0},{"NewName",FieldType::Variable,1}}}}},
-{"RemoveInventoryItem",65806,Frequency::Low,270,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"InventoryData",0,true,{{"ItemID",FieldType::LLUUID,0}}}}},
-{"ChangeInventoryItemFlags",65807,Frequency::Low,271,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"InventoryData",0,true,{{"ItemID",FieldType::LLUUID,0},{"Flags",FieldType::U32,0}}}}},
-{"SaveAssetIntoInventory",65808,Frequency::Low,272,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"InventoryData",1,false,{{"ItemID",FieldType::LLUUID,0},{"NewAssetID",FieldType::LLUUID,0}}}}},
-{"CreateInventoryFolder",65809,Frequency::Low,273,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"FolderData",1,false,{{"FolderID",FieldType::LLUUID,0},{"ParentID",FieldType::LLUUID,0},{"Type",FieldType::S8,0},{"Name",FieldType::Variable,1}}}}},
-{"UpdateInventoryFolder",65810,Frequency::Low,274,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"FolderData",0,true,{{"FolderID",FieldType::LLUUID,0},{"ParentID",FieldType::LLUUID,0},{"Type",FieldType::S8,0},{"Name",FieldType::Variable,1}}}}},
-{"MoveInventoryFolder",65811,Frequency::Low,275,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"Stamp",FieldType::BOOL,0}}},{"InventoryData",0,true,{{"FolderID",FieldType::LLUUID,0},{"ParentID",FieldType::LLUUID,0}}}}},
-{"RemoveInventoryFolder",65812,Frequency::Low,276,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"FolderData",0,true,{{"FolderID",FieldType::LLUUID,0}}}}},
-{"FetchInventoryDescendents",65813,Frequency::Low,277,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"InventoryData",1,false,{{"FolderID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"SortOrder",FieldType::S32,0},{"FetchFolders",FieldType::BOOL,0},{"FetchItems",FieldType::BOOL,0}}}}},
-{"InventoryDescendents",65814,Frequency::Low,278,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"FolderID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"Version",FieldType::S32,0},{"Descendents",FieldType::S32,0}}},{"FolderData",0,true,{{"FolderID",FieldType::LLUUID,0},{"ParentID",FieldType::LLUUID,0},{"Type",FieldType::S8,0},{"Name",FieldType::Variable,1}}},{"ItemData",0,true,{{"ItemID",FieldType::LLUUID,0},{"FolderID",FieldType::LLUUID,0},{"CreatorID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"BaseMask",FieldType::U32,0},{"OwnerMask",FieldType::U32,0},{"GroupMask",FieldType::U32,0},{"EveryoneMask",FieldType::U32,0},{"NextOwnerMask",FieldType::U32,0},{"GroupOwned",FieldType::BOOL,0},{"AssetID",FieldType::LLUUID,0},{"Type",FieldType::S8,0},{"InvType",FieldType::S8,0},{"Flags",FieldType::U32,0},{"SaleType",FieldType::U8,0},{"SalePrice",FieldType::S32,0},{"Name",FieldType::Variable,1},{"Description",FieldType::Variable,1},{"CreationDate",FieldType::S32,0},{"CRC",FieldType::U32,0}}}}},
-{"FetchInventory",65815,Frequency::Low,279,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"InventoryData",0,true,{{"OwnerID",FieldType::LLUUID,0},{"ItemID",FieldType::LLUUID,0}}}}},
-{"FetchInventoryReply",65816,Frequency::Low,280,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"InventoryData",0,true,{{"ItemID",FieldType::LLUUID,0},{"FolderID",FieldType::LLUUID,0},{"CreatorID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"BaseMask",FieldType::U32,0},{"OwnerMask",FieldType::U32,0},{"GroupMask",FieldType::U32,0},{"EveryoneMask",FieldType::U32,0},{"NextOwnerMask",FieldType::U32,0},{"GroupOwned",FieldType::BOOL,0},{"AssetID",FieldType::LLUUID,0},{"Type",FieldType::S8,0},{"InvType",FieldType::S8,0},{"Flags",FieldType::U32,0},{"SaleType",FieldType::U8,0},{"SalePrice",FieldType::S32,0},{"Name",FieldType::Variable,1},{"Description",FieldType::Variable,1},{"CreationDate",FieldType::S32,0},{"CRC",FieldType::U32,0}}}}},
-{"BulkUpdateInventory",65817,Frequency::Low,281,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"TransactionID",FieldType::LLUUID,0}}},{"FolderData",0,true,{{"FolderID",FieldType::LLUUID,0},{"ParentID",FieldType::LLUUID,0},{"Type",FieldType::S8,0},{"Name",FieldType::Variable,1}}},{"ItemData",0,true,{{"ItemID",FieldType::LLUUID,0},{"CallbackID",FieldType::U32,0},{"FolderID",FieldType::LLUUID,0},{"CreatorID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"BaseMask",FieldType::U32,0},{"OwnerMask",FieldType::U32,0},{"GroupMask",FieldType::U32,0},{"EveryoneMask",FieldType::U32,0},{"NextOwnerMask",FieldType::U32,0},{"GroupOwned",FieldType::BOOL,0},{"AssetID",FieldType::LLUUID,0},{"Type",FieldType::S8,0},{"InvType",FieldType::S8,0},{"Flags",FieldType::U32,0},{"SaleType",FieldType::U8,0},{"SalePrice",FieldType::S32,0},{"Name",FieldType::Variable,1},{"Description",FieldType::Variable,1},{"CreationDate",FieldType::S32,0},{"CRC",FieldType::U32,0}}}}},
-{"RemoveInventoryObjects",65820,Frequency::Low,284,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"FolderData",0,true,{{"FolderID",FieldType::LLUUID,0}}},{"ItemData",0,true,{{"ItemID",FieldType::LLUUID,0}}}}},
-{"PurgeInventoryDescendents",65821,Frequency::Low,285,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"InventoryData",1,false,{{"FolderID",FieldType::LLUUID,0}}}}},
-{"UpdateTaskInventory",65822,Frequency::Low,286,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"UpdateData",1,false,{{"LocalID",FieldType::U32,0},{"Key",FieldType::U8,0}}},{"InventoryData",1,false,{{"ItemID",FieldType::LLUUID,0},{"FolderID",FieldType::LLUUID,0},{"CreatorID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"BaseMask",FieldType::U32,0},{"OwnerMask",FieldType::U32,0},{"GroupMask",FieldType::U32,0},{"EveryoneMask",FieldType::U32,0},{"NextOwnerMask",FieldType::U32,0},{"GroupOwned",FieldType::BOOL,0},{"TransactionID",FieldType::LLUUID,0},{"Type",FieldType::S8,0},{"InvType",FieldType::S8,0},{"Flags",FieldType::U32,0},{"SaleType",FieldType::U8,0},{"SalePrice",FieldType::S32,0},{"Name",FieldType::Variable,1},{"Description",FieldType::Variable,1},{"CreationDate",FieldType::S32,0},{"CRC",FieldType::U32,0}}}}},
-{"RemoveTaskInventory",65823,Frequency::Low,287,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"InventoryData",1,false,{{"LocalID",FieldType::U32,0},{"ItemID",FieldType::LLUUID,0}}}}},
-{"MoveTaskInventory",65824,Frequency::Low,288,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"FolderID",FieldType::LLUUID,0}}},{"InventoryData",1,false,{{"LocalID",FieldType::U32,0},{"ItemID",FieldType::LLUUID,0}}}}},
-{"RequestTaskInventory",65825,Frequency::Low,289,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"InventoryData",1,false,{{"LocalID",FieldType::U32,0}}}}},
-{"ReplyTaskInventory",65826,Frequency::Low,290,true,true,false,{{"InventoryData",1,false,{{"TaskID",FieldType::LLUUID,0},{"Serial",FieldType::S16,0},{"Filename",FieldType::Variable,1}}}}},
-{"DeRezObject",65827,Frequency::Low,291,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"AgentBlock",1,false,{{"GroupID",FieldType::LLUUID,0},{"Destination",FieldType::U8,0},{"DestinationID",FieldType::LLUUID,0},{"TransactionID",FieldType::LLUUID,0},{"PacketCount",FieldType::U8,0},{"PacketNumber",FieldType::U8,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0}}}}},
-{"DeRezAck",65828,Frequency::Low,292,true,false,false,{{"TransactionData",1,false,{{"TransactionID",FieldType::LLUUID,0},{"Success",FieldType::BOOL,0}}}}},
-{"RezObject",65829,Frequency::Low,293,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"RezData",1,false,{{"FromTaskID",FieldType::LLUUID,0},{"BypassRaycast",FieldType::U8,0},{"RayStart",FieldType::LLVector3,0},{"RayEnd",FieldType::LLVector3,0},{"RayTargetID",FieldType::LLUUID,0},{"RayEndIsIntersection",FieldType::BOOL,0},{"RezSelected",FieldType::BOOL,0},{"RemoveItem",FieldType::BOOL,0},{"ItemFlags",FieldType::U32,0},{"GroupMask",FieldType::U32,0},{"EveryoneMask",FieldType::U32,0},{"NextOwnerMask",FieldType::U32,0}}},{"InventoryData",1,false,{{"ItemID",FieldType::LLUUID,0},{"FolderID",FieldType::LLUUID,0},{"CreatorID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"BaseMask",FieldType::U32,0},{"OwnerMask",FieldType::U32,0},{"GroupMask",FieldType::U32,0},{"EveryoneMask",FieldType::U32,0},{"NextOwnerMask",FieldType::U32,0},{"GroupOwned",FieldType::BOOL,0},{"TransactionID",FieldType::LLUUID,0},{"Type",FieldType::S8,0},{"InvType",FieldType::S8,0},{"Flags",FieldType::U32,0},{"SaleType",FieldType::U8,0},{"SalePrice",FieldType::S32,0},{"Name",FieldType::Variable,1},{"Description",FieldType::Variable,1},{"CreationDate",FieldType::S32,0},{"CRC",FieldType::U32,0}}}}},
-{"RezObjectFromNotecard",65830,Frequency::Low,294,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"RezData",1,false,{{"FromTaskID",FieldType::LLUUID,0},{"BypassRaycast",FieldType::U8,0},{"RayStart",FieldType::LLVector3,0},{"RayEnd",FieldType::LLVector3,0},{"RayTargetID",FieldType::LLUUID,0},{"RayEndIsIntersection",FieldType::BOOL,0},{"RezSelected",FieldType::BOOL,0},{"RemoveItem",FieldType::BOOL,0},{"ItemFlags",FieldType::U32,0},{"GroupMask",FieldType::U32,0},{"EveryoneMask",FieldType::U32,0},{"NextOwnerMask",FieldType::U32,0}}},{"NotecardData",1,false,{{"NotecardItemID",FieldType::LLUUID,0},{"ObjectID",FieldType::LLUUID,0}}},{"InventoryData",0,true,{{"ItemID",FieldType::LLUUID,0}}}}},
-{"AcceptFriendship",65833,Frequency::Low,297,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"TransactionBlock",1,false,{{"TransactionID",FieldType::LLUUID,0}}},{"FolderData",0,true,{{"FolderID",FieldType::LLUUID,0}}}}},
-{"DeclineFriendship",65834,Frequency::Low,298,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"TransactionBlock",1,false,{{"TransactionID",FieldType::LLUUID,0}}}}},
-{"TerminateFriendship",65836,Frequency::Low,300,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ExBlock",1,false,{{"OtherID",FieldType::LLUUID,0}}}}},
-{"OfferCallingCard",65837,Frequency::Low,301,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"AgentBlock",1,false,{{"DestID",FieldType::LLUUID,0},{"TransactionID",FieldType::LLUUID,0}}}}},
-{"AcceptCallingCard",65838,Frequency::Low,302,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"TransactionBlock",1,false,{{"TransactionID",FieldType::LLUUID,0}}},{"FolderData",0,true,{{"FolderID",FieldType::LLUUID,0}}}}},
-{"DeclineCallingCard",65839,Frequency::Low,303,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"TransactionBlock",1,false,{{"TransactionID",FieldType::LLUUID,0}}}}},
-{"RezScript",65840,Frequency::Low,304,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"UpdateBlock",1,false,{{"ObjectLocalID",FieldType::U32,0},{"Enabled",FieldType::BOOL,0}}},{"InventoryBlock",1,false,{{"ItemID",FieldType::LLUUID,0},{"FolderID",FieldType::LLUUID,0},{"CreatorID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"BaseMask",FieldType::U32,0},{"OwnerMask",FieldType::U32,0},{"GroupMask",FieldType::U32,0},{"EveryoneMask",FieldType::U32,0},{"NextOwnerMask",FieldType::U32,0},{"GroupOwned",FieldType::BOOL,0},{"TransactionID",FieldType::LLUUID,0},{"Type",FieldType::S8,0},{"InvType",FieldType::S8,0},{"Flags",FieldType::U32,0},{"SaleType",FieldType::U8,0},{"SalePrice",FieldType::S32,0},{"Name",FieldType::Variable,1},{"Description",FieldType::Variable,1},{"CreationDate",FieldType::S32,0},{"CRC",FieldType::U32,0}}}}},
-{"CreateInventoryItem",65841,Frequency::Low,305,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"InventoryBlock",1,false,{{"CallbackID",FieldType::U32,0},{"FolderID",FieldType::LLUUID,0},{"TransactionID",FieldType::LLUUID,0},{"NextOwnerMask",FieldType::U32,0},{"Type",FieldType::S8,0},{"InvType",FieldType::S8,0},{"WearableType",FieldType::U8,0},{"Name",FieldType::Variable,1},{"Description",FieldType::Variable,1}}}}},
-{"CreateLandmarkForEvent",65842,Frequency::Low,306,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"EventData",1,false,{{"EventID",FieldType::U32,0}}},{"InventoryBlock",1,false,{{"FolderID",FieldType::LLUUID,0},{"Name",FieldType::Variable,1}}}}},
-{"RegionHandleRequest",65845,Frequency::Low,309,true,false,false,{{"RequestBlock",1,false,{{"RegionID",FieldType::LLUUID,0}}}}},
-{"RegionIDAndHandleReply",65846,Frequency::Low,310,true,false,false,{{"ReplyBlock",1,false,{{"RegionID",FieldType::LLUUID,0},{"RegionHandle",FieldType::U64,0}}}}},
-{"MoneyTransferRequest",65847,Frequency::Low,311,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"MoneyData",1,false,{{"SourceID",FieldType::LLUUID,0},{"DestID",FieldType::LLUUID,0},{"Flags",FieldType::U8,0},{"Amount",FieldType::S32,0},{"AggregatePermNextOwner",FieldType::U8,0},{"AggregatePermInventory",FieldType::U8,0},{"TransactionType",FieldType::S32,0},{"Description",FieldType::Variable,1}}}}},
-{"MoneyBalanceRequest",65849,Frequency::Low,313,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"MoneyData",1,false,{{"TransactionID",FieldType::LLUUID,0}}}}},
-{"MoneyBalanceReply",65850,Frequency::Low,314,true,true,false,{{"MoneyData",1,false,{{"AgentID",FieldType::LLUUID,0},{"TransactionID",FieldType::LLUUID,0},{"TransactionSuccess",FieldType::BOOL,0},{"MoneyBalance",FieldType::S32,0},{"SquareMetersCredit",FieldType::S32,0},{"SquareMetersCommitted",FieldType::S32,0},{"Description",FieldType::Variable,1}}},{"TransactionInfo",1,false,{{"TransactionType",FieldType::S32,0},{"SourceID",FieldType::LLUUID,0},{"IsSourceGroup",FieldType::BOOL,0},{"DestID",FieldType::LLUUID,0},{"IsDestGroup",FieldType::BOOL,0},{"Amount",FieldType::S32,0},{"ItemDescription",FieldType::Variable,1}}}}},
-{"RoutedMoneyBalanceReply",65851,Frequency::Low,315,true,true,false,{{"TargetBlock",1,false,{{"TargetIP",FieldType::IPADDR,0},{"TargetPort",FieldType::IPPORT,0}}},{"MoneyData",1,false,{{"AgentID",FieldType::LLUUID,0},{"TransactionID",FieldType::LLUUID,0},{"TransactionSuccess",FieldType::BOOL,0},{"MoneyBalance",FieldType::S32,0},{"SquareMetersCredit",FieldType::S32,0},{"SquareMetersCommitted",FieldType::S32,0},{"Description",FieldType::Variable,1}}},{"TransactionInfo",1,false,{{"TransactionType",FieldType::S32,0},{"SourceID",FieldType::LLUUID,0},{"IsSourceGroup",FieldType::BOOL,0},{"DestID",FieldType::LLUUID,0},{"IsDestGroup",FieldType::BOOL,0},{"Amount",FieldType::S32,0},{"ItemDescription",FieldType::Variable,1}}}}},
-{"ActivateGestures",65852,Frequency::Low,316,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"Flags",FieldType::U32,0}}},{"Data",0,true,{{"ItemID",FieldType::LLUUID,0},{"AssetID",FieldType::LLUUID,0},{"GestureFlags",FieldType::U32,0}}}}},
-{"DeactivateGestures",65853,Frequency::Low,317,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"Flags",FieldType::U32,0}}},{"Data",0,true,{{"ItemID",FieldType::LLUUID,0},{"GestureFlags",FieldType::U32,0}}}}},
-{"MuteListUpdate",65854,Frequency::Low,318,true,false,false,{{"MuteData",1,false,{{"AgentID",FieldType::LLUUID,0},{"Filename",FieldType::Variable,1}}}}},
-{"UseCachedMuteList",65855,Frequency::Low,319,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}}}},
-{"GrantUserRights",65856,Frequency::Low,320,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Rights",0,true,{{"AgentRelated",FieldType::LLUUID,0},{"RelatedRights",FieldType::S32,0}}}}},
-{"ChangeUserRights",65857,Frequency::Low,321,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"Rights",0,true,{{"AgentRelated",FieldType::LLUUID,0},{"RelatedRights",FieldType::S32,0}}}}},
-{"OnlineNotification",65858,Frequency::Low,322,true,false,false,{{"AgentBlock",0,true,{{"AgentID",FieldType::LLUUID,0}}}}},
-{"OfflineNotification",65859,Frequency::Low,323,true,false,false,{{"AgentBlock",0,true,{{"AgentID",FieldType::LLUUID,0}}}}},
-{"SetStartLocationRequest",65860,Frequency::Low,324,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"StartLocationData",1,false,{{"SimName",FieldType::Variable,1},{"LocationID",FieldType::U32,0},{"LocationPos",FieldType::LLVector3,0},{"LocationLookAt",FieldType::LLVector3,0}}}}},
-{"AssetUploadRequest",65869,Frequency::Low,333,true,false,false,{{"AssetBlock",1,false,{{"TransactionID",FieldType::LLUUID,0},{"Type",FieldType::S8,0},{"Tempfile",FieldType::BOOL,0},{"StoreLocal",FieldType::BOOL,0},{"AssetData",FieldType::Variable,2}}}}},
-{"AssetUploadComplete",65870,Frequency::Low,334,true,false,false,{{"AssetBlock",1,false,{{"UUID",FieldType::LLUUID,0},{"Type",FieldType::S8,0},{"Success",FieldType::BOOL,0}}}}},
-{"CreateGroupRequest",65875,Frequency::Low,339,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"GroupData",1,false,{{"Name",FieldType::Variable,1},{"Charter",FieldType::Variable,2},{"ShowInList",FieldType::BOOL,0},{"InsigniaID",FieldType::LLUUID,0},{"MembershipFee",FieldType::S32,0},{"OpenEnrollment",FieldType::BOOL,0},{"AllowPublish",FieldType::BOOL,0},{"MaturePublish",FieldType::BOOL,0}}}}},
-{"CreateGroupReply",65876,Frequency::Low,340,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"ReplyData",1,false,{{"GroupID",FieldType::LLUUID,0},{"Success",FieldType::BOOL,0},{"Message",FieldType::Variable,1}}}}},
-{"UpdateGroupInfo",65877,Frequency::Low,341,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"GroupData",1,false,{{"GroupID",FieldType::LLUUID,0},{"Charter",FieldType::Variable,2},{"ShowInList",FieldType::BOOL,0},{"InsigniaID",FieldType::LLUUID,0},{"MembershipFee",FieldType::S32,0},{"OpenEnrollment",FieldType::BOOL,0},{"AllowPublish",FieldType::BOOL,0},{"MaturePublish",FieldType::BOOL,0}}}}},
-{"GroupRoleChanges",65878,Frequency::Low,342,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"RoleChange",0,true,{{"RoleID",FieldType::LLUUID,0},{"MemberID",FieldType::LLUUID,0},{"Change",FieldType::U32,0}}}}},
-{"JoinGroupRequest",65879,Frequency::Low,343,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"GroupData",1,false,{{"GroupID",FieldType::LLUUID,0}}}}},
-{"JoinGroupReply",65880,Frequency::Low,344,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"GroupData",1,false,{{"GroupID",FieldType::LLUUID,0},{"Success",FieldType::BOOL,0}}}}},
-{"EjectGroupMemberRequest",65881,Frequency::Low,345,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"GroupData",1,false,{{"GroupID",FieldType::LLUUID,0}}},{"EjectData",0,true,{{"EjecteeID",FieldType::LLUUID,0}}}}},
-{"EjectGroupMemberReply",65882,Frequency::Low,346,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"GroupData",1,false,{{"GroupID",FieldType::LLUUID,0}}},{"EjectData",1,false,{{"Success",FieldType::BOOL,0}}}}},
-{"LeaveGroupRequest",65883,Frequency::Low,347,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"GroupData",1,false,{{"GroupID",FieldType::LLUUID,0}}}}},
-{"LeaveGroupReply",65884,Frequency::Low,348,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"GroupData",1,false,{{"GroupID",FieldType::LLUUID,0},{"Success",FieldType::BOOL,0}}}}},
-{"InviteGroupRequest",65885,Frequency::Low,349,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"GroupData",1,false,{{"GroupID",FieldType::LLUUID,0}}},{"InviteData",0,true,{{"InviteeID",FieldType::LLUUID,0},{"RoleID",FieldType::LLUUID,0}}}}},
-{"GroupProfileRequest",65887,Frequency::Low,351,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"GroupData",1,false,{{"GroupID",FieldType::LLUUID,0}}}}},
-{"GroupProfileReply",65888,Frequency::Low,352,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"GroupData",1,false,{{"GroupID",FieldType::LLUUID,0},{"Name",FieldType::Variable,1},{"Charter",FieldType::Variable,2},{"ShowInList",FieldType::BOOL,0},{"MemberTitle",FieldType::Variable,1},{"PowersMask",FieldType::U64,0},{"InsigniaID",FieldType::LLUUID,0},{"FounderID",FieldType::LLUUID,0},{"MembershipFee",FieldType::S32,0},{"OpenEnrollment",FieldType::BOOL,0},{"Money",FieldType::S32,0},{"GroupMembershipCount",FieldType::S32,0},{"GroupRolesCount",FieldType::S32,0},{"AllowPublish",FieldType::BOOL,0},{"MaturePublish",FieldType::BOOL,0},{"OwnerRole",FieldType::LLUUID,0}}}}},
-{"GroupAccountSummaryRequest",65889,Frequency::Low,353,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"MoneyData",1,false,{{"RequestID",FieldType::LLUUID,0},{"IntervalDays",FieldType::S32,0},{"CurrentInterval",FieldType::S32,0}}}}},
-{"GroupAccountSummaryReply",65890,Frequency::Low,354,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"MoneyData",1,false,{{"RequestID",FieldType::LLUUID,0},{"IntervalDays",FieldType::S32,0},{"CurrentInterval",FieldType::S32,0},{"StartDate",FieldType::Variable,1},{"Balance",FieldType::S32,0},{"TotalCredits",FieldType::S32,0},{"TotalDebits",FieldType::S32,0},{"ObjectTaxCurrent",FieldType::S32,0},{"LightTaxCurrent",FieldType::S32,0},{"LandTaxCurrent",FieldType::S32,0},{"GroupTaxCurrent",FieldType::S32,0},{"ParcelDirFeeCurrent",FieldType::S32,0},{"ObjectTaxEstimate",FieldType::S32,0},{"LightTaxEstimate",FieldType::S32,0},{"LandTaxEstimate",FieldType::S32,0},{"GroupTaxEstimate",FieldType::S32,0},{"ParcelDirFeeEstimate",FieldType::S32,0},{"NonExemptMembers",FieldType::S32,0},{"LastTaxDate",FieldType::Variable,1},{"TaxDate",FieldType::Variable,1}}}}},
-{"GroupAccountDetailsRequest",65891,Frequency::Low,355,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"MoneyData",1,false,{{"RequestID",FieldType::LLUUID,0},{"IntervalDays",FieldType::S32,0},{"CurrentInterval",FieldType::S32,0}}}}},
-{"GroupAccountDetailsReply",65892,Frequency::Low,356,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"MoneyData",1,false,{{"RequestID",FieldType::LLUUID,0},{"IntervalDays",FieldType::S32,0},{"CurrentInterval",FieldType::S32,0},{"StartDate",FieldType::Variable,1}}},{"HistoryData",0,true,{{"Description",FieldType::Variable,1},{"Amount",FieldType::S32,0}}}}},
-{"GroupAccountTransactionsRequest",65893,Frequency::Low,357,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"MoneyData",1,false,{{"RequestID",FieldType::LLUUID,0},{"IntervalDays",FieldType::S32,0},{"CurrentInterval",FieldType::S32,0}}}}},
-{"GroupAccountTransactionsReply",65894,Frequency::Low,358,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"MoneyData",1,false,{{"RequestID",FieldType::LLUUID,0},{"IntervalDays",FieldType::S32,0},{"CurrentInterval",FieldType::S32,0},{"StartDate",FieldType::Variable,1}}},{"HistoryData",0,true,{{"Time",FieldType::Variable,1},{"User",FieldType::Variable,1},{"Type",FieldType::S32,0},{"Item",FieldType::Variable,1},{"Amount",FieldType::S32,0}}}}},
-{"GroupActiveProposalsRequest",65895,Frequency::Low,359,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"GroupData",1,false,{{"GroupID",FieldType::LLUUID,0}}},{"TransactionData",1,false,{{"TransactionID",FieldType::LLUUID,0}}}}},
-{"GroupActiveProposalItemReply",65896,Frequency::Low,360,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"TransactionData",1,false,{{"TransactionID",FieldType::LLUUID,0},{"TotalNumItems",FieldType::U32,0}}},{"ProposalData",0,true,{{"VoteID",FieldType::LLUUID,0},{"VoteInitiator",FieldType::LLUUID,0},{"TerseDateID",FieldType::Variable,1},{"StartDateTime",FieldType::Variable,1},{"EndDateTime",FieldType::Variable,1},{"AlreadyVoted",FieldType::BOOL,0},{"VoteCast",FieldType::Variable,1},{"Majority",FieldType::F32,0},{"Quorum",FieldType::S32,0},{"ProposalText",FieldType::Variable,1}}}}},
-{"GroupVoteHistoryRequest",65897,Frequency::Low,361,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"GroupData",1,false,{{"GroupID",FieldType::LLUUID,0}}},{"TransactionData",1,false,{{"TransactionID",FieldType::LLUUID,0}}}}},
-{"GroupVoteHistoryItemReply",65898,Frequency::Low,362,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"TransactionData",1,false,{{"TransactionID",FieldType::LLUUID,0},{"TotalNumItems",FieldType::U32,0}}},{"HistoryItemData",1,false,{{"VoteID",FieldType::LLUUID,0},{"TerseDateID",FieldType::Variable,1},{"StartDateTime",FieldType::Variable,1},{"EndDateTime",FieldType::Variable,1},{"VoteInitiator",FieldType::LLUUID,0},{"VoteType",FieldType::Variable,1},{"VoteResult",FieldType::Variable,1},{"Majority",FieldType::F32,0},{"Quorum",FieldType::S32,0},{"ProposalText",FieldType::Variable,2}}},{"VoteItem",0,true,{{"CandidateID",FieldType::LLUUID,0},{"VoteCast",FieldType::Variable,1},{"NumVotes",FieldType::S32,0}}}}},
-{"StartGroupProposal",65899,Frequency::Low,363,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ProposalData",1,false,{{"GroupID",FieldType::LLUUID,0},{"Quorum",FieldType::S32,0},{"Majority",FieldType::F32,0},{"Duration",FieldType::S32,0},{"ProposalText",FieldType::Variable,1}}}}},
-{"GroupProposalBallot",65900,Frequency::Low,364,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ProposalData",1,false,{{"ProposalID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"VoteCast",FieldType::Variable,1}}}}},
-{"GroupMembersRequest",65902,Frequency::Low,366,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"GroupData",1,false,{{"GroupID",FieldType::LLUUID,0},{"RequestID",FieldType::LLUUID,0}}}}},
-{"GroupMembersReply",65903,Frequency::Low,367,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"GroupData",1,false,{{"GroupID",FieldType::LLUUID,0},{"RequestID",FieldType::LLUUID,0},{"MemberCount",FieldType::S32,0}}},{"MemberData",0,true,{{"AgentID",FieldType::LLUUID,0},{"Contribution",FieldType::S32,0},{"OnlineStatus",FieldType::Variable,1},{"AgentPowers",FieldType::U64,0},{"Title",FieldType::Variable,1},{"IsOwner",FieldType::BOOL,0}}}}},
-{"ActivateGroup",65904,Frequency::Low,368,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}}}},
-{"SetGroupContribution",65905,Frequency::Low,369,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"GroupID",FieldType::LLUUID,0},{"Contribution",FieldType::S32,0}}}}},
-{"SetGroupAcceptNotices",65906,Frequency::Low,370,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Data",1,false,{{"GroupID",FieldType::LLUUID,0},{"AcceptNotices",FieldType::BOOL,0}}},{"NewData",1,false,{{"ListInProfile",FieldType::BOOL,0}}}}},
-{"GroupRoleDataRequest",65907,Frequency::Low,371,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"GroupData",1,false,{{"GroupID",FieldType::LLUUID,0},{"RequestID",FieldType::LLUUID,0}}}}},
-{"GroupRoleDataReply",65908,Frequency::Low,372,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"GroupData",1,false,{{"GroupID",FieldType::LLUUID,0},{"RequestID",FieldType::LLUUID,0},{"RoleCount",FieldType::S32,0}}},{"RoleData",0,true,{{"RoleID",FieldType::LLUUID,0},{"Name",FieldType::Variable,1},{"Title",FieldType::Variable,1},{"Description",FieldType::Variable,1},{"Powers",FieldType::U64,0},{"Members",FieldType::U32,0}}}}},
-{"GroupRoleMembersRequest",65909,Frequency::Low,373,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"GroupData",1,false,{{"GroupID",FieldType::LLUUID,0},{"RequestID",FieldType::LLUUID,0}}}}},
-{"GroupRoleMembersReply",65910,Frequency::Low,374,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"RequestID",FieldType::LLUUID,0},{"TotalPairs",FieldType::U32,0}}},{"MemberData",0,true,{{"RoleID",FieldType::LLUUID,0},{"MemberID",FieldType::LLUUID,0}}}}},
-{"GroupTitlesRequest",65911,Frequency::Low,375,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"RequestID",FieldType::LLUUID,0}}}}},
-{"GroupTitlesReply",65912,Frequency::Low,376,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"RequestID",FieldType::LLUUID,0}}},{"GroupData",0,true,{{"Title",FieldType::Variable,1},{"RoleID",FieldType::LLUUID,0},{"Selected",FieldType::BOOL,0}}}}},
-{"GroupTitleUpdate",65913,Frequency::Low,377,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"TitleRoleID",FieldType::LLUUID,0}}}}},
-{"GroupRoleUpdate",65914,Frequency::Low,378,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"RoleData",0,true,{{"RoleID",FieldType::LLUUID,0},{"Name",FieldType::Variable,1},{"Description",FieldType::Variable,1},{"Title",FieldType::Variable,1},{"Powers",FieldType::U64,0},{"UpdateType",FieldType::U8,0}}}}},
-{"LiveHelpGroupRequest",65915,Frequency::Low,379,true,false,false,{{"RequestData",1,false,{{"RequestID",FieldType::LLUUID,0},{"AgentID",FieldType::LLUUID,0}}}}},
-{"LiveHelpGroupReply",65916,Frequency::Low,380,true,false,false,{{"ReplyData",1,false,{{"RequestID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"Selection",FieldType::Variable,1}}}}},
-{"AgentWearablesRequest",65917,Frequency::Low,381,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}}}},
-{"AgentWearablesUpdate",65918,Frequency::Low,382,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"SerialNum",FieldType::U32,0}}},{"WearableData",0,true,{{"ItemID",FieldType::LLUUID,0},{"AssetID",FieldType::LLUUID,0},{"WearableType",FieldType::U8,0}}}}},
-{"AgentIsNowWearing",65919,Frequency::Low,383,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"WearableData",0,true,{{"ItemID",FieldType::LLUUID,0},{"WearableType",FieldType::U8,0}}}}},
-{"AgentCachedTexture",65920,Frequency::Low,384,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"SerialNum",FieldType::S32,0}}},{"WearableData",0,true,{{"ID",FieldType::LLUUID,0},{"TextureIndex",FieldType::U8,0}}}}},
-{"AgentCachedTextureResponse",65921,Frequency::Low,385,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"SerialNum",FieldType::S32,0}}},{"WearableData",0,true,{{"TextureID",FieldType::LLUUID,0},{"TextureIndex",FieldType::U8,0},{"HostName",FieldType::Variable,1}}}}},
-{"AgentDataUpdateRequest",65922,Frequency::Low,386,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}}}},
-{"AgentDataUpdate",65923,Frequency::Low,387,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"FirstName",FieldType::Variable,1},{"LastName",FieldType::Variable,1},{"GroupTitle",FieldType::Variable,1},{"ActiveGroupID",FieldType::LLUUID,0},{"GroupPowers",FieldType::U64,0},{"GroupName",FieldType::Variable,1}}}}},
-{"GroupDataUpdate",65924,Frequency::Low,388,true,true,false,{{"AgentGroupData",0,true,{{"AgentID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"AgentPowers",FieldType::U64,0},{"GroupTitle",FieldType::Variable,1}}}}},
-{"AgentGroupDataUpdate",65925,Frequency::Low,389,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"GroupData",0,true,{{"GroupID",FieldType::LLUUID,0},{"GroupPowers",FieldType::U64,0},{"AcceptNotices",FieldType::BOOL,0},{"GroupInsigniaID",FieldType::LLUUID,0},{"Contribution",FieldType::S32,0},{"GroupName",FieldType::Variable,1}}}}},
-{"AgentDropGroup",65926,Frequency::Low,390,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}}}},
-{"RezSingleAttachmentFromInv",65931,Frequency::Low,395,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",1,false,{{"ItemID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"AttachmentPt",FieldType::U8,0},{"ItemFlags",FieldType::U32,0},{"GroupMask",FieldType::U32,0},{"EveryoneMask",FieldType::U32,0},{"NextOwnerMask",FieldType::U32,0},{"Name",FieldType::Variable,1},{"Description",FieldType::Variable,1}}}}},
-{"RezMultipleAttachmentsFromInv",65932,Frequency::Low,396,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"HeaderData",1,false,{{"CompoundMsgID",FieldType::LLUUID,0},{"TotalObjects",FieldType::U8,0},{"FirstDetachAll",FieldType::BOOL,0}}},{"ObjectData",0,true,{{"ItemID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"AttachmentPt",FieldType::U8,0},{"ItemFlags",FieldType::U32,0},{"GroupMask",FieldType::U32,0},{"EveryoneMask",FieldType::U32,0},{"NextOwnerMask",FieldType::U32,0},{"Name",FieldType::Variable,1},{"Description",FieldType::Variable,1}}}}},
-{"DetachAttachmentIntoInv",65933,Frequency::Low,397,true,false,false,{{"ObjectData",1,false,{{"AgentID",FieldType::LLUUID,0},{"ItemID",FieldType::LLUUID,0}}}}},
-{"CreateNewOutfitAttachments",65934,Frequency::Low,398,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"HeaderData",1,false,{{"NewFolderID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"OldItemID",FieldType::LLUUID,0},{"OldFolderID",FieldType::LLUUID,0}}}}},
-{"UserInfoRequest",65935,Frequency::Low,399,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}}}},
-{"UserInfoReply",65936,Frequency::Low,400,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"UserData",1,false,{{"IMViaEMail",FieldType::BOOL,0},{"DirectoryVisibility",FieldType::Variable,1},{"EMail",FieldType::Variable,2}}}}},
-{"UpdateUserInfo",65937,Frequency::Low,401,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"UserData",1,false,{{"IMViaEMail",FieldType::BOOL,0},{"DirectoryVisibility",FieldType::Variable,1}}}}},
-{"InitiateDownload",65939,Frequency::Low,403,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"FileData",1,false,{{"SimFilename",FieldType::Variable,1},{"ViewerFilename",FieldType::Variable,1}}}}},
-{"MapLayerRequest",65941,Frequency::Low,405,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"Flags",FieldType::U32,0},{"EstateID",FieldType::U32,0},{"Godlike",FieldType::BOOL,0}}}}},
-{"MapLayerReply",65942,Frequency::Low,406,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"Flags",FieldType::U32,0}}},{"LayerData",0,true,{{"Left",FieldType::U32,0},{"Right",FieldType::U32,0},{"Top",FieldType::U32,0},{"Bottom",FieldType::U32,0},{"ImageID",FieldType::LLUUID,0}}}}},
-{"MapBlockRequest",65943,Frequency::Low,407,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"Flags",FieldType::U32,0},{"EstateID",FieldType::U32,0},{"Godlike",FieldType::BOOL,0}}},{"PositionData",1,false,{{"MinX",FieldType::U16,0},{"MaxX",FieldType::U16,0},{"MinY",FieldType::U16,0},{"MaxY",FieldType::U16,0}}}}},
-{"MapNameRequest",65944,Frequency::Low,408,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"Flags",FieldType::U32,0},{"EstateID",FieldType::U32,0},{"Godlike",FieldType::BOOL,0}}},{"NameData",1,false,{{"Name",FieldType::Variable,1}}}}},
-{"MapBlockReply",65945,Frequency::Low,409,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"Flags",FieldType::U32,0}}},{"Data",0,true,{{"X",FieldType::U16,0},{"Y",FieldType::U16,0},{"Name",FieldType::Variable,1},{"Access",FieldType::U8,0},{"RegionFlags",FieldType::U32,0},{"WaterHeight",FieldType::U8,0},{"Agents",FieldType::U8,0},{"MapImageID",FieldType::LLUUID,0}}},{"Size",0,true,{{"SizeX",FieldType::U16,0},{"SizeY",FieldType::U16,0}}}}},
-{"MapItemRequest",65946,Frequency::Low,410,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"Flags",FieldType::U32,0},{"EstateID",FieldType::U32,0},{"Godlike",FieldType::BOOL,0}}},{"RequestData",1,false,{{"ItemType",FieldType::U32,0},{"RegionHandle",FieldType::U64,0}}}}},
-{"MapItemReply",65947,Frequency::Low,411,true,false,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"Flags",FieldType::U32,0}}},{"RequestData",1,false,{{"ItemType",FieldType::U32,0}}},{"Data",0,true,{{"X",FieldType::U32,0},{"Y",FieldType::U32,0},{"ID",FieldType::LLUUID,0},{"Extra",FieldType::S32,0},{"Extra2",FieldType::S32,0},{"Name",FieldType::Variable,1}}}}},
-{"SendPostcard",65948,Frequency::Low,412,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"AssetID",FieldType::LLUUID,0},{"PosGlobal",FieldType::LLVector3d,0},{"To",FieldType::Variable,1},{"From",FieldType::Variable,1},{"Name",FieldType::Variable,1},{"Subject",FieldType::Variable,1},{"Msg",FieldType::Variable,2},{"AllowPublish",FieldType::BOOL,0},{"MaturePublish",FieldType::BOOL,0}}}}},
-{"ParcelMediaCommandMessage",65955,Frequency::Low,419,true,false,false,{{"CommandBlock",1,false,{{"Flags",FieldType::U32,0},{"Command",FieldType::U32,0},{"Time",FieldType::F32,0}}}}},
-{"ParcelMediaUpdate",65956,Frequency::Low,420,true,false,false,{{"DataBlock",1,false,{{"MediaURL",FieldType::Variable,1},{"MediaID",FieldType::LLUUID,0},{"MediaAutoScale",FieldType::U8,0}}},{"DataBlockExtended",1,false,{{"MediaType",FieldType::Variable,1},{"MediaDesc",FieldType::Variable,1},{"MediaWidth",FieldType::S32,0},{"MediaHeight",FieldType::S32,0},{"MediaLoop",FieldType::U8,0}}}}},
-{"LandStatRequest",65957,Frequency::Low,421,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"RequestData",1,false,{{"ReportType",FieldType::U32,0},{"RequestFlags",FieldType::U32,0},{"Filter",FieldType::Variable,1},{"ParcelLocalID",FieldType::S32,0}}}}},
-{"LandStatReply",65958,Frequency::Low,422,true,false,false,{{"RequestData",1,false,{{"ReportType",FieldType::U32,0},{"RequestFlags",FieldType::U32,0},{"TotalObjectCount",FieldType::U32,0}}},{"ReportData",0,true,{{"TaskLocalID",FieldType::U32,0},{"TaskID",FieldType::LLUUID,0},{"LocationX",FieldType::F32,0},{"LocationY",FieldType::F32,0},{"LocationZ",FieldType::F32,0},{"Score",FieldType::F32,0},{"TaskName",FieldType::Variable,1},{"OwnerName",FieldType::Variable,1}}}}},
-{"Error",65959,Frequency::Low,423,true,true,false,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0}}},{"Data",1,false,{{"Code",FieldType::S32,0},{"Token",FieldType::Variable,1},{"ID",FieldType::LLUUID,0},{"System",FieldType::Variable,1},{"Message",FieldType::Variable,2},{"Data",FieldType::Variable,2}}}}},
-{"ObjectIncludeInSearch",65960,Frequency::Low,424,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0},{"IncludeInSearch",FieldType::BOOL,0}}}}},
-{"RezRestoreToWorld",65961,Frequency::Low,425,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"InventoryData",1,false,{{"ItemID",FieldType::LLUUID,0},{"FolderID",FieldType::LLUUID,0},{"CreatorID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"BaseMask",FieldType::U32,0},{"OwnerMask",FieldType::U32,0},{"GroupMask",FieldType::U32,0},{"EveryoneMask",FieldType::U32,0},{"NextOwnerMask",FieldType::U32,0},{"GroupOwned",FieldType::BOOL,0},{"TransactionID",FieldType::LLUUID,0},{"Type",FieldType::S8,0},{"InvType",FieldType::S8,0},{"Flags",FieldType::U32,0},{"SaleType",FieldType::U8,0},{"SalePrice",FieldType::S32,0},{"Name",FieldType::Variable,1},{"Description",FieldType::Variable,1},{"CreationDate",FieldType::S32,0},{"CRC",FieldType::U32,0}}}}},
-{"LinkInventoryItem",65962,Frequency::Low,426,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"InventoryBlock",1,false,{{"CallbackID",FieldType::U32,0},{"FolderID",FieldType::LLUUID,0},{"TransactionID",FieldType::LLUUID,0},{"OldItemID",FieldType::LLUUID,0},{"Type",FieldType::S8,0},{"InvType",FieldType::S8,0},{"Name",FieldType::Variable,1},{"Description",FieldType::Variable,1}}}}},
-{"LargeGenericMessage",65966,Frequency::Low,430,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"TransactionID",FieldType::LLUUID,0}}},{"MethodData",1,false,{{"Method",FieldType::Variable,1},{"Invoice",FieldType::LLUUID,0}}},{"ParamList",0,true,{{"Parameter",FieldType::Variable,2}}}}},
-{"PacketAck",131067,Frequency::Low,65531,true,false,false,{{"Packets",0,true,{{"ID",FieldType::U32,0}}}}},
-{"OpenCircuit",131068,Frequency::Low,65532,true,false,false,{{"CircuitInfo",1,false,{{"IP",FieldType::IPADDR,0},{"Port",FieldType::IPPORT,0}}}}},
-{"CloseCircuit",131069,Frequency::Low,65533,true,false,false,{}},
-{"ObjectAdd",131073,Frequency::Medium,1,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0}}},{"ObjectData",1,false,{{"PCode",FieldType::U8,0},{"Material",FieldType::U8,0},{"AddFlags",FieldType::U32,0},{"PathCurve",FieldType::U8,0},{"ProfileCurve",FieldType::U8,0},{"PathBegin",FieldType::U16,0},{"PathEnd",FieldType::U16,0},{"PathScaleX",FieldType::U8,0},{"PathScaleY",FieldType::U8,0},{"PathShearX",FieldType::U8,0},{"PathShearY",FieldType::U8,0},{"PathTwist",FieldType::S8,0},{"PathTwistBegin",FieldType::S8,0},{"PathRadiusOffset",FieldType::S8,0},{"PathTaperX",FieldType::S8,0},{"PathTaperY",FieldType::S8,0},{"PathRevolutions",FieldType::U8,0},{"PathSkew",FieldType::S8,0},{"ProfileBegin",FieldType::U16,0},{"ProfileEnd",FieldType::U16,0},{"ProfileHollow",FieldType::U16,0},{"BypassRaycast",FieldType::U8,0},{"RayStart",FieldType::LLVector3,0},{"RayEnd",FieldType::LLVector3,0},{"RayTargetID",FieldType::LLUUID,0},{"RayEndIsIntersection",FieldType::U8,0},{"Scale",FieldType::LLVector3,0},{"Rotation",FieldType::LLQuaternion,0},{"State",FieldType::U8,0}}}}},
-{"MultipleObjectUpdate",131074,Frequency::Medium,2,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0},{"Type",FieldType::U8,0},{"Data",FieldType::Variable,1}}}}},
-{"RequestMultipleObjects",131075,Frequency::Medium,3,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"CacheMissType",FieldType::U8,0},{"ID",FieldType::U32,0}}}}},
-{"ObjectPosition",131076,Frequency::Medium,4,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",0,true,{{"ObjectLocalID",FieldType::U32,0},{"Position",FieldType::LLVector3,0}}}}},
-{"RequestObjectPropertiesFamily",131077,Frequency::Medium,5,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ObjectData",1,false,{{"RequestFlags",FieldType::U32,0},{"ObjectID",FieldType::LLUUID,0}}}}},
-{"CoarseLocationUpdate",131078,Frequency::Medium,6,true,false,false,{{"Location",0,true,{{"X",FieldType::U8,0},{"Y",FieldType::U8,0},{"Z",FieldType::U8,0}}},{"Index",1,false,{{"You",FieldType::S16,0},{"Prey",FieldType::S16,0}}},{"AgentData",0,true,{{"AgentID",FieldType::LLUUID,0}}}}},
-{"CrossedRegion",131079,Frequency::Medium,7,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"RegionData",1,false,{{"SimIP",FieldType::IPADDR,0},{"SimPort",FieldType::IPPORT,0},{"RegionHandle",FieldType::U64,0},{"SeedCapability",FieldType::Variable,2}}},{"Info",1,false,{{"Position",FieldType::LLVector3,0},{"LookAt",FieldType::LLVector3,0}}}}},
-{"ConfirmEnableSimulator",131080,Frequency::Medium,8,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}}}},
-{"ObjectProperties",131081,Frequency::Medium,9,true,true,false,{{"ObjectData",0,true,{{"ObjectID",FieldType::LLUUID,0},{"CreatorID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"CreationDate",FieldType::U64,0},{"BaseMask",FieldType::U32,0},{"OwnerMask",FieldType::U32,0},{"GroupMask",FieldType::U32,0},{"EveryoneMask",FieldType::U32,0},{"NextOwnerMask",FieldType::U32,0},{"OwnershipCost",FieldType::S32,0},{"SaleType",FieldType::U8,0},{"SalePrice",FieldType::S32,0},{"AggregatePerms",FieldType::U8,0},{"AggregatePermTextures",FieldType::U8,0},{"AggregatePermTexturesOwner",FieldType::U8,0},{"Category",FieldType::U32,0},{"InventorySerial",FieldType::S16,0},{"ItemID",FieldType::LLUUID,0},{"FolderID",FieldType::LLUUID,0},{"FromTaskID",FieldType::LLUUID,0},{"LastOwnerID",FieldType::LLUUID,0},{"Name",FieldType::Variable,1},{"Description",FieldType::Variable,1},{"TouchName",FieldType::Variable,1},{"SitName",FieldType::Variable,1},{"TextureID",FieldType::Variable,1}}}}},
-{"ObjectPropertiesFamily",131082,Frequency::Medium,10,true,true,false,{{"ObjectData",1,false,{{"RequestFlags",FieldType::U32,0},{"ObjectID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"GroupID",FieldType::LLUUID,0},{"BaseMask",FieldType::U32,0},{"OwnerMask",FieldType::U32,0},{"GroupMask",FieldType::U32,0},{"EveryoneMask",FieldType::U32,0},{"NextOwnerMask",FieldType::U32,0},{"OwnershipCost",FieldType::S32,0},{"SaleType",FieldType::U8,0},{"SalePrice",FieldType::S32,0},{"Category",FieldType::U32,0},{"LastOwnerID",FieldType::LLUUID,0},{"Name",FieldType::Variable,1},{"Description",FieldType::Variable,1}}}}},
-{"ParcelPropertiesRequest",131083,Frequency::Medium,11,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"ParcelData",1,false,{{"SequenceID",FieldType::S32,0},{"West",FieldType::F32,0},{"South",FieldType::F32,0},{"East",FieldType::F32,0},{"North",FieldType::F32,0},{"SnapSelection",FieldType::BOOL,0}}}}},
-{"AttachedSound",131085,Frequency::Medium,13,true,false,false,{{"DataBlock",1,false,{{"SoundID",FieldType::LLUUID,0},{"ObjectID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"Gain",FieldType::F32,0},{"Flags",FieldType::U8,0}}}}},
-{"AttachedSoundGainChange",131086,Frequency::Medium,14,true,false,false,{{"DataBlock",1,false,{{"ObjectID",FieldType::LLUUID,0},{"Gain",FieldType::F32,0}}}}},
-{"PreloadSound",131087,Frequency::Medium,15,true,false,false,{{"DataBlock",0,true,{{"ObjectID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"SoundID",FieldType::LLUUID,0}}}}},
-{"ViewerEffect",131089,Frequency::Medium,17,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"Effect",0,true,{{"ID",FieldType::LLUUID,0},{"AgentID",FieldType::LLUUID,0},{"Type",FieldType::U8,0},{"Duration",FieldType::F32,0},{"Color",FieldType::Fixed,4},{"TypeData",FieldType::Variable,1}}}}},
-{"StartPingCheck",196609,Frequency::High,1,true,false,false,{{"PingID",1,false,{{"PingID",FieldType::U8,0},{"OldestUnacked",FieldType::U32,0}}}}},
-{"CompletePingCheck",196610,Frequency::High,2,true,false,false,{{"PingID",1,false,{{"PingID",FieldType::U8,0}}}}},
-{"AgentUpdate",196612,Frequency::High,4,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"BodyRotation",FieldType::LLQuaternion,0},{"HeadRotation",FieldType::LLQuaternion,0},{"State",FieldType::U8,0},{"CameraCenter",FieldType::LLVector3,0},{"CameraAtAxis",FieldType::LLVector3,0},{"CameraLeftAxis",FieldType::LLVector3,0},{"CameraUpAxis",FieldType::LLVector3,0},{"Far",FieldType::F32,0},{"ControlFlags",FieldType::U32,0},{"Flags",FieldType::U8,0}}}}},
-{"AgentAnimation",196613,Frequency::High,5,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"AnimationList",0,true,{{"AnimID",FieldType::LLUUID,0},{"StartAnim",FieldType::BOOL,0}}},{"PhysicalAvatarEventList",0,true,{{"TypeData",FieldType::Variable,1}}}}},
-{"AgentRequestSit",196614,Frequency::High,6,true,true,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"TargetObject",1,false,{{"TargetID",FieldType::LLUUID,0},{"Offset",FieldType::LLVector3,0}}}}},
-{"AgentSit",196615,Frequency::High,7,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}}}},
-{"RequestImage",196616,Frequency::High,8,true,false,true,{{"AgentData",1,false,{{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}},{"RequestImage",0,true,{{"Image",FieldType::LLUUID,0},{"DiscardLevel",FieldType::S8,0},{"DownloadPriority",FieldType::F32,0},{"Packet",FieldType::U32,0},{"Type",FieldType::U8,0}}}}},
-{"ImageData",196617,Frequency::High,9,true,false,false,{{"ImageID",1,false,{{"ID",FieldType::LLUUID,0},{"Codec",FieldType::U8,0},{"Size",FieldType::U32,0},{"Packets",FieldType::U16,0}}},{"ImageData",1,false,{{"Data",FieldType::Variable,2}}}}},
-{"ImagePacket",196618,Frequency::High,10,true,false,false,{{"ImageID",1,false,{{"ID",FieldType::LLUUID,0},{"Packet",FieldType::U16,0}}},{"ImageData",1,false,{{"Data",FieldType::Variable,2}}}}},
-{"LayerData",196619,Frequency::High,11,true,false,false,{{"LayerID",1,false,{{"Type",FieldType::U8,0}}},{"LayerData",1,false,{{"Data",FieldType::Variable,2}}}}},
-{"ObjectUpdate",196620,Frequency::High,12,true,true,false,{{"RegionData",1,false,{{"RegionHandle",FieldType::U64,0},{"TimeDilation",FieldType::U16,0}}},{"ObjectData",0,true,{{"ID",FieldType::U32,0},{"State",FieldType::U8,0},{"FullID",FieldType::LLUUID,0},{"CRC",FieldType::U32,0},{"PCode",FieldType::U8,0},{"Material",FieldType::U8,0},{"ClickAction",FieldType::U8,0},{"Scale",FieldType::LLVector3,0},{"ObjectData",FieldType::Variable,1},{"ParentID",FieldType::U32,0},{"UpdateFlags",FieldType::U32,0},{"PathCurve",FieldType::U8,0},{"ProfileCurve",FieldType::U8,0},{"PathBegin",FieldType::U16,0},{"PathEnd",FieldType::U16,0},{"PathScaleX",FieldType::U8,0},{"PathScaleY",FieldType::U8,0},{"PathShearX",FieldType::U8,0},{"PathShearY",FieldType::U8,0},{"PathTwist",FieldType::S8,0},{"PathTwistBegin",FieldType::S8,0},{"PathRadiusOffset",FieldType::S8,0},{"PathTaperX",FieldType::S8,0},{"PathTaperY",FieldType::S8,0},{"PathRevolutions",FieldType::U8,0},{"PathSkew",FieldType::S8,0},{"ProfileBegin",FieldType::U16,0},{"ProfileEnd",FieldType::U16,0},{"ProfileHollow",FieldType::U16,0},{"TextureEntry",FieldType::Variable,2},{"TextureAnim",FieldType::Variable,1},{"NameValue",FieldType::Variable,2},{"Data",FieldType::Variable,2},{"Text",FieldType::Variable,1},{"TextColor",FieldType::Fixed,4},{"MediaURL",FieldType::Variable,1},{"PSBlock",FieldType::Variable,1},{"ExtraParams",FieldType::Variable,1},{"Sound",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"Gain",FieldType::F32,0},{"Flags",FieldType::U8,0},{"Radius",FieldType::F32,0},{"JointType",FieldType::U8,0},{"JointPivot",FieldType::LLVector3,0},{"JointAxisOrAnchor",FieldType::LLVector3,0}}}}},
-{"ObjectUpdateCompressed",196621,Frequency::High,13,true,false,false,{{"RegionData",1,false,{{"RegionHandle",FieldType::U64,0},{"TimeDilation",FieldType::U16,0}}},{"ObjectData",0,true,{{"UpdateFlags",FieldType::U32,0},{"Data",FieldType::Variable,2}}}}},
-{"ObjectUpdateCached",196622,Frequency::High,14,true,false,false,{{"RegionData",1,false,{{"RegionHandle",FieldType::U64,0},{"TimeDilation",FieldType::U16,0}}},{"ObjectData",0,true,{{"ID",FieldType::U32,0},{"CRC",FieldType::U32,0},{"UpdateFlags",FieldType::U32,0}}}}},
-{"ImprovedTerseObjectUpdate",196623,Frequency::High,15,true,false,false,{{"RegionData",1,false,{{"RegionHandle",FieldType::U64,0},{"TimeDilation",FieldType::U16,0}}},{"ObjectData",0,true,{{"Data",FieldType::Variable,1},{"TextureEntry",FieldType::Variable,2}}}}},
-{"KillObject",196624,Frequency::High,16,true,false,false,{{"ObjectData",0,true,{{"ID",FieldType::U32,0}}}}},
-{"TransferPacket",196625,Frequency::High,17,true,false,false,{{"TransferData",1,false,{{"TransferID",FieldType::LLUUID,0},{"ChannelType",FieldType::S32,0},{"Packet",FieldType::S32,0},{"Status",FieldType::S32,0},{"Data",FieldType::Variable,2}}}}},
-{"SendXferPacket",196626,Frequency::High,18,true,false,false,{{"XferID",1,false,{{"ID",FieldType::U64,0},{"Packet",FieldType::U32,0}}},{"DataPacket",1,false,{{"Data",FieldType::Variable,2}}}}},
-{"ConfirmXferPacket",196627,Frequency::High,19,true,false,false,{{"XferID",1,false,{{"ID",FieldType::U64,0},{"Packet",FieldType::U32,0}}}}},
-{"AvatarAnimation",196628,Frequency::High,20,true,false,false,{{"Sender",1,false,{{"ID",FieldType::LLUUID,0}}},{"AnimationList",0,true,{{"AnimID",FieldType::LLUUID,0},{"AnimSequenceID",FieldType::S32,0}}},{"AnimationSourceList",0,true,{{"ObjectID",FieldType::LLUUID,0}}},{"PhysicalAvatarEventList",0,true,{{"TypeData",FieldType::Variable,1}}}}},
-{"AvatarSitResponse",196629,Frequency::High,21,true,true,false,{{"SitObject",1,false,{{"ID",FieldType::LLUUID,0}}},{"SitTransform",1,false,{{"AutoPilot",FieldType::BOOL,0},{"SitPosition",FieldType::LLVector3,0},{"SitRotation",FieldType::LLQuaternion,0},{"CameraEyeOffset",FieldType::LLVector3,0},{"CameraAtOffset",FieldType::LLVector3,0},{"ForceMouselook",FieldType::BOOL,0}}}}},
-{"CameraConstraint",196630,Frequency::High,22,true,true,false,{{"CameraCollidePlane",1,false,{{"Plane",FieldType::LLVector4,0}}}}},
-{"ParcelProperties",196631,Frequency::High,23,true,true,false,{{"ParcelData",1,false,{{"RequestResult",FieldType::S32,0},{"SequenceID",FieldType::S32,0},{"SnapSelection",FieldType::BOOL,0},{"SelfCount",FieldType::S32,0},{"OtherCount",FieldType::S32,0},{"PublicCount",FieldType::S32,0},{"LocalID",FieldType::S32,0},{"OwnerID",FieldType::LLUUID,0},{"IsGroupOwned",FieldType::BOOL,0},{"AuctionID",FieldType::U32,0},{"ClaimDate",FieldType::S32,0},{"ClaimPrice",FieldType::S32,0},{"RentPrice",FieldType::S32,0},{"AABBMin",FieldType::LLVector3,0},{"AABBMax",FieldType::LLVector3,0},{"Bitmap",FieldType::Variable,2},{"Area",FieldType::S32,0},{"Status",FieldType::U8,0},{"SimWideMaxPrims",FieldType::S32,0},{"SimWideTotalPrims",FieldType::S32,0},{"MaxPrims",FieldType::S32,0},{"TotalPrims",FieldType::S32,0},{"OwnerPrims",FieldType::S32,0},{"GroupPrims",FieldType::S32,0},{"OtherPrims",FieldType::S32,0},{"SelectedPrims",FieldType::S32,0},{"ParcelPrimBonus",FieldType::F32,0},{"OtherCleanTime",FieldType::S32,0},{"ParcelFlags",FieldType::U32,0},{"SalePrice",FieldType::S32,0},{"Name",FieldType::Variable,1},{"Desc",FieldType::Variable,1},{"MusicURL",FieldType::Variable,1},{"MediaURL",FieldType::Variable,1},{"MediaID",FieldType::LLUUID,0},{"MediaAutoScale",FieldType::U8,0},{"GroupID",FieldType::LLUUID,0},{"PassPrice",FieldType::S32,0},{"PassHours",FieldType::F32,0},{"Category",FieldType::U8,0},{"AuthBuyerID",FieldType::LLUUID,0},{"SnapshotID",FieldType::LLUUID,0},{"UserLocation",FieldType::LLVector3,0},{"UserLookAt",FieldType::LLVector3,0},{"LandingType",FieldType::U8,0},{"RegionPushOverride",FieldType::BOOL,0},{"RegionDenyAnonymous",FieldType::BOOL,0},{"RegionDenyIdentified",FieldType::BOOL,0},{"RegionDenyTransacted",FieldType::BOOL,0}}},{"AgeVerificationBlock",1,false,{{"RegionDenyAgeUnverified",FieldType::BOOL,0}}},{"RegionAllowAccessBlock",1,false,{{"RegionAllowAccessOverride",FieldType::BOOL,0}}},{"ParcelEnvironmentBlock",1,false,{{"ParcelEnvironmentVersion",FieldType::S32,0},{"RegionAllowEnvironmentOverride",FieldType::BOOL,0}}}}},
-{"ChildAgentUpdate",196633,Frequency::High,25,true,true,true,{{"AgentData",1,false,{{"RegionHandle",FieldType::U64,0},{"ViewerCircuitCode",FieldType::U32,0},{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"AgentPos",FieldType::LLVector3,0},{"AgentVel",FieldType::LLVector3,0},{"Center",FieldType::LLVector3,0},{"Size",FieldType::LLVector3,0},{"AtAxis",FieldType::LLVector3,0},{"LeftAxis",FieldType::LLVector3,0},{"UpAxis",FieldType::LLVector3,0},{"ChangedGrid",FieldType::BOOL,0},{"Far",FieldType::F32,0},{"Aspect",FieldType::F32,0},{"Throttles",FieldType::Variable,1},{"LocomotionState",FieldType::U32,0},{"HeadRotation",FieldType::LLQuaternion,0},{"BodyRotation",FieldType::LLQuaternion,0},{"ControlFlags",FieldType::U32,0},{"EnergyLevel",FieldType::F32,0},{"GodLevel",FieldType::U8,0},{"AlwaysRun",FieldType::BOOL,0},{"PreyAgent",FieldType::LLUUID,0},{"AgentAccess",FieldType::U8,0},{"AgentTextures",FieldType::Variable,2},{"ActiveGroupID",FieldType::LLUUID,0}}},{"GroupData",0,true,{{"GroupID",FieldType::LLUUID,0},{"GroupPowers",FieldType::U64,0},{"AcceptNotices",FieldType::BOOL,0}}},{"AnimationData",0,true,{{"Animation",FieldType::LLUUID,0},{"ObjectID",FieldType::LLUUID,0}}},{"GranterBlock",0,true,{{"GranterID",FieldType::LLUUID,0}}},{"NVPairData",0,true,{{"NVPairs",FieldType::Variable,2}}},{"VisualParam",0,true,{{"ParamValue",FieldType::U8,0}}},{"AgentAccess",0,true,{{"AgentLegacyAccess",FieldType::U8,0},{"AgentMaxAccess",FieldType::U8,0}}},{"AgentInfo",0,true,{{"Flags",FieldType::U32,0}}}}},
-{"ChildAgentAlive",196634,Frequency::High,26,true,false,true,{{"AgentData",1,false,{{"RegionHandle",FieldType::U64,0},{"ViewerCircuitCode",FieldType::U32,0},{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0}}}}},
-{"ChildAgentPositionUpdate",196635,Frequency::High,27,true,false,true,{{"AgentData",1,false,{{"RegionHandle",FieldType::U64,0},{"ViewerCircuitCode",FieldType::U32,0},{"AgentID",FieldType::LLUUID,0},{"SessionID",FieldType::LLUUID,0},{"AgentPos",FieldType::LLVector3,0},{"AgentVel",FieldType::LLVector3,0},{"Center",FieldType::LLVector3,0},{"Size",FieldType::LLVector3,0},{"AtAxis",FieldType::LLVector3,0},{"LeftAxis",FieldType::LLVector3,0},{"UpAxis",FieldType::LLVector3,0},{"ChangedGrid",FieldType::BOOL,0}}}}},
-{"SoundTrigger",196637,Frequency::High,29,true,false,false,{{"SoundData",1,false,{{"SoundID",FieldType::LLUUID,0},{"OwnerID",FieldType::LLUUID,0},{"ObjectID",FieldType::LLUUID,0},{"ParentID",FieldType::LLUUID,0},{"Handle",FieldType::U64,0},{"Position",FieldType::LLVector3,0},{"Gain",FieldType::F32,0}}}}},
-{"ObjectAnimation",196638,Frequency::High,30,true,false,false,{{"Sender",1,false,{{"ID",FieldType::LLUUID,0}}},{"AnimationList",0,true,{{"AnimID",FieldType::LLUUID,0},{"AnimSequenceID",FieldType::S32,0}}}}},
-{"GenericStreamingMessage",196639,Frequency::High,31,true,false,false,{{"MethodData",1,false,{{"Method",FieldType::U16,0}}},{"DataBlock",1,false,{{"Data",FieldType::Variable,2}}}}},
+    {"TestMessage", 65537, Frequency::Low, 1, true, true, false, {
+        {"TestBlock1", 1, false, {
+            {"Test1", FieldType::U32, 0},
+        }},
+        {"NeighborBlock", 4, false, {
+            {"Test0", FieldType::U32, 0},
+            {"Test1", FieldType::U32, 0},
+            {"Test2", FieldType::U32, 0},
+        }},
+    }},
+    {"UseCircuitCode", 65539, Frequency::Low, 3, true, false, false, {
+        {"CircuitCode", 1, false, {
+            {"Code", FieldType::U32, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"ID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"TelehubInfo", 65546, Frequency::Low, 10, true, false, false, {
+        {"TelehubBlock", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"ObjectName", FieldType::Variable, 1},
+            {"TelehubPos", FieldType::LLVector3, 0},
+            {"TelehubRot", FieldType::LLQuaternion, 0},
+        }},
+        {"SpawnPointBlock", 0, true, {
+            {"SpawnPointPos", FieldType::LLVector3, 0},
+        }},
+    }},
+    {"EconomyDataRequest", 65560, Frequency::Low, 24, true, false, false, {
+    }},
+    {"EconomyData", 65561, Frequency::Low, 25, true, true, false, {
+        {"Info", 1, false, {
+            {"ObjectCapacity", FieldType::S32, 0},
+            {"ObjectCount", FieldType::S32, 0},
+            {"PriceEnergyUnit", FieldType::S32, 0},
+            {"PriceObjectClaim", FieldType::S32, 0},
+            {"PricePublicObjectDecay", FieldType::S32, 0},
+            {"PricePublicObjectDelete", FieldType::S32, 0},
+            {"PriceParcelClaim", FieldType::S32, 0},
+            {"PriceParcelClaimFactor", FieldType::F32, 0},
+            {"PriceUpload", FieldType::S32, 0},
+            {"PriceRentLight", FieldType::S32, 0},
+            {"TeleportMinPrice", FieldType::S32, 0},
+            {"TeleportPriceExponent", FieldType::F32, 0},
+            {"EnergyEfficiency", FieldType::F32, 0},
+            {"PriceObjectRent", FieldType::F32, 0},
+            {"PriceObjectScaleFactor", FieldType::F32, 0},
+            {"PriceParcelRent", FieldType::S32, 0},
+            {"PriceGroupCreate", FieldType::S32, 0},
+        }},
+    }},
+    {"AvatarPickerRequest", 65562, Frequency::Low, 26, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"QueryID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"Name", FieldType::Variable, 1},
+        }},
+    }},
+    {"AvatarPickerReply", 65564, Frequency::Low, 28, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"QueryID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 0, true, {
+            {"AvatarID", FieldType::LLUUID, 0},
+            {"FirstName", FieldType::Variable, 1},
+            {"LastName", FieldType::Variable, 1},
+        }},
+    }},
+    {"PlacesQuery", 65565, Frequency::Low, 29, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"QueryID", FieldType::LLUUID, 0},
+        }},
+        {"TransactionData", 1, false, {
+            {"TransactionID", FieldType::LLUUID, 0},
+        }},
+        {"QueryData", 1, false, {
+            {"QueryText", FieldType::Variable, 1},
+            {"QueryFlags", FieldType::U32, 0},
+            {"Category", FieldType::S8, 0},
+            {"SimName", FieldType::Variable, 1},
+        }},
+    }},
+    {"PlacesReply", 65566, Frequency::Low, 30, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"QueryID", FieldType::LLUUID, 0},
+        }},
+        {"TransactionData", 1, false, {
+            {"TransactionID", FieldType::LLUUID, 0},
+        }},
+        {"QueryData", 0, true, {
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Desc", FieldType::Variable, 1},
+            {"ActualArea", FieldType::S32, 0},
+            {"BillableArea", FieldType::S32, 0},
+            {"Flags", FieldType::U8, 0},
+            {"GlobalX", FieldType::F32, 0},
+            {"GlobalY", FieldType::F32, 0},
+            {"GlobalZ", FieldType::F32, 0},
+            {"SimName", FieldType::Variable, 1},
+            {"SnapshotID", FieldType::LLUUID, 0},
+            {"Dwell", FieldType::F32, 0},
+            {"Price", FieldType::S32, 0},
+        }},
+    }},
+    {"DirFindQuery", 65567, Frequency::Low, 31, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"QueryData", 1, false, {
+            {"QueryID", FieldType::LLUUID, 0},
+            {"QueryText", FieldType::Variable, 1},
+            {"QueryFlags", FieldType::U32, 0},
+            {"QueryStart", FieldType::S32, 0},
+        }},
+    }},
+    {"DirPlacesQuery", 65569, Frequency::Low, 33, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"QueryData", 1, false, {
+            {"QueryID", FieldType::LLUUID, 0},
+            {"QueryText", FieldType::Variable, 1},
+            {"QueryFlags", FieldType::U32, 0},
+            {"Category", FieldType::S8, 0},
+            {"SimName", FieldType::Variable, 1},
+            {"QueryStart", FieldType::S32, 0},
+        }},
+    }},
+    {"DirPlacesReply", 65571, Frequency::Low, 35, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"QueryData", 0, true, {
+            {"QueryID", FieldType::LLUUID, 0},
+        }},
+        {"QueryReplies", 0, true, {
+            {"ParcelID", FieldType::LLUUID, 0},
+            {"Name", FieldType::Variable, 1},
+            {"ForSale", FieldType::BOOL, 0},
+            {"Auction", FieldType::BOOL, 0},
+            {"Dwell", FieldType::F32, 0},
+        }},
+        {"StatusData", 0, true, {
+            {"Status", FieldType::U32, 0},
+        }},
+    }},
+    {"DirPeopleReply", 65572, Frequency::Low, 36, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"QueryData", 1, false, {
+            {"QueryID", FieldType::LLUUID, 0},
+        }},
+        {"QueryReplies", 0, true, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"FirstName", FieldType::Variable, 1},
+            {"LastName", FieldType::Variable, 1},
+            {"Group", FieldType::Variable, 1},
+            {"Online", FieldType::BOOL, 0},
+            {"Reputation", FieldType::S32, 0},
+        }},
+    }},
+    {"DirEventsReply", 65573, Frequency::Low, 37, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"QueryData", 1, false, {
+            {"QueryID", FieldType::LLUUID, 0},
+        }},
+        {"QueryReplies", 0, true, {
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"Name", FieldType::Variable, 1},
+            {"EventID", FieldType::U32, 0},
+            {"Date", FieldType::Variable, 1},
+            {"UnixTime", FieldType::U32, 0},
+            {"EventFlags", FieldType::U32, 0},
+        }},
+        {"StatusData", 0, true, {
+            {"Status", FieldType::U32, 0},
+        }},
+    }},
+    {"DirGroupsReply", 65574, Frequency::Low, 38, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"QueryData", 1, false, {
+            {"QueryID", FieldType::LLUUID, 0},
+        }},
+        {"QueryReplies", 0, true, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"GroupName", FieldType::Variable, 1},
+            {"Members", FieldType::S32, 0},
+            {"SearchOrder", FieldType::F32, 0},
+        }},
+    }},
+    {"DirClassifiedQuery", 65575, Frequency::Low, 39, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"QueryData", 1, false, {
+            {"QueryID", FieldType::LLUUID, 0},
+            {"QueryText", FieldType::Variable, 1},
+            {"QueryFlags", FieldType::U32, 0},
+            {"Category", FieldType::U32, 0},
+            {"QueryStart", FieldType::S32, 0},
+        }},
+    }},
+    {"DirClassifiedReply", 65577, Frequency::Low, 41, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"QueryData", 1, false, {
+            {"QueryID", FieldType::LLUUID, 0},
+        }},
+        {"QueryReplies", 0, true, {
+            {"ClassifiedID", FieldType::LLUUID, 0},
+            {"Name", FieldType::Variable, 1},
+            {"ClassifiedFlags", FieldType::U8, 0},
+            {"CreationDate", FieldType::U32, 0},
+            {"ExpirationDate", FieldType::U32, 0},
+            {"PriceForListing", FieldType::S32, 0},
+        }},
+        {"StatusData", 0, true, {
+            {"Status", FieldType::U32, 0},
+        }},
+    }},
+    {"AvatarClassifiedReply", 65578, Frequency::Low, 42, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"TargetID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 0, true, {
+            {"ClassifiedID", FieldType::LLUUID, 0},
+            {"Name", FieldType::Variable, 1},
+        }},
+    }},
+    {"ClassifiedInfoRequest", 65579, Frequency::Low, 43, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"ClassifiedID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ClassifiedInfoReply", 65580, Frequency::Low, 44, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"ClassifiedID", FieldType::LLUUID, 0},
+            {"CreatorID", FieldType::LLUUID, 0},
+            {"CreationDate", FieldType::U32, 0},
+            {"ExpirationDate", FieldType::U32, 0},
+            {"Category", FieldType::U32, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Desc", FieldType::Variable, 2},
+            {"ParcelID", FieldType::LLUUID, 0},
+            {"ParentEstate", FieldType::U32, 0},
+            {"SnapshotID", FieldType::LLUUID, 0},
+            {"SimName", FieldType::Variable, 1},
+            {"PosGlobal", FieldType::LLVector3d, 0},
+            {"ParcelName", FieldType::Variable, 1},
+            {"ClassifiedFlags", FieldType::U8, 0},
+            {"PriceForListing", FieldType::S32, 0},
+        }},
+    }},
+    {"ClassifiedInfoUpdate", 65581, Frequency::Low, 45, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"ClassifiedID", FieldType::LLUUID, 0},
+            {"Category", FieldType::U32, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Desc", FieldType::Variable, 2},
+            {"ParcelID", FieldType::LLUUID, 0},
+            {"ParentEstate", FieldType::U32, 0},
+            {"SnapshotID", FieldType::LLUUID, 0},
+            {"PosGlobal", FieldType::LLVector3d, 0},
+            {"ClassifiedFlags", FieldType::U8, 0},
+            {"PriceForListing", FieldType::S32, 0},
+        }},
+    }},
+    {"ClassifiedDelete", 65582, Frequency::Low, 46, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"ClassifiedID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ClassifiedGodDelete", 65583, Frequency::Low, 47, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"ClassifiedID", FieldType::LLUUID, 0},
+            {"QueryID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"DirLandQuery", 65584, Frequency::Low, 48, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"QueryData", 1, false, {
+            {"QueryID", FieldType::LLUUID, 0},
+            {"QueryFlags", FieldType::U32, 0},
+            {"SearchType", FieldType::U32, 0},
+            {"Price", FieldType::S32, 0},
+            {"Area", FieldType::S32, 0},
+            {"QueryStart", FieldType::S32, 0},
+        }},
+    }},
+    {"DirLandReply", 65586, Frequency::Low, 50, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"QueryData", 1, false, {
+            {"QueryID", FieldType::LLUUID, 0},
+        }},
+        {"QueryReplies", 0, true, {
+            {"ParcelID", FieldType::LLUUID, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Auction", FieldType::BOOL, 0},
+            {"ForSale", FieldType::BOOL, 0},
+            {"SalePrice", FieldType::S32, 0},
+            {"ActualArea", FieldType::S32, 0},
+        }},
+    }},
+    {"DirPopularQuery", 65587, Frequency::Low, 51, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"QueryData", 1, false, {
+            {"QueryID", FieldType::LLUUID, 0},
+            {"QueryFlags", FieldType::U32, 0},
+        }},
+    }},
+    {"DirPopularReply", 65589, Frequency::Low, 53, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"QueryData", 1, false, {
+            {"QueryID", FieldType::LLUUID, 0},
+        }},
+        {"QueryReplies", 0, true, {
+            {"ParcelID", FieldType::LLUUID, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Dwell", FieldType::F32, 0},
+        }},
+    }},
+    {"ParcelInfoRequest", 65590, Frequency::Low, 54, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"ParcelID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ParcelInfoReply", 65591, Frequency::Low, 55, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"ParcelID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Desc", FieldType::Variable, 1},
+            {"ActualArea", FieldType::S32, 0},
+            {"BillableArea", FieldType::S32, 0},
+            {"Flags", FieldType::U8, 0},
+            {"GlobalX", FieldType::F32, 0},
+            {"GlobalY", FieldType::F32, 0},
+            {"GlobalZ", FieldType::F32, 0},
+            {"SimName", FieldType::Variable, 1},
+            {"SnapshotID", FieldType::LLUUID, 0},
+            {"Dwell", FieldType::F32, 0},
+            {"SalePrice", FieldType::S32, 0},
+            {"AuctionID", FieldType::S32, 0},
+        }},
+    }},
+    {"ParcelObjectOwnersRequest", 65592, Frequency::Low, 56, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ParcelData", 1, false, {
+            {"LocalID", FieldType::S32, 0},
+        }},
+    }},
+    {"ParcelObjectOwnersReply", 65593, Frequency::Low, 57, true, true, false, {
+        {"Data", 0, true, {
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"IsGroupOwned", FieldType::BOOL, 0},
+            {"Count", FieldType::S32, 0},
+            {"OnlineStatus", FieldType::BOOL, 0},
+        }},
+    }},
+    {"GroupNoticesListRequest", 65594, Frequency::Low, 58, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"GroupNoticesListReply", 65595, Frequency::Low, 59, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 0, true, {
+            {"NoticeID", FieldType::LLUUID, 0},
+            {"Timestamp", FieldType::U32, 0},
+            {"FromName", FieldType::Variable, 2},
+            {"Subject", FieldType::Variable, 2},
+            {"HasAttachment", FieldType::BOOL, 0},
+            {"AssetType", FieldType::U8, 0},
+        }},
+    }},
+    {"GroupNoticeRequest", 65596, Frequency::Low, 60, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"GroupNoticeID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"TeleportRequest", 65598, Frequency::Low, 62, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Info", 1, false, {
+            {"RegionID", FieldType::LLUUID, 0},
+            {"Position", FieldType::LLVector3, 0},
+            {"LookAt", FieldType::LLVector3, 0},
+        }},
+    }},
+    {"TeleportLocationRequest", 65599, Frequency::Low, 63, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Info", 1, false, {
+            {"RegionHandle", FieldType::U64, 0},
+            {"Position", FieldType::LLVector3, 0},
+            {"LookAt", FieldType::LLVector3, 0},
+        }},
+    }},
+    {"TeleportLocal", 65600, Frequency::Low, 64, true, false, false, {
+        {"Info", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"LocationID", FieldType::U32, 0},
+            {"Position", FieldType::LLVector3, 0},
+            {"LookAt", FieldType::LLVector3, 0},
+            {"TeleportFlags", FieldType::U32, 0},
+        }},
+    }},
+    {"TeleportLandmarkRequest", 65601, Frequency::Low, 65, true, true, false, {
+        {"Info", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"LandmarkID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"TeleportProgress", 65602, Frequency::Low, 66, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"Info", 1, false, {
+            {"TeleportFlags", FieldType::U32, 0},
+            {"Message", FieldType::Variable, 1},
+        }},
+    }},
+    {"TeleportFinish", 65605, Frequency::Low, 69, true, false, false, {
+        {"Info", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"LocationID", FieldType::U32, 0},
+            {"SimIP", FieldType::IPADDR, 0},
+            {"SimPort", FieldType::IPPORT, 0},
+            {"RegionHandle", FieldType::U64, 0},
+            {"SeedCapability", FieldType::Variable, 2},
+            {"SimAccess", FieldType::U8, 0},
+            {"TeleportFlags", FieldType::U32, 0},
+        }},
+    }},
+    {"StartLure", 65606, Frequency::Low, 70, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Info", 1, false, {
+            {"LureType", FieldType::U8, 0},
+            {"Message", FieldType::Variable, 1},
+        }},
+        {"TargetData", 0, true, {
+            {"TargetID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"TeleportLureRequest", 65607, Frequency::Low, 71, true, false, false, {
+        {"Info", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"LureID", FieldType::LLUUID, 0},
+            {"TeleportFlags", FieldType::U32, 0},
+        }},
+    }},
+    {"TeleportCancel", 65608, Frequency::Low, 72, true, false, false, {
+        {"Info", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"TeleportStart", 65609, Frequency::Low, 73, true, false, false, {
+        {"Info", 1, false, {
+            {"TeleportFlags", FieldType::U32, 0},
+        }},
+    }},
+    {"TeleportFailed", 65610, Frequency::Low, 74, true, false, false, {
+        {"Info", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"Reason", FieldType::Variable, 1},
+        }},
+        {"AlertInfo", 0, true, {
+            {"Message", FieldType::Variable, 1},
+            {"ExtraParams", FieldType::Variable, 1},
+        }},
+    }},
+    {"Undo", 65611, Frequency::Low, 75, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"Redo", 65612, Frequency::Low, 76, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"UndoLand", 65613, Frequency::Low, 77, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"AgentPause", 65614, Frequency::Low, 78, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"SerialNum", FieldType::U32, 0},
+        }},
+    }},
+    {"AgentResume", 65615, Frequency::Low, 79, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"SerialNum", FieldType::U32, 0},
+        }},
+    }},
+    {"ChatFromViewer", 65616, Frequency::Low, 80, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ChatData", 1, false, {
+            {"Message", FieldType::Variable, 2},
+            {"Type", FieldType::U8, 0},
+            {"Channel", FieldType::S32, 0},
+        }},
+    }},
+    {"AgentThrottle", 65617, Frequency::Low, 81, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"CircuitCode", FieldType::U32, 0},
+        }},
+        {"Throttle", 1, false, {
+            {"GenCounter", FieldType::U32, 0},
+            {"Throttles", FieldType::Variable, 1},
+        }},
+    }},
+    {"AgentFOV", 65618, Frequency::Low, 82, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"CircuitCode", FieldType::U32, 0},
+        }},
+        {"FOVBlock", 1, false, {
+            {"GenCounter", FieldType::U32, 0},
+            {"VerticalAngle", FieldType::F32, 0},
+        }},
+    }},
+    {"AgentHeightWidth", 65619, Frequency::Low, 83, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"CircuitCode", FieldType::U32, 0},
+        }},
+        {"HeightWidthBlock", 1, false, {
+            {"GenCounter", FieldType::U32, 0},
+            {"Height", FieldType::U16, 0},
+            {"Width", FieldType::U16, 0},
+        }},
+    }},
+    {"AgentSetAppearance", 65620, Frequency::Low, 84, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"SerialNum", FieldType::U32, 0},
+            {"Size", FieldType::LLVector3, 0},
+        }},
+        {"WearableData", 0, true, {
+            {"CacheID", FieldType::LLUUID, 0},
+            {"TextureIndex", FieldType::U8, 0},
+        }},
+        {"ObjectData", 1, false, {
+            {"TextureEntry", FieldType::Variable, 2},
+        }},
+        {"VisualParam", 0, true, {
+            {"ParamValue", FieldType::U8, 0},
+        }},
+    }},
+    {"AgentQuitCopy", 65621, Frequency::Low, 85, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"FuseBlock", 1, false, {
+            {"ViewerCircuitCode", FieldType::U32, 0},
+        }},
+    }},
+    {"ImageNotInDatabase", 65622, Frequency::Low, 86, true, false, false, {
+        {"ImageID", 1, false, {
+            {"ID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"RebakeAvatarTextures", 65623, Frequency::Low, 87, true, false, false, {
+        {"TextureData", 1, false, {
+            {"TextureID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"SetAlwaysRun", 65624, Frequency::Low, 88, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"AlwaysRun", FieldType::BOOL, 0},
+        }},
+    }},
+    {"ObjectDelete", 65625, Frequency::Low, 89, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"Force", FieldType::BOOL, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+        }},
+    }},
+    {"ObjectDuplicate", 65626, Frequency::Low, 90, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"SharedData", 1, false, {
+            {"Offset", FieldType::LLVector3, 0},
+            {"DuplicateFlags", FieldType::U32, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+        }},
+    }},
+    {"ObjectDuplicateOnRay", 65627, Frequency::Low, 91, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"RayStart", FieldType::LLVector3, 0},
+            {"RayEnd", FieldType::LLVector3, 0},
+            {"BypassRaycast", FieldType::BOOL, 0},
+            {"RayEndIsIntersection", FieldType::BOOL, 0},
+            {"CopyCenters", FieldType::BOOL, 0},
+            {"CopyRotates", FieldType::BOOL, 0},
+            {"RayTargetID", FieldType::LLUUID, 0},
+            {"DuplicateFlags", FieldType::U32, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+        }},
+    }},
+    {"ObjectScale", 65628, Frequency::Low, 92, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+            {"Scale", FieldType::LLVector3, 0},
+        }},
+    }},
+    {"ObjectRotation", 65629, Frequency::Low, 93, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+            {"Rotation", FieldType::LLQuaternion, 0},
+        }},
+    }},
+    {"ObjectFlagUpdate", 65630, Frequency::Low, 94, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"ObjectLocalID", FieldType::U32, 0},
+            {"UsePhysics", FieldType::BOOL, 0},
+            {"IsTemporary", FieldType::BOOL, 0},
+            {"IsPhantom", FieldType::BOOL, 0},
+            {"CastsShadows", FieldType::BOOL, 0},
+        }},
+        {"ExtraPhysics", 0, true, {
+            {"PhysicsShapeType", FieldType::U8, 0},
+            {"Density", FieldType::F32, 0},
+            {"Friction", FieldType::F32, 0},
+            {"Restitution", FieldType::F32, 0},
+            {"GravityMultiplier", FieldType::F32, 0},
+        }},
+    }},
+    {"ObjectClickAction", 65631, Frequency::Low, 95, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+            {"ClickAction", FieldType::U8, 0},
+        }},
+    }},
+    {"ObjectImage", 65632, Frequency::Low, 96, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+            {"MediaURL", FieldType::Variable, 1},
+            {"TextureEntry", FieldType::Variable, 2},
+        }},
+    }},
+    {"ObjectMaterial", 65633, Frequency::Low, 97, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+            {"Material", FieldType::U8, 0},
+        }},
+    }},
+    {"ObjectShape", 65634, Frequency::Low, 98, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+            {"PathCurve", FieldType::U8, 0},
+            {"ProfileCurve", FieldType::U8, 0},
+            {"PathBegin", FieldType::U16, 0},
+            {"PathEnd", FieldType::U16, 0},
+            {"PathScaleX", FieldType::U8, 0},
+            {"PathScaleY", FieldType::U8, 0},
+            {"PathShearX", FieldType::U8, 0},
+            {"PathShearY", FieldType::U8, 0},
+            {"PathTwist", FieldType::S8, 0},
+            {"PathTwistBegin", FieldType::S8, 0},
+            {"PathRadiusOffset", FieldType::S8, 0},
+            {"PathTaperX", FieldType::S8, 0},
+            {"PathTaperY", FieldType::S8, 0},
+            {"PathRevolutions", FieldType::U8, 0},
+            {"PathSkew", FieldType::S8, 0},
+            {"ProfileBegin", FieldType::U16, 0},
+            {"ProfileEnd", FieldType::U16, 0},
+            {"ProfileHollow", FieldType::U16, 0},
+        }},
+    }},
+    {"ObjectExtraParams", 65635, Frequency::Low, 99, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+            {"ParamType", FieldType::U16, 0},
+            {"ParamInUse", FieldType::BOOL, 0},
+            {"ParamSize", FieldType::U32, 0},
+            {"ParamData", FieldType::Variable, 1},
+        }},
+    }},
+    {"ObjectOwner", 65636, Frequency::Low, 100, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"HeaderData", 1, false, {
+            {"Override", FieldType::BOOL, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+        }},
+    }},
+    {"ObjectGroup", 65637, Frequency::Low, 101, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+        }},
+    }},
+    {"ObjectBuy", 65638, Frequency::Low, 102, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"CategoryID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+            {"SaleType", FieldType::U8, 0},
+            {"SalePrice", FieldType::S32, 0},
+        }},
+    }},
+    {"BuyObjectInventory", 65639, Frequency::Low, 103, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"ItemID", FieldType::LLUUID, 0},
+            {"FolderID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"DerezContainer", 65640, Frequency::Low, 104, true, true, false, {
+        {"Data", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"Delete", FieldType::BOOL, 0},
+        }},
+    }},
+    {"ObjectPermissions", 65641, Frequency::Low, 105, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"HeaderData", 1, false, {
+            {"Override", FieldType::BOOL, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+            {"Field", FieldType::U8, 0},
+            {"Set", FieldType::U8, 0},
+            {"Mask", FieldType::U32, 0},
+        }},
+    }},
+    {"ObjectSaleInfo", 65642, Frequency::Low, 106, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"LocalID", FieldType::U32, 0},
+            {"SaleType", FieldType::U8, 0},
+            {"SalePrice", FieldType::S32, 0},
+        }},
+    }},
+    {"ObjectName", 65643, Frequency::Low, 107, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"LocalID", FieldType::U32, 0},
+            {"Name", FieldType::Variable, 1},
+        }},
+    }},
+    {"ObjectDescription", 65644, Frequency::Low, 108, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"LocalID", FieldType::U32, 0},
+            {"Description", FieldType::Variable, 1},
+        }},
+    }},
+    {"ObjectCategory", 65645, Frequency::Low, 109, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"LocalID", FieldType::U32, 0},
+            {"Category", FieldType::U32, 0},
+        }},
+    }},
+    {"ObjectSelect", 65646, Frequency::Low, 110, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+        }},
+    }},
+    {"ObjectDeselect", 65647, Frequency::Low, 111, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+        }},
+    }},
+    {"ObjectAttach", 65648, Frequency::Low, 112, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"AttachmentPoint", FieldType::U8, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+            {"Rotation", FieldType::LLQuaternion, 0},
+        }},
+    }},
+    {"ObjectDetach", 65649, Frequency::Low, 113, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+        }},
+    }},
+    {"ObjectDrop", 65650, Frequency::Low, 114, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+        }},
+    }},
+    {"ObjectLink", 65651, Frequency::Low, 115, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+        }},
+    }},
+    {"ObjectDelink", 65652, Frequency::Low, 116, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+        }},
+    }},
+    {"ObjectGrab", 65653, Frequency::Low, 117, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 1, false, {
+            {"LocalID", FieldType::U32, 0},
+            {"GrabOffset", FieldType::LLVector3, 0},
+        }},
+        {"SurfaceInfo", 0, true, {
+            {"UVCoord", FieldType::LLVector3, 0},
+            {"STCoord", FieldType::LLVector3, 0},
+            {"FaceIndex", FieldType::S32, 0},
+            {"Position", FieldType::LLVector3, 0},
+            {"Normal", FieldType::LLVector3, 0},
+            {"Binormal", FieldType::LLVector3, 0},
+        }},
+    }},
+    {"ObjectGrabUpdate", 65654, Frequency::Low, 118, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"GrabOffsetInitial", FieldType::LLVector3, 0},
+            {"GrabPosition", FieldType::LLVector3, 0},
+            {"TimeSinceLast", FieldType::U32, 0},
+        }},
+        {"SurfaceInfo", 0, true, {
+            {"UVCoord", FieldType::LLVector3, 0},
+            {"STCoord", FieldType::LLVector3, 0},
+            {"FaceIndex", FieldType::S32, 0},
+            {"Position", FieldType::LLVector3, 0},
+            {"Normal", FieldType::LLVector3, 0},
+            {"Binormal", FieldType::LLVector3, 0},
+        }},
+    }},
+    {"ObjectDeGrab", 65655, Frequency::Low, 119, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 1, false, {
+            {"LocalID", FieldType::U32, 0},
+        }},
+        {"SurfaceInfo", 0, true, {
+            {"UVCoord", FieldType::LLVector3, 0},
+            {"STCoord", FieldType::LLVector3, 0},
+            {"FaceIndex", FieldType::S32, 0},
+            {"Position", FieldType::LLVector3, 0},
+            {"Normal", FieldType::LLVector3, 0},
+            {"Binormal", FieldType::LLVector3, 0},
+        }},
+    }},
+    {"ObjectSpinStart", 65656, Frequency::Low, 120, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ObjectSpinUpdate", 65657, Frequency::Low, 121, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"Rotation", FieldType::LLQuaternion, 0},
+        }},
+    }},
+    {"ObjectSpinStop", 65658, Frequency::Low, 122, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ObjectExportSelected", 65659, Frequency::Low, 123, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"RequestID", FieldType::LLUUID, 0},
+            {"VolumeDetail", FieldType::S16, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ModifyLand", 65660, Frequency::Low, 124, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ModifyBlock", 1, false, {
+            {"Action", FieldType::U8, 0},
+            {"BrushSize", FieldType::U8, 0},
+            {"Seconds", FieldType::F32, 0},
+            {"Height", FieldType::F32, 0},
+        }},
+        {"ParcelData", 0, true, {
+            {"LocalID", FieldType::S32, 0},
+            {"West", FieldType::F32, 0},
+            {"South", FieldType::F32, 0},
+            {"East", FieldType::F32, 0},
+            {"North", FieldType::F32, 0},
+        }},
+        {"ModifyBlockExtended", 0, true, {
+            {"BrushSize", FieldType::F32, 0},
+        }},
+    }},
+    {"VelocityInterpolateOn", 65661, Frequency::Low, 125, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"VelocityInterpolateOff", 65662, Frequency::Low, 126, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"StateSave", 65663, Frequency::Low, 127, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"DataBlock", 1, false, {
+            {"Filename", FieldType::Variable, 1},
+        }},
+    }},
+    {"ReportAutosaveCrash", 65664, Frequency::Low, 128, true, false, false, {
+        {"AutosaveData", 1, false, {
+            {"PID", FieldType::S32, 0},
+            {"Status", FieldType::S32, 0},
+        }},
+    }},
+    {"SimWideDeletes", 65665, Frequency::Low, 129, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"DataBlock", 1, false, {
+            {"TargetID", FieldType::LLUUID, 0},
+            {"Flags", FieldType::U32, 0},
+        }},
+    }},
+    {"TrackAgent", 65666, Frequency::Low, 130, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"TargetData", 1, false, {
+            {"PreyID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ViewerStats", 65667, Frequency::Low, 131, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"IP", FieldType::IPADDR, 0},
+            {"StartTime", FieldType::U32, 0},
+            {"RunTime", FieldType::F32, 0},
+            {"SimFPS", FieldType::F32, 0},
+            {"FPS", FieldType::F32, 0},
+            {"AgentsInView", FieldType::U8, 0},
+            {"Ping", FieldType::F32, 0},
+            {"MetersTraveled", FieldType::F64, 0},
+            {"RegionsVisited", FieldType::S32, 0},
+            {"SysRAM", FieldType::U32, 0},
+            {"SysOS", FieldType::Variable, 1},
+            {"SysCPU", FieldType::Variable, 1},
+            {"SysGPU", FieldType::Variable, 1},
+        }},
+        {"DownloadTotals", 1, false, {
+            {"World", FieldType::U32, 0},
+            {"Objects", FieldType::U32, 0},
+            {"Textures", FieldType::U32, 0},
+        }},
+        {"NetStats", 2, false, {
+            {"Bytes", FieldType::U32, 0},
+            {"Packets", FieldType::U32, 0},
+            {"Compressed", FieldType::U32, 0},
+            {"Savings", FieldType::U32, 0},
+        }},
+        {"FailStats", 1, false, {
+            {"SendPacket", FieldType::U32, 0},
+            {"Dropped", FieldType::U32, 0},
+            {"Resent", FieldType::U32, 0},
+            {"FailedResends", FieldType::U32, 0},
+            {"OffCircuit", FieldType::U32, 0},
+            {"Invalid", FieldType::U32, 0},
+        }},
+        {"MiscStats", 0, true, {
+            {"Type", FieldType::U32, 0},
+            {"Value", FieldType::F64, 0},
+        }},
+    }},
+    {"ScriptAnswerYes", 65668, Frequency::Low, 132, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"TaskID", FieldType::LLUUID, 0},
+            {"ItemID", FieldType::LLUUID, 0},
+            {"Questions", FieldType::S32, 0},
+        }},
+    }},
+    {"UserReport", 65669, Frequency::Low, 133, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ReportData", 1, false, {
+            {"ReportType", FieldType::U8, 0},
+            {"Category", FieldType::U8, 0},
+            {"Position", FieldType::LLVector3, 0},
+            {"CheckFlags", FieldType::U8, 0},
+            {"ScreenshotID", FieldType::LLUUID, 0},
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"AbuserID", FieldType::LLUUID, 0},
+            {"AbuseRegionName", FieldType::Variable, 1},
+            {"AbuseRegionID", FieldType::LLUUID, 0},
+            {"Summary", FieldType::Variable, 1},
+            {"Details", FieldType::Variable, 2},
+            {"VersionString", FieldType::Variable, 1},
+        }},
+    }},
+    {"AlertMessage", 65670, Frequency::Low, 134, true, false, false, {
+        {"AlertData", 1, false, {
+            {"Message", FieldType::Variable, 1},
+        }},
+        {"AlertInfo", 0, true, {
+            {"Message", FieldType::Variable, 1},
+            {"ExtraParams", FieldType::Variable, 1},
+        }},
+    }},
+    {"AgentAlertMessage", 65671, Frequency::Low, 135, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"AlertData", 1, false, {
+            {"Modal", FieldType::BOOL, 0},
+            {"Message", FieldType::Variable, 1},
+        }},
+    }},
+    {"MeanCollisionAlert", 65672, Frequency::Low, 136, true, true, false, {
+        {"MeanCollision", 0, true, {
+            {"Victim", FieldType::LLUUID, 0},
+            {"Perp", FieldType::LLUUID, 0},
+            {"Time", FieldType::U32, 0},
+            {"Mag", FieldType::F32, 0},
+            {"Type", FieldType::U8, 0},
+        }},
+    }},
+    {"ViewerFrozenMessage", 65673, Frequency::Low, 137, true, false, false, {
+        {"FrozenData", 1, false, {
+            {"Data", FieldType::BOOL, 0},
+        }},
+    }},
+    {"HealthMessage", 65674, Frequency::Low, 138, true, true, false, {
+        {"HealthData", 1, false, {
+            {"Health", FieldType::F32, 0},
+        }},
+    }},
+    {"ChatFromSimulator", 65675, Frequency::Low, 139, true, false, false, {
+        {"ChatData", 1, false, {
+            {"FromName", FieldType::Variable, 1},
+            {"SourceID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"SourceType", FieldType::U8, 0},
+            {"ChatType", FieldType::U8, 0},
+            {"Audible", FieldType::U8, 0},
+            {"Position", FieldType::LLVector3, 0},
+            {"Message", FieldType::Variable, 2},
+        }},
+    }},
+    {"SimStats", 65676, Frequency::Low, 140, true, false, false, {
+        {"Region", 1, false, {
+            {"RegionX", FieldType::U32, 0},
+            {"RegionY", FieldType::U32, 0},
+            {"RegionFlags", FieldType::U32, 0},
+            {"ObjectCapacity", FieldType::U32, 0},
+        }},
+        {"Stat", 0, true, {
+            {"StatID", FieldType::U32, 0},
+            {"StatValue", FieldType::F32, 0},
+        }},
+        {"PidStat", 1, false, {
+            {"PID", FieldType::S32, 0},
+        }},
+        {"RegionInfo", 0, true, {
+            {"RegionFlagsExtended", FieldType::U64, 0},
+        }},
+    }},
+    {"RequestRegionInfo", 65677, Frequency::Low, 141, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"RegionInfo", 65678, Frequency::Low, 142, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"RegionInfo", 1, false, {
+            {"SimName", FieldType::Variable, 1},
+            {"EstateID", FieldType::U32, 0},
+            {"ParentEstateID", FieldType::U32, 0},
+            {"RegionFlags", FieldType::U32, 0},
+            {"SimAccess", FieldType::U8, 0},
+            {"MaxAgents", FieldType::U8, 0},
+            {"BillableFactor", FieldType::F32, 0},
+            {"ObjectBonusFactor", FieldType::F32, 0},
+            {"WaterHeight", FieldType::F32, 0},
+            {"TerrainRaiseLimit", FieldType::F32, 0},
+            {"TerrainLowerLimit", FieldType::F32, 0},
+            {"PricePerMeter", FieldType::S32, 0},
+            {"RedirectGridX", FieldType::S32, 0},
+            {"RedirectGridY", FieldType::S32, 0},
+            {"UseEstateSun", FieldType::BOOL, 0},
+            {"SunHour", FieldType::F32, 0},
+        }},
+        {"RegionInfo2", 1, false, {
+            {"ProductSKU", FieldType::Variable, 1},
+            {"ProductName", FieldType::Variable, 1},
+            {"MaxAgents32", FieldType::U32, 0},
+            {"HardMaxAgents", FieldType::U32, 0},
+            {"HardMaxObjects", FieldType::U32, 0},
+        }},
+        {"RegionInfo3", 0, true, {
+            {"RegionFlagsExtended", FieldType::U64, 0},
+        }},
+    }},
+    {"GodUpdateRegionInfo", 65679, Frequency::Low, 143, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"RegionInfo", 1, false, {
+            {"SimName", FieldType::Variable, 1},
+            {"EstateID", FieldType::U32, 0},
+            {"ParentEstateID", FieldType::U32, 0},
+            {"RegionFlags", FieldType::U32, 0},
+            {"BillableFactor", FieldType::F32, 0},
+            {"PricePerMeter", FieldType::S32, 0},
+            {"RedirectGridX", FieldType::S32, 0},
+            {"RedirectGridY", FieldType::S32, 0},
+        }},
+        {"RegionInfo2", 0, true, {
+            {"RegionFlagsExtended", FieldType::U64, 0},
+        }},
+    }},
+    {"RegionHandshake", 65684, Frequency::Low, 148, true, true, false, {
+        {"RegionInfo", 1, false, {
+            {"RegionFlags", FieldType::U32, 0},
+            {"SimAccess", FieldType::U8, 0},
+            {"SimName", FieldType::Variable, 1},
+            {"SimOwner", FieldType::LLUUID, 0},
+            {"IsEstateManager", FieldType::BOOL, 0},
+            {"WaterHeight", FieldType::F32, 0},
+            {"BillableFactor", FieldType::F32, 0},
+            {"CacheID", FieldType::LLUUID, 0},
+            {"TerrainBase0", FieldType::LLUUID, 0},
+            {"TerrainBase1", FieldType::LLUUID, 0},
+            {"TerrainBase2", FieldType::LLUUID, 0},
+            {"TerrainBase3", FieldType::LLUUID, 0},
+            {"TerrainDetail0", FieldType::LLUUID, 0},
+            {"TerrainDetail1", FieldType::LLUUID, 0},
+            {"TerrainDetail2", FieldType::LLUUID, 0},
+            {"TerrainDetail3", FieldType::LLUUID, 0},
+            {"TerrainStartHeight00", FieldType::F32, 0},
+            {"TerrainStartHeight01", FieldType::F32, 0},
+            {"TerrainStartHeight10", FieldType::F32, 0},
+            {"TerrainStartHeight11", FieldType::F32, 0},
+            {"TerrainHeightRange00", FieldType::F32, 0},
+            {"TerrainHeightRange01", FieldType::F32, 0},
+            {"TerrainHeightRange10", FieldType::F32, 0},
+            {"TerrainHeightRange11", FieldType::F32, 0},
+        }},
+        {"RegionInfo2", 1, false, {
+            {"RegionID", FieldType::LLUUID, 0},
+        }},
+        {"RegionInfo3", 1, false, {
+            {"CPUClassID", FieldType::S32, 0},
+            {"CPURatio", FieldType::S32, 0},
+            {"ColoName", FieldType::Variable, 1},
+            {"ProductSKU", FieldType::Variable, 1},
+            {"ProductName", FieldType::Variable, 1},
+        }},
+        {"RegionInfo4", 0, true, {
+            {"RegionFlagsExtended", FieldType::U64, 0},
+            {"RegionProtocols", FieldType::U64, 0},
+        }},
+    }},
+    {"RegionHandshakeReply", 65685, Frequency::Low, 149, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"RegionInfo", 1, false, {
+            {"Flags", FieldType::U32, 0},
+        }},
+    }},
+    {"SimulatorViewerTimeMessage", 65686, Frequency::Low, 150, true, false, false, {
+        {"TimeInfo", 1, false, {
+            {"UsecSinceStart", FieldType::U64, 0},
+            {"SecPerDay", FieldType::U32, 0},
+            {"SecPerYear", FieldType::U32, 0},
+            {"SunDirection", FieldType::LLVector3, 0},
+            {"SunPhase", FieldType::F32, 0},
+            {"SunAngVelocity", FieldType::LLVector3, 0},
+        }},
+    }},
+    {"EnableSimulator", 65687, Frequency::Low, 151, true, false, false, {
+        {"SimulatorInfo", 1, false, {
+            {"Handle", FieldType::U64, 0},
+            {"IP", FieldType::IPADDR, 0},
+            {"Port", FieldType::IPPORT, 0},
+        }},
+    }},
+    {"DisableSimulator", 65688, Frequency::Low, 152, true, false, false, {
+    }},
+    {"TransferRequest", 65689, Frequency::Low, 153, true, true, false, {
+        {"TransferInfo", 1, false, {
+            {"TransferID", FieldType::LLUUID, 0},
+            {"ChannelType", FieldType::S32, 0},
+            {"SourceType", FieldType::S32, 0},
+            {"Priority", FieldType::F32, 0},
+            {"Params", FieldType::Variable, 2},
+        }},
+    }},
+    {"TransferInfo", 65690, Frequency::Low, 154, true, true, false, {
+        {"TransferInfo", 1, false, {
+            {"TransferID", FieldType::LLUUID, 0},
+            {"ChannelType", FieldType::S32, 0},
+            {"TargetType", FieldType::S32, 0},
+            {"Status", FieldType::S32, 0},
+            {"Size", FieldType::S32, 0},
+            {"Params", FieldType::Variable, 2},
+        }},
+    }},
+    {"TransferAbort", 65691, Frequency::Low, 155, true, true, false, {
+        {"TransferInfo", 1, false, {
+            {"TransferID", FieldType::LLUUID, 0},
+            {"ChannelType", FieldType::S32, 0},
+        }},
+    }},
+    {"RequestXfer", 65692, Frequency::Low, 156, true, true, false, {
+        {"XferID", 1, false, {
+            {"ID", FieldType::U64, 0},
+            {"Filename", FieldType::Variable, 1},
+            {"FilePath", FieldType::U8, 0},
+            {"DeleteOnCompletion", FieldType::BOOL, 0},
+            {"UseBigPackets", FieldType::BOOL, 0},
+            {"VFileID", FieldType::LLUUID, 0},
+            {"VFileType", FieldType::S16, 0},
+        }},
+    }},
+    {"AbortXfer", 65693, Frequency::Low, 157, true, false, false, {
+        {"XferID", 1, false, {
+            {"ID", FieldType::U64, 0},
+            {"Result", FieldType::S32, 0},
+        }},
+    }},
+    {"AvatarAppearance", 65694, Frequency::Low, 158, true, true, false, {
+        {"Sender", 1, false, {
+            {"ID", FieldType::LLUUID, 0},
+            {"IsTrial", FieldType::BOOL, 0},
+        }},
+        {"ObjectData", 1, false, {
+            {"TextureEntry", FieldType::Variable, 2},
+        }},
+        {"VisualParam", 0, true, {
+            {"ParamValue", FieldType::U8, 0},
+        }},
+        {"AppearanceData", 0, true, {
+            {"AppearanceVersion", FieldType::U8, 0},
+            {"CofVersion", FieldType::S32, 0},
+            {"Flags", FieldType::U32, 0},
+        }},
+        {"AppearanceHover", 0, true, {
+            {"HoverHeight", FieldType::LLVector3, 0},
+        }},
+    }},
+    {"SetFollowCamProperties", 65695, Frequency::Low, 159, true, false, false, {
+        {"ObjectData", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+        }},
+        {"CameraProperty", 0, true, {
+            {"Type", FieldType::S32, 0},
+            {"Value", FieldType::F32, 0},
+        }},
+    }},
+    {"ClearFollowCamProperties", 65696, Frequency::Low, 160, true, false, false, {
+        {"ObjectData", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"RequestPayPrice", 65697, Frequency::Low, 161, true, false, false, {
+        {"ObjectData", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"PayPriceReply", 65698, Frequency::Low, 162, true, false, false, {
+        {"ObjectData", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"DefaultPayPrice", FieldType::S32, 0},
+        }},
+        {"ButtonData", 0, true, {
+            {"PayButton", FieldType::S32, 0},
+        }},
+    }},
+    {"KickUser", 65699, Frequency::Low, 163, true, false, false, {
+        {"TargetBlock", 1, false, {
+            {"TargetIP", FieldType::IPADDR, 0},
+            {"TargetPort", FieldType::IPPORT, 0},
+        }},
+        {"UserInfo", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"Reason", FieldType::Variable, 2},
+        }},
+    }},
+    {"GodKickUser", 65701, Frequency::Low, 165, true, false, false, {
+        {"UserInfo", 1, false, {
+            {"GodID", FieldType::LLUUID, 0},
+            {"GodSessionID", FieldType::LLUUID, 0},
+            {"AgentID", FieldType::LLUUID, 0},
+            {"KickFlags", FieldType::U32, 0},
+            {"Reason", FieldType::Variable, 2},
+        }},
+    }},
+    {"EjectUser", 65703, Frequency::Low, 167, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"TargetID", FieldType::LLUUID, 0},
+            {"Flags", FieldType::U32, 0},
+        }},
+    }},
+    {"FreezeUser", 65704, Frequency::Low, 168, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"TargetID", FieldType::LLUUID, 0},
+            {"Flags", FieldType::U32, 0},
+        }},
+    }},
+    {"AvatarPropertiesRequest", 65705, Frequency::Low, 169, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"AvatarID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"AvatarPropertiesReply", 65707, Frequency::Low, 171, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"AvatarID", FieldType::LLUUID, 0},
+        }},
+        {"PropertiesData", 1, false, {
+            {"ImageID", FieldType::LLUUID, 0},
+            {"FLImageID", FieldType::LLUUID, 0},
+            {"PartnerID", FieldType::LLUUID, 0},
+            {"AboutText", FieldType::Variable, 2},
+            {"FLAboutText", FieldType::Variable, 1},
+            {"BornOn", FieldType::Variable, 1},
+            {"ProfileURL", FieldType::Variable, 1},
+            {"CharterMember", FieldType::Variable, 1},
+            {"Flags", FieldType::U32, 0},
+        }},
+    }},
+    {"AvatarInterestsReply", 65708, Frequency::Low, 172, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"AvatarID", FieldType::LLUUID, 0},
+        }},
+        {"PropertiesData", 1, false, {
+            {"WantToMask", FieldType::U32, 0},
+            {"WantToText", FieldType::Variable, 1},
+            {"SkillsMask", FieldType::U32, 0},
+            {"SkillsText", FieldType::Variable, 1},
+            {"LanguagesText", FieldType::Variable, 1},
+        }},
+    }},
+    {"AvatarGroupsReply", 65709, Frequency::Low, 173, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"AvatarID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 0, true, {
+            {"GroupPowers", FieldType::U64, 0},
+            {"AcceptNotices", FieldType::BOOL, 0},
+            {"GroupTitle", FieldType::Variable, 1},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"GroupName", FieldType::Variable, 1},
+            {"GroupInsigniaID", FieldType::LLUUID, 0},
+        }},
+        {"NewGroupData", 1, false, {
+            {"ListInProfile", FieldType::BOOL, 0},
+        }},
+    }},
+    {"AvatarPropertiesUpdate", 65710, Frequency::Low, 174, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"PropertiesData", 1, false, {
+            {"ImageID", FieldType::LLUUID, 0},
+            {"FLImageID", FieldType::LLUUID, 0},
+            {"AboutText", FieldType::Variable, 2},
+            {"FLAboutText", FieldType::Variable, 1},
+            {"AllowPublish", FieldType::BOOL, 0},
+            {"MaturePublish", FieldType::BOOL, 0},
+            {"ProfileURL", FieldType::Variable, 1},
+        }},
+    }},
+    {"AvatarInterestsUpdate", 65711, Frequency::Low, 175, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"PropertiesData", 1, false, {
+            {"WantToMask", FieldType::U32, 0},
+            {"WantToText", FieldType::Variable, 1},
+            {"SkillsMask", FieldType::U32, 0},
+            {"SkillsText", FieldType::Variable, 1},
+            {"LanguagesText", FieldType::Variable, 1},
+        }},
+    }},
+    {"AvatarNotesReply", 65712, Frequency::Low, 176, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"TargetID", FieldType::LLUUID, 0},
+            {"Notes", FieldType::Variable, 2},
+        }},
+    }},
+    {"AvatarNotesUpdate", 65713, Frequency::Low, 177, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"TargetID", FieldType::LLUUID, 0},
+            {"Notes", FieldType::Variable, 2},
+        }},
+    }},
+    {"AvatarPicksReply", 65714, Frequency::Low, 178, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"TargetID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 0, true, {
+            {"PickID", FieldType::LLUUID, 0},
+            {"PickName", FieldType::Variable, 1},
+        }},
+    }},
+    {"EventInfoRequest", 65715, Frequency::Low, 179, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"EventData", 1, false, {
+            {"EventID", FieldType::U32, 0},
+        }},
+    }},
+    {"EventInfoReply", 65716, Frequency::Low, 180, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"EventData", 1, false, {
+            {"EventID", FieldType::U32, 0},
+            {"Creator", FieldType::Variable, 1},
+            {"Name", FieldType::Variable, 1},
+            {"Category", FieldType::Variable, 1},
+            {"Desc", FieldType::Variable, 2},
+            {"Date", FieldType::Variable, 1},
+            {"DateUTC", FieldType::U32, 0},
+            {"Duration", FieldType::U32, 0},
+            {"Cover", FieldType::U32, 0},
+            {"Amount", FieldType::U32, 0},
+            {"SimName", FieldType::Variable, 1},
+            {"GlobalPos", FieldType::LLVector3d, 0},
+            {"EventFlags", FieldType::U32, 0},
+        }},
+    }},
+    {"EventNotificationAddRequest", 65717, Frequency::Low, 181, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"EventData", 1, false, {
+            {"EventID", FieldType::U32, 0},
+        }},
+    }},
+    {"EventNotificationRemoveRequest", 65718, Frequency::Low, 182, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"EventData", 1, false, {
+            {"EventID", FieldType::U32, 0},
+        }},
+    }},
+    {"EventGodDelete", 65719, Frequency::Low, 183, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"EventData", 1, false, {
+            {"EventID", FieldType::U32, 0},
+        }},
+        {"QueryData", 1, false, {
+            {"QueryID", FieldType::LLUUID, 0},
+            {"QueryText", FieldType::Variable, 1},
+            {"QueryFlags", FieldType::U32, 0},
+            {"QueryStart", FieldType::S32, 0},
+        }},
+    }},
+    {"PickInfoReply", 65720, Frequency::Low, 184, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"PickID", FieldType::LLUUID, 0},
+            {"CreatorID", FieldType::LLUUID, 0},
+            {"TopPick", FieldType::BOOL, 0},
+            {"ParcelID", FieldType::LLUUID, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Desc", FieldType::Variable, 2},
+            {"SnapshotID", FieldType::LLUUID, 0},
+            {"User", FieldType::Variable, 1},
+            {"OriginalName", FieldType::Variable, 1},
+            {"SimName", FieldType::Variable, 1},
+            {"PosGlobal", FieldType::LLVector3d, 0},
+            {"SortOrder", FieldType::S32, 0},
+            {"Enabled", FieldType::BOOL, 0},
+        }},
+    }},
+    {"PickInfoUpdate", 65721, Frequency::Low, 185, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"PickID", FieldType::LLUUID, 0},
+            {"CreatorID", FieldType::LLUUID, 0},
+            {"TopPick", FieldType::BOOL, 0},
+            {"ParcelID", FieldType::LLUUID, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Desc", FieldType::Variable, 2},
+            {"SnapshotID", FieldType::LLUUID, 0},
+            {"PosGlobal", FieldType::LLVector3d, 0},
+            {"SortOrder", FieldType::S32, 0},
+            {"Enabled", FieldType::BOOL, 0},
+        }},
+    }},
+    {"PickDelete", 65722, Frequency::Low, 186, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"PickID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"PickGodDelete", 65723, Frequency::Low, 187, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"PickID", FieldType::LLUUID, 0},
+            {"QueryID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ScriptQuestion", 65724, Frequency::Low, 188, true, false, false, {
+        {"Data", 1, false, {
+            {"TaskID", FieldType::LLUUID, 0},
+            {"ItemID", FieldType::LLUUID, 0},
+            {"ObjectName", FieldType::Variable, 1},
+            {"ObjectOwner", FieldType::Variable, 1},
+            {"Questions", FieldType::S32, 0},
+        }},
+        {"Experience", 1, false, {
+            {"ExperienceID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ScriptControlChange", 65725, Frequency::Low, 189, true, false, false, {
+        {"Data", 0, true, {
+            {"TakeControls", FieldType::BOOL, 0},
+            {"Controls", FieldType::U32, 0},
+            {"PassToAgent", FieldType::BOOL, 0},
+        }},
+    }},
+    {"ScriptDialog", 65726, Frequency::Low, 190, true, true, false, {
+        {"Data", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"FirstName", FieldType::Variable, 1},
+            {"LastName", FieldType::Variable, 1},
+            {"ObjectName", FieldType::Variable, 1},
+            {"Message", FieldType::Variable, 2},
+            {"ChatChannel", FieldType::S32, 0},
+            {"ImageID", FieldType::LLUUID, 0},
+        }},
+        {"Buttons", 0, true, {
+            {"ButtonLabel", FieldType::Variable, 1},
+        }},
+        {"OwnerData", 0, true, {
+            {"OwnerID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ScriptDialogReply", 65727, Frequency::Low, 191, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"ChatChannel", FieldType::S32, 0},
+            {"ButtonIndex", FieldType::S32, 0},
+            {"ButtonLabel", FieldType::Variable, 1},
+        }},
+    }},
+    {"ForceScriptControlRelease", 65728, Frequency::Low, 192, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"RevokePermissions", 65729, Frequency::Low, 193, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"ObjectPermissions", FieldType::U32, 0},
+        }},
+    }},
+    {"LoadURL", 65730, Frequency::Low, 194, true, false, false, {
+        {"Data", 1, false, {
+            {"ObjectName", FieldType::Variable, 1},
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"OwnerIsGroup", FieldType::BOOL, 0},
+            {"Message", FieldType::Variable, 1},
+            {"URL", FieldType::Variable, 1},
+        }},
+    }},
+    {"ScriptTeleportRequest", 65731, Frequency::Low, 195, true, false, false, {
+        {"Data", 1, false, {
+            {"ObjectName", FieldType::Variable, 1},
+            {"SimName", FieldType::Variable, 1},
+            {"SimPosition", FieldType::LLVector3, 0},
+            {"LookAt", FieldType::LLVector3, 0},
+        }},
+        {"Options", 0, true, {
+            {"Flags", FieldType::U32, 0},
+        }},
+    }},
+    {"ParcelOverlay", 65732, Frequency::Low, 196, true, true, false, {
+        {"ParcelData", 1, false, {
+            {"SequenceID", FieldType::S32, 0},
+            {"Data", FieldType::Variable, 2},
+        }},
+    }},
+    {"ParcelPropertiesRequestByID", 65733, Frequency::Low, 197, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ParcelData", 1, false, {
+            {"SequenceID", FieldType::S32, 0},
+            {"LocalID", FieldType::S32, 0},
+        }},
+    }},
+    {"ParcelPropertiesUpdate", 65734, Frequency::Low, 198, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ParcelData", 1, false, {
+            {"LocalID", FieldType::S32, 0},
+            {"Flags", FieldType::U32, 0},
+            {"ParcelFlags", FieldType::U32, 0},
+            {"SalePrice", FieldType::S32, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Desc", FieldType::Variable, 1},
+            {"MusicURL", FieldType::Variable, 1},
+            {"MediaURL", FieldType::Variable, 1},
+            {"MediaID", FieldType::LLUUID, 0},
+            {"MediaAutoScale", FieldType::U8, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"PassPrice", FieldType::S32, 0},
+            {"PassHours", FieldType::F32, 0},
+            {"Category", FieldType::U8, 0},
+            {"AuthBuyerID", FieldType::LLUUID, 0},
+            {"SnapshotID", FieldType::LLUUID, 0},
+            {"UserLocation", FieldType::LLVector3, 0},
+            {"UserLookAt", FieldType::LLVector3, 0},
+            {"LandingType", FieldType::U8, 0},
+        }},
+    }},
+    {"ParcelReturnObjects", 65735, Frequency::Low, 199, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ParcelData", 1, false, {
+            {"LocalID", FieldType::S32, 0},
+            {"ReturnType", FieldType::U32, 0},
+        }},
+        {"TaskIDs", 0, true, {
+            {"TaskID", FieldType::LLUUID, 0},
+        }},
+        {"OwnerIDs", 0, true, {
+            {"OwnerID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ParcelSetOtherCleanTime", 65736, Frequency::Low, 200, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ParcelData", 1, false, {
+            {"LocalID", FieldType::S32, 0},
+            {"OtherCleanTime", FieldType::S32, 0},
+        }},
+    }},
+    {"ParcelDisableObjects", 65737, Frequency::Low, 201, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ParcelData", 1, false, {
+            {"LocalID", FieldType::S32, 0},
+            {"ReturnType", FieldType::U32, 0},
+        }},
+        {"TaskIDs", 0, true, {
+            {"TaskID", FieldType::LLUUID, 0},
+        }},
+        {"OwnerIDs", 0, true, {
+            {"OwnerID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ParcelSelectObjects", 65738, Frequency::Low, 202, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ParcelData", 1, false, {
+            {"LocalID", FieldType::S32, 0},
+            {"ReturnType", FieldType::U32, 0},
+        }},
+        {"ReturnIDs", 0, true, {
+            {"ReturnID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"EstateCovenantRequest", 65739, Frequency::Low, 203, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"EstateCovenantReply", 65740, Frequency::Low, 204, true, false, false, {
+        {"Data", 1, false, {
+            {"CovenantID", FieldType::LLUUID, 0},
+            {"CovenantTimestamp", FieldType::U32, 0},
+            {"EstateName", FieldType::Variable, 1},
+            {"EstateOwnerID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ForceObjectSelect", 65741, Frequency::Low, 205, true, false, false, {
+        {"_Header", 1, false, {
+            {"ResetList", FieldType::BOOL, 0},
+        }},
+        {"Data", 0, true, {
+            {"LocalID", FieldType::U32, 0},
+        }},
+    }},
+    {"ParcelBuyPass", 65742, Frequency::Low, 206, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ParcelData", 1, false, {
+            {"LocalID", FieldType::S32, 0},
+        }},
+    }},
+    {"ParcelDeedToGroup", 65743, Frequency::Low, 207, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"LocalID", FieldType::S32, 0},
+        }},
+    }},
+    {"ParcelReclaim", 65744, Frequency::Low, 208, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"LocalID", FieldType::S32, 0},
+        }},
+    }},
+    {"ParcelClaim", 65745, Frequency::Low, 209, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"IsGroupOwned", FieldType::BOOL, 0},
+            {"Final", FieldType::BOOL, 0},
+        }},
+        {"ParcelData", 0, true, {
+            {"West", FieldType::F32, 0},
+            {"South", FieldType::F32, 0},
+            {"East", FieldType::F32, 0},
+            {"North", FieldType::F32, 0},
+        }},
+    }},
+    {"ParcelJoin", 65746, Frequency::Low, 210, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ParcelData", 1, false, {
+            {"West", FieldType::F32, 0},
+            {"South", FieldType::F32, 0},
+            {"East", FieldType::F32, 0},
+            {"North", FieldType::F32, 0},
+        }},
+    }},
+    {"ParcelDivide", 65747, Frequency::Low, 211, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ParcelData", 1, false, {
+            {"West", FieldType::F32, 0},
+            {"South", FieldType::F32, 0},
+            {"East", FieldType::F32, 0},
+            {"North", FieldType::F32, 0},
+        }},
+    }},
+    {"ParcelRelease", 65748, Frequency::Low, 212, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"LocalID", FieldType::S32, 0},
+        }},
+    }},
+    {"ParcelBuy", 65749, Frequency::Low, 213, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"IsGroupOwned", FieldType::BOOL, 0},
+            {"RemoveContribution", FieldType::BOOL, 0},
+            {"LocalID", FieldType::S32, 0},
+            {"Final", FieldType::BOOL, 0},
+        }},
+        {"ParcelData", 1, false, {
+            {"Price", FieldType::S32, 0},
+            {"Area", FieldType::S32, 0},
+        }},
+    }},
+    {"ParcelGodForceOwner", 65750, Frequency::Low, 214, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"LocalID", FieldType::S32, 0},
+        }},
+    }},
+    {"ParcelAccessListRequest", 65751, Frequency::Low, 215, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"SequenceID", FieldType::S32, 0},
+            {"Flags", FieldType::U32, 0},
+            {"LocalID", FieldType::S32, 0},
+        }},
+    }},
+    {"ParcelAccessListReply", 65752, Frequency::Low, 216, true, true, false, {
+        {"Data", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SequenceID", FieldType::S32, 0},
+            {"Flags", FieldType::U32, 0},
+            {"LocalID", FieldType::S32, 0},
+        }},
+        {"List", 0, true, {
+            {"ID", FieldType::LLUUID, 0},
+            {"Time", FieldType::S32, 0},
+            {"Flags", FieldType::U32, 0},
+        }},
+    }},
+    {"ParcelAccessListUpdate", 65753, Frequency::Low, 217, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"Flags", FieldType::U32, 0},
+            {"LocalID", FieldType::S32, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+            {"SequenceID", FieldType::S32, 0},
+            {"Sections", FieldType::S32, 0},
+        }},
+        {"List", 0, true, {
+            {"ID", FieldType::LLUUID, 0},
+            {"Time", FieldType::S32, 0},
+            {"Flags", FieldType::U32, 0},
+        }},
+    }},
+    {"ParcelDwellRequest", 65754, Frequency::Low, 218, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"LocalID", FieldType::S32, 0},
+            {"ParcelID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ParcelDwellReply", 65755, Frequency::Low, 219, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"LocalID", FieldType::S32, 0},
+            {"ParcelID", FieldType::LLUUID, 0},
+            {"Dwell", FieldType::F32, 0},
+        }},
+    }},
+    {"ParcelGodMarkAsContent", 65763, Frequency::Low, 227, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ParcelData", 1, false, {
+            {"LocalID", FieldType::S32, 0},
+        }},
+    }},
+    {"ViewerStartAuction", 65764, Frequency::Low, 228, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ParcelData", 1, false, {
+            {"LocalID", FieldType::S32, 0},
+            {"SnapshotID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"UUIDNameRequest", 65771, Frequency::Low, 235, true, false, false, {
+        {"UUIDNameBlock", 0, true, {
+            {"ID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"UUIDNameReply", 65772, Frequency::Low, 236, true, false, false, {
+        {"UUIDNameBlock", 0, true, {
+            {"ID", FieldType::LLUUID, 0},
+            {"FirstName", FieldType::Variable, 1},
+            {"LastName", FieldType::Variable, 1},
+        }},
+    }},
+    {"UUIDGroupNameRequest", 65773, Frequency::Low, 237, true, false, false, {
+        {"UUIDNameBlock", 0, true, {
+            {"ID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"UUIDGroupNameReply", 65774, Frequency::Low, 238, true, false, false, {
+        {"UUIDNameBlock", 0, true, {
+            {"ID", FieldType::LLUUID, 0},
+            {"GroupName", FieldType::Variable, 1},
+        }},
+    }},
+    {"ChildAgentDying", 65776, Frequency::Low, 240, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ChildAgentUnknown", 65777, Frequency::Low, 241, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"GetScriptRunning", 65779, Frequency::Low, 243, true, false, false, {
+        {"Script", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"ItemID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ScriptRunningReply", 65780, Frequency::Low, 244, true, false, false, {
+        {"Script", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"ItemID", FieldType::LLUUID, 0},
+            {"Running", FieldType::BOOL, 0},
+        }},
+    }},
+    {"SetScriptRunning", 65781, Frequency::Low, 245, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Script", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"ItemID", FieldType::LLUUID, 0},
+            {"Running", FieldType::BOOL, 0},
+        }},
+    }},
+    {"ScriptReset", 65782, Frequency::Low, 246, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Script", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"ItemID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ScriptSensorRequest", 65783, Frequency::Low, 247, true, true, false, {
+        {"Requester", 1, false, {
+            {"SourceID", FieldType::LLUUID, 0},
+            {"RequestID", FieldType::LLUUID, 0},
+            {"SearchID", FieldType::LLUUID, 0},
+            {"SearchPos", FieldType::LLVector3, 0},
+            {"SearchDir", FieldType::LLQuaternion, 0},
+            {"SearchName", FieldType::Variable, 1},
+            {"Type", FieldType::S32, 0},
+            {"Range", FieldType::F32, 0},
+            {"Arc", FieldType::F32, 0},
+            {"RegionHandle", FieldType::U64, 0},
+            {"SearchRegions", FieldType::U8, 0},
+        }},
+    }},
+    {"ScriptSensorReply", 65784, Frequency::Low, 248, true, true, false, {
+        {"Requester", 1, false, {
+            {"SourceID", FieldType::LLUUID, 0},
+        }},
+        {"SensedData", 0, true, {
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"Position", FieldType::LLVector3, 0},
+            {"Velocity", FieldType::LLVector3, 0},
+            {"Rotation", FieldType::LLQuaternion, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Type", FieldType::S32, 0},
+            {"Range", FieldType::F32, 0},
+        }},
+    }},
+    {"CompleteAgentMovement", 65785, Frequency::Low, 249, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"CircuitCode", FieldType::U32, 0},
+        }},
+    }},
+    {"AgentMovementComplete", 65786, Frequency::Low, 250, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"Position", FieldType::LLVector3, 0},
+            {"LookAt", FieldType::LLVector3, 0},
+            {"RegionHandle", FieldType::U64, 0},
+            {"Timestamp", FieldType::U32, 0},
+        }},
+        {"SimData", 1, false, {
+            {"ChannelVersion", FieldType::Variable, 2},
+        }},
+    }},
+    {"LogoutRequest", 65788, Frequency::Low, 252, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"LogoutReply", 65789, Frequency::Low, 253, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryData", 0, true, {
+            {"ItemID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ImprovedInstantMessage", 65790, Frequency::Low, 254, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"MessageBlock", 1, false, {
+            {"FromGroup", FieldType::BOOL, 0},
+            {"ToAgentID", FieldType::LLUUID, 0},
+            {"ParentEstateID", FieldType::U32, 0},
+            {"RegionID", FieldType::LLUUID, 0},
+            {"Position", FieldType::LLVector3, 0},
+            {"Offline", FieldType::U8, 0},
+            {"Dialog", FieldType::U8, 0},
+            {"ID", FieldType::LLUUID, 0},
+            {"Timestamp", FieldType::U32, 0},
+            {"FromAgentName", FieldType::Variable, 1},
+            {"Message", FieldType::Variable, 2},
+            {"BinaryBucket", FieldType::Variable, 2},
+        }},
+    }},
+    {"RetrieveInstantMessages", 65791, Frequency::Low, 255, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"FindAgent", 65792, Frequency::Low, 256, true, false, false, {
+        {"AgentBlock", 1, false, {
+            {"Hunter", FieldType::LLUUID, 0},
+            {"Prey", FieldType::LLUUID, 0},
+            {"SpaceIP", FieldType::IPADDR, 0},
+        }},
+        {"LocationBlock", 0, true, {
+            {"GlobalX", FieldType::F64, 0},
+            {"GlobalY", FieldType::F64, 0},
+        }},
+    }},
+    {"RequestGodlikePowers", 65793, Frequency::Low, 257, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"RequestBlock", 1, false, {
+            {"Godlike", FieldType::BOOL, 0},
+            {"Token", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"GrantGodlikePowers", 65794, Frequency::Low, 258, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"GrantData", 1, false, {
+            {"GodLevel", FieldType::U8, 0},
+            {"Token", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"GodlikeMessage", 65795, Frequency::Low, 259, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+        }},
+        {"MethodData", 1, false, {
+            {"Method", FieldType::Variable, 1},
+            {"Invoice", FieldType::LLUUID, 0},
+        }},
+        {"ParamList", 0, true, {
+            {"Parameter", FieldType::Variable, 1},
+        }},
+    }},
+    {"EstateOwnerMessage", 65796, Frequency::Low, 260, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+        }},
+        {"MethodData", 1, false, {
+            {"Method", FieldType::Variable, 1},
+            {"Invoice", FieldType::LLUUID, 0},
+        }},
+        {"ParamList", 0, true, {
+            {"Parameter", FieldType::Variable, 1},
+        }},
+    }},
+    {"GenericMessage", 65797, Frequency::Low, 261, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+        }},
+        {"MethodData", 1, false, {
+            {"Method", FieldType::Variable, 1},
+            {"Invoice", FieldType::LLUUID, 0},
+        }},
+        {"ParamList", 0, true, {
+            {"Parameter", FieldType::Variable, 1},
+        }},
+    }},
+    {"MuteListRequest", 65798, Frequency::Low, 262, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"MuteData", 1, false, {
+            {"MuteCRC", FieldType::U32, 0},
+        }},
+    }},
+    {"UpdateMuteListEntry", 65799, Frequency::Low, 263, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"MuteData", 1, false, {
+            {"MuteID", FieldType::LLUUID, 0},
+            {"MuteName", FieldType::Variable, 1},
+            {"MuteType", FieldType::S32, 0},
+            {"MuteFlags", FieldType::U32, 0},
+        }},
+    }},
+    {"RemoveMuteListEntry", 65800, Frequency::Low, 264, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"MuteData", 1, false, {
+            {"MuteID", FieldType::LLUUID, 0},
+            {"MuteName", FieldType::Variable, 1},
+        }},
+    }},
+    {"CopyInventoryFromNotecard", 65801, Frequency::Low, 265, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"NotecardData", 1, false, {
+            {"NotecardItemID", FieldType::LLUUID, 0},
+            {"ObjectID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryData", 0, true, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"FolderID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"UpdateInventoryItem", 65802, Frequency::Low, 266, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryData", 0, true, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"FolderID", FieldType::LLUUID, 0},
+            {"CallbackID", FieldType::U32, 0},
+            {"CreatorID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"BaseMask", FieldType::U32, 0},
+            {"OwnerMask", FieldType::U32, 0},
+            {"GroupMask", FieldType::U32, 0},
+            {"EveryoneMask", FieldType::U32, 0},
+            {"NextOwnerMask", FieldType::U32, 0},
+            {"GroupOwned", FieldType::BOOL, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+            {"Type", FieldType::S8, 0},
+            {"InvType", FieldType::S8, 0},
+            {"Flags", FieldType::U32, 0},
+            {"SaleType", FieldType::U8, 0},
+            {"SalePrice", FieldType::S32, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Description", FieldType::Variable, 1},
+            {"CreationDate", FieldType::S32, 0},
+            {"CRC", FieldType::U32, 0},
+        }},
+    }},
+    {"UpdateCreateInventoryItem", 65803, Frequency::Low, 267, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SimApproved", FieldType::BOOL, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryData", 0, true, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"FolderID", FieldType::LLUUID, 0},
+            {"CallbackID", FieldType::U32, 0},
+            {"CreatorID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"BaseMask", FieldType::U32, 0},
+            {"OwnerMask", FieldType::U32, 0},
+            {"GroupMask", FieldType::U32, 0},
+            {"EveryoneMask", FieldType::U32, 0},
+            {"NextOwnerMask", FieldType::U32, 0},
+            {"GroupOwned", FieldType::BOOL, 0},
+            {"AssetID", FieldType::LLUUID, 0},
+            {"Type", FieldType::S8, 0},
+            {"InvType", FieldType::S8, 0},
+            {"Flags", FieldType::U32, 0},
+            {"SaleType", FieldType::U8, 0},
+            {"SalePrice", FieldType::S32, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Description", FieldType::Variable, 1},
+            {"CreationDate", FieldType::S32, 0},
+            {"CRC", FieldType::U32, 0},
+        }},
+    }},
+    {"MoveInventoryItem", 65804, Frequency::Low, 268, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"Stamp", FieldType::BOOL, 0},
+        }},
+        {"InventoryData", 0, true, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"FolderID", FieldType::LLUUID, 0},
+            {"NewName", FieldType::Variable, 1},
+        }},
+    }},
+    {"CopyInventoryItem", 65805, Frequency::Low, 269, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryData", 0, true, {
+            {"CallbackID", FieldType::U32, 0},
+            {"OldAgentID", FieldType::LLUUID, 0},
+            {"OldItemID", FieldType::LLUUID, 0},
+            {"NewFolderID", FieldType::LLUUID, 0},
+            {"NewName", FieldType::Variable, 1},
+        }},
+    }},
+    {"RemoveInventoryItem", 65806, Frequency::Low, 270, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryData", 0, true, {
+            {"ItemID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ChangeInventoryItemFlags", 65807, Frequency::Low, 271, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryData", 0, true, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"Flags", FieldType::U32, 0},
+        }},
+    }},
+    {"SaveAssetIntoInventory", 65808, Frequency::Low, 272, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryData", 1, false, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"NewAssetID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"CreateInventoryFolder", 65809, Frequency::Low, 273, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"FolderData", 1, false, {
+            {"FolderID", FieldType::LLUUID, 0},
+            {"ParentID", FieldType::LLUUID, 0},
+            {"Type", FieldType::S8, 0},
+            {"Name", FieldType::Variable, 1},
+        }},
+    }},
+    {"UpdateInventoryFolder", 65810, Frequency::Low, 274, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"FolderData", 0, true, {
+            {"FolderID", FieldType::LLUUID, 0},
+            {"ParentID", FieldType::LLUUID, 0},
+            {"Type", FieldType::S8, 0},
+            {"Name", FieldType::Variable, 1},
+        }},
+    }},
+    {"MoveInventoryFolder", 65811, Frequency::Low, 275, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"Stamp", FieldType::BOOL, 0},
+        }},
+        {"InventoryData", 0, true, {
+            {"FolderID", FieldType::LLUUID, 0},
+            {"ParentID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"RemoveInventoryFolder", 65812, Frequency::Low, 276, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"FolderData", 0, true, {
+            {"FolderID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"FetchInventoryDescendents", 65813, Frequency::Low, 277, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryData", 1, false, {
+            {"FolderID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"SortOrder", FieldType::S32, 0},
+            {"FetchFolders", FieldType::BOOL, 0},
+            {"FetchItems", FieldType::BOOL, 0},
+        }},
+    }},
+    {"InventoryDescendents", 65814, Frequency::Low, 278, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"FolderID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"Version", FieldType::S32, 0},
+            {"Descendents", FieldType::S32, 0},
+        }},
+        {"FolderData", 0, true, {
+            {"FolderID", FieldType::LLUUID, 0},
+            {"ParentID", FieldType::LLUUID, 0},
+            {"Type", FieldType::S8, 0},
+            {"Name", FieldType::Variable, 1},
+        }},
+        {"ItemData", 0, true, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"FolderID", FieldType::LLUUID, 0},
+            {"CreatorID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"BaseMask", FieldType::U32, 0},
+            {"OwnerMask", FieldType::U32, 0},
+            {"GroupMask", FieldType::U32, 0},
+            {"EveryoneMask", FieldType::U32, 0},
+            {"NextOwnerMask", FieldType::U32, 0},
+            {"GroupOwned", FieldType::BOOL, 0},
+            {"AssetID", FieldType::LLUUID, 0},
+            {"Type", FieldType::S8, 0},
+            {"InvType", FieldType::S8, 0},
+            {"Flags", FieldType::U32, 0},
+            {"SaleType", FieldType::U8, 0},
+            {"SalePrice", FieldType::S32, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Description", FieldType::Variable, 1},
+            {"CreationDate", FieldType::S32, 0},
+            {"CRC", FieldType::U32, 0},
+        }},
+    }},
+    {"FetchInventory", 65815, Frequency::Low, 279, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryData", 0, true, {
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"ItemID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"FetchInventoryReply", 65816, Frequency::Low, 280, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryData", 0, true, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"FolderID", FieldType::LLUUID, 0},
+            {"CreatorID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"BaseMask", FieldType::U32, 0},
+            {"OwnerMask", FieldType::U32, 0},
+            {"GroupMask", FieldType::U32, 0},
+            {"EveryoneMask", FieldType::U32, 0},
+            {"NextOwnerMask", FieldType::U32, 0},
+            {"GroupOwned", FieldType::BOOL, 0},
+            {"AssetID", FieldType::LLUUID, 0},
+            {"Type", FieldType::S8, 0},
+            {"InvType", FieldType::S8, 0},
+            {"Flags", FieldType::U32, 0},
+            {"SaleType", FieldType::U8, 0},
+            {"SalePrice", FieldType::S32, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Description", FieldType::Variable, 1},
+            {"CreationDate", FieldType::S32, 0},
+            {"CRC", FieldType::U32, 0},
+        }},
+    }},
+    {"BulkUpdateInventory", 65817, Frequency::Low, 281, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+        }},
+        {"FolderData", 0, true, {
+            {"FolderID", FieldType::LLUUID, 0},
+            {"ParentID", FieldType::LLUUID, 0},
+            {"Type", FieldType::S8, 0},
+            {"Name", FieldType::Variable, 1},
+        }},
+        {"ItemData", 0, true, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"CallbackID", FieldType::U32, 0},
+            {"FolderID", FieldType::LLUUID, 0},
+            {"CreatorID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"BaseMask", FieldType::U32, 0},
+            {"OwnerMask", FieldType::U32, 0},
+            {"GroupMask", FieldType::U32, 0},
+            {"EveryoneMask", FieldType::U32, 0},
+            {"NextOwnerMask", FieldType::U32, 0},
+            {"GroupOwned", FieldType::BOOL, 0},
+            {"AssetID", FieldType::LLUUID, 0},
+            {"Type", FieldType::S8, 0},
+            {"InvType", FieldType::S8, 0},
+            {"Flags", FieldType::U32, 0},
+            {"SaleType", FieldType::U8, 0},
+            {"SalePrice", FieldType::S32, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Description", FieldType::Variable, 1},
+            {"CreationDate", FieldType::S32, 0},
+            {"CRC", FieldType::U32, 0},
+        }},
+    }},
+    {"RemoveInventoryObjects", 65820, Frequency::Low, 284, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"FolderData", 0, true, {
+            {"FolderID", FieldType::LLUUID, 0},
+        }},
+        {"ItemData", 0, true, {
+            {"ItemID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"PurgeInventoryDescendents", 65821, Frequency::Low, 285, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryData", 1, false, {
+            {"FolderID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"UpdateTaskInventory", 65822, Frequency::Low, 286, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"UpdateData", 1, false, {
+            {"LocalID", FieldType::U32, 0},
+            {"Key", FieldType::U8, 0},
+        }},
+        {"InventoryData", 1, false, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"FolderID", FieldType::LLUUID, 0},
+            {"CreatorID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"BaseMask", FieldType::U32, 0},
+            {"OwnerMask", FieldType::U32, 0},
+            {"GroupMask", FieldType::U32, 0},
+            {"EveryoneMask", FieldType::U32, 0},
+            {"NextOwnerMask", FieldType::U32, 0},
+            {"GroupOwned", FieldType::BOOL, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+            {"Type", FieldType::S8, 0},
+            {"InvType", FieldType::S8, 0},
+            {"Flags", FieldType::U32, 0},
+            {"SaleType", FieldType::U8, 0},
+            {"SalePrice", FieldType::S32, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Description", FieldType::Variable, 1},
+            {"CreationDate", FieldType::S32, 0},
+            {"CRC", FieldType::U32, 0},
+        }},
+    }},
+    {"RemoveTaskInventory", 65823, Frequency::Low, 287, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryData", 1, false, {
+            {"LocalID", FieldType::U32, 0},
+            {"ItemID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"MoveTaskInventory", 65824, Frequency::Low, 288, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"FolderID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryData", 1, false, {
+            {"LocalID", FieldType::U32, 0},
+            {"ItemID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"RequestTaskInventory", 65825, Frequency::Low, 289, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryData", 1, false, {
+            {"LocalID", FieldType::U32, 0},
+        }},
+    }},
+    {"ReplyTaskInventory", 65826, Frequency::Low, 290, true, true, false, {
+        {"InventoryData", 1, false, {
+            {"TaskID", FieldType::LLUUID, 0},
+            {"Serial", FieldType::S16, 0},
+            {"Filename", FieldType::Variable, 1},
+        }},
+    }},
+    {"DeRezObject", 65827, Frequency::Low, 291, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"AgentBlock", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"Destination", FieldType::U8, 0},
+            {"DestinationID", FieldType::LLUUID, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+            {"PacketCount", FieldType::U8, 0},
+            {"PacketNumber", FieldType::U8, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+        }},
+    }},
+    {"DeRezAck", 65828, Frequency::Low, 292, true, false, false, {
+        {"TransactionData", 1, false, {
+            {"TransactionID", FieldType::LLUUID, 0},
+            {"Success", FieldType::BOOL, 0},
+        }},
+    }},
+    {"RezObject", 65829, Frequency::Low, 293, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"RezData", 1, false, {
+            {"FromTaskID", FieldType::LLUUID, 0},
+            {"BypassRaycast", FieldType::U8, 0},
+            {"RayStart", FieldType::LLVector3, 0},
+            {"RayEnd", FieldType::LLVector3, 0},
+            {"RayTargetID", FieldType::LLUUID, 0},
+            {"RayEndIsIntersection", FieldType::BOOL, 0},
+            {"RezSelected", FieldType::BOOL, 0},
+            {"RemoveItem", FieldType::BOOL, 0},
+            {"ItemFlags", FieldType::U32, 0},
+            {"GroupMask", FieldType::U32, 0},
+            {"EveryoneMask", FieldType::U32, 0},
+            {"NextOwnerMask", FieldType::U32, 0},
+        }},
+        {"InventoryData", 1, false, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"FolderID", FieldType::LLUUID, 0},
+            {"CreatorID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"BaseMask", FieldType::U32, 0},
+            {"OwnerMask", FieldType::U32, 0},
+            {"GroupMask", FieldType::U32, 0},
+            {"EveryoneMask", FieldType::U32, 0},
+            {"NextOwnerMask", FieldType::U32, 0},
+            {"GroupOwned", FieldType::BOOL, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+            {"Type", FieldType::S8, 0},
+            {"InvType", FieldType::S8, 0},
+            {"Flags", FieldType::U32, 0},
+            {"SaleType", FieldType::U8, 0},
+            {"SalePrice", FieldType::S32, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Description", FieldType::Variable, 1},
+            {"CreationDate", FieldType::S32, 0},
+            {"CRC", FieldType::U32, 0},
+        }},
+    }},
+    {"RezObjectFromNotecard", 65830, Frequency::Low, 294, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"RezData", 1, false, {
+            {"FromTaskID", FieldType::LLUUID, 0},
+            {"BypassRaycast", FieldType::U8, 0},
+            {"RayStart", FieldType::LLVector3, 0},
+            {"RayEnd", FieldType::LLVector3, 0},
+            {"RayTargetID", FieldType::LLUUID, 0},
+            {"RayEndIsIntersection", FieldType::BOOL, 0},
+            {"RezSelected", FieldType::BOOL, 0},
+            {"RemoveItem", FieldType::BOOL, 0},
+            {"ItemFlags", FieldType::U32, 0},
+            {"GroupMask", FieldType::U32, 0},
+            {"EveryoneMask", FieldType::U32, 0},
+            {"NextOwnerMask", FieldType::U32, 0},
+        }},
+        {"NotecardData", 1, false, {
+            {"NotecardItemID", FieldType::LLUUID, 0},
+            {"ObjectID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryData", 0, true, {
+            {"ItemID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"AcceptFriendship", 65833, Frequency::Low, 297, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"TransactionBlock", 1, false, {
+            {"TransactionID", FieldType::LLUUID, 0},
+        }},
+        {"FolderData", 0, true, {
+            {"FolderID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"DeclineFriendship", 65834, Frequency::Low, 298, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"TransactionBlock", 1, false, {
+            {"TransactionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"TerminateFriendship", 65836, Frequency::Low, 300, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ExBlock", 1, false, {
+            {"OtherID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"OfferCallingCard", 65837, Frequency::Low, 301, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"AgentBlock", 1, false, {
+            {"DestID", FieldType::LLUUID, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"AcceptCallingCard", 65838, Frequency::Low, 302, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"TransactionBlock", 1, false, {
+            {"TransactionID", FieldType::LLUUID, 0},
+        }},
+        {"FolderData", 0, true, {
+            {"FolderID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"DeclineCallingCard", 65839, Frequency::Low, 303, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"TransactionBlock", 1, false, {
+            {"TransactionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"RezScript", 65840, Frequency::Low, 304, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"UpdateBlock", 1, false, {
+            {"ObjectLocalID", FieldType::U32, 0},
+            {"Enabled", FieldType::BOOL, 0},
+        }},
+        {"InventoryBlock", 1, false, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"FolderID", FieldType::LLUUID, 0},
+            {"CreatorID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"BaseMask", FieldType::U32, 0},
+            {"OwnerMask", FieldType::U32, 0},
+            {"GroupMask", FieldType::U32, 0},
+            {"EveryoneMask", FieldType::U32, 0},
+            {"NextOwnerMask", FieldType::U32, 0},
+            {"GroupOwned", FieldType::BOOL, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+            {"Type", FieldType::S8, 0},
+            {"InvType", FieldType::S8, 0},
+            {"Flags", FieldType::U32, 0},
+            {"SaleType", FieldType::U8, 0},
+            {"SalePrice", FieldType::S32, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Description", FieldType::Variable, 1},
+            {"CreationDate", FieldType::S32, 0},
+            {"CRC", FieldType::U32, 0},
+        }},
+    }},
+    {"CreateInventoryItem", 65841, Frequency::Low, 305, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryBlock", 1, false, {
+            {"CallbackID", FieldType::U32, 0},
+            {"FolderID", FieldType::LLUUID, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+            {"NextOwnerMask", FieldType::U32, 0},
+            {"Type", FieldType::S8, 0},
+            {"InvType", FieldType::S8, 0},
+            {"WearableType", FieldType::U8, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Description", FieldType::Variable, 1},
+        }},
+    }},
+    {"CreateLandmarkForEvent", 65842, Frequency::Low, 306, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"EventData", 1, false, {
+            {"EventID", FieldType::U32, 0},
+        }},
+        {"InventoryBlock", 1, false, {
+            {"FolderID", FieldType::LLUUID, 0},
+            {"Name", FieldType::Variable, 1},
+        }},
+    }},
+    {"RegionHandleRequest", 65845, Frequency::Low, 309, true, false, false, {
+        {"RequestBlock", 1, false, {
+            {"RegionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"RegionIDAndHandleReply", 65846, Frequency::Low, 310, true, false, false, {
+        {"ReplyBlock", 1, false, {
+            {"RegionID", FieldType::LLUUID, 0},
+            {"RegionHandle", FieldType::U64, 0},
+        }},
+    }},
+    {"MoneyTransferRequest", 65847, Frequency::Low, 311, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"MoneyData", 1, false, {
+            {"SourceID", FieldType::LLUUID, 0},
+            {"DestID", FieldType::LLUUID, 0},
+            {"Flags", FieldType::U8, 0},
+            {"Amount", FieldType::S32, 0},
+            {"AggregatePermNextOwner", FieldType::U8, 0},
+            {"AggregatePermInventory", FieldType::U8, 0},
+            {"TransactionType", FieldType::S32, 0},
+            {"Description", FieldType::Variable, 1},
+        }},
+    }},
+    {"MoneyBalanceRequest", 65849, Frequency::Low, 313, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"MoneyData", 1, false, {
+            {"TransactionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"MoneyBalanceReply", 65850, Frequency::Low, 314, true, true, false, {
+        {"MoneyData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+            {"TransactionSuccess", FieldType::BOOL, 0},
+            {"MoneyBalance", FieldType::S32, 0},
+            {"SquareMetersCredit", FieldType::S32, 0},
+            {"SquareMetersCommitted", FieldType::S32, 0},
+            {"Description", FieldType::Variable, 1},
+        }},
+        {"TransactionInfo", 1, false, {
+            {"TransactionType", FieldType::S32, 0},
+            {"SourceID", FieldType::LLUUID, 0},
+            {"IsSourceGroup", FieldType::BOOL, 0},
+            {"DestID", FieldType::LLUUID, 0},
+            {"IsDestGroup", FieldType::BOOL, 0},
+            {"Amount", FieldType::S32, 0},
+            {"ItemDescription", FieldType::Variable, 1},
+        }},
+    }},
+    {"RoutedMoneyBalanceReply", 65851, Frequency::Low, 315, true, true, false, {
+        {"TargetBlock", 1, false, {
+            {"TargetIP", FieldType::IPADDR, 0},
+            {"TargetPort", FieldType::IPPORT, 0},
+        }},
+        {"MoneyData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+            {"TransactionSuccess", FieldType::BOOL, 0},
+            {"MoneyBalance", FieldType::S32, 0},
+            {"SquareMetersCredit", FieldType::S32, 0},
+            {"SquareMetersCommitted", FieldType::S32, 0},
+            {"Description", FieldType::Variable, 1},
+        }},
+        {"TransactionInfo", 1, false, {
+            {"TransactionType", FieldType::S32, 0},
+            {"SourceID", FieldType::LLUUID, 0},
+            {"IsSourceGroup", FieldType::BOOL, 0},
+            {"DestID", FieldType::LLUUID, 0},
+            {"IsDestGroup", FieldType::BOOL, 0},
+            {"Amount", FieldType::S32, 0},
+            {"ItemDescription", FieldType::Variable, 1},
+        }},
+    }},
+    {"ActivateGestures", 65852, Frequency::Low, 316, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"Flags", FieldType::U32, 0},
+        }},
+        {"Data", 0, true, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"AssetID", FieldType::LLUUID, 0},
+            {"GestureFlags", FieldType::U32, 0},
+        }},
+    }},
+    {"DeactivateGestures", 65853, Frequency::Low, 317, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"Flags", FieldType::U32, 0},
+        }},
+        {"Data", 0, true, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"GestureFlags", FieldType::U32, 0},
+        }},
+    }},
+    {"MuteListUpdate", 65854, Frequency::Low, 318, true, false, false, {
+        {"MuteData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"Filename", FieldType::Variable, 1},
+        }},
+    }},
+    {"UseCachedMuteList", 65855, Frequency::Low, 319, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"GrantUserRights", 65856, Frequency::Low, 320, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Rights", 0, true, {
+            {"AgentRelated", FieldType::LLUUID, 0},
+            {"RelatedRights", FieldType::S32, 0},
+        }},
+    }},
+    {"ChangeUserRights", 65857, Frequency::Low, 321, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"Rights", 0, true, {
+            {"AgentRelated", FieldType::LLUUID, 0},
+            {"RelatedRights", FieldType::S32, 0},
+        }},
+    }},
+    {"OnlineNotification", 65858, Frequency::Low, 322, true, false, false, {
+        {"AgentBlock", 0, true, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"OfflineNotification", 65859, Frequency::Low, 323, true, false, false, {
+        {"AgentBlock", 0, true, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"SetStartLocationRequest", 65860, Frequency::Low, 324, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"StartLocationData", 1, false, {
+            {"SimName", FieldType::Variable, 1},
+            {"LocationID", FieldType::U32, 0},
+            {"LocationPos", FieldType::LLVector3, 0},
+            {"LocationLookAt", FieldType::LLVector3, 0},
+        }},
+    }},
+    {"AssetUploadRequest", 65869, Frequency::Low, 333, true, false, false, {
+        {"AssetBlock", 1, false, {
+            {"TransactionID", FieldType::LLUUID, 0},
+            {"Type", FieldType::S8, 0},
+            {"Tempfile", FieldType::BOOL, 0},
+            {"StoreLocal", FieldType::BOOL, 0},
+            {"AssetData", FieldType::Variable, 2},
+        }},
+    }},
+    {"AssetUploadComplete", 65870, Frequency::Low, 334, true, false, false, {
+        {"AssetBlock", 1, false, {
+            {"UUID", FieldType::LLUUID, 0},
+            {"Type", FieldType::S8, 0},
+            {"Success", FieldType::BOOL, 0},
+        }},
+    }},
+    {"CreateGroupRequest", 65875, Frequency::Low, 339, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 1, false, {
+            {"Name", FieldType::Variable, 1},
+            {"Charter", FieldType::Variable, 2},
+            {"ShowInList", FieldType::BOOL, 0},
+            {"InsigniaID", FieldType::LLUUID, 0},
+            {"MembershipFee", FieldType::S32, 0},
+            {"OpenEnrollment", FieldType::BOOL, 0},
+            {"AllowPublish", FieldType::BOOL, 0},
+            {"MaturePublish", FieldType::BOOL, 0},
+        }},
+    }},
+    {"CreateGroupReply", 65876, Frequency::Low, 340, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"ReplyData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"Success", FieldType::BOOL, 0},
+            {"Message", FieldType::Variable, 1},
+        }},
+    }},
+    {"UpdateGroupInfo", 65877, Frequency::Low, 341, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"Charter", FieldType::Variable, 2},
+            {"ShowInList", FieldType::BOOL, 0},
+            {"InsigniaID", FieldType::LLUUID, 0},
+            {"MembershipFee", FieldType::S32, 0},
+            {"OpenEnrollment", FieldType::BOOL, 0},
+            {"AllowPublish", FieldType::BOOL, 0},
+            {"MaturePublish", FieldType::BOOL, 0},
+        }},
+    }},
+    {"GroupRoleChanges", 65878, Frequency::Low, 342, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"RoleChange", 0, true, {
+            {"RoleID", FieldType::LLUUID, 0},
+            {"MemberID", FieldType::LLUUID, 0},
+            {"Change", FieldType::U32, 0},
+        }},
+    }},
+    {"JoinGroupRequest", 65879, Frequency::Low, 343, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"JoinGroupReply", 65880, Frequency::Low, 344, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"Success", FieldType::BOOL, 0},
+        }},
+    }},
+    {"EjectGroupMemberRequest", 65881, Frequency::Low, 345, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"EjectData", 0, true, {
+            {"EjecteeID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"EjectGroupMemberReply", 65882, Frequency::Low, 346, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"EjectData", 1, false, {
+            {"Success", FieldType::BOOL, 0},
+        }},
+    }},
+    {"LeaveGroupRequest", 65883, Frequency::Low, 347, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"LeaveGroupReply", 65884, Frequency::Low, 348, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"Success", FieldType::BOOL, 0},
+        }},
+    }},
+    {"InviteGroupRequest", 65885, Frequency::Low, 349, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"InviteData", 0, true, {
+            {"InviteeID", FieldType::LLUUID, 0},
+            {"RoleID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"GroupProfileRequest", 65887, Frequency::Low, 351, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"GroupProfileReply", 65888, Frequency::Low, 352, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Charter", FieldType::Variable, 2},
+            {"ShowInList", FieldType::BOOL, 0},
+            {"MemberTitle", FieldType::Variable, 1},
+            {"PowersMask", FieldType::U64, 0},
+            {"InsigniaID", FieldType::LLUUID, 0},
+            {"FounderID", FieldType::LLUUID, 0},
+            {"MembershipFee", FieldType::S32, 0},
+            {"OpenEnrollment", FieldType::BOOL, 0},
+            {"Money", FieldType::S32, 0},
+            {"GroupMembershipCount", FieldType::S32, 0},
+            {"GroupRolesCount", FieldType::S32, 0},
+            {"AllowPublish", FieldType::BOOL, 0},
+            {"MaturePublish", FieldType::BOOL, 0},
+            {"OwnerRole", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"GroupAccountSummaryRequest", 65889, Frequency::Low, 353, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"MoneyData", 1, false, {
+            {"RequestID", FieldType::LLUUID, 0},
+            {"IntervalDays", FieldType::S32, 0},
+            {"CurrentInterval", FieldType::S32, 0},
+        }},
+    }},
+    {"GroupAccountSummaryReply", 65890, Frequency::Low, 354, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"MoneyData", 1, false, {
+            {"RequestID", FieldType::LLUUID, 0},
+            {"IntervalDays", FieldType::S32, 0},
+            {"CurrentInterval", FieldType::S32, 0},
+            {"StartDate", FieldType::Variable, 1},
+            {"Balance", FieldType::S32, 0},
+            {"TotalCredits", FieldType::S32, 0},
+            {"TotalDebits", FieldType::S32, 0},
+            {"ObjectTaxCurrent", FieldType::S32, 0},
+            {"LightTaxCurrent", FieldType::S32, 0},
+            {"LandTaxCurrent", FieldType::S32, 0},
+            {"GroupTaxCurrent", FieldType::S32, 0},
+            {"ParcelDirFeeCurrent", FieldType::S32, 0},
+            {"ObjectTaxEstimate", FieldType::S32, 0},
+            {"LightTaxEstimate", FieldType::S32, 0},
+            {"LandTaxEstimate", FieldType::S32, 0},
+            {"GroupTaxEstimate", FieldType::S32, 0},
+            {"ParcelDirFeeEstimate", FieldType::S32, 0},
+            {"NonExemptMembers", FieldType::S32, 0},
+            {"LastTaxDate", FieldType::Variable, 1},
+            {"TaxDate", FieldType::Variable, 1},
+        }},
+    }},
+    {"GroupAccountDetailsRequest", 65891, Frequency::Low, 355, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"MoneyData", 1, false, {
+            {"RequestID", FieldType::LLUUID, 0},
+            {"IntervalDays", FieldType::S32, 0},
+            {"CurrentInterval", FieldType::S32, 0},
+        }},
+    }},
+    {"GroupAccountDetailsReply", 65892, Frequency::Low, 356, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"MoneyData", 1, false, {
+            {"RequestID", FieldType::LLUUID, 0},
+            {"IntervalDays", FieldType::S32, 0},
+            {"CurrentInterval", FieldType::S32, 0},
+            {"StartDate", FieldType::Variable, 1},
+        }},
+        {"HistoryData", 0, true, {
+            {"Description", FieldType::Variable, 1},
+            {"Amount", FieldType::S32, 0},
+        }},
+    }},
+    {"GroupAccountTransactionsRequest", 65893, Frequency::Low, 357, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"MoneyData", 1, false, {
+            {"RequestID", FieldType::LLUUID, 0},
+            {"IntervalDays", FieldType::S32, 0},
+            {"CurrentInterval", FieldType::S32, 0},
+        }},
+    }},
+    {"GroupAccountTransactionsReply", 65894, Frequency::Low, 358, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"MoneyData", 1, false, {
+            {"RequestID", FieldType::LLUUID, 0},
+            {"IntervalDays", FieldType::S32, 0},
+            {"CurrentInterval", FieldType::S32, 0},
+            {"StartDate", FieldType::Variable, 1},
+        }},
+        {"HistoryData", 0, true, {
+            {"Time", FieldType::Variable, 1},
+            {"User", FieldType::Variable, 1},
+            {"Type", FieldType::S32, 0},
+            {"Item", FieldType::Variable, 1},
+            {"Amount", FieldType::S32, 0},
+        }},
+    }},
+    {"GroupActiveProposalsRequest", 65895, Frequency::Low, 359, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"TransactionData", 1, false, {
+            {"TransactionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"GroupActiveProposalItemReply", 65896, Frequency::Low, 360, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"TransactionData", 1, false, {
+            {"TransactionID", FieldType::LLUUID, 0},
+            {"TotalNumItems", FieldType::U32, 0},
+        }},
+        {"ProposalData", 0, true, {
+            {"VoteID", FieldType::LLUUID, 0},
+            {"VoteInitiator", FieldType::LLUUID, 0},
+            {"TerseDateID", FieldType::Variable, 1},
+            {"StartDateTime", FieldType::Variable, 1},
+            {"EndDateTime", FieldType::Variable, 1},
+            {"AlreadyVoted", FieldType::BOOL, 0},
+            {"VoteCast", FieldType::Variable, 1},
+            {"Majority", FieldType::F32, 0},
+            {"Quorum", FieldType::S32, 0},
+            {"ProposalText", FieldType::Variable, 1},
+        }},
+    }},
+    {"GroupVoteHistoryRequest", 65897, Frequency::Low, 361, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"TransactionData", 1, false, {
+            {"TransactionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"GroupVoteHistoryItemReply", 65898, Frequency::Low, 362, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"TransactionData", 1, false, {
+            {"TransactionID", FieldType::LLUUID, 0},
+            {"TotalNumItems", FieldType::U32, 0},
+        }},
+        {"HistoryItemData", 1, false, {
+            {"VoteID", FieldType::LLUUID, 0},
+            {"TerseDateID", FieldType::Variable, 1},
+            {"StartDateTime", FieldType::Variable, 1},
+            {"EndDateTime", FieldType::Variable, 1},
+            {"VoteInitiator", FieldType::LLUUID, 0},
+            {"VoteType", FieldType::Variable, 1},
+            {"VoteResult", FieldType::Variable, 1},
+            {"Majority", FieldType::F32, 0},
+            {"Quorum", FieldType::S32, 0},
+            {"ProposalText", FieldType::Variable, 2},
+        }},
+        {"VoteItem", 0, true, {
+            {"CandidateID", FieldType::LLUUID, 0},
+            {"VoteCast", FieldType::Variable, 1},
+            {"NumVotes", FieldType::S32, 0},
+        }},
+    }},
+    {"StartGroupProposal", 65899, Frequency::Low, 363, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ProposalData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"Quorum", FieldType::S32, 0},
+            {"Majority", FieldType::F32, 0},
+            {"Duration", FieldType::S32, 0},
+            {"ProposalText", FieldType::Variable, 1},
+        }},
+    }},
+    {"GroupProposalBallot", 65900, Frequency::Low, 364, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ProposalData", 1, false, {
+            {"ProposalID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"VoteCast", FieldType::Variable, 1},
+        }},
+    }},
+    {"GroupMembersRequest", 65902, Frequency::Low, 366, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"RequestID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"GroupMembersReply", 65903, Frequency::Low, 367, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"RequestID", FieldType::LLUUID, 0},
+            {"MemberCount", FieldType::S32, 0},
+        }},
+        {"MemberData", 0, true, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"Contribution", FieldType::S32, 0},
+            {"OnlineStatus", FieldType::Variable, 1},
+            {"AgentPowers", FieldType::U64, 0},
+            {"Title", FieldType::Variable, 1},
+            {"IsOwner", FieldType::BOOL, 0},
+        }},
+    }},
+    {"ActivateGroup", 65904, Frequency::Low, 368, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"SetGroupContribution", 65905, Frequency::Low, 369, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"Contribution", FieldType::S32, 0},
+        }},
+    }},
+    {"SetGroupAcceptNotices", 65906, Frequency::Low, 370, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"AcceptNotices", FieldType::BOOL, 0},
+        }},
+        {"NewData", 1, false, {
+            {"ListInProfile", FieldType::BOOL, 0},
+        }},
+    }},
+    {"GroupRoleDataRequest", 65907, Frequency::Low, 371, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"RequestID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"GroupRoleDataReply", 65908, Frequency::Low, 372, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"RequestID", FieldType::LLUUID, 0},
+            {"RoleCount", FieldType::S32, 0},
+        }},
+        {"RoleData", 0, true, {
+            {"RoleID", FieldType::LLUUID, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Title", FieldType::Variable, 1},
+            {"Description", FieldType::Variable, 1},
+            {"Powers", FieldType::U64, 0},
+            {"Members", FieldType::U32, 0},
+        }},
+    }},
+    {"GroupRoleMembersRequest", 65909, Frequency::Low, 373, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 1, false, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"RequestID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"GroupRoleMembersReply", 65910, Frequency::Low, 374, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"RequestID", FieldType::LLUUID, 0},
+            {"TotalPairs", FieldType::U32, 0},
+        }},
+        {"MemberData", 0, true, {
+            {"RoleID", FieldType::LLUUID, 0},
+            {"MemberID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"GroupTitlesRequest", 65911, Frequency::Low, 375, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"RequestID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"GroupTitlesReply", 65912, Frequency::Low, 376, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"RequestID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 0, true, {
+            {"Title", FieldType::Variable, 1},
+            {"RoleID", FieldType::LLUUID, 0},
+            {"Selected", FieldType::BOOL, 0},
+        }},
+    }},
+    {"GroupTitleUpdate", 65913, Frequency::Low, 377, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"TitleRoleID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"GroupRoleUpdate", 65914, Frequency::Low, 378, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"RoleData", 0, true, {
+            {"RoleID", FieldType::LLUUID, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Description", FieldType::Variable, 1},
+            {"Title", FieldType::Variable, 1},
+            {"Powers", FieldType::U64, 0},
+            {"UpdateType", FieldType::U8, 0},
+        }},
+    }},
+    {"LiveHelpGroupRequest", 65915, Frequency::Low, 379, true, false, false, {
+        {"RequestData", 1, false, {
+            {"RequestID", FieldType::LLUUID, 0},
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"LiveHelpGroupReply", 65916, Frequency::Low, 380, true, false, false, {
+        {"ReplyData", 1, false, {
+            {"RequestID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"Selection", FieldType::Variable, 1},
+        }},
+    }},
+    {"AgentWearablesRequest", 65917, Frequency::Low, 381, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"AgentWearablesUpdate", 65918, Frequency::Low, 382, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"SerialNum", FieldType::U32, 0},
+        }},
+        {"WearableData", 0, true, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"AssetID", FieldType::LLUUID, 0},
+            {"WearableType", FieldType::U8, 0},
+        }},
+    }},
+    {"AgentIsNowWearing", 65919, Frequency::Low, 383, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"WearableData", 0, true, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"WearableType", FieldType::U8, 0},
+        }},
+    }},
+    {"AgentCachedTexture", 65920, Frequency::Low, 384, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"SerialNum", FieldType::S32, 0},
+        }},
+        {"WearableData", 0, true, {
+            {"ID", FieldType::LLUUID, 0},
+            {"TextureIndex", FieldType::U8, 0},
+        }},
+    }},
+    {"AgentCachedTextureResponse", 65921, Frequency::Low, 385, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"SerialNum", FieldType::S32, 0},
+        }},
+        {"WearableData", 0, true, {
+            {"TextureID", FieldType::LLUUID, 0},
+            {"TextureIndex", FieldType::U8, 0},
+            {"HostName", FieldType::Variable, 1},
+        }},
+    }},
+    {"AgentDataUpdateRequest", 65922, Frequency::Low, 386, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"AgentDataUpdate", 65923, Frequency::Low, 387, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"FirstName", FieldType::Variable, 1},
+            {"LastName", FieldType::Variable, 1},
+            {"GroupTitle", FieldType::Variable, 1},
+            {"ActiveGroupID", FieldType::LLUUID, 0},
+            {"GroupPowers", FieldType::U64, 0},
+            {"GroupName", FieldType::Variable, 1},
+        }},
+    }},
+    {"GroupDataUpdate", 65924, Frequency::Low, 388, true, true, false, {
+        {"AgentGroupData", 0, true, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"AgentPowers", FieldType::U64, 0},
+            {"GroupTitle", FieldType::Variable, 1},
+        }},
+    }},
+    {"AgentGroupDataUpdate", 65925, Frequency::Low, 389, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 0, true, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"GroupPowers", FieldType::U64, 0},
+            {"AcceptNotices", FieldType::BOOL, 0},
+            {"GroupInsigniaID", FieldType::LLUUID, 0},
+            {"Contribution", FieldType::S32, 0},
+            {"GroupName", FieldType::Variable, 1},
+        }},
+    }},
+    {"AgentDropGroup", 65926, Frequency::Low, 390, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"RezSingleAttachmentFromInv", 65931, Frequency::Low, 395, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 1, false, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"AttachmentPt", FieldType::U8, 0},
+            {"ItemFlags", FieldType::U32, 0},
+            {"GroupMask", FieldType::U32, 0},
+            {"EveryoneMask", FieldType::U32, 0},
+            {"NextOwnerMask", FieldType::U32, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Description", FieldType::Variable, 1},
+        }},
+    }},
+    {"RezMultipleAttachmentsFromInv", 65932, Frequency::Low, 396, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"HeaderData", 1, false, {
+            {"CompoundMsgID", FieldType::LLUUID, 0},
+            {"TotalObjects", FieldType::U8, 0},
+            {"FirstDetachAll", FieldType::BOOL, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"AttachmentPt", FieldType::U8, 0},
+            {"ItemFlags", FieldType::U32, 0},
+            {"GroupMask", FieldType::U32, 0},
+            {"EveryoneMask", FieldType::U32, 0},
+            {"NextOwnerMask", FieldType::U32, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Description", FieldType::Variable, 1},
+        }},
+    }},
+    {"DetachAttachmentIntoInv", 65933, Frequency::Low, 397, true, false, false, {
+        {"ObjectData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"ItemID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"CreateNewOutfitAttachments", 65934, Frequency::Low, 398, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"HeaderData", 1, false, {
+            {"NewFolderID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"OldItemID", FieldType::LLUUID, 0},
+            {"OldFolderID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"UserInfoRequest", 65935, Frequency::Low, 399, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"UserInfoReply", 65936, Frequency::Low, 400, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"UserData", 1, false, {
+            {"IMViaEMail", FieldType::BOOL, 0},
+            {"DirectoryVisibility", FieldType::Variable, 1},
+            {"EMail", FieldType::Variable, 2},
+        }},
+    }},
+    {"UpdateUserInfo", 65937, Frequency::Low, 401, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"UserData", 1, false, {
+            {"IMViaEMail", FieldType::BOOL, 0},
+            {"DirectoryVisibility", FieldType::Variable, 1},
+        }},
+    }},
+    {"InitiateDownload", 65939, Frequency::Low, 403, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"FileData", 1, false, {
+            {"SimFilename", FieldType::Variable, 1},
+            {"ViewerFilename", FieldType::Variable, 1},
+        }},
+    }},
+    {"MapLayerRequest", 65941, Frequency::Low, 405, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"Flags", FieldType::U32, 0},
+            {"EstateID", FieldType::U32, 0},
+            {"Godlike", FieldType::BOOL, 0},
+        }},
+    }},
+    {"MapLayerReply", 65942, Frequency::Low, 406, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"Flags", FieldType::U32, 0},
+        }},
+        {"LayerData", 0, true, {
+            {"Left", FieldType::U32, 0},
+            {"Right", FieldType::U32, 0},
+            {"Top", FieldType::U32, 0},
+            {"Bottom", FieldType::U32, 0},
+            {"ImageID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"MapBlockRequest", 65943, Frequency::Low, 407, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"Flags", FieldType::U32, 0},
+            {"EstateID", FieldType::U32, 0},
+            {"Godlike", FieldType::BOOL, 0},
+        }},
+        {"PositionData", 1, false, {
+            {"MinX", FieldType::U16, 0},
+            {"MaxX", FieldType::U16, 0},
+            {"MinY", FieldType::U16, 0},
+            {"MaxY", FieldType::U16, 0},
+        }},
+    }},
+    {"MapNameRequest", 65944, Frequency::Low, 408, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"Flags", FieldType::U32, 0},
+            {"EstateID", FieldType::U32, 0},
+            {"Godlike", FieldType::BOOL, 0},
+        }},
+        {"NameData", 1, false, {
+            {"Name", FieldType::Variable, 1},
+        }},
+    }},
+    {"MapBlockReply", 65945, Frequency::Low, 409, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"Flags", FieldType::U32, 0},
+        }},
+        {"Data", 0, true, {
+            {"X", FieldType::U16, 0},
+            {"Y", FieldType::U16, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Access", FieldType::U8, 0},
+            {"RegionFlags", FieldType::U32, 0},
+            {"WaterHeight", FieldType::U8, 0},
+            {"Agents", FieldType::U8, 0},
+            {"MapImageID", FieldType::LLUUID, 0},
+        }},
+        {"Size", 0, true, {
+            {"SizeX", FieldType::U16, 0},
+            {"SizeY", FieldType::U16, 0},
+        }},
+    }},
+    {"MapItemRequest", 65946, Frequency::Low, 410, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"Flags", FieldType::U32, 0},
+            {"EstateID", FieldType::U32, 0},
+            {"Godlike", FieldType::BOOL, 0},
+        }},
+        {"RequestData", 1, false, {
+            {"ItemType", FieldType::U32, 0},
+            {"RegionHandle", FieldType::U64, 0},
+        }},
+    }},
+    {"MapItemReply", 65947, Frequency::Low, 411, true, false, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"Flags", FieldType::U32, 0},
+        }},
+        {"RequestData", 1, false, {
+            {"ItemType", FieldType::U32, 0},
+        }},
+        {"Data", 0, true, {
+            {"X", FieldType::U32, 0},
+            {"Y", FieldType::U32, 0},
+            {"ID", FieldType::LLUUID, 0},
+            {"Extra", FieldType::S32, 0},
+            {"Extra2", FieldType::S32, 0},
+            {"Name", FieldType::Variable, 1},
+        }},
+    }},
+    {"SendPostcard", 65948, Frequency::Low, 412, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"AssetID", FieldType::LLUUID, 0},
+            {"PosGlobal", FieldType::LLVector3d, 0},
+            {"To", FieldType::Variable, 1},
+            {"From", FieldType::Variable, 1},
+            {"Name", FieldType::Variable, 1},
+            {"Subject", FieldType::Variable, 1},
+            {"Msg", FieldType::Variable, 2},
+            {"AllowPublish", FieldType::BOOL, 0},
+            {"MaturePublish", FieldType::BOOL, 0},
+        }},
+    }},
+    {"ParcelMediaCommandMessage", 65955, Frequency::Low, 419, true, false, false, {
+        {"CommandBlock", 1, false, {
+            {"Flags", FieldType::U32, 0},
+            {"Command", FieldType::U32, 0},
+            {"Time", FieldType::F32, 0},
+        }},
+    }},
+    {"ParcelMediaUpdate", 65956, Frequency::Low, 420, true, false, false, {
+        {"DataBlock", 1, false, {
+            {"MediaURL", FieldType::Variable, 1},
+            {"MediaID", FieldType::LLUUID, 0},
+            {"MediaAutoScale", FieldType::U8, 0},
+        }},
+        {"DataBlockExtended", 1, false, {
+            {"MediaType", FieldType::Variable, 1},
+            {"MediaDesc", FieldType::Variable, 1},
+            {"MediaWidth", FieldType::S32, 0},
+            {"MediaHeight", FieldType::S32, 0},
+            {"MediaLoop", FieldType::U8, 0},
+        }},
+    }},
+    {"LandStatRequest", 65957, Frequency::Low, 421, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"RequestData", 1, false, {
+            {"ReportType", FieldType::U32, 0},
+            {"RequestFlags", FieldType::U32, 0},
+            {"Filter", FieldType::Variable, 1},
+            {"ParcelLocalID", FieldType::S32, 0},
+        }},
+    }},
+    {"LandStatReply", 65958, Frequency::Low, 422, true, false, false, {
+        {"RequestData", 1, false, {
+            {"ReportType", FieldType::U32, 0},
+            {"RequestFlags", FieldType::U32, 0},
+            {"TotalObjectCount", FieldType::U32, 0},
+        }},
+        {"ReportData", 0, true, {
+            {"TaskLocalID", FieldType::U32, 0},
+            {"TaskID", FieldType::LLUUID, 0},
+            {"LocationX", FieldType::F32, 0},
+            {"LocationY", FieldType::F32, 0},
+            {"LocationZ", FieldType::F32, 0},
+            {"Score", FieldType::F32, 0},
+            {"TaskName", FieldType::Variable, 1},
+            {"OwnerName", FieldType::Variable, 1},
+        }},
+    }},
+    {"Error", 65959, Frequency::Low, 423, true, true, false, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+        {"Data", 1, false, {
+            {"Code", FieldType::S32, 0},
+            {"Token", FieldType::Variable, 1},
+            {"ID", FieldType::LLUUID, 0},
+            {"System", FieldType::Variable, 1},
+            {"Message", FieldType::Variable, 2},
+            {"Data", FieldType::Variable, 2},
+        }},
+    }},
+    {"ObjectIncludeInSearch", 65960, Frequency::Low, 424, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+            {"IncludeInSearch", FieldType::BOOL, 0},
+        }},
+    }},
+    {"RezRestoreToWorld", 65961, Frequency::Low, 425, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryData", 1, false, {
+            {"ItemID", FieldType::LLUUID, 0},
+            {"FolderID", FieldType::LLUUID, 0},
+            {"CreatorID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"BaseMask", FieldType::U32, 0},
+            {"OwnerMask", FieldType::U32, 0},
+            {"GroupMask", FieldType::U32, 0},
+            {"EveryoneMask", FieldType::U32, 0},
+            {"NextOwnerMask", FieldType::U32, 0},
+            {"GroupOwned", FieldType::BOOL, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+            {"Type", FieldType::S8, 0},
+            {"InvType", FieldType::S8, 0},
+            {"Flags", FieldType::U32, 0},
+            {"SaleType", FieldType::U8, 0},
+            {"SalePrice", FieldType::S32, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Description", FieldType::Variable, 1},
+            {"CreationDate", FieldType::S32, 0},
+            {"CRC", FieldType::U32, 0},
+        }},
+    }},
+    {"LinkInventoryItem", 65962, Frequency::Low, 426, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"InventoryBlock", 1, false, {
+            {"CallbackID", FieldType::U32, 0},
+            {"FolderID", FieldType::LLUUID, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+            {"OldItemID", FieldType::LLUUID, 0},
+            {"Type", FieldType::S8, 0},
+            {"InvType", FieldType::S8, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Description", FieldType::Variable, 1},
+        }},
+    }},
+    {"LargeGenericMessage", 65966, Frequency::Low, 430, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"TransactionID", FieldType::LLUUID, 0},
+        }},
+        {"MethodData", 1, false, {
+            {"Method", FieldType::Variable, 1},
+            {"Invoice", FieldType::LLUUID, 0},
+        }},
+        {"ParamList", 0, true, {
+            {"Parameter", FieldType::Variable, 2},
+        }},
+    }},
+    {"PacketAck", 131067, Frequency::Low, 65531, true, false, false, {
+        {"Packets", 0, true, {
+            {"ID", FieldType::U32, 0},
+        }},
+    }},
+    {"OpenCircuit", 131068, Frequency::Low, 65532, true, false, false, {
+        {"CircuitInfo", 1, false, {
+            {"IP", FieldType::IPADDR, 0},
+            {"Port", FieldType::IPPORT, 0},
+        }},
+    }},
+    {"CloseCircuit", 131069, Frequency::Low, 65533, true, false, false, {
+    }},
+    {"ObjectAdd", 131073, Frequency::Medium, 1, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 1, false, {
+            {"PCode", FieldType::U8, 0},
+            {"Material", FieldType::U8, 0},
+            {"AddFlags", FieldType::U32, 0},
+            {"PathCurve", FieldType::U8, 0},
+            {"ProfileCurve", FieldType::U8, 0},
+            {"PathBegin", FieldType::U16, 0},
+            {"PathEnd", FieldType::U16, 0},
+            {"PathScaleX", FieldType::U8, 0},
+            {"PathScaleY", FieldType::U8, 0},
+            {"PathShearX", FieldType::U8, 0},
+            {"PathShearY", FieldType::U8, 0},
+            {"PathTwist", FieldType::S8, 0},
+            {"PathTwistBegin", FieldType::S8, 0},
+            {"PathRadiusOffset", FieldType::S8, 0},
+            {"PathTaperX", FieldType::S8, 0},
+            {"PathTaperY", FieldType::S8, 0},
+            {"PathRevolutions", FieldType::U8, 0},
+            {"PathSkew", FieldType::S8, 0},
+            {"ProfileBegin", FieldType::U16, 0},
+            {"ProfileEnd", FieldType::U16, 0},
+            {"ProfileHollow", FieldType::U16, 0},
+            {"BypassRaycast", FieldType::U8, 0},
+            {"RayStart", FieldType::LLVector3, 0},
+            {"RayEnd", FieldType::LLVector3, 0},
+            {"RayTargetID", FieldType::LLUUID, 0},
+            {"RayEndIsIntersection", FieldType::U8, 0},
+            {"Scale", FieldType::LLVector3, 0},
+            {"Rotation", FieldType::LLQuaternion, 0},
+            {"State", FieldType::U8, 0},
+        }},
+    }},
+    {"MultipleObjectUpdate", 131074, Frequency::Medium, 2, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+            {"Type", FieldType::U8, 0},
+            {"Data", FieldType::Variable, 1},
+        }},
+    }},
+    {"RequestMultipleObjects", 131075, Frequency::Medium, 3, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"CacheMissType", FieldType::U8, 0},
+            {"ID", FieldType::U32, 0},
+        }},
+    }},
+    {"ObjectPosition", 131076, Frequency::Medium, 4, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ObjectLocalID", FieldType::U32, 0},
+            {"Position", FieldType::LLVector3, 0},
+        }},
+    }},
+    {"RequestObjectPropertiesFamily", 131077, Frequency::Medium, 5, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ObjectData", 1, false, {
+            {"RequestFlags", FieldType::U32, 0},
+            {"ObjectID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"CoarseLocationUpdate", 131078, Frequency::Medium, 6, true, false, false, {
+        {"Location", 0, true, {
+            {"X", FieldType::U8, 0},
+            {"Y", FieldType::U8, 0},
+            {"Z", FieldType::U8, 0},
+        }},
+        {"Index", 1, false, {
+            {"You", FieldType::S16, 0},
+            {"Prey", FieldType::S16, 0},
+        }},
+        {"AgentData", 0, true, {
+            {"AgentID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"CrossedRegion", 131079, Frequency::Medium, 7, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"RegionData", 1, false, {
+            {"SimIP", FieldType::IPADDR, 0},
+            {"SimPort", FieldType::IPPORT, 0},
+            {"RegionHandle", FieldType::U64, 0},
+            {"SeedCapability", FieldType::Variable, 2},
+        }},
+        {"Info", 1, false, {
+            {"Position", FieldType::LLVector3, 0},
+            {"LookAt", FieldType::LLVector3, 0},
+        }},
+    }},
+    {"ConfirmEnableSimulator", 131080, Frequency::Medium, 8, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ObjectProperties", 131081, Frequency::Medium, 9, true, true, false, {
+        {"ObjectData", 0, true, {
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"CreatorID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"CreationDate", FieldType::U64, 0},
+            {"BaseMask", FieldType::U32, 0},
+            {"OwnerMask", FieldType::U32, 0},
+            {"GroupMask", FieldType::U32, 0},
+            {"EveryoneMask", FieldType::U32, 0},
+            {"NextOwnerMask", FieldType::U32, 0},
+            {"OwnershipCost", FieldType::S32, 0},
+            {"SaleType", FieldType::U8, 0},
+            {"SalePrice", FieldType::S32, 0},
+            {"AggregatePerms", FieldType::U8, 0},
+            {"AggregatePermTextures", FieldType::U8, 0},
+            {"AggregatePermTexturesOwner", FieldType::U8, 0},
+            {"Category", FieldType::U32, 0},
+            {"InventorySerial", FieldType::S16, 0},
+            {"ItemID", FieldType::LLUUID, 0},
+            {"FolderID", FieldType::LLUUID, 0},
+            {"FromTaskID", FieldType::LLUUID, 0},
+            {"LastOwnerID", FieldType::LLUUID, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Description", FieldType::Variable, 1},
+            {"TouchName", FieldType::Variable, 1},
+            {"SitName", FieldType::Variable, 1},
+            {"TextureID", FieldType::Variable, 1},
+        }},
+    }},
+    {"ObjectPropertiesFamily", 131082, Frequency::Medium, 10, true, true, false, {
+        {"ObjectData", 1, false, {
+            {"RequestFlags", FieldType::U32, 0},
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"BaseMask", FieldType::U32, 0},
+            {"OwnerMask", FieldType::U32, 0},
+            {"GroupMask", FieldType::U32, 0},
+            {"EveryoneMask", FieldType::U32, 0},
+            {"NextOwnerMask", FieldType::U32, 0},
+            {"OwnershipCost", FieldType::S32, 0},
+            {"SaleType", FieldType::U8, 0},
+            {"SalePrice", FieldType::S32, 0},
+            {"Category", FieldType::U32, 0},
+            {"LastOwnerID", FieldType::LLUUID, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Description", FieldType::Variable, 1},
+        }},
+    }},
+    {"ParcelPropertiesRequest", 131083, Frequency::Medium, 11, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"ParcelData", 1, false, {
+            {"SequenceID", FieldType::S32, 0},
+            {"West", FieldType::F32, 0},
+            {"South", FieldType::F32, 0},
+            {"East", FieldType::F32, 0},
+            {"North", FieldType::F32, 0},
+            {"SnapSelection", FieldType::BOOL, 0},
+        }},
+    }},
+    {"AttachedSound", 131085, Frequency::Medium, 13, true, false, false, {
+        {"DataBlock", 1, false, {
+            {"SoundID", FieldType::LLUUID, 0},
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"Gain", FieldType::F32, 0},
+            {"Flags", FieldType::U8, 0},
+        }},
+    }},
+    {"AttachedSoundGainChange", 131086, Frequency::Medium, 14, true, false, false, {
+        {"DataBlock", 1, false, {
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"Gain", FieldType::F32, 0},
+        }},
+    }},
+    {"PreloadSound", 131087, Frequency::Medium, 15, true, false, false, {
+        {"DataBlock", 0, true, {
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"SoundID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ViewerEffect", 131089, Frequency::Medium, 17, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"Effect", 0, true, {
+            {"ID", FieldType::LLUUID, 0},
+            {"AgentID", FieldType::LLUUID, 0},
+            {"Type", FieldType::U8, 0},
+            {"Duration", FieldType::F32, 0},
+            {"Color", FieldType::Fixed, 4},
+            {"TypeData", FieldType::Variable, 1},
+        }},
+    }},
+    {"StartPingCheck", 196609, Frequency::High, 1, true, false, false, {
+        {"PingID", 1, false, {
+            {"PingID", FieldType::U8, 0},
+            {"OldestUnacked", FieldType::U32, 0},
+        }},
+    }},
+    {"CompletePingCheck", 196610, Frequency::High, 2, true, false, false, {
+        {"PingID", 1, false, {
+            {"PingID", FieldType::U8, 0},
+        }},
+    }},
+    {"AgentUpdate", 196612, Frequency::High, 4, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"BodyRotation", FieldType::LLQuaternion, 0},
+            {"HeadRotation", FieldType::LLQuaternion, 0},
+            {"State", FieldType::U8, 0},
+            {"CameraCenter", FieldType::LLVector3, 0},
+            {"CameraAtAxis", FieldType::LLVector3, 0},
+            {"CameraLeftAxis", FieldType::LLVector3, 0},
+            {"CameraUpAxis", FieldType::LLVector3, 0},
+            {"Far", FieldType::F32, 0},
+            {"ControlFlags", FieldType::U32, 0},
+            {"Flags", FieldType::U8, 0},
+        }},
+    }},
+    {"AgentAnimation", 196613, Frequency::High, 5, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"AnimationList", 0, true, {
+            {"AnimID", FieldType::LLUUID, 0},
+            {"StartAnim", FieldType::BOOL, 0},
+        }},
+        {"PhysicalAvatarEventList", 0, true, {
+            {"TypeData", FieldType::Variable, 1},
+        }},
+    }},
+    {"AgentRequestSit", 196614, Frequency::High, 6, true, true, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"TargetObject", 1, false, {
+            {"TargetID", FieldType::LLUUID, 0},
+            {"Offset", FieldType::LLVector3, 0},
+        }},
+    }},
+    {"AgentSit", 196615, Frequency::High, 7, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"RequestImage", 196616, Frequency::High, 8, true, false, true, {
+        {"AgentData", 1, false, {
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+        {"RequestImage", 0, true, {
+            {"Image", FieldType::LLUUID, 0},
+            {"DiscardLevel", FieldType::S8, 0},
+            {"DownloadPriority", FieldType::F32, 0},
+            {"Packet", FieldType::U32, 0},
+            {"Type", FieldType::U8, 0},
+        }},
+    }},
+    {"ImageData", 196617, Frequency::High, 9, true, false, false, {
+        {"ImageID", 1, false, {
+            {"ID", FieldType::LLUUID, 0},
+            {"Codec", FieldType::U8, 0},
+            {"Size", FieldType::U32, 0},
+            {"Packets", FieldType::U16, 0},
+        }},
+        {"ImageData", 1, false, {
+            {"Data", FieldType::Variable, 2},
+        }},
+    }},
+    {"ImagePacket", 196618, Frequency::High, 10, true, false, false, {
+        {"ImageID", 1, false, {
+            {"ID", FieldType::LLUUID, 0},
+            {"Packet", FieldType::U16, 0},
+        }},
+        {"ImageData", 1, false, {
+            {"Data", FieldType::Variable, 2},
+        }},
+    }},
+    {"LayerData", 196619, Frequency::High, 11, true, false, false, {
+        {"LayerID", 1, false, {
+            {"Type", FieldType::U8, 0},
+        }},
+        {"LayerData", 1, false, {
+            {"Data", FieldType::Variable, 2},
+        }},
+    }},
+    {"ObjectUpdate", 196620, Frequency::High, 12, true, true, false, {
+        {"RegionData", 1, false, {
+            {"RegionHandle", FieldType::U64, 0},
+            {"TimeDilation", FieldType::U16, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ID", FieldType::U32, 0},
+            {"State", FieldType::U8, 0},
+            {"FullID", FieldType::LLUUID, 0},
+            {"CRC", FieldType::U32, 0},
+            {"PCode", FieldType::U8, 0},
+            {"Material", FieldType::U8, 0},
+            {"ClickAction", FieldType::U8, 0},
+            {"Scale", FieldType::LLVector3, 0},
+            {"ObjectData", FieldType::Variable, 1},
+            {"ParentID", FieldType::U32, 0},
+            {"UpdateFlags", FieldType::U32, 0},
+            {"PathCurve", FieldType::U8, 0},
+            {"ProfileCurve", FieldType::U8, 0},
+            {"PathBegin", FieldType::U16, 0},
+            {"PathEnd", FieldType::U16, 0},
+            {"PathScaleX", FieldType::U8, 0},
+            {"PathScaleY", FieldType::U8, 0},
+            {"PathShearX", FieldType::U8, 0},
+            {"PathShearY", FieldType::U8, 0},
+            {"PathTwist", FieldType::S8, 0},
+            {"PathTwistBegin", FieldType::S8, 0},
+            {"PathRadiusOffset", FieldType::S8, 0},
+            {"PathTaperX", FieldType::S8, 0},
+            {"PathTaperY", FieldType::S8, 0},
+            {"PathRevolutions", FieldType::U8, 0},
+            {"PathSkew", FieldType::S8, 0},
+            {"ProfileBegin", FieldType::U16, 0},
+            {"ProfileEnd", FieldType::U16, 0},
+            {"ProfileHollow", FieldType::U16, 0},
+            {"TextureEntry", FieldType::Variable, 2},
+            {"TextureAnim", FieldType::Variable, 1},
+            {"NameValue", FieldType::Variable, 2},
+            {"Data", FieldType::Variable, 2},
+            {"Text", FieldType::Variable, 1},
+            {"TextColor", FieldType::Fixed, 4},
+            {"MediaURL", FieldType::Variable, 1},
+            {"PSBlock", FieldType::Variable, 1},
+            {"ExtraParams", FieldType::Variable, 1},
+            {"Sound", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"Gain", FieldType::F32, 0},
+            {"Flags", FieldType::U8, 0},
+            {"Radius", FieldType::F32, 0},
+            {"JointType", FieldType::U8, 0},
+            {"JointPivot", FieldType::LLVector3, 0},
+            {"JointAxisOrAnchor", FieldType::LLVector3, 0},
+        }},
+    }},
+    {"ObjectUpdateCompressed", 196621, Frequency::High, 13, true, false, false, {
+        {"RegionData", 1, false, {
+            {"RegionHandle", FieldType::U64, 0},
+            {"TimeDilation", FieldType::U16, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"UpdateFlags", FieldType::U32, 0},
+            {"Data", FieldType::Variable, 2},
+        }},
+    }},
+    {"ObjectUpdateCached", 196622, Frequency::High, 14, true, false, false, {
+        {"RegionData", 1, false, {
+            {"RegionHandle", FieldType::U64, 0},
+            {"TimeDilation", FieldType::U16, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"ID", FieldType::U32, 0},
+            {"CRC", FieldType::U32, 0},
+            {"UpdateFlags", FieldType::U32, 0},
+        }},
+    }},
+    {"ImprovedTerseObjectUpdate", 196623, Frequency::High, 15, true, false, false, {
+        {"RegionData", 1, false, {
+            {"RegionHandle", FieldType::U64, 0},
+            {"TimeDilation", FieldType::U16, 0},
+        }},
+        {"ObjectData", 0, true, {
+            {"Data", FieldType::Variable, 1},
+            {"TextureEntry", FieldType::Variable, 2},
+        }},
+    }},
+    {"KillObject", 196624, Frequency::High, 16, true, false, false, {
+        {"ObjectData", 0, true, {
+            {"ID", FieldType::U32, 0},
+        }},
+    }},
+    {"TransferPacket", 196625, Frequency::High, 17, true, false, false, {
+        {"TransferData", 1, false, {
+            {"TransferID", FieldType::LLUUID, 0},
+            {"ChannelType", FieldType::S32, 0},
+            {"Packet", FieldType::S32, 0},
+            {"Status", FieldType::S32, 0},
+            {"Data", FieldType::Variable, 2},
+        }},
+    }},
+    {"SendXferPacket", 196626, Frequency::High, 18, true, false, false, {
+        {"XferID", 1, false, {
+            {"ID", FieldType::U64, 0},
+            {"Packet", FieldType::U32, 0},
+        }},
+        {"DataPacket", 1, false, {
+            {"Data", FieldType::Variable, 2},
+        }},
+    }},
+    {"ConfirmXferPacket", 196627, Frequency::High, 19, true, false, false, {
+        {"XferID", 1, false, {
+            {"ID", FieldType::U64, 0},
+            {"Packet", FieldType::U32, 0},
+        }},
+    }},
+    {"AvatarAnimation", 196628, Frequency::High, 20, true, false, false, {
+        {"Sender", 1, false, {
+            {"ID", FieldType::LLUUID, 0},
+        }},
+        {"AnimationList", 0, true, {
+            {"AnimID", FieldType::LLUUID, 0},
+            {"AnimSequenceID", FieldType::S32, 0},
+        }},
+        {"AnimationSourceList", 0, true, {
+            {"ObjectID", FieldType::LLUUID, 0},
+        }},
+        {"PhysicalAvatarEventList", 0, true, {
+            {"TypeData", FieldType::Variable, 1},
+        }},
+    }},
+    {"AvatarSitResponse", 196629, Frequency::High, 21, true, true, false, {
+        {"SitObject", 1, false, {
+            {"ID", FieldType::LLUUID, 0},
+        }},
+        {"SitTransform", 1, false, {
+            {"AutoPilot", FieldType::BOOL, 0},
+            {"SitPosition", FieldType::LLVector3, 0},
+            {"SitRotation", FieldType::LLQuaternion, 0},
+            {"CameraEyeOffset", FieldType::LLVector3, 0},
+            {"CameraAtOffset", FieldType::LLVector3, 0},
+            {"ForceMouselook", FieldType::BOOL, 0},
+        }},
+    }},
+    {"CameraConstraint", 196630, Frequency::High, 22, true, true, false, {
+        {"CameraCollidePlane", 1, false, {
+            {"Plane", FieldType::LLVector4, 0},
+        }},
+    }},
+    {"ParcelProperties", 196631, Frequency::High, 23, true, true, false, {
+        {"ParcelData", 1, false, {
+            {"RequestResult", FieldType::S32, 0},
+            {"SequenceID", FieldType::S32, 0},
+            {"SnapSelection", FieldType::BOOL, 0},
+            {"SelfCount", FieldType::S32, 0},
+            {"OtherCount", FieldType::S32, 0},
+            {"PublicCount", FieldType::S32, 0},
+            {"LocalID", FieldType::S32, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"IsGroupOwned", FieldType::BOOL, 0},
+            {"AuctionID", FieldType::U32, 0},
+            {"ClaimDate", FieldType::S32, 0},
+            {"ClaimPrice", FieldType::S32, 0},
+            {"RentPrice", FieldType::S32, 0},
+            {"AABBMin", FieldType::LLVector3, 0},
+            {"AABBMax", FieldType::LLVector3, 0},
+            {"Bitmap", FieldType::Variable, 2},
+            {"Area", FieldType::S32, 0},
+            {"Status", FieldType::U8, 0},
+            {"SimWideMaxPrims", FieldType::S32, 0},
+            {"SimWideTotalPrims", FieldType::S32, 0},
+            {"MaxPrims", FieldType::S32, 0},
+            {"TotalPrims", FieldType::S32, 0},
+            {"OwnerPrims", FieldType::S32, 0},
+            {"GroupPrims", FieldType::S32, 0},
+            {"OtherPrims", FieldType::S32, 0},
+            {"SelectedPrims", FieldType::S32, 0},
+            {"ParcelPrimBonus", FieldType::F32, 0},
+            {"OtherCleanTime", FieldType::S32, 0},
+            {"ParcelFlags", FieldType::U32, 0},
+            {"SalePrice", FieldType::S32, 0},
+            {"Name", FieldType::Variable, 1},
+            {"Desc", FieldType::Variable, 1},
+            {"MusicURL", FieldType::Variable, 1},
+            {"MediaURL", FieldType::Variable, 1},
+            {"MediaID", FieldType::LLUUID, 0},
+            {"MediaAutoScale", FieldType::U8, 0},
+            {"GroupID", FieldType::LLUUID, 0},
+            {"PassPrice", FieldType::S32, 0},
+            {"PassHours", FieldType::F32, 0},
+            {"Category", FieldType::U8, 0},
+            {"AuthBuyerID", FieldType::LLUUID, 0},
+            {"SnapshotID", FieldType::LLUUID, 0},
+            {"UserLocation", FieldType::LLVector3, 0},
+            {"UserLookAt", FieldType::LLVector3, 0},
+            {"LandingType", FieldType::U8, 0},
+            {"RegionPushOverride", FieldType::BOOL, 0},
+            {"RegionDenyAnonymous", FieldType::BOOL, 0},
+            {"RegionDenyIdentified", FieldType::BOOL, 0},
+            {"RegionDenyTransacted", FieldType::BOOL, 0},
+        }},
+        {"AgeVerificationBlock", 1, false, {
+            {"RegionDenyAgeUnverified", FieldType::BOOL, 0},
+        }},
+        {"RegionAllowAccessBlock", 1, false, {
+            {"RegionAllowAccessOverride", FieldType::BOOL, 0},
+        }},
+        {"ParcelEnvironmentBlock", 1, false, {
+            {"ParcelEnvironmentVersion", FieldType::S32, 0},
+            {"RegionAllowEnvironmentOverride", FieldType::BOOL, 0},
+        }},
+    }},
+    {"ChildAgentUpdate", 196633, Frequency::High, 25, true, true, true, {
+        {"AgentData", 1, false, {
+            {"RegionHandle", FieldType::U64, 0},
+            {"ViewerCircuitCode", FieldType::U32, 0},
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"AgentPos", FieldType::LLVector3, 0},
+            {"AgentVel", FieldType::LLVector3, 0},
+            {"Center", FieldType::LLVector3, 0},
+            {"Size", FieldType::LLVector3, 0},
+            {"AtAxis", FieldType::LLVector3, 0},
+            {"LeftAxis", FieldType::LLVector3, 0},
+            {"UpAxis", FieldType::LLVector3, 0},
+            {"ChangedGrid", FieldType::BOOL, 0},
+            {"Far", FieldType::F32, 0},
+            {"Aspect", FieldType::F32, 0},
+            {"Throttles", FieldType::Variable, 1},
+            {"LocomotionState", FieldType::U32, 0},
+            {"HeadRotation", FieldType::LLQuaternion, 0},
+            {"BodyRotation", FieldType::LLQuaternion, 0},
+            {"ControlFlags", FieldType::U32, 0},
+            {"EnergyLevel", FieldType::F32, 0},
+            {"GodLevel", FieldType::U8, 0},
+            {"AlwaysRun", FieldType::BOOL, 0},
+            {"PreyAgent", FieldType::LLUUID, 0},
+            {"AgentAccess", FieldType::U8, 0},
+            {"AgentTextures", FieldType::Variable, 2},
+            {"ActiveGroupID", FieldType::LLUUID, 0},
+        }},
+        {"GroupData", 0, true, {
+            {"GroupID", FieldType::LLUUID, 0},
+            {"GroupPowers", FieldType::U64, 0},
+            {"AcceptNotices", FieldType::BOOL, 0},
+        }},
+        {"AnimationData", 0, true, {
+            {"Animation", FieldType::LLUUID, 0},
+            {"ObjectID", FieldType::LLUUID, 0},
+        }},
+        {"GranterBlock", 0, true, {
+            {"GranterID", FieldType::LLUUID, 0},
+        }},
+        {"NVPairData", 0, true, {
+            {"NVPairs", FieldType::Variable, 2},
+        }},
+        {"VisualParam", 0, true, {
+            {"ParamValue", FieldType::U8, 0},
+        }},
+        {"AgentAccess", 0, true, {
+            {"AgentLegacyAccess", FieldType::U8, 0},
+            {"AgentMaxAccess", FieldType::U8, 0},
+        }},
+        {"AgentInfo", 0, true, {
+            {"Flags", FieldType::U32, 0},
+        }},
+    }},
+    {"ChildAgentAlive", 196634, Frequency::High, 26, true, false, true, {
+        {"AgentData", 1, false, {
+            {"RegionHandle", FieldType::U64, 0},
+            {"ViewerCircuitCode", FieldType::U32, 0},
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+        }},
+    }},
+    {"ChildAgentPositionUpdate", 196635, Frequency::High, 27, true, false, true, {
+        {"AgentData", 1, false, {
+            {"RegionHandle", FieldType::U64, 0},
+            {"ViewerCircuitCode", FieldType::U32, 0},
+            {"AgentID", FieldType::LLUUID, 0},
+            {"SessionID", FieldType::LLUUID, 0},
+            {"AgentPos", FieldType::LLVector3, 0},
+            {"AgentVel", FieldType::LLVector3, 0},
+            {"Center", FieldType::LLVector3, 0},
+            {"Size", FieldType::LLVector3, 0},
+            {"AtAxis", FieldType::LLVector3, 0},
+            {"LeftAxis", FieldType::LLVector3, 0},
+            {"UpAxis", FieldType::LLVector3, 0},
+            {"ChangedGrid", FieldType::BOOL, 0},
+        }},
+    }},
+    {"SoundTrigger", 196637, Frequency::High, 29, true, false, false, {
+        {"SoundData", 1, false, {
+            {"SoundID", FieldType::LLUUID, 0},
+            {"OwnerID", FieldType::LLUUID, 0},
+            {"ObjectID", FieldType::LLUUID, 0},
+            {"ParentID", FieldType::LLUUID, 0},
+            {"Handle", FieldType::U64, 0},
+            {"Position", FieldType::LLVector3, 0},
+            {"Gain", FieldType::F32, 0},
+        }},
+    }},
+    {"ObjectAnimation", 196638, Frequency::High, 30, true, false, false, {
+        {"Sender", 1, false, {
+            {"ID", FieldType::LLUUID, 0},
+        }},
+        {"AnimationList", 0, true, {
+            {"AnimID", FieldType::LLUUID, 0},
+            {"AnimSequenceID", FieldType::S32, 0},
+        }},
+    }},
+    {"GenericStreamingMessage", 196639, Frequency::High, 31, true, false, false, {
+        {"MethodData", 1, false, {
+            {"Method", FieldType::U16, 0},
+        }},
+        {"DataBlock", 1, false, {
+            {"Data", FieldType::Variable, 2},
+        }},
+    }},
 };

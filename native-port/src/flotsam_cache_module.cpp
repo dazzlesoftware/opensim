@@ -15,10 +15,6 @@ bool white(const std::optional<std::string>& text) {
     auto chars = framework::utf16_replacing(*text);
     return std::all_of(chars.begin(), chars.end(), framework::unicode_whitespace);
 }
-std::shared_ptr<FlotsamCacheSharedState> global_state() {
-    static auto state = std::make_shared<FlotsamCacheSharedState>();
-    return state;
-}
 class CleanupTimer final : public FlotsamCleanupTimer {
     struct State {
         std::mutex mutex;
@@ -105,6 +101,10 @@ class CleanupTimer final : public FlotsamCleanupTimer {
     }
 };
 }
+std::shared_ptr<FlotsamCacheSharedState> shared_flotsam_cache_state() {
+    static auto state = std::make_shared<FlotsamCacheSharedState>();
+    return state;
+}
 std::shared_ptr<FlotsamCleanupTimer> native_flotsam_cleanup_timer(double milliseconds) {
     return std::make_shared<CleanupTimer>(milliseconds);
 }
@@ -125,7 +125,7 @@ FlotsamCacheModule::FlotsamCacheModule(Options options, std::shared_ptr<framewor
                                        std::shared_ptr<FlotsamCacheModuleBackend> backend,
                                        std::shared_ptr<FlotsamCacheSharedState> shared)
     : options_(std::move(options)), cache_(std::move(cache)), backend_(std::move(backend)),
-      shared_(shared ? std::move(shared) : global_state()) {
+      shared_(shared ? std::move(shared) : shared_flotsam_cache_state()) {
     if (!cache_ || !backend_)
         throw std::invalid_argument("Missing Flotsam cache module dependency");
 }

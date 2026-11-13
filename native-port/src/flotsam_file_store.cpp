@@ -254,8 +254,9 @@ FlotsamFileReader read_native(const Path& path) {
 }
 }
 FlotsamFileStore::FlotsamFileStore(Options options, std::shared_ptr<FlotsamFileBackend> backend,
-                                   std::shared_ptr<FlotsamFileState> state)
-    : options_(std::move(options)), backend_(std::move(backend)),
+                                   std::shared_ptr<FlotsamFileState> state,
+                                   std::function<Options()> live_options)
+    : options_(std::move(options)), live_options_(std::move(live_options)), backend_(std::move(backend)),
       state_(state ? std::move(state) : shared_state()) {
     options_.tiers = std::clamp(options_.tiers, 1, 3);
     options_.tier_length = std::clamp(options_.tier_length, 1, 4);
@@ -276,20 +277,23 @@ std::u16string FlotsamFileStore::file_name_text(const std::string& id) const {
             c = u'_';
 #endif
     }
-    auto length = static_cast<std::size_t>(options_.tiers * options_.tier_length);
+    const auto options = live_options_ ? live_options_() : options_;
+    const auto tiers = std::clamp(options.tiers, 1, 3);
+    const auto tier_length = std::clamp(options.tier_length, 1, 4);
+    auto length = static_cast<std::size_t>(tiers * tier_length);
     if (value.size() < length)
         throw std::out_of_range("Short cache ID tier span");
     std::u16string relative;
-    for (int tier = 0; tier < options_.tiers; ++tier) {
-        relative += value.substr(static_cast<std::size_t>(tier * options_.tier_length),
-                                 static_cast<std::size_t>(options_.tier_length));
+    for (int tier = 0; tier < tiers; ++tier) {
+        relative += value.substr(static_cast<std::size_t>(tier * tier_length),
+                                 static_cast<std::size_t>(tier_length));
         relative += static_cast<char16_t>(Path::preferred_separator);
     }
     relative += value;
 #ifdef _WIN32
-    return (options_.directory / Path(relative)).u16string();
+    return (options.directory / Path(relative)).u16string();
 #else
-    auto root = options_.directory.u16string();
+    auto root = options.directory.u16string();
     if (!root.empty() && root.back() != u'/')
         root += u'/';
     return root + relative;
@@ -308,6 +312,7 @@ void FlotsamFileStore::cache(const std::string& id, Asset asset, bool replace) {
     if (!backend_->worker_available())
         return;
     auto filename = file_name(id);
+    const bool access = live_options_ ? live_options_().update_access : options_.update_access;
     try {
         {
             std::lock_guard lock(state_->mutex);
@@ -317,7 +322,6 @@ void FlotsamFileStore::cache(const std::string& id, Asset asset, bool replace) {
         if (backend_->worker_available()) {
             auto backend = backend_;
             auto state = state_;
-            auto access = options_.update_access;
             backend_->enqueue([filename, asset, replace, access, backend, state]() mutable {
                 try {
                     write(filename, asset, replace, access, backend, state);

@@ -25,6 +25,7 @@
  */
 
 #pragma once
+#include "opensim/framework/atomic_shared_ptr.hpp"
 #include "opensim/framework/ordered_dictionary.hpp"
 #include <atomic>
 #include <algorithm>
@@ -65,8 +66,8 @@ template <class K, class V, class Hash = std::hash<K>> class ExpiringCacheOS {
     using Mode = ExpiringCacheLock::Mode;
     struct State {
         ExpiringCacheBackend backend;
-        std::atomic<std::shared_ptr<ExpiringCacheLock>> lock{std::make_shared<ExpiringCacheLock>()};
-        std::atomic<std::shared_ptr<ExpiringCacheTimer>> timer;
+        opensim::framework::AtomicSharedPtr<ExpiringCacheLock> lock{std::make_shared<ExpiringCacheLock>()};
+        opensim::framework::AtomicSharedPtr<ExpiringCacheTimer> timer;
         OrderedDictionary<K, std::int32_t, Hash> expires;
         OrderedDictionary<K, V, Hash> values;
         std::shared_ptr<std::vector<V>> array;

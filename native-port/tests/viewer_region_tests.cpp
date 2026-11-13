@@ -100,6 +100,57 @@ void flight_policy_test() {
     check(blocked && !blocked->flying && blocked->controls == fly,
           "no-flight viewer state keeps the raw request available to scripts");
 }
+void frozen_teleport_test() {
+    Fixture f;
+    bool frozen = true;
+    std::vector<lludp::Packet> replies;
+    ViewerRegionOptions options;
+    options.movement_frozen = [&](const ViewerAgent&) { return frozen; };
+    ViewerRegion region(f.world, f.circuits,
+                        [&](const auto&, auto bytes) {
+                            replies.push_back(lludp::decode_datagram(bytes));
+                            return true;
+                        },
+                        [](const auto&, const auto&, const auto&) { return true; }, options);
+    const UdpEndpoint endpoint{"127.0.0.1", 12345};
+    const auto send = [&](const auto& packet) {
+        region.receive(endpoint, lludp::encode_datagram(packet));
+        region.transport().poll();
+    };
+    send(f.use());
+    auto arrival = f.packet("CompleteAgentMovement", 2);
+    arrival.block("AgentData")["CircuitCode"] = std::uint64_t{42};
+    send(arrival);
+
+    auto teleport = f.packet("TeleportLocationRequest", 3);
+    auto& destination = teleport.block("Info");
+    destination["RegionHandle"] = (std::uint64_t(options.x + 256) << 32) | (options.y - 256);
+    destination["Position"] = std::vector<double>{-116, 406, 80};
+    destination["LookAt"] = std::vector<double>{0, 1, 0};
+    replies.clear();
+    send(teleport);
+    const auto blocked = region.agent(f.circuit->agent_id);
+    check(blocked && blocked->root && blocked->position == f.circuit->start_position,
+          "a frozen avatar stays at its original position");
+    check(std::ranges::any_of(replies, [](const auto& reply) {
+        if (reply.spec->name != "TeleportFailed")
+            return false;
+        const auto& reason = std::get<std::vector<std::uint8_t>>(reply.block("Info").at("Reason"));
+        const std::string expected = "You are frozen";
+        return !reason.empty() && reason.back() == 0 &&
+               std::ranges::equal(expected, std::span(reason).first(reason.size() - 1));
+    }), "the viewer receives the original frozen teleport failure");
+    check(std::ranges::none_of(replies, [](const auto& reply) {
+        return reply.spec->name == "TeleportStart" || reply.spec->name == "TeleportLocal";
+    }), "a frozen teleport sends no start or destination packet");
+
+    frozen = false;
+    teleport.sequence = 4;
+    send(teleport);
+    const auto moved = region.agent(f.circuit->agent_id);
+    check(moved && moved->position == Vector3{140, 150, 80},
+          "unfreezing permits the local destination expressed relative to an adjacent tile");
+}
 void root_agent_names_test() {
     Fixture f;
     ViewerRegion region(f.world, f.circuits,
@@ -301,6 +352,7 @@ int main() {
     try {
         admission_test();
         flight_policy_test();
+        frozen_teleport_test();
         root_agent_names_test();
         socket_test();
     } catch (const std::exception& e) {

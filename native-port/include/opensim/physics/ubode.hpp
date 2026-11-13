@@ -103,6 +103,7 @@ class UbodeWorld {
     void remove_avatar();
     void set_target_velocity(framework::Vector3);
     void set_momentum(framework::Vector3);
+    void move_avatar_position(framework::Vector3);
     void snap_avatar_position(framework::Vector3);
     void set_flying(bool);
     void set_running(bool);

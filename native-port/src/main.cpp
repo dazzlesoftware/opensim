@@ -2,17 +2,26 @@
 #include "opensim/scene/profile_user_agent.hpp"
 #include "opensim/services/open_profile_client.hpp"
 #include "opensim/server/grid_identity.hpp"
+#include "opensim/script/lsl_runtime.hpp"
+#include "opensim/script/asset_text.hpp"
 #include "opensim/server/agent_access.hpp"
 #include "opensim/server/object_handler.hpp"
+#include "opensim/framework/directory_entries.hpp"
 #include "opensim/framework/viewer_name.hpp"
 #include "opensim/framework/http_host.hpp"
+#include "opensim/framework/http_uri.hpp"
 #include "opensim/framework/host_resolver.hpp"
+#include "opensim/server/config_xml_startup.hpp"
+#include "opensim/framework/nini_xml_document_save.hpp"
+#include "opensim/framework/nini_xml_reader.hpp"
+#include "opensim/framework/nini_xml_resolver.hpp"
 #include "opensim/framework/culture_prefix.hpp"
 #include "opensim/framework/vector_text.hpp"
 #include <sstream>
 #include "opensim/framework/integer_text.hpp"
 #include "opensim/framework/vector_text.hpp"
 #include "opensim/network/osd_value.hpp"
+#include "opensim/network/script_smtp.hpp"
 #include "opensim/network/sdk_osd_stream.hpp"
 #include "opensim/framework/config_native_uri_object.hpp"
 #include "opensim/network/rest_forms.hpp"
@@ -88,6 +97,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "opensim/framework/filesystem.hpp"
 #include "opensim/framework/stream_reader_text.hpp"
 #include "opensim/scene/region_runtime.hpp"
+#include "opensim/scene/remote_data_channels.hpp"
+#include "opensim/scene/live_asset_gather.hpp"
 #include "opensim/scene/object_asset_xml.hpp"
 #include "opensim/services/region_asset_runtime.hpp"
 #include "opensim/services/simulator_features.hpp"
@@ -108,10 +119,13 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <atomic>
 #include <bit>
 #include <cmath>
+#include <limits>
+#include <map>
 #include <fstream>
 #include <algorithm>
 #include <ctime>
 #include <charconv>
+#include "opensim/framework/invariant_number_parse.hpp"
 #include <mutex>
 #include <random>
 #include <set>
@@ -133,6 +147,102 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 #endif
 namespace {
+std::int32_t remote_data_integer(const opensim::network::Value& value) {
+    using Kind = opensim::network::Value::Kind;
+    switch (value.kind) {
+    case Kind::Undefined:
+    case Kind::NullReference:
+        return 0;
+    case Kind::Integer:
+        return value.integer;
+    case Kind::Boolean:
+        return value.boolean ? 1 : 0;
+    case Kind::String:
+        return opensim::framework::invariant_convert_to_int32(
+            opensim::framework::utf16_replacing(value.text));
+    case Kind::Real: {
+        // Convert.ToInt32 rounds midpoint values to the nearest even integer.
+        const double lower = std::floor(value.real);
+        const double fraction = value.real - lower;
+        const bool round_up = fraction > 0.5 ||
+                              (fraction == 0.5 && std::fmod(lower, 2.0) != 0.0);
+        const double rounded = round_up ? lower + 1.0 : lower;
+        if (rounded >= std::numeric_limits<std::int32_t>::min() &&
+            rounded <= std::numeric_limits<std::int32_t>::max())
+            return static_cast<std::int32_t>(rounded);
+        break;
+    }
+    default:
+        break;
+    }
+    throw std::invalid_argument("Invalid remote data integer");
+}
+
+std::optional<opensim::network::HttpResponse> remote_data_rpc(
+    const opensim::network::HttpRequest& request, opensim::scene::RemoteDataChannels& channels) {
+    using namespace opensim;
+    using namespace opensim::network;
+    if (request.method != "POST" || request.path != "/")
+        return {};
+    RpcCall call;
+    try {
+        call = parse_xml_rpc(request.body);
+    } catch (const std::exception&) {
+        return {};
+    }
+    if (call.method != "llRemoteData")
+        return {};
+    HttpResponse response;
+    response.content_type = "text/xml";
+    if (call.parameters.empty()) {
+        response.body = xml_rpc_fault(-32602, "Invalid parameters");
+        return response;
+    }
+    const auto& values = call.parameters.front();
+    const auto& channel = values.get("Channel");
+    const auto& number = values.get("IntValue");
+    const auto& text = values.get("StringValue");
+    if (!values.contains("Channel") || !values.contains("IntValue") ||
+        !values.contains("StringValue")) {
+        response.body = xml_rpc_fault(-32602, "Invalid parameters");
+        return response;
+    }
+    framework::Uuid id;
+    try {
+        id = framework::parse_sdk_uuid(channel.text);
+    } catch (const std::invalid_argument&) {
+        response.body = xml_rpc_fault(-1, "Invalid channel");
+        return response;
+    }
+    if (!channels.find(id)) {
+        response.body = xml_rpc_fault(-1, "Invalid channel");
+        return response;
+    }
+    std::int32_t integer;
+    try {
+        integer = remote_data_integer(number);
+    } catch (const std::exception&) {
+        response.body = xml_rpc_fault(-32602, "Invalid parameters");
+        return response;
+    }
+    if (text.kind != Value::Kind::String && text.kind != Value::Kind::Undefined) {
+        response.body = xml_rpc_fault(-32602, "Invalid parameters");
+        return response;
+    }
+    const auto result = channels.request(id, {integer, text.text});
+    if (!result.data) {
+        response.body = xml_rpc_fault(-1, result.status == scene::RemoteDataChannels::Status::InvalidChannel
+                                             ? "Invalid channel" : "Script timeout");
+        return response;
+    }
+    Value reply;
+    reply.kind = Value::Kind::Array;
+    reply.array.push_back(Value::object({{"StringValue", Value(result.data->text)},
+                                        {"IntValue", Value(result.data->integer)}}));
+    response.body = xml_rpc_response(reply);
+    return response;
+}
+
 opensim::network::HttpResponse sample_economy_rpc(const opensim::network::HttpRequest& request) {
     using namespace opensim::network;
     HttpResponse response;
@@ -339,8 +449,12 @@ std::filesystem::path executable_directory(const std::string& argument) {
     std::uint32_t count = 0;
     _NSGetExecutablePath(nullptr, &count);
     std::vector<char> path(count);
-    if (_NSGetExecutablePath(path.data(), &count) == 0)
-        return opensim::framework::utf8_path(path.data()).parent_path();
+    if (count != 0 && _NSGetExecutablePath(path.data(), &count) == 0) {
+        const auto executable = opensim::framework::utf8_path(path.data());
+        std::error_code error;
+        const auto resolved = std::filesystem::canonical(executable, error);
+        return (error ? executable : resolved).parent_path();
+    }
 #elif defined(__linux__)
     std::error_code error;
     auto path = std::filesystem::read_symlink("/proc/self/exe", error);
@@ -518,12 +632,475 @@ bool load_estate_settings(opensim::services::SqliteTableOperations& estate,
 
 constexpr int restart_region_result = 75;
 
+opensim::server::IniConfig download_region_config(const std::string& url) {
+    using namespace opensim;
+    const auto uris = framework::native_config_uri_object_backend();
+    const auto uri = uris->create(framework::nini_writer_text(framework::utf16_replacing(url)),
+                                  framework::ConfigUriObjectKind::Absolute);
+    if (*uri->scheme() != u"http" && *uri->scheme() != u"https")
+        throw std::invalid_argument("Region configuration URL must use HTTP or HTTPS");
+    network::WebHttpClients clients(network::native_web_http_handler_factory());
+    clients.setup(false, false, nullptr, 32);
+    framework::ConfigXmlHttpOperation request;
+    request.method = "GET";
+    auto stream = clients.get_new_global_client(30000)->send_headers(uri, std::move(request), true);
+    const auto bytes = stream->copy_to_memory();
+    stream->close();
+    auto arena = std::make_shared<framework::NiniConfigArena>(framework::native_nini_invariant_config_backend());
+    auto readers = framework::native_nini_xml_url_reader_backend(
+        uris, [](auto) -> std::shared_ptr<framework::NativeNiniXmlByteInput> {
+            throw std::invalid_argument("External XML entities are unsupported in web region configuration");
+        });
+    auto xml = framework::native_nini_xml_config_backend(framework::native_xml_document_io(std::move(readers)));
+    return server::IniConfig::from_native_source(framework::NiniXmlConfigSource::create(
+        arena, xml, framework::NativeNiniXmlReader::from_bytes(bytes)));
+}
+
+struct RegionConfigSection {
+    opensim::server::IniConfig source;
+    std::string name;
+};
+
+std::vector<RegionConfigSection> discover_region_sections(const opensim::server::IniConfig& config) {
+    using namespace opensim;
+    const auto configured_directory = framework::trim_utf8(
+        config.get("Startup", "regionload_regionsdir"));
+    const bool explicit_directory = !configured_directory.empty();
+    const bool allow_regionless = config.boolean("Startup", "allow_regionless", false);
+    const bool from_web = config.get("Startup", "region_info_source") == "web";
+    std::vector<RegionConfigSection> regions;
+    const auto append_sections = [&](const server::IniConfig& source, bool first_only) {
+        const auto sections = source.native_source()->configs();
+        const auto count = first_only ? std::min(sections->count(), 1) : sections->count();
+        for (int index = 0; index < count; ++index)
+            regions.push_back({source, framework::utf8(*sections->at(index)->name())});
+    };
+    if (from_web) {
+        const auto url = framework::trim_utf8(config.get("Startup", "regionload_webserver_url"));
+        if (url.empty())
+            throw std::invalid_argument("Missing regionload_webserver_url");
+        for (int attempt = 0; attempt < 3; ++attempt) {
+            server::IniConfig source;
+            try {
+                source = download_region_config(url);
+            } catch (const framework::ConfigXmlHttpError& error) {
+                if (allow_regionless && error.status == 404)
+                    return {};
+                throw;
+            }
+            append_sections(source, false);
+            if (!regions.empty())
+                return regions;
+            if (allow_regionless)
+                return {};
+            if (attempt < 2)
+                std::this_thread::sleep_for(std::chrono::seconds(2));
+        }
+        throw std::invalid_argument("Web region configuration returned no regions");
+    }
+
+    auto directory = framework::utf8_path(explicit_directory ? configured_directory : "Regions");
+    if (directory.is_relative())
+        directory = config.directory / directory;
+    if ((!explicit_directory || allow_regionless) && !std::filesystem::exists(directory))
+        return {};
+
+    const auto directory_text = framework::nini_writer_text(directory.u16string());
+    const auto ini_files = framework::directory_get_files(directory_text, framework::nini_writer_text(u"*.ini"));
+    const auto xml_files = framework::directory_get_files(directory_text, framework::nini_writer_text(u"*.xml"));
+    for (const auto& file : ini_files)
+        append_sections(server::IniConfig::load(std::filesystem::path(*file)), false);
+
+    if (!xml_files.empty()) {
+        auto arena = std::make_shared<framework::NiniConfigArena>(
+            framework::native_nini_invariant_config_backend());
+        const auto load_xml = server::native_startup_xml_source(std::move(arena), {});
+        for (const auto& file : xml_files) {
+            const auto path = std::filesystem::path(*file);
+            const auto source = server::IniConfig::from_native_source(load_xml(file), path.parent_path());
+            append_sections(source, true);
+        }
+    }
+    if (regions.empty()) {
+        if (allow_regionless || (!explicit_directory && ini_files.empty() && xml_files.empty()))
+            return {};
+        throw std::invalid_argument("No region configurations found in " + framework::utf8(directory.u16string()));
+    }
+    return regions;
+}
+
+opensim::server::IniConfig make_region_settings(const opensim::server::IniConfig& config,
+                                                  const RegionConfigSection* definition) {
+    using namespace opensim;
+    auto arena = std::make_shared<framework::NiniConfigArena>(framework::native_nini_invariant_config_backend());
+    auto settings = server::IniConfig::from_native_source(
+        arena->create_source(framework::nini_writer_text(u"RegionSettings")), config.directory);
+    for (const auto& [key, value] : config.ordered_section("NativeRegion"))
+        settings.set("NativeRegion", key, value);
+    if (!definition)
+        return settings;
+
+    const auto& [region_config, region_name] = *definition;
+    const auto id_text = framework::trim_utf8(region_config.get(region_name, "RegionUUID"));
+    framework::Uuid region_id;
+    if (!framework::try_parse_sdk_uuid(id_text, region_id) || region_id.is_zero())
+        throw std::invalid_argument("Region " + region_name + " requires a valid RegionUUID");
+    settings.set("NativeRegion", "ID", region_id.str());
+
+    const auto location = region_config.get(region_name, "Location");
+    const auto separator = location.find(',');
+    if (separator == std::string::npos)
+        throw std::invalid_argument("Region Location must contain two grid coordinates");
+    const auto suffix = location.find(',', separator + 1);
+    const auto parse_coordinate = [](std::string_view coordinate) {
+        const auto text = framework::trim_utf8(std::string(coordinate));
+        const auto number = framework::invariant_convert_to_int32(framework::utf16_replacing(text));
+        if (number < 0 || number > std::numeric_limits<int>::max() / 256)
+            throw std::invalid_argument("Region Location coordinate is out of range");
+        return std::to_string(number);
+    };
+    settings.set("NativeRegion", "LocationX", parse_coordinate(std::string_view(location).substr(0, separator)));
+    const auto y_end = suffix == std::string::npos ? location.size() : suffix;
+    settings.set("NativeRegion", "LocationY",
+               parse_coordinate(std::string_view(location).substr(separator + 1, y_end - separator - 1)));
+    settings.set("NativeRegion", "Name", region_name);
+
+    const auto read_size = [&](const char* key) {
+        const auto size = framework::invariant_convert_to_int64(
+            framework::utf16_replacing(region_config.get(region_name, key, "256")));
+        if (size < 0 || size > std::numeric_limits<std::uint32_t>::max())
+            throw std::invalid_argument(std::string("Invalid region dimension ") + key);
+        return std::max<std::int64_t>(1, size / 256);
+    };
+    const auto size = std::min({read_size("SizeX"), read_size("SizeY"), std::int64_t{16}}) * 256;
+    settings.set("NativeRegion", "SizeX", std::to_string(size));
+    settings.set("NativeRegion", "SizeY", std::to_string(size));
+
+    for (const auto& [source, target] : {
+             std::pair{"InternalAddress", "BindAddress"},
+             std::pair{"InternalPort", "UDPPort"}, std::pair{"ExternalHostName", "ExternalHost"},
+             std::pair{"ScopeID", "ScopeID"},
+             std::pair{"DefaultLanding", "DefaultLanding"}, std::pair{"MaxAgents", "MaxAgents"},
+             std::pair{"MaxPrims", "MaxPrims"}, std::pair{"ResolveAddress", "ResolveAddress"},
+             std::pair{"NonPhysicalPrimMin", "NonPhysicalPrimMin"},
+             std::pair{"NonPhysicalPrimMax", "NonPhysicalPrimMax"},
+             std::pair{"PhysicalPrimMin", "PhysicalPrimMin"},
+             std::pair{"PhysicalPrimMax", "PhysicalPrimMax"},
+             std::pair{"LinksetPrims", "LinksetPrims"}, std::pair{"ClampPrimSize", "ClampPrimSize"},
+             std::pair{"RegionType", "RegionType"}, std::pair{"MaxPrimsPerUser", "MaxPrimsPerUser"},
+             std::pair{"MaptileStaticUUID", "MaptileStaticUUID"},
+             std::pair{"MaptileStaticFile", "MaptileStaticFile"}}) {
+        if (region_config.contains(region_name, source))
+            settings.set("NativeRegion", target, region_config.get(region_name, source));
+    }
+    for (const auto& [key, value] : region_config.ordered_section(region_name)) {
+        for (const auto* permission : {"auto_grant_attach_perms", "auto_grant_all_perms"}) {
+            if (framework::ordinal_equals_ignore_case(key, permission))
+                settings.set("NativeRegion", permission, value);
+        }
+    }
+    return settings;
+}
+
+std::vector<opensim::server::IniConfig> load_local_region_settings(
+    const opensim::server::IniConfig& config) {
+    if (config.contains("NativeServer", "EnableLocalRegion")) {
+        if (config.boolean("NativeServer", "EnableLocalRegion", false))
+            return {make_region_settings(config, nullptr)};
+        return {};
+    }
+
+    const auto definitions = discover_region_sections(config);
+    std::vector<opensim::server::IniConfig> settings;
+    settings.reserve(definitions.size());
+    for (const auto& definition : definitions)
+        settings.push_back(make_region_settings(config, &definition));
+    return settings;
+}
+
+opensim::services::GridRegion describe_local_region(const opensim::server::IniConfig& region_settings,
+                                                   int previous_udp_port) {
+    using namespace opensim;
+    services::GridRegion region;
+    region.id =
+        framework::Uuid(region_settings.get("NativeRegion", "ID", "11111111-1111-4111-8111-111111111111"));
+    region.scope = framework::Uuid(
+        region_settings.get("NativeRegion", "ScopeID", "00000000-0000-0000-0000-000000000000"));
+    region.name = region_settings.get("NativeRegion", "Name", "Native Region");
+    region.external_host = region_settings.get("NativeRegion", "ExternalHost", "127.0.0.1");
+    if (*region.external_host == "SYSTEMIP")
+        region.external_host = framework::HostResolver::local_host_address()->str();
+    else if (region_settings.boolean("NativeRegion", "ResolveAddress", false)) {
+        const auto addresses = framework::HostResolver::system_lookup(*region.external_host);
+        if (addresses && addresses->size() == 1)
+            region.external_host = addresses->front()->str();
+    }
+    region.estate_owner = framework::Uuid(
+        region_settings.get("NativeRegion", "OwnerID", "00000000-0000-0000-0000-000000000000"));
+    const auto world_coordinate = [&](const char* key) {
+        const auto coordinate = region_settings.integer("NativeRegion", key, 1000);
+        if (coordinate < 0 || coordinate > std::numeric_limits<std::int32_t>::max() / 256)
+            throw std::invalid_argument(std::string("NativeRegion ") + key + " is out of range");
+        return coordinate * 256;
+    };
+    region.x = world_coordinate("LocationX");
+    region.y = world_coordinate("LocationY");
+    const auto size_x = region_settings.integer("NativeRegion", "SizeX", 256);
+    const auto size_y = region_settings.integer("NativeRegion", "SizeY", 256);
+    const auto size = std::clamp(std::min(size_x, size_y) / 256, 1, 16) * 256;
+    region.size_x = size;
+    region.size_y = size;
+    region.access = 13;
+    auto udp_port = region_settings.integer("NativeRegion", "UDPPort", 9000);
+    if (udp_port < 0 || udp_port > 65535)
+        throw std::invalid_argument("NativeRegion UDPPort must be between 0 and 65535");
+    if (udp_port == 0)
+        udp_port = previous_udp_port;
+    region.internal_endpoint =
+        services::RegionEndpoint{region_settings.get("NativeRegion", "BindAddress", "0.0.0.0"),
+                                 static_cast<std::uint16_t>(udp_port)};
+    return region;
+}
+
+constexpr std::uint8_t grid_moderation_dialog = 250;
+
+std::optional<opensim::scene::RegionInstantMessage> parse_grid_message(
+    const opensim::network::Value& message, std::string_view key) {
+    using namespace opensim;
+
+    for (const auto* field :
+         {"from_agent_id", "to_agent_id", "im_session_id", "timestamp", "from_agent_name",
+          "message", "dialog", "from_group", "offline", "parent_estate_id", "position_x",
+          "position_y", "position_z", "region_id", "binary_bucket"}) {
+        const auto kind = message.get(field).kind;
+        if (kind != network::Value::Kind::String &&
+            (kind != network::Value::Kind::Undefined || !message.contains(field)))
+            return std::nullopt;
+    }
+    const auto& message_key = message.get("message_key");
+    if (!key.empty() && (message_key.kind != network::Value::Kind::String || message_key.text != key))
+        return std::nullopt;
+    scene::RegionInstantMessage incoming;
+    const auto text = [&](const char* field) -> const std::string& {
+        return message.get(field).text;
+    };
+    if (!framework::try_parse_sdk_uuid(text("to_agent_id"), incoming.recipient))
+        return std::nullopt;
+    incoming.message = framework::utf16_replacing(text("message"));
+    const auto binary = [&](const char* field) {
+        network::Value value;
+        value.kind = network::Value::Kind::Binary;
+        value.text = text(field);
+        return network::osd_binary(value);
+    };
+    try {
+        const auto dialog = binary("dialog");
+        const auto offline = binary("offline");
+        if ((dialog->empty() && !text("dialog").empty()) ||
+            (offline->empty() && !text("offline").empty()))
+            return std::nullopt;
+        incoming.dialog = dialog->empty() ? 0 : dialog->front();
+        incoming.offline = offline->empty() ? 0 : offline->front();
+        incoming.bucket = *binary("binary_bucket");
+    } catch (const std::exception&) {
+        return std::nullopt;
+    }
+    const bool valid_sender = framework::try_parse_sdk_uuid(text("from_agent_id"), incoming.sender);
+    if (incoming.dialog == grid_moderation_dialog) {
+        if (!valid_sender)
+            return std::nullopt;
+        return incoming;
+    }
+    framework::try_parse_sdk_uuid(text("im_session_id"), incoming.session);
+    framework::try_parse_sdk_uuid(text("region_id"), incoming.region);
+    // The managed receiver converts to Int32 before casting to UInt32.
+    const auto number = [&](const char* field) -> std::uint32_t {
+        std::int32_t value;
+        if (!services::parse_account_integer(text(field), value))
+            return 0;
+        return static_cast<std::uint32_t>(value);
+    };
+    incoming.timestamp = number("timestamp");
+    incoming.estate = number("parent_estate_id");
+    incoming.position.x = static_cast<float>(number("position_x"));
+    incoming.position.y = static_cast<float>(number("position_y"));
+    incoming.position.z = static_cast<float>(number("position_z"));
+    incoming.sender_name = framework::utf16_replacing(text("from_agent_name"));
+    incoming.from_group = text("from_group") == "TRUE";
+    return incoming;
+}
+
+class LocalRegionRouter final : public opensim::services::ISimulationLogin,
+                                public opensim::services::ISimulationAgentUpdates,
+                                public opensim::services::ISimulationObjects {
+public:
+    void add(const std::shared_ptr<opensim::scene::RegionRuntime>& region) {
+        std::lock_guard lock(mutex_);
+        if (!regions_.emplace(region->descriptor().id, region).second)
+            throw std::invalid_argument("Duplicate local region ID");
+    }
+    void remove(const opensim::framework::Uuid& id) {
+        std::lock_guard lock(mutex_);
+        regions_.erase(id);
+    }
+    std::shared_ptr<opensim::scene::RegionRuntime> find(const opensim::framework::Uuid& id) const {
+        std::lock_guard lock(mutex_);
+        const auto region = regions_.find(id);
+        return region == regions_.end() ? nullptr : region->second.lock();
+    }
+
+    void for_each_region(const std::function<void(opensim::scene::RegionRuntime&)>& action) const {
+        for (const auto& region : snapshot())
+            action(*region);
+    }
+
+    bool deliver_to_viewer(const std::function<bool(opensim::scene::RegionRuntime&)>& deliver) const {
+        for (const auto& region : snapshot()) {
+            if (deliver(*region))
+                return true;
+        }
+        return false;
+    }
+
+    bool deliver_grid_message(const opensim::scene::RegionInstantMessage& message) const {
+        if (message.dialog == grid_moderation_dialog) {
+            // A broadcast moderation request must reach every local region.
+            bool handled = false;
+            for (const auto& region : snapshot()) {
+                if (region->receive_grid_moderation(message))
+                    handled = true;
+            }
+            return handled;
+        }
+
+        return deliver_to_viewer([&](auto& region) {
+            return region.deliver_instant_message(message);
+        });
+    }
+
+    opensim::network::Value land_data(std::uint64_t handle, std::uint32_t x, std::uint32_t y) const {
+        // The handle and offsets together identify the parcel's world position.
+        for (const auto& region : snapshot()) {
+            auto data = region->land_data(handle, x, y);
+            if (!data.map.empty())
+                return data;
+        }
+        return opensim::network::Value::object({});
+    }
+
+    std::optional<opensim::network::HttpResponse> map_request(
+        const opensim::network::HttpRequest& request) const {
+        if (request.path != "/index.php" && !request.path.starts_with("/MAP/MapItems/"))
+            return {};
+        for (const auto& region : snapshot()) {
+            auto response = request.path == "/index.php" ? region->region_map_image(request)
+                                                         : region->remote_map_items(request);
+            if (response)
+                return response;
+        }
+        return {};
+    }
+
+    bool query_access(opensim::services::GridRegion& destination, const opensim::framework::Uuid& agent,
+                      const std::optional<std::string>& home, bool teleport,
+                      const opensim::framework::Vector3& position, std::vector<opensim::framework::Uuid>& features,
+                      opensim::services::LoginTransferContext& context, std::string& reason) override {
+        if (auto region = find(destination.id))
+            return region->query_access(destination, agent, home, teleport, position, features, context, reason);
+        reason = "Region unavailable";
+        return false;
+    }
+
+    bool create_agent(const opensim::services::GridRegion* source, opensim::services::GridRegion& destination,
+                      const std::shared_ptr<opensim::framework::AgentCircuitData>& circuit, std::uint32_t flags,
+                      opensim::services::LoginTransferContext& context, std::string& reason) override {
+        if (auto region = find(destination.id))
+            return region->create_agent(source, destination, circuit, flags, context, reason);
+        reason = "Region unavailable";
+        return false;
+    }
+
+    std::shared_ptr<opensim::framework::AgentTransferScene> get_scene(
+        const opensim::framework::Uuid& id) override {
+        if (auto region = find(id))
+            return region->get_scene(id);
+        return {};
+    }
+
+    bool update_agent(opensim::services::GridRegion& destination,
+                      const std::shared_ptr<opensim::framework::AgentData>& data,
+                      opensim::framework::EntityTransferContext& context) override {
+        auto region = find(destination.id);
+        return region && region->update_agent(destination, data, context);
+    }
+
+    bool update_agent(opensim::services::GridRegion& destination,
+                      const std::shared_ptr<opensim::framework::AgentPosition>& data) override {
+        auto region = find(destination.id);
+        return region && region->update_agent(destination, data);
+    }
+
+    bool create_object(opensim::services::GridRegion* destination,
+                       const opensim::framework::Vector3& position,
+                       std::shared_ptr<opensim::services::SimulationObject> object, bool local_call) override {
+        auto region = destination ? find(destination->id) : nullptr;
+        return region && region->create_object(destination, position, std::move(object), local_call);
+    }
+
+private:
+    std::vector<std::shared_ptr<opensim::scene::RegionRuntime>> snapshot() const {
+        std::lock_guard lock(mutex_);
+        std::vector<std::shared_ptr<opensim::scene::RegionRuntime>> result;
+        result.reserve(regions_.size());
+        for (const auto& [id, entry] : regions_) {
+            if (auto region = entry.lock())
+                result.push_back(std::move(region));
+        }
+        return result;
+    }
+
+    mutable std::mutex mutex_;
+    std::map<opensim::framework::Uuid, std::weak_ptr<opensim::scene::RegionRuntime>> regions_;
+};
+
 struct RegionListenerPorts {
     int main_http = 0;
     int script_http = 0;
     int script_https = 0;
     std::uint16_t udp = 0;
 };
+
+std::string find_service_connector(const opensim::server::IniConfig& config, const char* name,
+                                   std::string_view suffix, std::string_view section = {}) {
+    auto entry = config.get("ServiceList", name);
+    if (!entry.empty())
+        return entry;
+    const auto matches = [&](std::string_view candidate) {
+        if (!section.empty()) {
+            const auto qualifier = candidate.substr(0, candidate.find('/'));
+            const auto separator = qualifier.find('@');
+            const auto candidate_section =
+                separator == std::string_view::npos ? "AssetService" : qualifier.substr(0, separator);
+            if (candidate_section != section)
+                return false;
+        }
+        return candidate == suffix.substr(1) || candidate.ends_with(suffix);
+    };
+    for (const auto& [key, candidate] : config.ordered_section("ServiceList"))
+        if (matches(candidate))
+            return candidate;
+
+    const auto connectors = config.get("Startup", "ServiceConnectors");
+    constexpr std::string_view separators = ", \r\n\t";
+    for (auto start = connectors.find_first_not_of(separators); start != std::string::npos;) {
+        const auto end = connectors.find_first_of(separators, start);
+        const auto candidate = std::string_view(connectors).substr(start, end - start);
+        if (matches(candidate))
+            return std::string(candidate);
+        start = connectors.find_first_not_of(separators, end);
+    }
+    return std::string{};
+}
 
 int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     using namespace opensim;
@@ -601,6 +1178,26 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     startup_options.argv_overrides = std::move(argv_source);
     auto config =
         server::IniConfig::load_startup(framework::utf8_path(config_path), std::move(startup_options));
+    const auto relative = framework::utf8_path(config.get("AssetService", "AssetLoaderArgs"));
+    if (relative.lexically_normal() == std::filesystem::path("assets") / "AssetSets.xml") {
+        auto control_file = config.directory / relative;
+        if (!std::filesystem::is_regular_file(control_file) && !std::filesystem::is_regular_file(relative)) {
+            auto root = executable_directory(args[0]);
+            for (int depth = 0; depth < 4; ++depth, root = root.parent_path()) {
+                for (const auto& base : {root / "share/opensim-native", root / "bin"}) {
+                    const auto candidate = base / relative;
+                    if (std::filesystem::is_regular_file(candidate)) {
+                        control_file = candidate;
+                        break;
+                    }
+                }
+                if (std::filesystem::is_regular_file(control_file))
+                    break;
+            }
+        }
+        if (std::filesystem::is_regular_file(control_file))
+            config.set("AssetService", "AssetLoaderArgs", framework::utf8(control_file.u16string()));
+    }
     const bool remote_console_mode = config.get("Startup", "console") == "rest";
     const auto authentication_provider = config.get("NativeServer", "AuthenticationProvider", "SQLite");
     if (authentication_provider != "SQLite" && authentication_provider != "Remote")
@@ -610,7 +1207,34 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
         local_authentication
             ? server::database_path(config, "AuthenticationService", "AuthenticationDatabase")
             : std::string{};
-    const bool local_region = config.boolean("NativeServer", "EnableLocalRegion", false);
+    const auto local_region_settings = load_local_region_settings(config);
+    std::vector<services::GridRegion> local_region_descriptors;
+    local_region_descriptors.reserve(local_region_settings.size());
+    for (const auto& settings : local_region_settings) {
+        auto region = describe_local_region(settings, local_region_descriptors.empty() ? ports.udp : 0);
+        if (region.id.is_zero())
+            throw std::invalid_argument("Invalid local region UUID for " + region.name.value_or(""));
+        for (const auto& existing : local_region_descriptors) {
+            if (existing.id == region.id)
+                throw std::invalid_argument("Duplicate local region ID " + region.id.str());
+            const bool overlaps_x = std::int64_t(existing.x) + existing.size_x > region.x &&
+                                    std::int64_t(region.x) + region.size_x > existing.x;
+            const bool overlaps_y = std::int64_t(existing.y) + existing.size_y > region.y &&
+                                    std::int64_t(region.y) + region.size_y > existing.y;
+            if (overlaps_x && overlaps_y)
+                throw std::invalid_argument("Overlapping local regions: " + existing.name.value_or("") +
+                                            " and " + region.name.value_or(""));
+            const auto port = region.internal_endpoint->port;
+            if (port == existing.internal_endpoint->port)
+                throw std::invalid_argument("Duplicate local region UDP port " + std::to_string(port));
+        }
+        local_region_descriptors.push_back(std::move(region));
+    }
+    if (local_region_settings.size() > 1)
+        throw std::invalid_argument("This native host currently accepts one region per process");
+    const bool local_region = !local_region_settings.empty();
+    const auto& region_settings = local_region ? local_region_settings.front() : config;
+    const auto remote_data_port = local_region ? config.integer("XMLRPC", "XmlRpcPort", 0) : 0;
     const auto money_module = config.get("Startup", "economymodule");
     const auto selected_money_module = money_module.empty() ? config.get("Economy", "economymodule") : money_module;
     const bool sample_economy_enabled =
@@ -626,12 +1250,58 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
         }
         return shared_http;
     };
+    std::shared_ptr<scene::RemoteDataChannels> remote_data;
+    if (remote_data_port > 0) {
+        remote_data = std::make_shared<scene::RemoteDataChannels>(
+            [transport = network::NwcXmlRpcHttpTransport(outgoing_clients())](
+                std::string_view channel, std::string_view destination, scene::RemoteDataChannels::Data& data,
+                std::stop_token stop) mutable {
+                auto request = std::make_shared<network::NwcXmlRpcRequest>();
+                auto fields = network::Value::object({
+                    {"StringValue", network::Value(data.text)},
+                    {"IntValue", network::Value(std::to_string(data.integer))},
+                });
+                framework::Uuid id;
+                request->method_name = u"llRemoteData";
+                if (!channel.empty()) {
+                    if (framework::try_parse_sdk_uuid(channel, id))
+                        fields.set("Channel", network::Value(std::string(channel)));
+                    else
+                        request->method_name = framework::utf16_replacing(channel);
+                }
+                request->parameters->push_back(std::make_shared<network::Value>(std::move(fields)));
+                const auto response = transport.send(request, framework::utf16_replacing(destination), 30000,
+                                                     [stop] { return stop.stop_requested(); });
+                if (!response || !response->value)
+                    return;
+                const auto& value = response->value->view();
+                const auto& fields_reply = value.kind == network::Value::Kind::Array && !value.array.empty()
+                    ? value.array.front().view() : value;
+                const auto read_text = [&](std::string_view name) {
+                    if (!fields_reply.contains(name))
+                        return;
+                    const auto& field = fields_reply.get(name).view();
+                    if (field.kind != network::Value::Kind::String &&
+                        field.kind != network::Value::Kind::Undefined)
+                        throw std::invalid_argument("Invalid remote data string");
+                    data.text = field.text;
+                };
+                const auto read_integer = [&](std::string_view name) {
+                    if (fields_reply.contains(name))
+                        data.integer = remote_data_integer(fields_reply.get(name).view());
+                };
+                read_text("StringValue");
+                read_integer("IntValue");
+                read_text("faultString");
+                read_integer("faultCode");
+            });
+    }
     std::unique_ptr<services::AuthenticationConnector> remote_authentication;
     if (!local_authentication)
         remote_authentication = std::make_unique<services::AuthenticationConnector>(
             config, services::AuthenticationConnector::Request{}, outgoing_clients());
     const bool remote_simulation = config.boolean("NativeServer", "EnableRemoteSimulationConnector", false);
-    const auto region_physics = config.get("NativeRegion", "Physics", "None");
+    const auto region_physics = region_settings.get("NativeRegion", "Physics", "None");
     if (local_region && region_physics != "None" && region_physics != "ubODE")
         throw std::invalid_argument("NativeRegion Physics must be None or ubODE");
     const bool physical_region = local_region && region_physics == "ubODE";
@@ -648,47 +1318,16 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     const bool local_friends = need_friends && friends_provider == "SQLite";
     const bool need_avatar = config.boolean("NativeServer", "EnableAvatarService", false) ||
                              config.boolean("NativeServer", "EnableAvatarEndpoint", false);
-    const auto find_connector = [&](const char* name, std::string_view suffix,
-                                    std::string_view section = {}) {
-        auto entry = config.get("ServiceList", name);
-        if (!entry.empty())
-            return entry;
-        const auto matches = [&](std::string_view candidate) {
-            if (!section.empty()) {
-                const auto qualifier = candidate.substr(0, candidate.find('/'));
-                const auto separator = qualifier.find('@');
-                const auto candidate_section =
-                    separator == std::string_view::npos ? "AssetService" : qualifier.substr(0, separator);
-                if (candidate_section != section)
-                    return false;
-            }
-            return candidate == suffix.substr(1) || candidate.ends_with(suffix);
-        };
-        for (const auto& [key, candidate] : config.ordered_section("ServiceList"))
-            if (matches(candidate))
-                return candidate;
-
-        const auto connectors = config.get("Startup", "ServiceConnectors");
-        constexpr std::string_view separators = ", \r\n\t";
-        for (auto start = connectors.find_first_not_of(separators); start != std::string::npos;) {
-            const auto end = connectors.find_first_of(separators, start);
-            const auto candidate = std::string_view(connectors).substr(start, end - start);
-            if (matches(candidate))
-                return std::string(candidate);
-            start = connectors.find_first_not_of(separators, end);
-        }
-        return std::string{};
-    };
-    const auto grid_connector = find_connector(
-        "GridServiceConnector", "/OpenSim.Server.Handlers.dll:GridServiceConnector");
-    const auto asset_connector = find_connector(
-        "AssetServiceConnector", "/OpenSim.Server.Handlers.dll:AssetServiceConnector", "AssetService");
-    const auto hg_asset_connector = find_connector(
-        "HGAssetServiceConnector", "/OpenSim.Server.Handlers.dll:AssetServiceConnector", "HGAssetService");
-    const auto grid_user_connector = find_connector(
-        "GridUserServiceConnector", "/OpenSim.Server.Handlers.dll:GridUserServiceConnector");
-    const auto presence_connector = find_connector(
-        "PresenceServiceConnector", "/OpenSim.Server.Handlers.dll:PresenceServiceConnector");
+    const auto grid_connector = find_service_connector(
+        config, "GridServiceConnector", "/OpenSim.Server.Handlers.dll:GridServiceConnector");
+    const auto asset_connector = find_service_connector(
+        config, "AssetServiceConnector", "/OpenSim.Server.Handlers.dll:AssetServiceConnector", "AssetService");
+    const auto hg_asset_connector = find_service_connector(
+        config, "HGAssetServiceConnector", "/OpenSim.Server.Handlers.dll:AssetServiceConnector", "HGAssetService");
+    const auto grid_user_connector = find_service_connector(
+        config, "GridUserServiceConnector", "/OpenSim.Server.Handlers.dll:GridUserServiceConnector");
+    const auto presence_connector = find_service_connector(
+        config, "PresenceServiceConnector", "/OpenSim.Server.Handlers.dll:PresenceServiceConnector");
     const bool expose_grid = config.boolean("NativeServer", "EnableGridEndpoint", !grid_connector.empty());
     const bool expose_assets =
         config.boolean("NativeServer", "EnableAssetEndpoint", !asset_connector.empty());
@@ -724,8 +1363,16 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     if (expose_presence)
         validate_service_module("PresenceService", "OpenSim.Services.PresenceService.dll:PresenceService",
                                 presence_connector);
-    const bool need_grid = connected_login || expose_grid;
-    const bool need_grid_user = connected_login || expose_grid_user;
+    const bool grid_required = connected_login || expose_grid;
+    const bool grid_user_required = connected_login || expose_grid_user;
+    const bool configured_grid_statistics =
+        !config.boolean("GridInfoService", "DisableStatsEndpoint", false) &&
+        config.get("GridService", "LocalServiceModule") == "OpenSim.Services.GridService.dll:GridService" &&
+        (!config.get("NativeServer", "GridUserDatabase").empty() ||
+         !config.get("GridUserService", "ConnectionString").empty() ||
+         !config.get("DatabaseService", "ConnectionString").empty());
+    const bool need_grid = grid_required || configured_grid_statistics;
+    const bool need_grid_user = grid_user_required || configured_grid_statistics;
     const bool use_remote_grid_user =
         local_region && config.get("Modules", "GridUserServices") == "RemoteGridUserServicesConnector";
     const bool inherit_grid_user_database = !use_remote_grid_user || expose_grid_user;
@@ -742,7 +1389,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
         ? server::database_path(config, inherit_grid_user_path ? "DatabaseService" : "GridUserService",
               "GridUserDatabase")
         : std::string{};
-    if (need_grid_user && !sqlite_grid_users
+    if (grid_user_required && !sqlite_grid_users
 #ifdef OPENSIM_HAVE_MYSQL
         && grid_user_provider != "OpenSim.Data.MySQL.dll"
 #endif
@@ -772,7 +1419,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     };
     const auto region_provider = config.get("NativeServer", "GridRegionProvider", "Null");
     const bool durable_regions = need_grid && region_provider == "SQLite";
-    if (need_grid && region_provider != "Null" && region_provider != "SQLite")
+    if (grid_required && region_provider != "Null" && region_provider != "SQLite")
         throw std::invalid_argument("GridRegionProvider must be Null or SQLite");
     if (initialize && connected_login) {
         const auto path = server::database_path(config, "InventoryService", "InventoryDatabase");
@@ -846,7 +1493,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 server::database_path(config, "AvatarService", "AvatarDatabase"), true,
                 config.get("AvatarService", "Realm", "Avatars"));
         }
-        if (need_grid_user)
+        if (grid_user_required || (configured_grid_statistics && sqlite_grid_users))
             open_grid_user_store();
         if (connected_login) {
             services::InventoryFolderStore inventory(
@@ -893,8 +1540,11 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     auto console_output = [&](const std::string& line) {
         if (remote_console)
             remote_console->output(framework::utf16_replacing(line));
-        else
+        else {
+            static std::mutex output_mutex;
+            std::lock_guard lock(output_mutex);
             std::cout << line << '\n' << std::flush;
+        }
     };
     auto log_message = [&](std::int32_t level, const std::string& text) {
         console_log.append(level, framework::utf16_replacing(text));
@@ -971,9 +1621,39 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     };
     options.certificate = resolve("TlsCertificate");
     options.private_key = resolve("TlsPrivateKey");
+    const auto home_agent_connector = find_service_connector(
+        config, "UserAgentServerConnector", "/OpenSim.Server.Handlers.dll:UserAgentServerConnector");
     const auto travel_path = resolve("TravelDatabase");
-    const auto travel_store =
-        travel_path.empty() ? nullptr : std::make_shared<services::SqliteTravelStore>(travel_path);
+    const auto home_agent_module = config.get("UserAgentService", "LocalServiceModule");
+    const auto travel_store = [&]() -> std::shared_ptr<services::TravelStore> {
+        const auto realm = config.get("UserAgentService", "Realm", "hg_traveling_data");
+        if (!travel_path.empty())
+            return std::make_shared<services::SqliteTravelStore>(travel_path, realm);
+        if (home_agent_connector.empty() &&
+            home_agent_module != "OpenSim.Services.HypergridService.dll:UserAgentService")
+            return {};
+        const auto provider = config.get("UserAgentService", "StorageProvider",
+                                         config.get("DatabaseService", "StorageProvider"));
+        const auto default_connection = config.get("DatabaseService", "ConnectionString");
+        const auto connection = config.get("UserAgentService", "ConnectionString", default_connection);
+        if (connection.empty())
+            throw std::invalid_argument("UserAgentService requires a connection string");
+        if (provider == "OpenSim.Data.SQLite.dll") {
+            const auto section = config.get("UserAgentService", "ConnectionString").empty()
+                ? "DatabaseService" : "UserAgentService";
+            return std::make_shared<services::SqliteTravelStore>(
+                server::database_path(config, section, "TravelDatabase"), realm);
+        }
+#ifdef OPENSIM_HAVE_MYSQL
+        if (provider == "OpenSim.Data.MySQL.dll")
+            return services::mysql_travel_store(connection, realm);
+#endif
+#ifdef OPENSIM_HAVE_POSTGRESQL
+        if (provider == "OpenSim.Data.PGSQL.dll")
+            return services::postgres_travel_store(connection, realm);
+#endif
+        throw std::invalid_argument("Unsupported native UserAgentService storage provider: " + provider);
+    }();
     std::mutex travel_launch_mutex;
     auto home_grid_name =
         config.get("UserAgentService", "GatekeeperURI",
@@ -985,29 +1665,55 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     home_grid_name = framework::lower_invariant_culture(home_grid_name);
     if (!home_grid_name.empty() && !home_grid_name.ends_with('/'))
         home_grid_name += '/';
-    const auto travel_allowed = [&](int user_level, const std::string& remote_grid) {
-        const auto suffix = "_Level_" + std::to_string(user_level);
-        const auto policy_key = "ForeignTripsAllowed" + suffix;
-        if (!framework::invariant_equals_ignore_case(home_grid_name, remote_grid) &&
-            !config.get("UserAgentService", policy_key).empty()) {
-            bool allowed = config.boolean("UserAgentService", policy_key, true);
-            const auto exceptions =
-                config.get("UserAgentService", (allowed ? "AllowExcept" : "DisallowExcept") + suffix);
-            std::istringstream domains(exceptions);
+    std::map<int, bool> trip_permissions;
+    std::map<int, std::vector<std::string>> allowed_trip_exceptions, denied_trip_exceptions;
+    if (travel_store) {
+        const auto level_for = [](std::string_view key, std::string_view prefix) -> std::optional<int> {
+            std::int32_t level;
+            if (key.starts_with(prefix) && services::parse_account_integer(key.substr(prefix.size()), level))
+                return level;
+            return std::nullopt;
+        };
+        const auto add_exceptions = [](auto& exceptions, int level, const std::string& value) {
+            const auto [entry, inserted] = exceptions.try_emplace(level);
+            if (!inserted)
+                return;
+            std::istringstream domains(value);
             for (std::string domain; std::getline(domains, domain, ',');) {
+                if (domain.empty())
+                    continue;
                 domain = framework::trim_utf8(domain);
                 if (!domain.ends_with('/'))
                     domain += '/';
-                if (framework::invariant_equals_ignore_case(domain, remote_grid)) {
-                    allowed = !allowed;
-                    break;
-                }
+                entry->second.push_back(std::move(domain));
             }
-            if (!allowed) {
-                return false;
+        };
+        for (const auto& [key, value] : config.ordered_section("UserAgentService")) {
+            if (const auto level = level_for(key, "ForeignTripsAllowed_Level_")) {
+                if (!trip_permissions.emplace(*level, config.boolean("UserAgentService", key, true)).second)
+                    throw std::invalid_argument("Duplicate UserAgentService travel permission level");
+            } else if (const auto allowed_level = level_for(key, "AllowExcept_Level_")) {
+                add_exceptions(allowed_trip_exceptions, *allowed_level, value);
+            } else if (const auto denied_level = level_for(key, "DisallowExcept_Level_")) {
+                add_exceptions(denied_trip_exceptions, *denied_level, value);
             }
         }
-        return true;
+    }
+    const auto travel_allowed = [&](int user_level, const std::string& remote_grid) {
+        const auto permission = trip_permissions.find(user_level);
+        if (permission == trip_permissions.end())
+            return true;
+        auto destination = framework::lower_invariant_culture(remote_grid);
+        if (destination == home_grid_name)
+            return true;
+        if (!destination.ends_with('/'))
+            destination += '/';
+        const bool allowed = permission->second;
+        const auto& exceptions = allowed ? allowed_trip_exceptions : denied_trip_exceptions;
+        const auto found = exceptions.find(user_level);
+        const bool is_exception = found != exceptions.end() &&
+                                  std::ranges::find(found->second, destination) != found->second.end();
+        return allowed != is_exception;
     };
     services::LoginService login(accounts, config);
     if (remote_authentication)
@@ -1021,8 +1727,8 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     std::unique_ptr<server::OfflineImEndpoint> offline_im_endpoint;
     constexpr std::string_view offline_connector_suffix =
         "/OpenSim.Addons.OfflineIM.dll:OfflineIMServiceRobustConnector";
-    const auto mute_list_connector = find_connector(
-        "MuteListConnector", "/OpenSim.Server.Handlers.dll:MuteListServiceConnector");
+    const auto mute_list_connector = find_service_connector(
+        config, "MuteListConnector", "/OpenSim.Server.Handlers.dll:MuteListServiceConnector");
     const bool expose_mute_list =
         config.boolean("NativeServer", "EnableMuteListEndpoint", !mute_list_connector.empty());
     const bool local_mute_list =
@@ -1039,9 +1745,9 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
         }
     }
 
-    const auto offline_connector = find_connector("OfflineIMServiceConnector", offline_connector_suffix);
-    const auto preferences_connector = find_connector(
-        "AgentPreferencesServiceConnector", "/OpenSim.Server.Handlers.dll:AgentPreferencesServiceConnector");
+    const auto offline_connector = find_service_connector(config, "OfflineIMServiceConnector", offline_connector_suffix);
+    const auto preferences_connector = find_service_connector(
+        config, "AgentPreferencesServiceConnector", "/OpenSim.Server.Handlers.dll:AgentPreferencesServiceConnector");
     const bool preferences_endpoint_enabled =
         config.boolean("NativeServer", "EnableAgentPreferencesEndpoint", !preferences_connector.empty());
     const bool local_preferences_enabled = config.boolean("NativeServer", "EnableAgentPreferencesService",
@@ -1357,10 +2063,18 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     std::unique_ptr<services::GridUserService> grid_user;
     std::unique_ptr<server::GridUserEndpoint> grid_user_endpoint;
     if (need_grid_user) {
-        grid_user_store = open_grid_user_store();
-        grid_user = std::make_unique<services::GridUserService>(*grid_user_store);
-        if (expose_grid_user)
-            grid_user_endpoint = std::make_unique<server::GridUserEndpoint>(*grid_user, config);
+        try {
+            grid_user_store = open_grid_user_store();
+            if (grid_user_required) {
+                grid_user = std::make_unique<services::GridUserService>(*grid_user_store);
+                if (expose_grid_user)
+                    grid_user_endpoint = std::make_unique<server::GridUserEndpoint>(*grid_user, config);
+            }
+        } catch (const std::exception& failure) {
+            if (grid_user_required)
+                throw;
+            error_log(std::string("Grid statistics could not open the grid-user store: ") + failure.what());
+        }
     }
     std::unique_ptr<services::GridUserConnector> remote_grid_user;
     if (use_remote_grid_user)
@@ -1369,12 +2083,20 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     std::unique_ptr<services::GridService> grid;
     std::unique_ptr<server::GridEndpoint> grid_endpoint;
     if (need_grid) {
-        if (durable_regions)
-            region_store = std::make_unique<services::SqliteRegionStore>(
-                server::database_path(config, "GridService", "GridRegionDatabase"), false,
-                config.get("GridService", "Realm", "regions"));
-        else
-            region_store = std::make_unique<services::NullRegionStore>();
+        try {
+            if (durable_regions)
+                region_store = std::make_unique<services::SqliteRegionStore>(
+                    server::database_path(config, "GridService", "GridRegionDatabase"), false,
+                    config.get("GridService", "Realm", "regions"));
+            else if (region_provider == "Null")
+                region_store = std::make_unique<services::NullRegionStore>();
+        } catch (const std::exception& failure) {
+            if (grid_required)
+                throw;
+            error_log(std::string("Grid statistics could not open the region store: ") + failure.what());
+        }
+    }
+    if (region_store) {
         services::GridService::Link link;
         if (config.boolean("GridService", "AllowHypergridMapSearch", false)) {
             auto transport = std::make_shared<network::NwcXmlRpcHttpTransport>(outgoing_clients());
@@ -1392,14 +2114,22 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     auto reply =
                         transport->send(request, framework::utf16_replacing(uri.host_url_slash()), 10000);
                     auto linked = reply && !reply->is_fault ? reply->value : nullptr;
+                    if (!linked || linked->view().kind != network::Value::Kind::Map)
+                        return std::nullopt;
+                    for (const auto* key : {"result", "uuid", "handle", "region_image", "external_name",
+                                            "size_x", "size_y"}) {
+                        const auto kind = linked->get(key).view().kind;
+                        if (kind != network::Value::Kind::String && kind != network::Value::Kind::Undefined)
+                            return std::nullopt;
+                    }
                     framework::Uuid id;
-                    if (!linked ||
-                        !framework::ordinal_equals_ignore_case(linked->get("result").as_string(), "true") ||
+                    if (!framework::ordinal_equals_ignore_case(
+                            framework::trim_utf8(linked->get("result").as_string()), "true") ||
                         !framework::try_parse_sdk_uuid(linked->get("uuid").as_string(), id) || id.is_zero())
                         return std::nullopt;
                     std::uint64_t remote_handle = 0;
                     const auto handle_text = linked->get("handle").as_string();
-                    if (linked->contains("handle") &&
+                    if (linked->get("handle").view().kind == network::Value::Kind::String &&
                         !framework::try_parse_unsigned_integer(handle_text, remote_handle))
                         return std::nullopt;
                     if (auto existing = grid->by_id(scope, id))
@@ -1408,21 +2138,10 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     region.id = id;
                     region.scope = scope;
                     const auto read_size = [&](const char* key, int fallback) {
-                        if (!linked->contains(key))
-                            return fallback;
-                        const auto value = linked->get(key).as_string();
-                        const auto start = value.find_first_not_of(" \t\r\n\v\f");
-                        if (start == std::string::npos)
-                            return 0;
-                        const auto last = value.find_last_not_of(" \t\r\n\v\f");
-                        const auto first = value.data() + start;
-                        const auto end = value.data() + last + 1;
-                        const auto digits = first + (*first == '+');
-                        if (*first == '+' && digits != end && *digits == '-')
-                            return 0;
-                        int result = 0;
-                        const auto parsed = std::from_chars(digits, end, result);
-                        return parsed.ec == std::errc{} && parsed.ptr == end ? result : 0;
+                        const auto& field = linked->get(key);
+                        if (field.view().kind == network::Value::Kind::String)
+                            services::parse_account_integer(field.as_string(), fallback);
+                        return fallback;
                     };
                     region.size_x = read_size("size_x", region.size_x);
                     region.size_y = read_size("size_y", region.size_y);
@@ -1519,7 +2238,9 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
         if (last.starts_with('@')) {
             const auto dot = first.find('.');
             if (dot != std::string::npos) {
-                last = first.substr(dot + 1, first.find('.', dot + 1) - dot - 1);
+                const auto last_start = dot + 1;
+                const auto last_end = first.find('.', last_start);
+                last = first.substr(last_start, last_end == first.npos ? first.npos : last_end - last_start);
                 first.resize(dot);
             }
         }
@@ -1540,33 +2261,48 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
         sync_foreign_friend;
     std::function<void(framework::Uuid, framework::Uuid, bool)> publish_friend_status;
     std::function<void(framework::Uuid, framework::Uuid)> create_friend_card;
-    std::function<void(const scene::Terrain&)> save_baked_terrain;
-    std::function<void(framework::Uuid, std::uint32_t)> save_estate_covenant;
-    std::function<void(framework::Uuid, const std::vector<scene::RegionSpawnPoint>&)> save_telehub;
-    std::function<void(std::size_t, float, float)> save_terrain_texture_heights;
-    std::function<void(bool, std::size_t, framework::Uuid)> save_terrain_texture_asset;
-    std::function<void(float, float, float)> save_region_terrain_settings;
-    std::function<void(bool)> save_region_sun_settings;
-    std::function<void(std::optional<framework::Uuid>, std::optional<std::string>)> save_environment;
-    std::function<void(const scene::EstateRegionSettings&)> save_estate_region_settings;
+    struct RegionPersistence {
+        std::function<void(const scene::Terrain&)> save_baked_terrain;
+        std::function<void(framework::Uuid, std::uint32_t)> save_estate_covenant;
+        std::function<void(framework::Uuid, const std::vector<scene::RegionSpawnPoint>&)> save_telehub;
+        std::function<void(std::size_t, float, float)> save_terrain_texture_heights;
+        std::function<void(bool, std::size_t, framework::Uuid)> save_terrain_texture_asset;
+        std::function<void(float, float, float)> save_region_terrain_settings;
+        std::function<void(bool)> save_region_sun_settings;
+        std::function<void(std::optional<framework::Uuid>, std::optional<std::string>)> save_environment;
+        std::function<void(const scene::EstateRegionSettings&)> save_estate_region_settings;
+        std::function<void()> save_terrain;
+        std::function<void(framework::Uuid, framework::Uuid)> save_map_images;
+        std::function<void()> save_prim_metadata;
+        std::chrono::steady_clock::time_point next_terrain_save = std::chrono::steady_clock::now();
+    };
     using ParcelCells = std::vector<std::shared_ptr<const scene::ScriptParcel>>;
-    std::optional<ParcelCells> persisted_parcels;
-    std::vector<std::shared_ptr<const scene::ScriptParcel>> persisted_parcel_records;
-    std::shared_ptr<const scene::ScriptParcel> default_parcel;
-    std::mutex parcels_mutex;
     enum class ParcelSave { Access, Ownership, Reclaim, CleanTime, Music, Media, Properties, Purchase, MarkContent };
-    std::function<void(const scene::ScriptParcel&, bool, ParcelSave)> save_parcel;
-    std::function<void(const ParcelCells&, const std::vector<framework::Uuid>&)> save_parcel_topology;
-    std::function<void(framework::Uuid, float)> save_parcel_dwell;
-    std::atomic<double> parcel_object_bonus{1.0};
-    std::unique_ptr<services::RegionAssetRuntime> region_assets;
+    struct RegionParcels {
+        std::optional<ParcelCells> persisted_parcels;
+        std::vector<std::shared_ptr<const scene::ScriptParcel>> persisted_parcel_records;
+        std::shared_ptr<const scene::ScriptParcel> default_parcel;
+        std::mutex parcels_mutex;
+        std::function<void(const scene::ScriptParcel&, bool, ParcelSave)> save_parcel;
+        std::function<void(const ParcelCells&, const std::vector<framework::Uuid>&)> save_parcel_topology;
+        std::function<void(framework::Uuid, float)> save_parcel_dwell;
+        std::atomic<double> parcel_object_bonus{1.0};
+    };
+    LocalRegionRouter local_regions;
     std::function<network::ServiceXmlValue(const services::OrderedRegionFields&)> remote_grid_request;
-    std::unique_ptr<scene::RegionRuntime> region_runtime;
-    std::function<void()> save_terrain;
-    std::function<void(framework::Uuid, framework::Uuid)> save_map_images;
-    std::function<void()> publish_map_images;
-    std::function<void()> save_prim_metadata;
-    auto next_terrain_save = std::chrono::steady_clock::now();
+    struct HostedRegion {
+        RegionPersistence persistence;
+        RegionParcels parcels;
+        std::unique_ptr<services::RegionAssetRuntime> assets;
+        std::function<void()> publish_map_images;
+        std::shared_ptr<scene::RegionRuntime> runtime;
+    } hosted_region;
+    auto& region_persistence = hosted_region.persistence;
+    auto& region_parcels = hosted_region.parcels;
+    auto& region_assets = hosted_region.assets;
+    auto& region_runtime = hosted_region.runtime;
+    auto& publish_map_images = hosted_region.publish_map_images;
+    std::weak_ptr<network::ScriptHttpService> script_http_service;
     std::unique_ptr<server::GridIdentity> profile_grid_identity;
     std::shared_ptr<scene::UserProfileRequests> advanced_profiles;
 
@@ -1579,6 +2315,8 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     std::unique_ptr<ProfileWorkers> profile_workers;
     const bool estate_communications =
         config.get("Estates", "EstateCommunicationsHandler", "EstateModule") == "EstateModule";
+    const bool message_transfer_enabled =
+        config.get("Messaging", "MessageTransferModule", "MessageTransferModule") == "MessageTransferModule";
     const auto estate_token = config.get("Estates", "Token", "7db8eh2gvgg45jj");
     std::unique_ptr<ProfileWorkers> bakes_workers;
     std::unique_ptr<ProfileWorkers> bakes_upload_worker;
@@ -1661,42 +2399,138 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
             auto simulation_requester = make_simulation_requester();
             simulation_connector = std::make_unique<services::SimulationConnector>(simulation_requester);
             if (local_region) {
-                services::GridRegion region;
-                region.id =
-                    framework::Uuid(config.get("NativeRegion", "ID", "11111111-1111-4111-8111-111111111111"));
-                region.scope = framework::Uuid(
-                    config.get("NativeRegion", "ScopeID", "00000000-0000-0000-0000-000000000000"));
-                region.name = config.get("NativeRegion", "Name", "Native Region");
-                region.external_host = config.get("NativeRegion", "ExternalHost", "127.0.0.1");
-                region.estate_owner = framework::Uuid(
-                    config.get("NativeRegion", "OwnerID", "00000000-0000-0000-0000-000000000000"));
-                region.x = config.integer("NativeRegion", "LocationX", 1000) * 256;
-                region.y = config.integer("NativeRegion", "LocationY", 1000) * 256;
-                const auto size_x = config.integer("NativeRegion", "SizeX", 256);
-                const auto size_y = config.integer("NativeRegion", "SizeY", 256);
-                const auto size = std::clamp(std::min(size_x, size_y) / 256, 1, 16) * 256;
-                region.size_x = size;
-                region.size_y = size;
-                region.access = 13;
-                const bool generate_map_tiles = config.boolean(
-                    "Map", "GenerateMaptiles", config.boolean("Startup", "GenerateMaptiles", true));
+                auto region = local_region_descriptors.front();
+                const auto size = region.size_x;
+                // OpenSimulator applies Map first and then overrides it with Startup.
+                const auto map_setting = [&](const char* key, std::string fallback = {}) {
+                    return config.get("Startup", key, config.get("Map", key, std::move(fallback)));
+                };
+                const auto map_flag = [&](const char* key, bool fallback) {
+                    return config.boolean("Startup", key, config.boolean("Map", key, fallback));
+                };
+                const auto map_integer = [&](const char* key, int fallback) {
+                    return config.integer("Startup", key, config.integer("Map", key, fallback));
+                };
+                const bool generate_map_tiles = map_flag("GenerateMaptiles", true);
                 if (!generate_map_tiles) {
-                    const auto static_map = config.get(
-                        "Map", "MaptileStaticUUID", config.get("Startup", "MaptileStaticUUID"));
+                    const auto static_map = map_setting("MaptileStaticUUID");
                     if (!framework::try_parse_sdk_uuid(static_map, region.terrain_image) ||
                         region.terrain_image.is_zero())
-                        framework::try_parse_sdk_uuid(config.get("NativeRegion", "MaptileStaticUUID"),
+                        framework::try_parse_sdk_uuid(region_settings.get("NativeRegion", "MaptileStaticUUID"),
                                                        region.terrain_image);
                 }
-                auto udp_port = config.integer("NativeRegion", "UDPPort", 9000);
-                if (udp_port < 0 || udp_port > 65535)
-                    throw std::invalid_argument("NativeRegion UDPPort must be between 0 and 65535");
-                if (udp_port == 0)
-                    udp_port = ports.udp;
-                region.internal_endpoint =
-                    services::RegionEndpoint{config.get("NativeRegion", "BindAddress", "0.0.0.0"),
-                                             static_cast<std::uint16_t>(udp_port)};
                 scene::RegionPolicies policies;
+                policies.script_remote_data_channels = remote_data;
+                policies.auto_grant_attach_permissions =
+                    region_settings.get("NativeRegion", "auto_grant_attach_perms") == "true";
+                policies.auto_grant_all_script_permissions =
+                    region_settings.get("NativeRegion", "auto_grant_all_perms") == "true";
+                const auto landing = region_settings.get("NativeRegion", "DefaultLanding", "<128, 128, 30>");
+                framework::Vector3 landing_position;
+                if (framework::try_parse_sdk_vector3(framework::utf16_replacing(landing), landing_position) &&
+                    std::isfinite(landing_position.x) && std::isfinite(landing_position.y) &&
+                    std::isfinite(landing_position.z))
+                    policies.default_landing = landing_position;
+                else
+                    error_log("Unable to parse DefaultLanding for " + region.name.value_or(""));
+                if (config.get("Startup", "emailmodule", "DefaultEmailModule") == "DefaultEmailModule" &&
+                    config.boolean("SMTP", "enabled", false)) {
+                    const auto local_recipient_limit = config.integer("SMTP", "MailsToPrimAddressPerHour", 50);
+                    const auto mailbox = std::make_shared<scene::ScriptMailbox>(
+                        config.integer("SMTP", "MailsFromOwnerPerHour", 500),
+                        local_recipient_limit, config.integer("SMTP", "SMTP_MailsPerDay", 100),
+                        config.integer("SMTP", "MailsToSMTPAddressPerHour", local_recipient_limit));
+                    const auto host = config.get("SMTP", "internal_object_host", "lsl.opensim.local");
+                    const bool enable_smtp = config.boolean("SMTP", "enableEmailToSMTP", false);
+                    const auto smtp_host = config.get("SMTP", "SMTP_SERVER_HOSTNAME");
+                    const auto smtp_port = config.integer("SMTP", "SMTP_SERVER_PORT", 25);
+                    const auto smtp_from = config.get("SMTP", "SMTP_SERVER_FROM");
+                    const auto smtp_domain = config.get("SMTP", "host_domain_header_from");
+                    const bool smtp_start_tls = config.boolean("SMTP", "SMTP_SERVER_TLS", false);
+                    const network::ScriptSmtpSecurity smtp_security{
+                        smtp_start_tls ? network::ScriptSmtpTls::StartTls :
+                            smtp_port == 465 ? network::ScriptSmtpTls::Implicit : network::ScriptSmtpTls::Automatic,
+                        !smtp_start_tls || config.boolean("SMTP", "SMTP_VerifyCertChain", true),
+                        !smtp_start_tls || config.boolean("SMTP", "SMTP_VerifyCertNames", true),
+                        config.get("SMTP", "SMTP_SERVER_LOGIN"), config.get("SMTP", "SMTP_SERVER_PASSWORD")};
+                    const bool restrict_email = config.boolean("LL-Functions", "RestrictEmail", false);
+                    const auto max_size = config.integer("SMTP", "email_max_size", 4096);
+                    const auto message_limit = max_size >= 256 && max_size <= 1000000 ? max_size : 4096;
+                    const auto pause = config.integer("SMTP", "email_pause_time", 20);
+                    policies.script_email_delay_ms = static_cast<std::int32_t>(
+                        std::clamp<std::int64_t>(static_cast<std::int64_t>(pause) * 1000, 0, INT32_MAX));
+                    policies.script_email_events = [mailbox] {
+                        return scene::PartEmailEvents{
+                            [mailbox](framework::Uuid part) { mailbox->add(part); },
+                            [mailbox](framework::Uuid part) { mailbox->remove(part); },
+                        };
+                    };
+                    policies.next_script_email = [mailbox](framework::Uuid part, std::string_view sender,
+                                                            std::string_view subject) {
+                        return mailbox->next(part, sender, subject);
+                    };
+                    policies.send_script_email = [mailbox, host, message_limit, restrict_email, enable_smtp,
+                                                  smtp_host, smtp_port, smtp_from, smtp_domain, smtp_security,
+                                                  &accounts, &error_log, scope = region.scope](
+                            scene::ScriptEmailOrigin origin, std::string address,
+                            std::string subject, std::string body) {
+                        if (!origin.targeted && restrict_email && address.find(host) == std::string::npos) {
+                            const auto account = accounts.find_by_id(scope.str(), origin.part_owner.str());
+                            if (!account || !account->email || account->email->empty())
+                                return;
+                            address = *account->email;
+                        }
+                        address = framework::trim_utf8(address);
+                        if (address.empty() || framework::utf16(address).size() > 320 ||
+                            !mailbox->allow_owner(origin.owner))
+                            return;
+                        const auto separator = address.find('@');
+                        if (separator == std::string::npos ||
+                            framework::utf16(subject).size() + framework::utf16(body).size() >
+                                static_cast<std::size_t>(message_limit))
+                            return;
+                        const auto domain = std::string_view(address).substr(separator + 1);
+                        const bool local = framework::invariant_equals_ignore_case(domain, host) ||
+                            framework::invariant_equals_ignore_case(domain, "lsl.secondlife.com");
+                        if (!local && (!enable_smtp || smtp_host.empty() || smtp_port < 1 || smtp_port > 65535))
+                            return;
+                        const auto coordinate = [](float value) {
+                            return value >= -2147483648.f && value < 2147483648.f
+                                ? static_cast<std::int32_t>(value) : INT32_MIN;
+                        };
+                        const auto position = "(" + std::to_string(coordinate(origin.position.x)) + ", " +
+                            std::to_string(coordinate(origin.position.y)) + ", " +
+                            std::to_string(coordinate(origin.position.z)) + ")";
+                        auto text = "Object-Name: " + origin.name + "\nRegion: " + origin.region +
+                            "\nLocal-Position: " + position + "\n\n" + body;
+                        const auto object_id = origin.part.str();
+                        auto throttle_address = framework::utf8(
+                            framework::invariant_lower_utf16(framework::utf16(address)));
+                        if (!local) {
+                            if (!mailbox->allow_smtp(std::move(throttle_address)))
+                                return;
+                            try {
+                                const auto sender = smtp_from.empty() ? object_id + "@" + smtp_domain : smtp_from;
+                                if (!smtp_from.empty())
+                                    subject = "(OSObj" + object_id + ") " + subject;
+                                network::send_script_smtp(smtp_host, smtp_port, sender, address, subject,
+                                                          text, origin.owner.str(), object_id, smtp_security);
+                            } catch (const std::exception& error) {
+                                error_log("[EMAIL]: DefaultEmailModule Exception: " + std::string(error.what()));
+                            }
+                            return;
+                        }
+                        if (!mailbox->allow_recipient(std::move(throttle_address)))
+                            return;
+                        framework::Uuid recipient;
+                        if (!framework::try_parse_sdk_uuid(std::string_view(address).substr(0, separator), recipient))
+                            return;
+                        const auto now = std::chrono::duration_cast<std::chrono::seconds>(
+                            std::chrono::system_clock::now().time_since_epoch()).count();
+                        mailbox->insert(recipient, {std::to_string(now), object_id + "@" + host,
+                                                    std::move(subject), std::move(text)});
+                    };
+                }
                 policies.attachments_enabled = config.boolean("Attachments", "Enabled", true);
                 policies.wear_replaces_all = config.boolean("Attachments", "WearReplacesAll", true);
                 const auto permission_modules = config.get(
@@ -1705,7 +2539,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 std::istringstream permission_names(permission_modules);
                 for (std::string name; std::getline(permission_names, name, ',');)
                     policies.prim_limits_enabled |= framework::trim_utf8(name) == "PrimLimitsModule";
-                policies.max_prims_per_user = config.integer("NativeRegion", "MaxPrimsPerUser", -1);
+                policies.max_prims_per_user = region_settings.integer("NativeRegion", "MaxPrimsPerUser", -1);
                 policies.allow_viewer_restart =
                     config.boolean("EstateManagement", "AllowRegionRestartFromClient", true);
                 policies.skip_restart_delay_when_empty =
@@ -1716,6 +2550,10 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     restart_marker = framework::utf8_path(marker) / region.id.str();
                     std::error_code ignored;
                     std::filesystem::remove(restart_marker, ignored);
+                    policies.clear_restart_marker = [restart_marker] {
+                        if (!std::filesystem::is_directory(std::filesystem::symlink_status(restart_marker)))
+                            std::filesystem::remove(restart_marker);
+                    };
                 }
                 policies.restart_region = [&, restart_shuts_down, restart_marker](bool write_marker) {
                     if (write_marker && !restart_marker.empty()) {
@@ -1733,8 +2571,8 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     config.get("Dwell", "DwellModule", "DefaultDwellModule") == "DefaultDwellModule";
                 if (policies.parcel_dwell_enabled) {
                     policies.persist_parcel_dwell = [&](framework::Uuid parcel, float dwell) {
-                        if (save_parcel_dwell)
-                            save_parcel_dwell(parcel, dwell);
+                        if (region_parcels.save_parcel_dwell)
+                            region_parcels.save_parcel_dwell(parcel, dwell);
                     };
                 }
                 policies.force_parcel_bans = !config.boolean("LandManagement", "DisableParcelBans", false);
@@ -1756,8 +2594,12 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 policies.spawn_point_routing = config.get("Startup", "SpawnPointRouting", "closest");
                 policies.use_sl_landing_behavior =
                     config.get("EntityTransfer", "LandingPointBehavior") == "LandingPointBehavior_SL";
-                policies.minimum_asset_upload_level =
-                    config.integer("Permissions", "LevelUpload", config.integer("Startup", "LevelUpload", 0));
+                auto level_upload = config.get("Permissions", "LevelUpload");
+                if (level_upload.empty())
+                    level_upload = config.get("Startup", "LevelUpload");
+                if (!level_upload.empty() &&
+                    !services::parse_account_integer(level_upload, policies.minimum_asset_upload_level))
+                    throw std::invalid_argument("LevelUpload must be a valid 32-bit integer");
                 policies.asset_upload_user_level = [&, scope = region.scope](framework::Uuid agent) {
                     const auto account = accounts.find_by_id(scope.str(), agent.str());
                     return account ? account->user_level : 0;
@@ -1866,18 +2708,18 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     return account ? static_cast<std::uint32_t>(account->user_flags) : 0u;
                 };
                 policies.persist_estate_covenant = [&](framework::Uuid covenant, std::uint32_t timestamp) {
-                    if (save_estate_covenant)
-                        save_estate_covenant(covenant, timestamp);
+                    if (region_persistence.save_estate_covenant)
+                        region_persistence.save_estate_covenant(covenant, timestamp);
                 };
                 policies.persist_telehub = [&](framework::Uuid hub, const auto& points) {
-                    if (save_telehub)
-                        save_telehub(hub, points);
+                    if (region_persistence.save_telehub)
+                        region_persistence.save_telehub(hub, points);
                 };
                 policies.region_agent_capacity =
-                    std::max(0, config.integer("NativeRegion", "MaxAgents", 100));
+                    std::max(0, region_settings.integer("NativeRegion", "MaxAgents", 100));
                 policies.region_object_capacity =
-                    std::max(0, config.integer("NativeRegion", "MaxPrims", 15000));
-                policies.region_type = config.get("NativeRegion", "RegionType");
+                    std::max(0, region_settings.integer("NativeRegion", "MaxPrims", 15000));
+                policies.region_type = region_settings.get("NativeRegion", "RegionType");
                 policies.script_whisper_range = config.integer("SMTP", "whisper_distance", 10);
                 policies.script_chat_range = config.integer("SMTP", "say_distance", 20);
                 policies.script_shout_range = config.integer("SMTP", "shout_distance", 100);
@@ -1896,7 +2738,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 const bool manager_god = !grid_gods_only && god_option("region_manager_is_god", false);
                 policies.estate_manager_is_god = manager_god;
                 auto estate_owner = region.estate_owner;
-                if (const auto configured = config.get("NativeRegion", "EstateDatabase");
+                if (const auto configured = region_settings.get("NativeRegion", "EstateDatabase");
                     !configured.empty()) {
                     auto path = framework::utf8_path(configured);
                     if (path.is_relative())
@@ -2652,6 +3494,27 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 if (framework::parse_invariant_float(config.get("Startup", "FrameTime"), scene_frame_time) &&
                     std::isfinite(scene_frame_time) && scene_frame_time > 0.f)
                     policies.scene_frame_time = scene_frame_time;
+                if (const auto wind = config.native_section("Wind"); wind && config.boolean("Wind", "enabled", true)) {
+                    using Model = scene::RegionPolicies::Wind::Model;
+                    const auto plugin = config.get("Wind", "wind_plugin", "SimpleRandomWind");
+                    policies.wind.update_frames = std::max(1, config.integer("Wind", "wind_update_rate", 150));
+                    if (plugin == "SimpleRandomWind") {
+                        policies.wind.model = Model::SimpleRandom;
+                        policies.wind.strength = wind->get_float(framework::nini_writer_text(u"strength"), 1.f);
+                    } else if (plugin == "ConfigurableWind") {
+                        policies.wind.model = Model::Configurable;
+                        // The managed plugin parses the legacy key before replacing it with avg_strength.
+                        wind->get_float(framework::nini_writer_text(u"strength"), 5.f);
+                        policies.wind.average_strength = wind->get_float(framework::nini_writer_text(u"avg_strength"), 5.f);
+                        policies.wind.average_direction = wind->get_float(framework::nini_writer_text(u"avg_direction"), 0.f);
+                        policies.wind.strength_variation = wind->get_float(framework::nini_writer_text(u"var_strength"), 5.f);
+                        policies.wind.direction_variation = wind->get_float(framework::nini_writer_text(u"var_direction"), 30.f);
+                        policies.wind.rate = wind->get_float(framework::nini_writer_text(u"rate_change"), 1.f);
+                    } else {
+                        error_log("[WIND] Could not find specified wind plug-in: " + plugin);
+                        error_log("[WIND] Defaulting to no wind.");
+                    }
+                }
                 policies.update_objects_every_n_frames =
                     config.integer("Startup", "UpdateObjectsEveryNFrames", 1);
                 if (config.boolean("Startup", "Normalized55FPS", true))
@@ -2660,7 +3523,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 // Match the default LandData flags used when a region has no saved parcels.
                 constexpr std::uint32_t default_parcel_flags =
                     0x1u | 0x8u | 0x8000000u | 0x2000u | 0x40u | 0x2u | 0x20000000u;
-                default_parcel = std::make_shared<const scene::ScriptParcel>(
+                region_parcels.default_parcel = std::make_shared<const scene::ScriptParcel>(
                             scene::ScriptParcel{region.id,
                                                 region.estate_owner,
                                                 default_parcel_flags,
@@ -2677,32 +3540,32 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                         framework::Vector3 position) -> std::shared_ptr<const scene::ScriptParcel> {
                     if (!(position.x >= 0 && position.x < size && position.y >= 0 && position.y < size))
                         return {};
-                    std::lock_guard lock(parcels_mutex);
-                    if (!persisted_parcels)
-                        return default_parcel;
+                    std::lock_guard lock(region_parcels.parcels_mutex);
+                    if (!region_parcels.persisted_parcels)
+                        return region_parcels.default_parcel;
                     const auto x = static_cast<unsigned>(position.x) / 4;
                     const auto y = static_cast<unsigned>(position.y) / 4;
-                    return (*persisted_parcels)[y * (size / 4) + x];
+                    return (*region_parcels.persisted_parcels)[y * (size / 4) + x];
                 };
                 policies.list_parcels = [&] {
-                    std::lock_guard lock(parcels_mutex);
-                    if (!persisted_parcels)
-                        return std::vector{default_parcel};
-                    return persisted_parcel_records;
+                    std::lock_guard lock(region_parcels.parcels_mutex);
+                    if (!region_parcels.persisted_parcels)
+                        return std::vector{region_parcels.default_parcel};
+                    return region_parcels.persisted_parcel_records;
                 };
                 const auto update_parcel = [&](std::shared_ptr<const scene::ScriptParcel> parcel, bool persist,
                                                ParcelSave change) {
-                    if (persist && save_parcel)
-                        save_parcel(*parcel, !persisted_parcels, change);
-                    std::lock_guard lock(parcels_mutex);
-                    if (!persisted_parcels) {
-                        default_parcel = std::move(parcel);
+                    if (persist && region_parcels.save_parcel)
+                        region_parcels.save_parcel(*parcel, !region_parcels.persisted_parcels, change);
+                    std::lock_guard lock(region_parcels.parcels_mutex);
+                    if (!region_parcels.persisted_parcels) {
+                        region_parcels.default_parcel = std::move(parcel);
                         return;
                     }
-                    for (auto& record : persisted_parcel_records)
+                    for (auto& record : region_parcels.persisted_parcel_records)
                         if (record->id == parcel->id)
                             record = parcel;
-                    for (auto& cell : *persisted_parcels)
+                    for (auto& cell : *region_parcels.persisted_parcels)
                         if (cell && cell->id == parcel->id)
                             cell = parcel;
                 };
@@ -2723,8 +3586,8 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 };
                 policies.update_parcel_topology = [&, size](const ParcelCells& changed,
                                                             const std::vector<framework::Uuid>& removed) {
-                    std::lock_guard lock(parcels_mutex);
-                    auto records = persisted_parcels ? persisted_parcel_records : ParcelCells{default_parcel};
+                    std::lock_guard lock(region_parcels.parcels_mutex);
+                    auto records = region_parcels.persisted_parcels ? region_parcels.persisted_parcel_records : ParcelCells{region_parcels.default_parcel};
                     std::erase_if(records, [&](const auto& parcel) {
                         return std::ranges::find(removed, parcel->id) != removed.end() ||
                                std::ranges::any_of(changed, [&](const auto& edit) { return edit->id == parcel->id; });
@@ -2736,10 +3599,10 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                         for (std::size_t i = 0; i < cells.size(); ++i)
                             if (i / 8 < parcel->land_bitmap.size() && (parcel->land_bitmap[i / 8] & (1u << (i % 8))))
                                 cells[i] = parcel;
-                    if (save_parcel_topology)
-                        save_parcel_topology(changed, removed);
-                    persisted_parcel_records = std::move(records);
-                    persisted_parcels = std::move(cells);
+                    if (region_parcels.save_parcel_topology)
+                        region_parcels.save_parcel_topology(changed, removed);
+                    region_parcels.persisted_parcel_records = std::move(records);
+                    region_parcels.persisted_parcels = std::move(cells);
                 };
                 policies.update_parcel_ownership = [update_parcel](auto parcel, bool reset_claim) {
                     update_parcel(std::move(parcel), true, reset_claim ? ParcelSave::Reclaim : ParcelSave::Ownership);
@@ -2751,10 +3614,10 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     update_parcel(std::move(parcel), true, ParcelSave::MarkContent);
                 };
                 policies.script_parcel_capacity =
-                    [&, size, capacity = std::max(0, config.integer("NativeRegion", "MaxPrims", 15000))](
+                    [&, size, capacity = std::max(0, region_settings.integer("NativeRegion", "MaxPrims", 15000))](
                         std::int32_t area) {
                         const auto rounded =
-                            area * static_cast<double>(capacity) * parcel_object_bonus / (size * size) + 0.5;
+                            area * static_cast<double>(capacity) * region_parcels.parcel_object_bonus / (size * size) + 0.5;
                         return static_cast<std::int32_t>(std::min(rounded, static_cast<double>(capacity)));
                     };
                 policies.is_local_grid_user = [&, scope = region.scope](framework::Uuid agent) {
@@ -2763,10 +3626,14 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 policies.script_account = [&, scope = region.scope](framework::Uuid agent) {
                     return accounts.find_by_id(scope.str(), agent.str());
                 };
+                policies.script_grid_user_online = [&](framework::Uuid agent) {
+                    const auto user = agent.str();
+                    const auto info = remote_grid_user ? remote_grid_user->info(user) : grid_user->info(user);
+                    return info && info->online;
+                };
                 policies.script_account_key = services::make_script_user_key_lookup(accounts, outgoing_clients());
                 policies.script_grid_region = services::make_script_grid_lookup(*grid, region.scope, remote_grid_request);
-                const auto world_map = config.get("Map", "WorldMapModule",
-                                                  config.get("Startup", "WorldMapModule", "WorldMap"));
+                const auto world_map = map_setting("WorldMapModule", "WorldMap");
                 policies.map_layer_enabled = world_map == "WorldMap" || world_map == "HGWorldMap";
                 const auto remote_map_regions = [&, scope = region.scope](services::OrderedRegionFields query) {
                     query.emplace_back("SCOPEID", scope.str());
@@ -2805,29 +3672,29 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                             : grid_user->set_home(agent.str(), region_id, position, look);
                 };
                 policies.persist_baked_terrain = [&](const scene::Terrain& terrain) {
-                    if (save_baked_terrain)
-                        save_baked_terrain(terrain);
+                    if (region_persistence.save_baked_terrain)
+                        region_persistence.save_baked_terrain(terrain);
                 };
                 policies.persist_terrain_texture_heights = [&](std::size_t corner, float low, float high) {
-                    if (save_terrain_texture_heights)
-                        save_terrain_texture_heights(corner, low, high);
+                    if (region_persistence.save_terrain_texture_heights)
+                        region_persistence.save_terrain_texture_heights(corner, low, high);
                 };
                 policies.persist_terrain_texture_asset = [&](bool pbr, std::size_t corner, framework::Uuid asset) {
-                    if (save_terrain_texture_asset)
-                        save_terrain_texture_asset(pbr, corner, asset);
+                    if (region_persistence.save_terrain_texture_asset)
+                        region_persistence.save_terrain_texture_asset(pbr, corner, asset);
                 };
                 policies.persist_region_terrain_settings = [&](float water, float raise, float lower) {
-                    if (save_region_terrain_settings)
-                        save_region_terrain_settings(water, raise, lower);
+                    if (region_persistence.save_region_terrain_settings)
+                        region_persistence.save_region_terrain_settings(water, raise, lower);
                 };
                 policies.persist_region_sun_settings = [&](bool use_estate_sun) {
-                    if (save_region_sun_settings)
-                        save_region_sun_settings(use_estate_sun);
+                    if (region_persistence.save_region_sun_settings)
+                        region_persistence.save_region_sun_settings(use_estate_sun);
                 };
                 policies.persist_estate_region_settings = [&](const auto& settings) {
-                    if (save_estate_region_settings)
-                        save_estate_region_settings(settings);
-                    parcel_object_bonus = settings.object_bonus;
+                    if (region_persistence.save_estate_region_settings)
+                        region_persistence.save_estate_region_settings(settings);
+                    region_parcels.parcel_object_bonus = settings.object_bonus;
                 };
                 policies.resolve_landmark = [&](const scene::ViewerAgent& viewer, framework::Uuid landmark,
                                                 network::lludp::Packet& request) -> std::string {
@@ -2858,25 +3725,14 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                         }
                         if (!asset || !asset->data || asset->data->empty())
                             return missing;
-                        std::istringstream lines(std::string(asset->data->begin(), asset->data->end()));
-                        std::string version, region_line, position_line, handle_line;
-                        if (!std::getline(lines, version) || !std::getline(lines, region_line) ||
-                            !std::getline(lines, position_line) || !std::getline(lines, handle_line) ||
-                            region_line.size() < 46 || position_line.size() < 10 || handle_line.size() < 14)
+                        try {
+                            const auto parsed = script::parse_landmark(asset->data);
+                            region_id = parsed.region;
+                            position = parsed.position;
+                            landmark_handle = parsed.handle;
+                        } catch (const std::invalid_argument&) {
                             return missing;
-                        framework::try_parse_sdk_uuid(region_line.substr(10, 36), region_id);
-                        std::istringstream coordinates(position_line.substr(10));
-                        for (auto* axis : {&position.x, &position.y, &position.z}) {
-                            std::string scalar;
-                            std::getline(coordinates, scalar, ' ');
-                            services::parse_avatar_float(scalar, *axis);
                         }
-                        const auto handle_text = framework::trim_utf8(handle_line.substr(14));
-                        std::uint64_t handle = 0;
-                        const auto parsed = std::from_chars(handle_text.data(),
-                                                            handle_text.data() + handle_text.size(), handle);
-                        if (parsed.ec == std::errc{} && parsed.ptr == handle_text.data() + handle_text.size())
-                            landmark_handle = handle;
                     }
                     auto destination = grid->by_id({}, region_id);
                     if (!destination)
@@ -2916,9 +3772,14 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                                         {"Y", std::to_string(y)},
                                                         {"METHOD", "get_region_by_position"}});
                 };
+                policies.teleport_destination_by_name = [&, lookup_remote_region, scope = region.scope](
+                                                            const std::string& name) {
+                    auto destination = grid->by_name(scope, name);
+                    return destination ? destination : lookup_remote_region(
+                        scope, {{"NAME", name}, {"METHOD", "get_region_by_name"}});
+                };
                 if (policies.map_layer_enabled) {
-                    policies.map_item_failure_seconds = config.integer(
-                        "Map", "BlacklistTimeout", config.integer("Startup", "BlacklistTimeout", 600));
+                    policies.map_item_failure_seconds = map_integer("BlacklistTimeout", 600);
                     using MapFailureCache = framework::ExpiringCacheOS<std::string, bool>;
                     auto failed_map_servers = std::make_shared<MapFailureCache>(1000);
                     auto failed_map_urls = std::make_shared<MapFailureCache>(1000);
@@ -2961,6 +3822,8 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 }
                 if (config.boolean("NativeServer", "EnableSimulationEndpoint", false)) {
                     policies.send_crossing_object = [&](auto& destination, auto position, auto object) {
+                        if (local_regions.find(destination.id))
+                            return local_regions.create_object(&destination, position, std::move(object), true);
                         return simulation_connector->create_object(destination, position, std::move(object), true);
                     };
                 }
@@ -3008,12 +3871,36 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     return record && record->region_id == destination;
                 };
                 policies.cancel_teleport_destination = [&](auto& destination, auto agent, auto session) {
-                    simulation_connector->close_agent(destination, agent, session.str());
+                    if (auto local = local_regions.find(destination.id))
+                        local->close_agent_session(agent, session.str());
+                    else
+                        simulation_connector->close_agent(destination, agent, session.str());
                 };
                 const bool disable_teleport_cancellation =
                     config.boolean("EntityTransfer", "DisableInterRegionTeleportCancellation", false);
                 policies.disable_teleport_cancellation = disable_teleport_cancellation;
                 policies.release_teleport_source = [&](const std::string& uri) {
+                    const auto authority = uri.find("://");
+                    const auto path_start = authority == std::string::npos
+                        ? std::string::npos : uri.find('/', authority + 3);
+                    if (path_start != std::string::npos) {
+                        const std::string_view target = std::string_view(uri).substr(path_start);
+                        server::AgentPathParameters path;
+                        if (server::agent_path_parameters(target.substr(0, target.find('?')), path) &&
+                            path.action == "release") {
+                            if (auto source = local_regions.find(path.region)) {
+                                const auto descriptor = source->descriptor();
+                                const auto registered = grid->by_id(descriptor.scope, path.region);
+                                if (registered && uri.starts_with(registered->server_uri() + "agent/")) {
+                                    const auto auth = server::agent_delete_auth(target);
+                                    framework::Uuid token;
+                                    if (auth && framework::try_parse_sdk_uuid(*auth, token))
+                                        source->confirm_teleport_arrival(path.agent, token);
+                                    return;
+                                }
+                            }
+                        }
+                    }
                     simulation_connector->release_agent({}, {}, uri);
                 };
                 policies.teleport_access = [&](services::GridRegion& destination,
@@ -3049,25 +3936,56 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                             if (!reply || reply->is_fault || !reply->value)
                                 return "Error contacting grid.";
                             const auto& result = *reply->value;
-                            if (!framework::ordinal_equals_ignore_case(result.get("result").as_string(),
-                                                                       "true")) {
+                            const auto string_field = [&](std::string_view key) {
+                                const auto kind = result.get(key).view().kind;
+                                return kind == network::Value::Kind::String ||
+                                       kind == network::Value::Kind::Undefined;
+                            };
+                            if (result.view().kind != network::Value::Kind::Map ||
+                                !string_field("result") || !string_field("message"))
+                                return "Error parsing response from grid.";
+                            if (!framework::ordinal_equals_ignore_case(
+                                    framework::trim_utf8(result.get("result").as_string()), "true")) {
                                 const auto message = result.get("message").as_string();
-                                return message.empty() ? "Unable to locate destination" : message;
+                                return message.empty() ? "The teleport destination could not be found." : message;
                             }
-                            services::RegionFields fields_from_reply;
-                            for (const auto& [remote, local] : {std::pair{"uuid", "uuid"},
-                                                                {"x", "locX"},
-                                                                {"y", "locY"},
-                                                                {"size_x", "sizeX"},
-                                                                {"size_y", "sizeY"},
-                                                                {"region_name", "regionName"},
-                                                                {"hostname", "serverIP"},
-                                                                {"http_port", "serverHttpPort"},
-                                                                {"internal_port", "serverPort"},
-                                                                {"server_uri", "serverURI"}})
-                                if (result.contains(remote))
-                                    fields_from_reply[local] = result.get(remote).as_string();
-                            auto remote_region = services::GridRegion::from_fields(fields_from_reply);
+                            services::GridRegion remote_region;
+                            try {
+                                const auto read_text = [&](std::string_view key) -> std::optional<std::string> {
+                                    if (!string_field(key))
+                                        throw std::invalid_argument("Invalid Gatekeeper region field");
+                                    const auto& field = result.get(key);
+                                    if (field.view().kind == network::Value::Kind::Undefined)
+                                        return std::nullopt;
+                                    return field.as_string();
+                                };
+                                const auto read_integer = [&](std::string_view key, std::int32_t& target) {
+                                    if (const auto value = read_text(key))
+                                        services::parse_account_integer(*value, target);
+                                };
+                                if (const auto id = read_text("uuid"))
+                                    framework::try_parse_sdk_uuid(*id, remote_region.id);
+                                read_integer("x", remote_region.x);
+                                read_integer("y", remote_region.y);
+                                read_integer("size_x", remote_region.size_x);
+                                read_integer("size_y", remote_region.size_y);
+                                remote_region.name = read_text("region_name");
+                                remote_region.external_host = read_text("hostname");
+                                if (const auto port = read_text("http_port"))
+                                    framework::try_parse_unsigned_integer(*port, remote_region.http_port);
+                                if (const auto port = read_text("internal_port")) {
+                                    std::int32_t internal_port;
+                                    services::parse_account_integer(*port, internal_port);
+                                    if (internal_port < 0 || internal_port > 65535)
+                                        throw std::out_of_range("Invalid Gatekeeper region port");
+                                    remote_region.internal_endpoint = services::RegionEndpoint{
+                                        "0.0.0.0", static_cast<std::uint16_t>(internal_port)};
+                                }
+                                if (const auto uri = read_text("server_uri"))
+                                    remote_region.set_server_uri(*uri);
+                            } catch (const std::exception&) {
+                                return "Error parsing response from grid.";
+                            }
                             if (remote_region.id.is_zero())
                                 return "Unable to locate destination";
                             remote_region.flags = destination.flags;
@@ -3080,8 +3998,10 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                         !framework::host_resolver().endpoint(destination.external_host,
                                                              destination.internal_endpoint->port))
                         return "Could not resolve destination Address";
-                    if (simulation_connector->query_access(destination, agent.circuit->agent_id, home, via_teleport,
-                                                           position, features, context, reason))
+                    services::ISimulationLogin& admission = local_regions.find(destination.id)
+                        ? static_cast<services::ISimulationLogin&>(local_regions) : *simulation_connector;
+                    if (admission.query_access(destination, agent.circuit->agent_id, home, via_teleport,
+                                               position, features, context, reason))
                         return {};
                     return reason.empty() ? "Destination region denied access" : reason;
                 };
@@ -3095,7 +4015,8 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                         std::string& reason) -> std::optional<network::lludp::Packet> {
                     const bool crossing = token.is_zero();
                     const bool foreign = (gatekeeper.flags.value_or(0) & services::Hyperlink) != 0;
-                    if (!foreign && (!simulation_connector ||
+                    auto local_destination = foreign ? nullptr : local_regions.find(destination.id);
+                    if (!foreign && !local_destination && (!simulation_connector ||
                                      (!remote_region_presence &&
                                       (!presence_store || !presence_store->persistent())) ||
                                      agent.circuit->verified_foreign_login))
@@ -3204,7 +4125,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                         travel_lock.lock();
                         auto launch = destination;
                         launch.raw_server_uri = gatekeeper.server_uri();
-                        previous_travel = travel_store->get_by_user(circuit->agent_id);
+                        previous_travel = travel_store->replaced_by(circuit->session_id, circuit->agent_id);
                         circuit->service_session_id =
                             launch.server_uri() + ";" + framework::Uuid::random().str();
                         if (previous_travel && previous_travel->session_id == circuit->session_id &&
@@ -3218,11 +4139,19 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                              *circuit->service_session_id,
                                              circuit->ip_address.value_or(""),
                                              {}});
-                        services::GatekeeperSimulationConnector connector(simulation_requester);
-                        accepted = connector.create_agent(&advertised_source, launch, circuit, 1u << 7,
-                                                          context, reason);
+                        try {
+                            services::GatekeeperSimulationConnector connector(simulation_requester);
+                            accepted = connector.create_agent(&advertised_source, launch, circuit, 1u << 7,
+                                                              context, reason);
+                        } catch (...) {
+                            rollback_travel();
+                            throw;
+                        }
                         if (!accepted)
                             rollback_travel();
+                    } else if (local_destination) {
+                        accepted = local_destination->create_agent(&advertised_source, destination,
+                                                                   circuit, flags, context, reason);
                     } else {
                         accepted =
                             foreign ? home_agent->login_agent_to_grid(&advertised_source, circuit, gatekeeper,
@@ -3279,9 +4208,15 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                         update->new_callback_uri = advertised_source.server_uri() + "agent/" +
                                                    circuit->agent_id.str() + "/" + source.id.str() +
                                                    "/release/?auth=" + token.str();
-                    if (!simulation_connector->update_agent(destination, update, context)) {
-                        simulation_connector->close_agent(destination, circuit->agent_id,
-                                                          circuit->session_id.str());
+                    const bool updated = local_destination
+                        ? local_destination->update_agent(destination, update, context)
+                        : simulation_connector->update_agent(destination, update, context);
+                    if (!updated) {
+                        if (local_destination)
+                            local_destination->close_agent_session(circuit->agent_id, circuit->session_id.str());
+                        else
+                            simulation_connector->close_agent(destination, circuit->agent_id,
+                                                              circuit->session_id.str());
                         rollback_travel();
                         reason = "Destination did not accept the agent update";
                         return std::nullopt;
@@ -3563,7 +4498,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 }
                 auto runtime_file = [&](const char* key, const std::filesystem::path& original,
                                         const std::filesystem::path& installed) {
-                    auto explicit_file = config.get("NativeRegion", key);
+                    auto explicit_file = region_settings.get("NativeRegion", key);
                     if (!explicit_file.empty()) {
                         auto path = framework::utf8_path(explicit_file);
                         return path.is_relative() ? config.directory / path : path;
@@ -3575,7 +4510,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     }
                     auto root = executable_directory(args[0]);
                     for (int depth = 0; depth < 4; ++depth) {
-                        for (const auto& relative : {original, installed}) {
+                        for (const auto& relative : {installed, original}) {
                             auto path = root / relative;
                             if (std::filesystem::is_regular_file(path))
                                 return path;
@@ -3604,9 +4539,6 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                          std::filesystem::path("lib/opensim-native") / jpeg_library);
                         if (policies.map_layer_enabled)
                             policies.encode_map_jpeg = scene::open_map_jpeg_encoder(library);
-                        const auto map_flag = [&](const char* name, bool fallback) {
-                            return config.boolean("Map", name, config.boolean("Startup", name, fallback));
-                        };
                         if (policies.map_layer_enabled) {
                             policies.generate_map_on_startup = generate_map_tiles;
                             policies.load_map_asset =
@@ -3616,8 +4548,17 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                 };
                             policies.map_export_scale = map_flag("ExportMapAddScale", false);
                             policies.map_export_region_name = map_flag("ExportMapAddRegionName", false);
-                            policies.map_tiles_directory = framework::utf8_path(
-                                config.get("Map", "MapTilesDirectory", config.get("Startup", "MapTilesDirectory")));
+                            const auto map_tiles_directory = map_setting("MapTilesDirectory");
+                            policies.map_tiles_directory = framework::utf8_path(map_tiles_directory);
+                            if (!policies.map_tiles_directory.empty()) {
+                                std::error_code failure;
+                                std::filesystem::create_directories(policies.map_tiles_directory, failure);
+                                if (failure) {
+                                    error_log("[WORLD MAP]: Failed to create local map tile directory " +
+                                              map_tiles_directory + ": " + failure.message());
+                                    policies.map_tiles_directory.clear();
+                                }
+                            }
                             float view_distance = 255.f;
                             float draw_distance = 512.f;
                             framework::parse_invariant_float(
@@ -3629,22 +4570,20 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                 policies.map_export_view_distance = static_cast<int>(
                                     std::clamp(export_distance, 0.f, 32767.f));
                             policies.static_map_file = framework::utf8_path(
-                                config.get("NativeRegion", "MaptileStaticFile"));
-                            policies.warp_map_tiles = config.get(
-                                "Map", "MapImageModule", config.get("Startup", "MapImageModule", "MapImageModule"))
-                                == "Warp3DImageModule";
+                                region_settings.get("NativeRegion", "MaptileStaticFile"));
+                            policies.warp_map_tiles =
+                                map_setting("MapImageModule", "MapImageModule") == "Warp3DImageModule";
                             policies.draw_map_object_volumes = map_flag("DrawPrimOnMapTile", true);
                             policies.average_warp_map_textures = policies.warp_map_tiles &&
                                 map_flag("AverageTextureColorOnMapTile", false);
                             if (policies.warp_map_tiles) {
                                 policies.texture_warp_prims = map_flag("TexturePrims", true);
+                                policies.render_warp_meshes = map_flag("RenderMeshes", false);
                                 float minimum = -100.f, maximum = 4096.f;
                                 framework::parse_invariant_float(
-                                    config.get("Map", "RenderMinHeight", config.get("Startup", "RenderMinHeight", "-100")),
-                                    minimum);
+                                    map_setting("RenderMinHeight", "-100"), minimum);
                                 framework::parse_invariant_float(
-                                    config.get("Map", "RenderMaxHeight", config.get("Startup", "RenderMaxHeight", "4096")),
-                                    maximum);
+                                    map_setting("RenderMaxHeight", "4096"), maximum);
                                 if (std::isfinite(maximum))
                                     policies.warp_prim_max_height = std::clamp(maximum, 100.f, 4086.f);
                                 if (std::isfinite(minimum))
@@ -3655,7 +4594,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                 policies.average_warp_map_textures;
                             policies.encode_map_jpeg2000 = scene::open_map_jpeg2000_encoder(library);
                             const auto map_color = [&](const char* key, scene::MapColor fallback) {
-                                const auto text = config.get("Map", key, config.get("Startup", key));
+                                const auto text = map_setting(key);
                                 return scene::parse_map_color(text).value_or(fallback);
                             };
                             auto& palette = policies.map_palette;
@@ -3672,16 +4611,15 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                     };
                             }
                             if (generate_map_tiles)
-                                policies.map_tile_refresh = std::chrono::seconds(config.integer(
-                                    "Map", "MaptileRefresh", config.integer("Startup", "MaptileRefresh", 0)));
+                                policies.map_tile_refresh = std::chrono::seconds(map_integer("MaptileRefresh", 0));
                             policies.local_map_assets = map_flag("LocalV1MapAssets", false);
                             policies.store_map_tile = [&](auto asset) {
                                 if (!region_assets || !region_assets->store(std::move(asset)))
                                     throw std::runtime_error("Could not store terrain map tile");
                             };
                             policies.save_map_tiles = [&](framework::Uuid terrain, framework::Uuid parcel) {
-                                if (save_map_images)
-                                    save_map_images(terrain, parcel);
+                                if (region_persistence.save_map_images)
+                                    region_persistence.save_map_images(terrain, parcel);
                             };
                             policies.publish_map_tiles = [&] {
                                 if (publish_map_images)
@@ -4094,8 +5032,8 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 policies.environment_enabled =
                     config.get("ClientStack.LindenCaps", "Cap_EnvironmentSettings") == "localhost";
                 policies.persist_environment = [&](auto parcel, auto settings) {
-                    if (save_environment)
-                        save_environment(std::move(parcel), std::move(settings));
+                    if (region_persistence.save_environment)
+                        region_persistence.save_environment(std::move(parcel), std::move(settings));
                 };
                 auto ossl = config.native_section("OSSL");
                 if (!ossl)
@@ -4115,7 +5053,10 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                          {"osRequestURL", "osRequestSecureURL", "osForceOtherSit", "osGetAgents", "osGetAgentIP",
                           "osAvatarPlayAnimation", "osAvatarStopAnimation", "osSetRegionWaterHeight",
                           "osSetRegionSunSettings", "osSunGetParam", "osReplaceAgentEnvironment",
-                          "osSetHealRate", "osGetHealRate"})
+                          "osSetHealRate", "osGetHealRate", "osListenRegex", "osRegexIsMatch",
+                          "osTeleportAgent", "osTeleportOwner",
+                          "osMatchString", "osReplaceString", "osGetScriptEngineName", "osGetGridLoginURI",
+                          "osGetGridHomeURI", "osGetGridGatekeeperURI", "osGetGridCustom"})
                         policies.script_ossl_rules.emplace(function, scene::RegionPolicies::OsslRule{
                             read("Allow_" + function), read("Creators_" + function)});
                 }
@@ -4131,7 +5072,74 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 if (auto functions = config.native_section("LL-Functions"))
                     policies.script_url_limit = functions->get_int(
                         framework::nini_writer_text(u"max_external_urls_per_simulator"), policies.script_url_limit);
+                auto outbound_service = script_http_service.lock();
+                if (!outbound_service) {
+                    const auto outbound_filter = std::make_shared<framework::OutboundUrlFilter>(
+                        config.get("Network", "OutboundDisallowForUserScripts",
+                                   std::string(framework::OutboundUrlFilter::default_disallow)),
+                        config.get("Network", "OutboundDisallowForUserScriptsExcept", ""),
+                        framework::HostResolver::Lookup{},
+                        [&](std::string_view entry, bool network) {
+                            error_log("[OUTBOUND URL FILTER]: Invalid " +
+                                      std::string(network ? "network" : "endpoint") +
+                                      " for script HTTP: " + std::string(entry));
+                        });
+                    outbound_service = std::make_shared<network::ScriptHttpService>(
+                        outbound_filter, config.integer("Network", "HttpBodyMaxLenMAX", 16384),
+                        config.integer("ScriptsHttpRequestModule", "RequestsTimeOut", 30000),
+                        config.integer("ScriptsHttpRequestModule", "MaxPoolThreads", 8),
+                        network::make_script_http_proxy(config.get("Startup", "HttpProxy", ""),
+                                                       config.get("Startup", "HttpProxyExceptions", "")));
+                    script_http_service = outbound_service;
+                }
+                script::HttpRequestThrottleSettings http_throttle;
+                if (auto http = config.native_section("ScriptsHttpRequestModule")) {
+                    http_throttle.prim_rate = http->get_float(
+                        framework::nini_writer_text(u"PrimRequestsPerSec"), http_throttle.prim_rate);
+                    http_throttle.prim_burst = http->get_float(
+                        framework::nini_writer_text(u"PrimRequestsBurst"), http_throttle.prim_burst);
+                    http_throttle.owner_rate = http->get_float(
+                        framework::nini_writer_text(u"PrimOwnerRequestsPerSec"), http_throttle.owner_rate);
+                    http_throttle.owner_burst = http->get_float(
+                        framework::nini_writer_text(u"PrimOwnerRequestsBurst"), http_throttle.owner_burst);
+                }
+                policies.script_outbound_http = std::make_shared<network::ScriptHttpModule>(
+                    std::move(outbound_service), http_throttle);
+                const auto grid_identity = [&](const std::string& key) {
+                    auto value = config.get("Const", key);
+                    value = config.get("GridInfo", key, value);
+                    return config.get("SimulatorFeatures", key, value);
+                };
+                policies.script_grid_name = grid_identity("GridName");
+                if (policies.script_grid_name.empty())
+                    policies.script_grid_name = grid_identity("gridname");
+                if (policies.script_grid_name.empty())
+                    policies.script_grid_name = "Another bad configured grid";
+                policies.script_grid_nick = grid_identity("GridNick");
+                policies.script_grid_info = [&config, &options, &ports, clients = outgoing_clients(),
+                                             host = region.external_host.value_or("127.0.0.1")](
+                    script::LslGridQuery query, std::string_view key) -> std::string {
+                    using Query = script::LslGridQuery;
+                    if (query == Query::Login || query == Query::Custom)
+                        return server::script_grid_service_value(config, *clients, query == Query::Login ? "login" : key);
+                    try {
+                        const auto scheme = options.certificate.empty() && options.pkcs12_bundle.empty()
+                            ? "http://" : "https://";
+                        const auto authority = host.find(':') == std::string::npos ? host : "[" + host + "]";
+                        const server::GridIdentity identity(
+                            config, scheme + authority + ":" + std::to_string(ports.main_http) + "/");
+                        return (query == Query::Home ? identity.home_uri() : identity.gate_uri()).value_or("");
+                    } catch (const server::GridIdentityError&) {
+                        return {};
+                    }
+                };
+                policies.yengine_state_root = "ScriptEngines";
                 if (auto yengine = config.native_section("YEngine")) {
+                    auto state_root = yengine->get_string(framework::nini_writer_text(u"ScriptEnginesPath"), {});
+                    if (!state_root || framework::trim_utf8(framework::utf8(*state_root)).empty())
+                        state_root = yengine->get_string(framework::nini_writer_text(u"ScriptBasePath"), {});
+                    if (state_root && !framework::trim_utf8(framework::utf8(*state_root)).empty())
+                        policies.yengine_state_root = std::filesystem::path(*state_root);
                     policies.min_timer_interval = yengine->get_float(
                         framework::nini_writer_text(u"MinTimerInterval"), policies.min_timer_interval);
                     const auto heap_kib = yengine->get_int(
@@ -4149,12 +5157,21 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                         policies.disable_underground_movement);
                     policies.notecard_line_chars = std::min(65535, yengine->get_int(
                         framework::nini_writer_text(u"NotecardLineReadCharsMax"), policies.notecard_line_chars));
+                    policies.async_command_loop_ms = yengine->get_int(
+                        framework::nini_writer_text(u"AsyncLLCommandLoopms"), policies.async_command_loop_ms);
+                    policies.sensor_max_range = yengine->get_float(
+                        framework::nini_writer_text(u"SensorMaxRange"), policies.sensor_max_range);
+                    policies.sensor_max_results = yengine->get_int(
+                        framework::nini_writer_text(u"SensorMaxResults"), policies.sensor_max_results);
                     policies.automatic_link_permission =
                         yengine->get_boolean(framework::nini_writer_text(u"AutomaticLinkPermission"),
                                              policies.automatic_link_permission);
                     policies.linkset_data_limit = yengine->get_int(
                         framework::nini_writer_text(u"LinksetDataLimit"), policies.linkset_data_limit);
                 }
+                const auto region_linkset_capacity = region_settings.integer("NativeRegion", "LinksetPrims", 0);
+                policies.linkset_capacity = region_linkset_capacity > 0
+                    ? region_linkset_capacity : config.integer("Startup", "LinksetPrims", 0);
                 if (auto startup = config.native_section("Startup")) {
                     policies.physical_linkset_capacity =
                         startup->get_int(framework::nini_writer_text(u"LinksetPhysPrims"), 0);
@@ -4175,6 +5192,26 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                                     policies.physical_prim_max),
                                  2048.f);
                 }
+                const auto region_prim_limit = [&](const char* key, float fallback) {
+                    const auto value = region_settings.integer("NativeRegion", key, 0);
+                    return value > 0 ? static_cast<float>(value) : fallback;
+                };
+                const auto region_prim_minimum = [&](std::u16string_view key, float fallback) {
+                    const auto section = region_settings.native_section("NativeRegion");
+                    const auto value = section ? section->get_float(
+                        framework::nini_writer_text(std::u16string(key)), 0.f) : 0.f;
+                    return value > 0.f ? value : fallback;
+                };
+                policies.nonphysical_prim_min = std::max(
+                    region_prim_minimum(u"NonPhysicalPrimMin", policies.nonphysical_prim_min), 0.001f);
+                policies.nonphysical_prim_max = std::min(
+                    region_prim_limit("NonPhysicalPrimMax", policies.nonphysical_prim_max), 65536.f);
+                policies.physical_prim_min = std::max(
+                    region_prim_minimum(u"PhysicalPrimMin", policies.physical_prim_min), 0.01f);
+                policies.physical_prim_max = std::min(
+                    region_prim_limit("PhysicalPrimMax", policies.physical_prim_max), 2048.f);
+                policies.clamp_prim_size = config.boolean("Startup", "ClampPrimSize", false) ||
+                                          region_settings.boolean("NativeRegion", "ClampPrimSize", false);
                 constexpr std::uint32_t modify = 1u << 14;
                 constexpr std::uint32_t move = 1u << 19;
                 const bool check_permissions =
@@ -4299,7 +5336,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     return object.flags | (object.inventory_empty ? 0x800u : 0u) | 0x10u |
                            (id == object.owner ? 0x1002012cu : 0u);
                 };
-                if (auto filename = config.get("NativeRegion", "DefaultScriptFile"); !filename.empty()) {
+                if (auto filename = region_settings.get("NativeRegion", "DefaultScriptFile"); !filename.empty()) {
                     auto path = framework::utf8_path(filename);
                     if (path.is_relative())
                         path = config.directory / path;
@@ -4323,15 +5360,76 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                         return asset->full_id();
                     };
                 }
-                policies.entered = [&](const auto& a) {
-                    const auto user = grid_user_identity(*a.circuit);
-                    const auto region_id = region_runtime->descriptor().id;
-                    if (remote_grid_user)
-                        remote_grid_user->set_last_position(user, region_id, a.position, a.look_at);
-                    else
-                        grid_user->set_last_position(user, a.circuit->session_id, region_id, a.position, a.look_at);
+                std::shared_ptr<const server::GridIdentity> activity_grid;
+                try {
+                    activity_grid = std::make_shared<server::GridIdentity>(config, std::nullopt);
+                } catch (const server::GridIdentityError&) {
+                    // Region activity can still use a stored foreign identity.
+                }
+                const auto resolve_grid_user = [&, scope = region.scope, activity_grid](
+                                                   const framework::AgentCircuitData& circuit)
+                    -> std::optional<std::string> {
+                    const auto user = grid_user_identity(circuit);
+                    if (circuit.verified_foreign_login || accounts.find_by_id(scope.str(), user))
+                        return user;
+
+                    const auto stored = remote_grid_user ? remote_grid_user->info(user) : grid_user->info(user);
+                    const auto prefix = user + ";";
+                    if (!stored || !stored->user_id.starts_with(prefix))
+                        return std::nullopt;
+
+                    const auto identity = std::string_view(stored->user_id).substr(prefix.size());
+                    const auto home_end = identity.find(';');
+                    if (home_end == identity.npos)
+                        return std::nullopt;
+                    const auto name_start = home_end + 1;
+                    const auto name_end = identity.find(';', name_start);
+                    auto name = identity.substr(name_start, name_end == identity.npos ? identity.npos
+                                                                                     : name_end - name_start);
+                    const auto first_start = name.find_first_not_of(' ');
+                    if (first_start == name.npos)
+                        return std::nullopt;
+                    name.remove_prefix(first_start);
+                    const auto first_end = name.find(' ');
+                    const auto first = name.substr(0, first_end);
+                    const auto last_start = first_end == name.npos ? name.npos : name.find_first_not_of(' ', first_end);
+                    const auto last = last_start == name.npos ? std::string_view{} : name.substr(last_start);
+                    const auto dotted_name = std::string(first) + "." + std::string(last.substr(0, last.find(' ')));
+
+                    const auto home_url = framework::trim_utf8(identity.substr(0, home_end));
+                    if (home_url.empty())
+                        return user;
+                    const framework::HttpHost home{home_url};
+                    if (!home.valid())
+                        return std::nullopt;
+                    if (activity_grid && activity_grid->is_local_grid(home) == 1)
+                        return user;
+                    const auto dot = dotted_name.find('.');
+                    const auto next_dot = dotted_name.find('.', dot + 1);
+                    return prefix + home.uri + ";" + dotted_name.substr(0, dot) + " " +
+                           dotted_name.substr(dot + 1, next_dot == dotted_name.npos ? dotted_name.npos
+                                                                                   : next_dot - dot - 1);
                 };
-                policies.logged_out = [&](const auto& a) {
+                policies.entered = [&, resolve_grid_user, region_id = region.id](const auto& a) {
+                    const auto user = resolve_grid_user(*a.circuit);
+                    if (!user)
+                        return;
+                    if (remote_grid_user)
+                        remote_grid_user->set_last_position(*user, region_id, a.position, a.look_at);
+                    else
+                        grid_user->set_last_position(*user, a.circuit->session_id, region_id, a.position, a.look_at);
+                };
+                const auto record_grid_logout = [&, resolve_grid_user, region_id = region.id](const auto& a) {
+                    const auto user = resolve_grid_user(*a.circuit);
+                    if (!user)
+                        return;
+                    if (remote_grid_user)
+                        remote_grid_user->logged_out(*user, region_id, a.position, a.look_at);
+                    else
+                        grid_user->logged_out(*user, a.circuit->session_id, region_id, a.position, a.look_at);
+                };
+                policies.departed_to_another_grid = record_grid_logout;
+                policies.logged_out = [&, record_grid_logout](const auto& a) {
                     {
                         std::lock_guard lock(live_friend_offers_mutex);
                         const auto session = a.circuit->session_id;
@@ -4347,15 +5445,17 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                             }
                         }
                     }
-                    const auto user = grid_user_identity(*a.circuit);
-                    const auto region_id = region_runtime->descriptor().id;
-                    if (remote_grid_user) {
-                        if (a.root)
-                            remote_grid_user->logged_out(user, region_id, a.position, a.look_at);
-                    } else {
-                        grid_user->logged_out(user, a.circuit->session_id, region_id, a.position, a.look_at);
+                    if (!a.root) {
+                        // Login records GridUser before the viewer connects.
+                        constexpr std::uint32_t via_login = 1u << 7;
+                        const bool login = a.circuit->verified_foreign_login ||
+                                           (a.circuit->teleport_flags & via_login) != 0;
+                        if (!a.connected && login)
+                            record_grid_logout(a);
+                        return;
                     }
-                    if (!a.root || !a.circuit->verified_foreign_login || !a.circuit->service_urls)
+                    record_grid_logout(a);
+                    if (!a.circuit->verified_foreign_login || !a.circuit->service_urls)
                         return;
                     const auto home = a.circuit->service_urls->find("HomeURI");
                     if (home == a.circuit->service_urls->end())
@@ -4379,7 +5479,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     home_agent.logout_agent(a.circuit->agent_id, a.circuit->session_id);
                 };
                 policies.log = normal_log;
-                if (auto key = config.get("Messaging", "MessageKey"); !key.empty() || store_offline) {
+                if (auto key = config.get("Messaging", "MessageKey"); message_transfer_enabled || store_offline) {
                     const bool forward_group_messages =
                         config.boolean("Messaging", "ForwardOfflineGroupMessages", true);
                     if (!profile_workers)
@@ -4396,7 +5496,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                                       own_region, clients, message] {
                                 const auto locations = region_presence->agents({message.recipient.str()});
                                 std::optional<services::GridRegion> destination;
-                                if (!key.empty() && !locations.empty() &&
+                                if (message_transfer_enabled && !locations.empty() &&
                                     !locations.front().region_id.is_zero() &&
                                     locations.front().region_id != own_region) {
                                     destination = grid->by_id(scope, locations.front().region_id);
@@ -4421,13 +5521,14 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                      {"from_group", message.from_group ? "TRUE" : "FALSE"},
                                      {"offline", binary({message.offline})},
                                      {"parent_estate_id", std::to_string(message.estate)},
-                                     {"position_x", std::to_string(message.position.x)},
-                                     {"position_y", std::to_string(message.position.y)},
-                                     {"position_z", std::to_string(message.position.z)},
+                                     {"position_x", framework::invariant_float_string(message.position.x)},
+                                     {"position_y", framework::invariant_float_string(message.position.y)},
+                                     {"position_z", framework::invariant_float_string(message.position.z)},
                                      {"region_id", message.region.str()},
                                      {"binary_bucket", binary(message.bucket)},
-                                     {"region_handle", network::Value(std::int32_t{0})},
-                                     {"message_key", key}});
+                                     {"region_handle", network::Value(std::int32_t{0})}});
+                                if (!key.empty())
+                                    payload.map.emplace("message_key", network::Value(key));
                                 if (destination && !destination->server_uri().empty() &&
                                     services::send_grid_instant_message(destination->server_uri(), payload,
                                                                         clients))
@@ -4436,6 +5537,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                     constexpr auto message_from_agent = 0;
                                     constexpr auto group_invitation = 3;
                                     constexpr auto inventory_offered = 4;
+                                    constexpr auto task_inventory_offered = 9;
                                     constexpr auto message_from_object = 19;
                                     constexpr auto group_notice = 32;
                                     switch (message.dialog) {
@@ -4446,6 +5548,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                         break;
                                     case message_from_agent:
                                     case inventory_offered:
+                                    case task_inventory_offered:
                                     case message_from_object:
                                         break;
                                     default:
@@ -4480,6 +5583,28 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 feature_backend->log = error_log;
                 simulator_features = std::make_shared<services::SimulatorFeaturesModule>(feature_backend);
                 simulator_features->initialise(&config);
+                if (world_map == "HGWorldMap") {
+                    auto map_url = config.get("LoginService", "MapTileURL");
+                    map_url = config.get("HGWorldMap", "MapTileURL", map_url);
+                    map_url = config.get("SimulatorFeatures", "MapTileURL", map_url);
+                    if (!map_url.empty()) {
+                        map_url = framework::trim_utf8(map_url);
+                        if (!map_url.ends_with('/'))
+                            map_url += '/';
+                        auto map_feature = services::SimulatorFeatureValue::from_value(network::Value(map_url));
+                        simulator_features->on_request.add({
+                            {simulator_features.get(), "HGWorldMap.SimulatorFeatures"},
+                            [is_local = policies.is_local_grid_user, map_feature](
+                                framework::Uuid agent, services::FeatureData& features) {
+                                if (is_local(agent))
+                                    return;
+                                auto& extras = features->map["OpenSimExtras"];
+                                if (!extras)
+                                    extras = services::SimulatorFeatureValue::object();
+                                extras->map["map-server-url"] = map_feature;
+                            }});
+                    }
+                }
                 simulator_features->add_feature(
                     "AvatarHoverHeightEnabled",
                     services::SimulatorFeatureValue::from_value(network::Value(true)));
@@ -4552,7 +5677,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     auto packet = network::lludp::make_packet("EconomyData");
                     packet.reliable = true;
                     auto& info = packet.block("Info");
-                    info["ObjectCapacity"] = std::int64_t(config.integer("NativeRegion", "MaxPrims", 15000));
+                    info["ObjectCapacity"] = std::int64_t(region_settings.integer("NativeRegion", "MaxPrims", 15000));
                     const std::pair<const char*, int> prices[]{{"PriceEnergyUnit", 0},
                                                                {"PriceGroupCreate", -1},
                                                                {"PriceObjectClaim", 0},
@@ -4591,27 +5716,15 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                         policies.sound_max_distance = distance;
                 }
                 policies.object_capacity = static_cast<std::uint32_t>(
-                    std::max(0, config.integer("NativeRegion", "MaxPrims", 15000)));
+                    std::max(0, region_settings.integer("NativeRegion", "MaxPrims", 15000)));
                 region_runtime =
-                    std::make_unique<scene::RegionRuntime>(std::move(region), *region_presence, std::move(policies));
-                if (config.boolean("Modules", "LandServiceInConnector", false)) {
-                    app.set_land_data_lookup([&](const network::Value& request) {
-                        std::uint64_t handle;
-                        std::uint32_t x, y;
-                        if (!framework::try_parse_unsigned_integer(network::osd_string(request.get("region_handle")),
-                                                                   handle) ||
-                            !framework::try_parse_unsigned_integer(network::osd_string(request.get("x")), x) ||
-                            !framework::try_parse_unsigned_integer(network::osd_string(request.get("y")), y))
-                            throw std::invalid_argument("Invalid land_data coordinates");
-                        return region_runtime->land_data(handle, x, y);
-                    });
-                }
+                    std::make_shared<scene::RegionRuntime>(std::move(region), *region_presence, std::move(policies));
                 const auto initialize_terrain = [&] {
                     if (config.get("Terrain", "InitialTerrain", "pinhead-island") != "flat")
                         region_runtime->world().terrain().initialize_island();
                 };
-                if (!config.get("NativeRegion", "TerrainDatabase").empty()) {
-                    auto path = framework::utf8_path(config.get("NativeRegion", "TerrainDatabase"));
+                if (!region_settings.get("NativeRegion", "TerrainDatabase").empty()) {
+                    auto path = framework::utf8_path(region_settings.get("NativeRegion", "TerrainDatabase"));
                     if (path.is_relative())
                         path = config.directory / path;
                     const auto path_bytes = path.u8string();
@@ -4662,7 +5775,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                             tables->execute("UPDATE regionenvironment SET llsd_settings=:settings WHERE region_id=:id",
                                             {{":settings", migrated_settings}, {":id", id}});
                     }
-                    save_environment = [tables, id](std::optional<framework::Uuid> parcel,
+                    region_persistence.save_environment = [tables, id](std::optional<framework::Uuid> parcel,
                                                     std::optional<std::string> settings) {
                         if (parcel) {
                             bool has_environment_column = false;
@@ -4873,6 +5986,9 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                                             optional_real("CameraAtOffsetY"),
                                                             optional_real("CameraAtOffsetZ")};
                                 object.force_mouselook = optional_real("ForceMouselook") != 0;
+                                const auto script_pin = optional_text("ScriptAccessPin");
+                                std::from_chars(script_pin.data(), script_pin.data() + script_pin.size(),
+                                                object.script_access_pin);
                                 object.sit_target_orientation = {optional_real("SitTargetOrientX"),
                                                                  optional_real("SitTargetOrientY"),
                                                                  optional_real("SitTargetOrientZ"),
@@ -4947,14 +6063,20 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                     read_optional_blob("MatOvrd", object.material_overrides);
                                 }
                                 read_optional_blob("sopanims", object.object_animations);
-                                if (auto animation = optional_text("TextureAnimation"); !animation.empty()) {
+                                const auto read_base64 = [&](const char* column, auto& bytes) {
+                                    auto value = optional_text(column);
+                                    if (value.empty())
+                                        return;
                                     network::Value encoded;
                                     encoded.kind = network::Value::Kind::Binary;
-                                    encoded.text = std::move(animation);
-                                    object.texture_animation = *network::osd_binary(encoded);
-                                }
+                                    encoded.text = std::move(value);
+                                    bytes = *network::osd_binary(encoded);
+                                };
+                                read_base64("TextureAnimation", object.texture_animation);
+                                read_base64("ParticleSystem", object.particle_system);
                                 object.dynamic_attributes_xml = optional_text("DynAttrs");
-                                if (object.shape.pcode == 9)
+                                if (object.shape.pcode == 9 ||
+                                    (group == object.id && scene::is_vegetation(object.shape.pcode)))
                                     stored_parts.emplace_back(group, std::move(object));
                             } catch (const std::exception& error) {
                                 error_log(std::string("Failed to load stored prim: ") + error.what());
@@ -5011,6 +6133,8 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                             add("sopanims", {part.object_animations.begin(), part.object_animations.end()});
                             add("TextureAnimation", network::binary_base64(network::osd_from_binary(
                                 std::make_shared<std::vector<std::uint8_t>>(part.texture_animation))));
+                            add("ParticleSystem", network::binary_base64(network::osd_from_binary(
+                                std::make_shared<std::vector<std::uint8_t>>(part.particle_system))));
                             add("DynAttrs", part.dynamic_attributes_xml);
                             add("PassTouches", part.pass_touches ? "1" : "0");
                             add("SitTargetOffsetX", services::avatar_float_string(part.sit_target_position.x));
@@ -5025,6 +6149,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                             add("CameraAtOffsetY", services::avatar_float_string(part.camera_at_offset.y));
                             add("CameraAtOffsetZ", services::avatar_float_string(part.camera_at_offset.z));
                             add("ForceMouselook", part.force_mouselook ? "1" : "0");
+                            add("ScriptAccessPin", std::to_string(part.script_access_pin));
                             add("SitTargetOffsetY", services::avatar_float_string(part.sit_target_position.y));
                             add("SitTargetOffsetZ", services::avatar_float_string(part.sit_target_position.z));
                             add("SitTargetOrientX", services::avatar_float_string(part.sit_target_orientation.x));
@@ -5138,7 +6263,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                 saved.emplace(part.id, std::move(fields));
                             }
                         using ScriptStates = std::map<framework::Uuid, scene::RegionRuntime::TaskScriptStates>;
-                        save_prim_metadata = [database, tables, id, &world, runtime = region_runtime.get(),
+                        region_persistence.save_prim_metadata = [database, tables, id, &world, runtime = region_runtime.get(),
                                               metadata, transform, has_shapes, has_items, prim_columns,
                                               inventory_rows, saved_inventory, saved = std::move(saved),
                                               stored_shapes = std::move(stored_shapes),
@@ -5609,12 +6734,12 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                 }
                                 const auto record =
                                     std::make_shared<const scene::ScriptParcel>(std::move(parcel));
-                                persisted_parcel_records.push_back(record);
-                                if (!persisted_parcels)
-                                    persisted_parcels.emplace(parcel_cell_count);
+                                region_parcels.persisted_parcel_records.push_back(record);
+                                if (!region_parcels.persisted_parcels)
+                                    region_parcels.persisted_parcels.emplace(parcel_cell_count);
                                 for (std::size_t cell = 0; cell < parcel_cell_count; ++cell)
                                     if (record->land_bitmap[cell / 8] & (1u << (cell % 8)))
-                                        (*persisted_parcels)[cell] = record;
+                                        (*region_parcels.persisted_parcels)[cell] = record;
                             });
                         std::set<std::string> land_columns;
                         tables->query("PRAGMA table_info(land)", {}, {"name"},
@@ -5677,7 +6802,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                 tables->execute("INSERT INTO land (" + columns + ") VALUES (" +
                                                 placeholders + ")", parameters);
                             };
-                        save_parcel_topology = [tables, database, id, insert_generated_parcel, land_columns](
+                        region_parcels.save_parcel_topology = [tables, database, id, insert_generated_parcel, land_columns](
                                                    const ParcelCells& changed, const std::vector<framework::Uuid>& removed) {
                             std::lock_guard lock(database->mutex());
                             tables->execute("BEGIN IMMEDIATE", {});
@@ -5735,7 +6860,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                             }
                         };
                         if (land_columns.contains("Dwell")) {
-                            save_parcel_dwell =
+                            region_parcels.save_parcel_dwell =
                                 [&, tables, database, id, insert_generated_parcel](framework::Uuid parcel, float dwell) {
                                 const auto rounded = std::nearbyint(static_cast<double>(dwell));
                                 if (!std::isfinite(rounded) || rounded < std::numeric_limits<std::int32_t>::min() ||
@@ -5744,9 +6869,9 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                 const auto saved_dwell = static_cast<std::int32_t>(rounded);
                                 std::shared_ptr<const scene::ScriptParcel> generated;
                                 {
-                                    std::lock_guard lock(parcels_mutex);
-                                    if (!persisted_parcels && default_parcel && default_parcel->id == parcel)
-                                        generated = default_parcel;
+                                    std::lock_guard lock(region_parcels.parcels_mutex);
+                                    if (!region_parcels.persisted_parcels && region_parcels.default_parcel && region_parcels.default_parcel->id == parcel)
+                                        generated = region_parcels.default_parcel;
                                 }
                                 std::lock_guard lock(database->mutex());
                                 tables->execute("BEGIN IMMEDIATE", {});
@@ -5767,7 +6892,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                 }
                             };
                         }
-                        save_parcel = [tables, database, id, insert_generated_parcel, land_columns](
+                        region_parcels.save_parcel = [tables, database, id, insert_generated_parcel, land_columns](
                                           const scene::ScriptParcel& parcel, bool generated, ParcelSave change) {
                             const auto parcel_id = parcel.id.str();
                             std::lock_guard lock(database->mutex());
@@ -5883,7 +7008,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                         "SELECT name FROM sqlite_master WHERE type='table' AND name='regionsettings'", {},
                         {"name"}, [&](const auto&, const auto&) { has_region_settings = true; });
                     if (has_region_settings) {
-                        save_estate_region_settings = estate_region_settings_writer(tables, id);
+                        region_persistence.save_estate_region_settings = estate_region_settings_writer(tables, id);
                         bool has_terrain_image_column = false;
                         bool has_parcel_image_column = false;
                         tables->query("PRAGMA table_info(regionsettings)", {}, {"name"},
@@ -5903,7 +7028,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                             if (has_parcel_image_column)
                                 update += "parcel_tile_ID=:parcel";
                             update += " WHERE regionUUID=:id";
-                            save_map_images = [tables, id, update = std::move(update),
+                            region_persistence.save_map_images = [tables, id, update = std::move(update),
                                                has_terrain_image_column, has_parcel_image_column](
                                                   framework::Uuid terrain, framework::Uuid parcel) {
                                 services::SqliteTableParameters values{{":id", id}};
@@ -5963,7 +7088,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                     double bonus;
                                     if (network::try_parse_invariant_real(row.value_text(0), bonus) &&
                                         std::isfinite(bonus) && bonus >= 0)
-                                        parcel_object_bonus = bonus;
+                                        region_parcels.parcel_object_bonus = bonus;
                                 });
                         bool has_agent_limit = false;
                         tables->query(
@@ -5974,7 +7099,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                           {{":id", id}}, {"agent_limit"}, [&](const auto& row, const auto&) {
                                               agent_limit = row.int32_value(0);
                                           });
-                        region_runtime->set_region_menu_limits(agent_limit, parcel_object_bonus.load());
+                        region_runtime->set_region_menu_limits(agent_limit, region_parcels.parcel_object_bonus.load());
                         std::optional<framework::Uuid> loaded_telehub;
                         constexpr std::array texture_corners{"sw", "nw", "se", "ne"};
                         std::array<bool, 4> saved_texture_heights{};
@@ -6060,7 +7185,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                                                   covenant);
                                     timestamp = static_cast<std::uint32_t>(
                                         row.int32_value(row.column("covenant_datetime")));
-                                    save_estate_covenant = [tables, id](framework::Uuid value,
+                                    region_persistence.save_estate_covenant = [tables, id](framework::Uuid value,
                                                                         std::uint32_t changed) {
                                         if (tables->execute(
                                                 "UPDATE regionsettings SET covenant=:covenant,covenant_datetime=:changed WHERE regionUUID=:id",
@@ -6075,7 +7200,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                 }
                                 region_runtime->set_estate_covenant(covenant, timestamp);
                             });
-                        save_terrain_texture_heights =
+                        region_persistence.save_terrain_texture_heights =
                             [tables, id, saved_texture_heights, texture_corners](std::size_t corner,
                                                                                 float low, float high) {
                                 if (!saved_texture_heights.at(corner))
@@ -6094,7 +7219,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                                     {{":low", text(low)}, {":high", text(high)}, {":id", id}}) != 1)
                                     throw std::runtime_error("Missing or duplicate terrain texture settings");
                             };
-                        save_terrain_texture_asset =
+                        region_persistence.save_terrain_texture_asset =
                             [tables, id, saved_texture_assets, saved_pbr_materials](
                                 bool pbr, std::size_t corner, framework::Uuid asset) {
                                 if (!(pbr ? saved_pbr_materials : saved_texture_assets).at(corner))
@@ -6107,7 +7232,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                     throw std::runtime_error("Missing or duplicate terrain texture settings");
                             };
                         if (saved_terrain_settings) {
-                            save_region_terrain_settings = [tables, id](float water, float raise, float lower) {
+                            region_persistence.save_region_terrain_settings = [tables, id](float water, float raise, float lower) {
                                 const auto text = [](double value) {
                                     std::array<char, 64> bytes;
                                     const auto result = std::to_chars(bytes.data(), bytes.data() + bytes.size(), value);
@@ -6124,7 +7249,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                             };
                         }
                         if (saved_sun_settings) {
-                            save_region_sun_settings = [tables, id](bool use_estate_sun) {
+                            region_persistence.save_region_sun_settings = [tables, id](bool use_estate_sun) {
                                 if (tables->execute(
                                         "UPDATE regionsettings SET use_estate_sun=:estate,fixed_sun=0,"
                                         "sun_position=0 WHERE regionUUID=:id",
@@ -6150,7 +7275,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                             points.push_back(point);
                                     });
                             region_runtime->set_region_telehub(*loaded_telehub, std::move(points));
-                            save_telehub = [tables, database, id](framework::Uuid hub, const auto& points) {
+                            region_persistence.save_telehub = [tables, database, id](framework::Uuid hub, const auto& points) {
                                 const auto number = [](float value) {
                                     char buffer[64];
                                     const auto result = std::to_chars(buffer, buffer + sizeof buffer, value);
@@ -6251,8 +7376,8 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                         store("terrain", terrain);
                     if (!has_baked)
                         store("bakedterrain", terrain);
-                    save_baked_terrain = [store](const scene::Terrain& data) { store("bakedterrain", data); };
-                    save_terrain = [&terrain, store, saved = terrain.revision()]() mutable {
+                    region_persistence.save_baked_terrain = [store](const scene::Terrain& data) { store("bakedterrain", data); };
+                    region_persistence.save_terrain = [&terrain, store, saved = terrain.revision()]() mutable {
                         const auto revision = terrain.revision();
                         if (revision == saved)
                             return;
@@ -6261,66 +7386,6 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     };
                 } else
                     initialize_terrain();
-                if (auto key = config.get("Messaging", "MessageKey"); !key.empty()) {
-                    app.set_grid_message_handler([&, key = std::move(key)](const network::Value& message) {
-                        for (const auto* field :
-                             {"from_agent_id", "to_agent_id", "im_session_id", "timestamp", "from_agent_name",
-                              "message", "dialog", "from_group", "offline", "parent_estate_id", "position_x",
-                              "position_y", "position_z", "region_id", "binary_bucket"})
-                            if (message.get(field).kind != network::Value::Kind::String)
-                                return false;
-                        const auto matches = [&](const char* field, std::string_view expected) {
-                            const auto& value = message.get(field);
-                            return value.kind == network::Value::Kind::String && value.text == expected;
-                        };
-                        if (!matches("message_key", key))
-                            return false;
-                        scene::RegionInstantMessage incoming;
-                        const auto text = [&](const char* field) -> const std::string& {
-                            return message.get(field).text;
-                        };
-                        if (!framework::try_parse_sdk_uuid(text("to_agent_id"), incoming.recipient))
-                            return false;
-                        incoming.message = framework::utf16_replacing(text("message"));
-                        const auto binary = [&](const char* field) {
-                            network::Value value;
-                            value.kind = network::Value::Kind::Binary;
-                            value.text = text(field);
-                            return network::osd_binary(value);
-                        };
-                        try {
-                            const auto dialog = binary("dialog");
-                            const auto offline = binary("offline");
-                            if (dialog->size() != 1 || offline->size() != 1)
-                                return false;
-                            incoming.dialog = dialog->front();
-                            incoming.offline = offline->front();
-                            incoming.bucket = *binary("binary_bucket");
-                        } catch (const std::exception&) {
-                            return false;
-                        }
-                        const auto valid_sender =
-                            framework::try_parse_sdk_uuid(text("from_agent_id"), incoming.sender);
-                        if (incoming.dialog == 250)
-                            return valid_sender && region_runtime->receive_grid_moderation(incoming);
-                        framework::try_parse_sdk_uuid(text("im_session_id"), incoming.session);
-                        framework::try_parse_sdk_uuid(text("region_id"), incoming.region);
-                        const auto number = [&](const char* field, std::uint32_t& value) {
-                            const auto& input = text(field);
-                            auto parsed = std::from_chars(input.data(), input.data() + input.size(), value);
-                            if (parsed.ec != std::errc{} || parsed.ptr != input.data() + input.size())
-                                value = 0;
-                        };
-                        number("timestamp", incoming.timestamp);
-                        number("parent_estate_id", incoming.estate);
-                        framework::parse_invariant_float(text("position_x"), incoming.position.x);
-                        framework::parse_invariant_float(text("position_y"), incoming.position.y);
-                        framework::parse_invariant_float(text("position_z"), incoming.position.z);
-                        incoming.sender_name = framework::utf16_replacing(text("from_agent_name"));
-                        incoming.from_group = text("from_group") == "TRUE";
-                        return region_runtime->deliver_instant_message(incoming);
-                    });
-                }
                 if (local_profiles_connector) {
                     struct ProfileRegionIdentity final : services::LocalProfileScene {
                         framework::Uuid id;
@@ -6361,7 +7426,8 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     config.native_source(), std::move(connector));
             }
             agent_launcher = std::make_unique<services::AgentLauncher>(
-                grid.get(), region_runtime.get(), remote_simulation ? simulation_connector.get() : nullptr,
+                grid.get(), region_runtime ? &local_regions : nullptr,
+                remote_simulation ? simulation_connector.get() : nullptr,
                 login_user_agent.get(), gatekeeper);
             services::LoginAgentFactory::Config urls;
             for (const auto& pair : config.ordered_section("LoginService"))
@@ -6394,10 +7460,26 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     result.push_back(std::make_shared<services::InventoryItem>(item));
                 return result;
             };
-            auto library_path = framework::utf8_path(
-                config.get("LibraryService", "DefaultLibrary", "../bin/inventory/Libraries.xml"));
+            const auto configured_library = config.get("LibraryService", "DefaultLibrary");
+            auto library_path = framework::utf8_path(configured_library.empty()
+                ? "../bin/inventory/Libraries.xml" : configured_library);
             if (library_path.is_relative())
                 library_path = config.directory / library_path;
+            if (configured_library.empty() && !std::filesystem::is_regular_file(library_path)) {
+                auto root = executable_directory(args[0]);
+                for (int depth = 0; depth < 4; ++depth, root = root.parent_path()) {
+                    const auto installed = root / "share/opensim-native/inventory/Libraries.xml";
+                    const auto source = root / "bin/inventory/Libraries.xml";
+                    if (std::filesystem::is_regular_file(installed)) {
+                        library_path = installed;
+                        break;
+                    }
+                    if (std::filesystem::is_regular_file(source)) {
+                        library_path = source;
+                        break;
+                    }
+                }
+            }
             auto library_u8 = library_path.u8string();
             library_service = std::make_shared<services::LibraryService>(
                 std::string(reinterpret_cast<const char*>(library_u8.data()), library_u8.size()),
@@ -6635,8 +7717,8 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 continue;
             framework::Uuid recipient;
             if (framework::try_parse_sdk_uuid(session.user_id, recipient)) {
-                if (region_runtime && session.region_id == region_runtime->descriptor().id) {
-                    region_runtime->notify_friend_status(recipient, sender, online);
+                if (auto runtime = local_regions.find(session.region_id)) {
+                    runtime->notify_friend_status(recipient, sender, online);
                 } else if (grid && profile_workers) {
                     const auto region = grid->by_id({}, session.region_id);
                     if (region) {
@@ -6676,15 +7758,15 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 if (!friends || !region_presence ||
                     !framework::try_parse_sdk_uuid(data.get("userID").as_string(), sender))
                     return empty;
-                const bool online =
-                    framework::invariant_equals_ignore_case(data.get("online").as_string(), "true");
+                const auto online_text = framework::trim_utf8(data.get("online").as_string());
+                const bool online = framework::invariant_equals_ignore_case(online_text, "true");
                 std::vector<std::string> identifiers;
                 for (const auto& [key, field] : data.view().map)
                     if (key.starts_with("friend_"))
                         identifiers.push_back(field.as_string());
                 const auto online_friends = notify_hg_friends(sender, online, identifiers, true);
                 if (!online_friends.empty())
-                    return network::Value::object({{"friend_0", online_friends.front()}});
+                    return network::Value::object({{"result", "false"}, {"friend_0", online_friends.front()}});
                 return empty;
             }
             if (method == "get_uui") {
@@ -6700,18 +7782,37 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                                                account->last_name.value_or("")}});
                 }
                 if (friends) {
-                    const auto prefix = target.str() + ";";
+                    const auto target_id = target.str();
                     for (const auto& entry : friends->get(user)) {
-                        if (!entry.friend_id || !entry.friend_id->starts_with(prefix))
+                        if (!entry.friend_id || !entry.friend_id->starts_with(target_id))
                             continue;
                         const auto& value = *entry.friend_id;
-                        const auto name = value.find(';', prefix.size());
-                        if (name == std::string::npos)
+                        if (value.size() == target_id.size())
+                            throw std::invalid_argument("Friend identity has no secret");
+                        const auto home_separator = value.find(';', target_id.size());
+                        if (home_separator == value.npos)
                             continue;
-                        const auto secret = value.find(';', name + 1);
-                        return network::Value::object(
-                            {{"UUI",
-                              secret == std::string::npos ? value : value.substr(0, secret + 1) + "0"}});
+                        const auto name_separator = value.find(';', home_separator + 1);
+                        if (name_separator == value.npos)
+                            continue;
+                        const auto name_start = name_separator + 1;
+                        const auto secret_separator = value.find(';', name_start);
+                        auto name = std::string_view(value).substr(name_start);
+                        if (secret_separator != value.npos)
+                            name = name.substr(0, secret_separator - name_start);
+                        else if (framework::trim_utf8(name).empty())
+                            continue;
+                        if (name.find_first_not_of(' ') == name.npos)
+                            continue;
+                        if (secret_separator == value.npos || secret_separator + 1 == value.size())
+                            throw std::invalid_argument("Friend identity has no secret");
+                        const auto secret = std::string_view(value).substr(secret_separator + 1);
+                        auto public_identity = value;
+                        // The managed service replaces every occurrence of the stored secret.
+                        for (auto start = public_identity.find(secret); start != value.npos;
+                             start = public_identity.find(secret, start + 1))
+                            public_identity.replace(start, secret.size(), "0");
+                        return network::Value::object({{"UUI", std::move(public_identity)}});
                     }
                 }
                 return network::Value::object({{"result", "User unknown"}});
@@ -6759,8 +7860,8 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     return network::Value::object({});
                 framework::Uuid user;
                 if (framework::try_parse_sdk_uuid(data.get("userID").as_string(), user)) {
-                    const auto record = travel_store->get_by_user(user);
-                    if (record && !record->grid.empty() && home_grid_name != record->grid)
+                    const auto record = travel_store->locate(user, home_grid_name);
+                    if (record)
                         return network::Value::object({{"URL", record->grid}});
                 }
                 return network::Value::object({{"result", "Unable to locate user"}});
@@ -6845,9 +7946,9 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     card.sale_price = 10;
                     card.creation_date = static_cast<int>(std::time(nullptr));
                     if (inventory->add_item(card)) {
-                        const auto caps = region_runtime->capabilities();
-                        if (caps && caps->event_queue())
-                            caps->event_queue()->bulk_inventory(&card, principal);
+                        local_regions.deliver_to_viewer([&](auto& runtime) {
+                            return runtime.notify_inventory_item(card);
+                        });
                     }
                 }
             }
@@ -6855,8 +7956,6 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     };
     const auto deliver_friend_answer = [&](framework::Uuid principal, framework::Uuid friend_id,
                                            std::string_view name, bool accepted) {
-        if (!region_runtime)
-            return false;
         scene::RegionInstantMessage approval;
         approval.sender = friend_id;
         approval.recipient = principal;
@@ -6865,11 +7964,14 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
             session_bytes[i] ^= principal.bytes()[i];
         approval.session = framework::Uuid::from_bytes(session_bytes);
         approval.timestamp = static_cast<std::uint32_t>(std::time(nullptr));
-        approval.region = region_runtime->descriptor().id;
         approval.dialog = accepted ? 39 : 40; // FriendshipAccepted or FriendshipDeclined
         approval.sender_name = framework::utf16_replacing(name);
         approval.message = framework::utf16_replacing(friend_id.str());
-        if (!region_runtime->deliver_instant_message(approval))
+        const bool delivered = local_regions.deliver_to_viewer([&](auto& runtime) {
+            approval.region = runtime.descriptor().id;
+            return runtime.deliver_instant_message(approval);
+        });
+        if (!delivered)
             return false;
         if (accepted)
             create_friend_card(principal, friend_id);
@@ -6877,16 +7979,16 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     };
     const auto deliver_friend_offer = [&](framework::Uuid recipient, framework::Uuid sender,
                                           std::string_view name, std::string_view message) {
-        if (!region_runtime)
-            return false;
         scene::RegionInstantMessage offer;
         offer.sender = offer.session = sender;
         offer.recipient = recipient;
-        offer.region = region_runtime->descriptor().id;
         offer.dialog = 38; // FriendshipOffered
         offer.sender_name = framework::utf16_replacing(name);
         offer.message = framework::utf16_replacing(message);
-        return region_runtime->deliver_instant_message(offer);
+        return local_regions.deliver_to_viewer([&](auto& runtime) {
+            offer.region = runtime.descriptor().id;
+            return runtime.deliver_instant_message(offer);
+        });
     };
     const auto friend_region = [&](const std::string& user) -> std::optional<services::GridRegion> {
         if (!region_presence || !grid)
@@ -6901,7 +8003,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
             if (!sessions.empty())
                 region_id = sessions.front().region_id;
         }
-        if (region_id.is_zero() || (region_runtime && region_id == region_runtime->descriptor().id))
+        if (region_id.is_zero() || local_regions.find(region_id))
             return std::nullopt;
         return grid->by_id({}, region_id);
     };
@@ -6991,7 +8093,10 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
             if (entry.their_flags == -1 || !(entry.my_flags & 1) || !entry.friend_id ||
                 !framework::try_parse_sdk_uuid(std::string_view(*entry.friend_id).substr(0, 36), recipient))
                 continue;
-            if (region_runtime->notify_friend_status(recipient, principal, online) || !profile_workers)
+            const bool delivered = local_regions.deliver_to_viewer([&](auto& runtime) {
+                return runtime.notify_friend_status(recipient, principal, online);
+            });
+            if (delivered || !profile_workers)
                 continue;
             if (entry.friend_id->size() > 36) {
                 const auto home_end = entry.friend_id->find(';', 37);
@@ -7045,8 +8150,11 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                         continue;
                     const auto prefix = friend_id.str() + ";";
                     if (std::any_of(identifiers.begin(), identifiers.end(),
-                                    [&](const auto& identifier) { return identifier.starts_with(prefix); }))
-                        region_runtime->notify_friend_status(principal, friend_id, true, session);
+                                    [&](const auto& identifier) { return identifier.starts_with(prefix); })) {
+                        local_regions.deliver_to_viewer([&](auto& runtime) {
+                            return runtime.notify_friend_status(principal, friend_id, true, session);
+                        });
+                    }
                 }
             });
         }
@@ -7137,18 +8245,24 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
         auto transport = network::rest_forms_transport(outgoing_clients());
         profile_workers->enqueue([transport = std::move(transport), uri, body] { transport(uri, body); });
     };
-    if (friends_endpoint && region_runtime) {
+    if (friends_endpoint && local_region) {
         friends_endpoint->set_rights_handler(
             [&](auto recipient, auto principal, auto previous, auto granted) {
-                return region_runtime->notify_friend_rights(recipient, principal, previous, granted);
+                return local_regions.deliver_to_viewer([&](auto& runtime) {
+                    return runtime.notify_friend_rights(recipient, principal, previous, granted);
+                });
             });
         friends_endpoint->set_termination_handler([&](auto recipient, auto former_friend) {
-            return region_runtime->notify_friend_termination(recipient, former_friend);
+            return local_regions.deliver_to_viewer([&](auto& runtime) {
+                return runtime.notify_friend_termination(recipient, former_friend);
+            });
         });
         friends_endpoint->set_offer_handler(deliver_friend_offer);
         friends_endpoint->set_answer_handler(deliver_friend_answer);
         friends_endpoint->set_status_handler([&](auto recipient, auto sender, bool online) {
-            return region_runtime->notify_friend_status(recipient, sender, online);
+            return local_regions.deliver_to_viewer([&](auto& runtime) {
+                return runtime.notify_friend_status(recipient, sender, online);
+            });
         });
     }
     if (travel_store && grid && grid_user) {
@@ -7190,8 +8304,8 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     }
     std::mutex gateway_region_mutex;
     std::optional<services::GridRegion> gateway_region;
-    const auto gatekeeper_connector = find_connector(
-        "GatekeeperServiceInConnector", "/OpenSim.Server.Handlers.dll:GatekeeperServiceInConnector");
+    const auto gatekeeper_connector = find_service_connector(
+        config, "GatekeeperServiceInConnector", "/OpenSim.Server.Handlers.dll:GatekeeperServiceInConnector");
     const bool gatekeeper_enabled =
         grid && config.boolean("NativeServer", "EnableGatekeeperDiscovery", !gatekeeper_connector.empty());
     const auto connector_port = [&](const std::string& connector) {
@@ -7208,6 +8322,10 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     };
     const int gatekeeper_port =
         gatekeeper_enabled ? connector_port(gatekeeper_connector) : options.port;
+    const int home_agent_port = connector_port(home_agent_connector);
+    const bool home_agent_on_main = home_agent_port == options.port;
+    const int grid_info_port = connector_port(find_service_connector(
+        config, "GridInfoServerInConnector", "/OpenSim.Server.Handlers.dll:GridInfoServerInConnector"));
     const auto foreign_grid =
         gatekeeper_enabled
             ? std::make_unique<server::GridIdentity>(config, std::nullopt, framework::RegionUri::Resolver{},
@@ -7280,6 +8398,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
             });
     }
     std::mutex foreign_presence_mutex;
+    server::AgentAccessHandler::CreateAgent admit_foreign_agent;
     server::AgentAccessHandler home_agent_launch(nullptr);
     if (travel_store) {
         home_agent_launch.set_home_agent_handler(
@@ -7293,19 +8412,19 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     reason = "Forbidden to launch your agents from here";
                     return false;
                 }
-                const auto gate = gatekeeper.raw_server_uri.value_or("");
-                if (destination.id.is_zero() ||
-                    (!gate.starts_with("http://") && !gate.starts_with("https://"))) {
+                const auto gate = gatekeeper.server_uri();
+                const framework::HttpUri gate_uri{gate};
+                if (destination.id.is_zero() || !gate_uri.valid() || gate_uri.host.empty()) {
                     reason = "Invalid destination";
                     return false;
                 }
-                if (!travel_allowed(account->user_level, gatekeeper.server_uri())) {
+                if (!travel_allowed(account->user_level, gate)) {
                     reason = "Your world does not allow you to visit the destination";
                     return false;
                 }
                 std::lock_guard lock(travel_launch_mutex);
                 const auto previous = travel_store->get(circuit->session_id);
-                const auto login_server_ip = config.get("UserAgentService", "LoginServerIP");
+                const auto login_server_ip = config.get("UserAgentService", "LoginServerIP", "127.0.0.1");
                 const bool from_login = !login_server_ip.empty() && caller == login_server_ip;
                 if ((previous && previous->user_id != circuit->agent_id) ||
                     (!from_login && (!previous || previous->service_token.empty() ||
@@ -7313,24 +8432,37 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     reason = "Unable to verify identity";
                     return false;
                 }
-                const auto replaced = previous ? previous : travel_store->get_by_user(circuit->agent_id);
-                destination.raw_server_uri = gatekeeper.server_uri();
+                const auto replaced = previous ? previous :
+                    travel_store->replaced_by(circuit->session_id, circuit->agent_id);
+                destination.raw_server_uri = gate;
                 circuit->service_session_id =
                     destination.server_uri() + ";" + framework::Uuid::random().str();
-                if (!from_login && previous && !previous->client_ip.empty())
+                if (previous)
                     circuit->ip_address = previous->client_ip;
                 travel_store->store({circuit->session_id, circuit->agent_id, destination.server_uri(),
                                      *circuit->service_session_id, circuit->ip_address.value_or(""),
                                      previous ? previous->external_ip : std::string{}});
-                services::GatekeeperSimulationConnector connector(requester);
-                const bool accepted =
-                    connector.create_agent(source, destination, circuit, 1u << 7, context, reason);
-                if (!accepted) {
+                const auto rollback = [&] {
                     if (replaced)
                         travel_store->store(*replaced);
                     else
                         travel_store->erase(circuit->session_id);
+                };
+                bool accepted;
+                try {
+                    constexpr std::uint32_t via_login = 1u << 7;
+                    if (admit_foreign_agent && framework::invariant_equals_ignore_case(home_grid_name, gate)) {
+                        accepted = admit_foreign_agent(source, destination, circuit, via_login, context, reason);
+                    } else {
+                        services::GatekeeperSimulationConnector connector(requester);
+                        accepted = connector.create_agent(source, destination, circuit, via_login, context, reason);
+                    }
+                } catch (...) {
+                    rollback();
+                    throw;
                 }
+                if (!accepted)
+                    rollback();
                 return accepted;
             });
     }
@@ -7408,12 +8540,12 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                                          std::move(connector));
             return verifier.verify_client(circuit.session_id, framework::utf16_replacing(peer));
         };
-        foreign_agent.set_create_agent_handler([&, transport, foreign_scope, visitors_allowed, normalize_home,
+        admit_foreign_agent = [&, transport, foreign_scope, visitors_allowed, normalize_home,
                                                 denied_macs, denied_id0s, allowed_clients, denied_clients,
                                                 allow_duplicates, duplicate_message_key, duplicate_clients,
                                                 visitor_exceptions = std::move(visitor_exceptions)](
                                                    const auto* source, auto& destination, const auto& circuit,
-                                                   std::uint32_t flags, auto& context, std::string& reason) {
+                                                   std::uint32_t, auto& context, std::string& reason) {
             const auto viewer = framework::viewer_name(*circuit);
             if (allowed_clients && !allowed_clients(viewer)) {
                 reason = "Login failed: client " + viewer + " is not allowed";
@@ -7517,14 +8649,6 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 reason = "Invalid account ID";
                 return false;
             }
-            const auto registered_destination = grid->by_id(foreign_scope, destination.id);
-            if (!registered_destination) {
-                reason = "Destination region not found";
-                return false;
-            }
-            destination = *registered_destination;
-            if (!region_runtime->query_gatekeeper_access(destination, *circuit, reason))
-                return false;
             circuit->verified_foreign_login = !account;
             // Keep presence registration and circuit creation together for competing
             // foreign requests so one request cannot roll back another's presence.
@@ -7539,7 +8663,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 }
             }
             const auto user = grid_user_identity(*circuit);
-            if (!allow_duplicates && grid_user && !(account && existing)) {
+            if (!allow_duplicates && grid_user) {
                 const auto previous = grid_user->info(user);
                 if (previous && previous->online && !previous->last_region.is_zero() &&
                     services::recover_duplicate_session(*grid, *grid_user, {}, circuit->agent_id, *previous,
@@ -7550,6 +8674,15 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                     return false;
                 }
             }
+            const auto registered_destination = grid->by_id(foreign_scope, destination.id);
+            auto runtime = registered_destination ? local_regions.find(registered_destination->id) : nullptr;
+            if (!runtime) {
+                reason = "Destination region not found";
+                return false;
+            }
+            destination = *registered_destination;
+            if (!runtime->query_gatekeeper_access(destination, *circuit, reason))
+                return false;
             if (!existing &&
                 !presence->login(circuit->agent_id.str(), circuit->session_id, circuit->secure_session_id)) {
                 reason = "Unable to login presence";
@@ -7558,10 +8691,9 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
             constexpr std::uint32_t via_login = 1u << 7;
             constexpr std::uint32_t via_hypergrid_login = 1u << 30;
             const auto login_flags =
-                flags | circuit->teleport_flags | (existing ? via_login : via_hypergrid_login);
+                circuit->teleport_flags | (existing ? via_login : via_hypergrid_login);
             try {
-                if (region_runtime->create_agent(source, destination, circuit, login_flags, context,
-                                                 reason)) {
+                if (runtime->create_agent(source, destination, circuit, login_flags, context, reason)) {
                     if (!existing && !account && grid_user)
                         grid_user->logged_in(user);
                     return true;
@@ -7574,17 +8706,14 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
             if (!existing)
                 presence->logout(circuit->session_id);
             return false;
-        });
+        };
+        foreign_agent.set_create_agent_handler(admit_foreign_agent);
     }
     const auto foreign_request =
-        [&](const network::HttpRequest& request) -> std::optional<network::HttpResponse> {
-        if (region_runtime) {
-            if (auto response = region_runtime->remote_map_items(request))
-                return response;
-            if (auto response = region_runtime->region_map_image(request))
-                return response;
-        }
-        if (estate_communications && region_runtime && request.path == "/estate") {
+        [&](const network::HttpRequest& request, bool allow_home_agent) -> std::optional<network::HttpResponse> {
+        if (auto response = local_regions.map_request(request))
+            return response;
+        if (estate_communications && local_region && request.path == "/estate") {
             network::HttpResponse response;
             response.keep_alive = false;
             if (request.method != "POST") {
@@ -7608,27 +8737,35 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 framework::Uuid id;
                 if (fields.contains("TOKEN") && field("TOKEN") == estate_token &&
                     services::parse_account_integer(field("EstateID"), estate)) {
+                    const auto estate_id = static_cast<std::uint32_t>(estate);
                     const auto method = field("METHOD");
                     if (method == "update_covenant" && framework::try_parse_sdk_uuid(field("CovenantID"), id)) {
-                        region_runtime->receive_estate_covenant(static_cast<std::uint32_t>(estate), id);
+                        local_regions.for_each_region([&](auto& runtime) {
+                            runtime.receive_estate_covenant(estate_id, id);
+                        });
                         accepted = true;
                     } else if (method == "update_estate") {
-                        region_runtime->receive_estate_update(static_cast<std::uint32_t>(estate));
+                        local_regions.for_each_region([&](auto& runtime) {
+                            runtime.receive_estate_update(estate_id);
+                        });
                         accepted = true;
                     } else if (method == "estate_message" && fields.contains("FromName") &&
                                fields.contains("Message") && framework::try_parse_sdk_uuid(field("FromID"), id)) {
-                        if (estate >= 0)
-                            region_runtime->receive_estate_message(static_cast<std::uint32_t>(estate),
-                                                                   field("Message"));
+                        if (estate >= 0) {
+                            const auto message = field("Message");
+                            local_regions.for_each_region([&](auto& runtime) {
+                                runtime.receive_estate_message(estate_id, message);
+                            });
+                        }
                         accepted = true;
-                    } else if (method == "teleport_home_all_users") {
+                    } else if (method == "teleport_home_all_users" ||
+                               (method == "teleport_home_one_user" &&
+                                framework::try_parse_sdk_uuid(field("PreyID"), id))) {
+                        const auto target = method == "teleport_home_one_user" ? std::optional{id} : std::nullopt;
                         if (estate >= 0)
-                            region_runtime->receive_estate_teleport_home(static_cast<std::uint32_t>(estate), {});
-                        accepted = true;
-                    } else if (method == "teleport_home_one_user" &&
-                               framework::try_parse_sdk_uuid(field("PreyID"), id)) {
-                        if (estate >= 0)
-                            region_runtime->receive_estate_teleport_home(static_cast<std::uint32_t>(estate), id);
+                            local_regions.for_each_region([&](auto& runtime) {
+                                runtime.receive_estate_teleport_home(estate_id, target);
+                            });
                         accepted = true;
                     }
                 }
@@ -7836,7 +8973,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
             }
             return result(false, "Friend not found");
         }
-        const bool home_launch = travel_store && request.path.starts_with("/homeagent/");
+        const bool home_launch = allow_home_agent && travel_store && request.path.starts_with("/homeagent/");
         if (!home_launch && (!foreign_enabled || !request.path.starts_with("/foreignagent/")))
             return std::nullopt;
         network::HttpResponse response;
@@ -7858,12 +8995,12 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
         return response;
     };
     const auto gatekeeper_request = [&](const network::HttpRequest& request) {
-        if (auto response = foreign_request(request))
+        if (auto response = foreign_request(request, home_agent_connector.empty() || home_agent_port == gatekeeper_port))
             return *response;
         return app.handle_gatekeeper(request);
     };
     const auto helo_connector =
-        find_connector("HeloServiceInConnector", "/OpenSim.Server.Handlers.dll:HeloServiceInConnector");
+        find_service_connector(config, "HeloServiceInConnector", "/OpenSim.Server.Handlers.dll:HeloServiceInConnector");
     const bool helo_enabled = config.boolean("NativeServer", "EnableHeloEndpoint", !helo_connector.empty());
     const int helo_port = helo_enabled ? connector_port(helo_connector) : options.port;
     const auto helo_handler = [](const network::HttpRequest& request) {
@@ -7876,7 +9013,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     };
     const bool helo_on_main = helo_enabled && helo_port == options.port;
     const auto bakes_connector =
-        find_connector("BakedTextureService", "/OpenSim.Server.Handlers.dll:XBakesConnector");
+        find_service_connector(config, "BakedTextureService", "/OpenSim.Server.Handlers.dll:XBakesConnector");
     const bool bakes_enabled =
         config.boolean("NativeServer", "EnableBakedTextureEndpoint", !bakes_connector.empty());
     const auto bakes_directory = config.get("BakedTextureService", "BaseDirectory");
@@ -8017,8 +9154,20 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
         app.set_grid_endpoint(grid_endpoint.get());
     if (grid_user_endpoint && grid_user_port == options.port)
         app.set_grid_user_endpoint(grid_user_endpoint.get());
+    app.set_grid_statistics(grid.get(), grid_user_store.get());
     const auto service_on_port = [&](int port, const network::HttpRequest& request)
         -> std::optional<network::HttpResponse> {
+        if ((!home_agent_on_main && port == home_agent_port) ||
+            (home_agent_on_main && port == options.port)) {
+            if (request.path.starts_with("/homeagent/"))
+                return foreign_request(request, true);
+            if (!home_agent_on_main)
+                if (auto response = app.handle_home_agent(request))
+                    return response;
+        }
+        if (grid_info_port != options.port && grid_info_port == port)
+            if (auto discovery = app.handle_grid_discovery(request, true))
+                return discovery;
         if (asset_endpoint && asset_port == port && server::AssetEndpoint::matches(request))
             return asset_endpoint->handle(request);
         if (hg_asset_endpoint && hg_asset_port == port && server::AssetEndpoint::matches(request))
@@ -8176,7 +9325,32 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
         }
         return response;
     };
+    if (local_region) {
+        if (config.boolean("Modules", "LandServiceInConnector", false)) {
+            app.set_land_data_lookup([&local_regions](const network::Value& request) {
+                std::uint64_t handle;
+                std::uint32_t x, y;
+                if (!framework::try_parse_unsigned_integer(network::osd_string(request.get("region_handle")),
+                                                           handle) ||
+                    !framework::try_parse_unsigned_integer(network::osd_string(request.get("x")), x) ||
+                    !framework::try_parse_unsigned_integer(network::osd_string(request.get("y")), y))
+                    throw std::invalid_argument("Invalid land_data coordinates");
+                return local_regions.land_data(handle, x, y);
+            });
+        }
+        if (message_transfer_enabled) {
+            auto key = config.get("Messaging", "MessageKey");
+            app.set_grid_message_handler([&local_regions, key = std::move(key)](const network::Value& message) {
+                const auto incoming = parse_grid_message(message, key);
+                return incoming && local_regions.deliver_grid_message(*incoming);
+            });
+        }
+    }
+
     auto application_handler = [&](const network::HttpRequest& request) {
+        if (remote_data && (remote_data_port == options.port || remote_data_port == ports.main_http))
+            if (auto response = remote_data_rpc(request, *remote_data))
+                return *response;
         if (sample_economy_enabled && (request.path == "/currency.php" || request.path == "/landtool.php"))
             return sample_economy_rpc(request);
         if (auto response = collect_snapshot(request))
@@ -8190,28 +9364,30 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
         if (region_runtime && config.boolean("NativeServer", "EnableSimulationEndpoint", false) &&
             request.path.starts_with("/object/")) {
             network::HttpResponse response;
-            server::ObjectHandler(region_runtime.get()).process_request(request, response);
+            server::ObjectHandler(&local_regions).process_request(request, response);
             return response;
         }
         if (region_runtime && request.method == "DELETE" && request.path.starts_with("/agent/")) {
             server::AgentPathParameters path;
-            if (server::agent_path_parameters(request.path, path) && path.action == "release") {
+            const bool parsed = server::agent_path_parameters(request.path, path);
+            auto destination = parsed ? local_regions.find(path.region) : nullptr;
+            if (parsed && path.action == "release") {
                 const auto auth = server::agent_delete_auth(request.raw_target);
                 framework::Uuid token;
-                const bool accepted = path.region == region_runtime->descriptor().id && auth &&
+                const bool accepted = destination && auth &&
                                       framework::try_parse_sdk_uuid(*auth, token) &&
-                                      region_runtime->confirm_teleport_arrival(path.agent, token);
+                                      destination->confirm_teleport_arrival(path.agent, token);
                 network::HttpResponse response;
                 response.status = accepted ? 200 : 404;
                 response.body = accepted ? "OpenSim agent " + path.agent.str() : "false";
                 return response;
             }
             if (path.action.empty() && !path.agent.is_zero() &&
-                path.region == region_runtime->descriptor().id &&
+                destination &&
                 config.boolean("NativeServer", "EnableSimulationEndpoint", false)) {
                 const auto auth = server::agent_delete_auth(request.raw_target);
                 if (auth)
-                    region_runtime->close_agent_session(path.agent, *auth);
+                    destination->close_agent_session(path.agent, *auth);
                 network::HttpResponse response;
                 response.status = 200;
                 response.body = "OpenSim agent " + path.agent.str();
@@ -8225,14 +9401,14 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
             if (request.method == "PUT") {
                 server::AgentPathParameters path;
                 if (!server::agent_path_parameters(request.path, path) ||
-                    (!path.region.is_zero() && path.region != region_runtime->descriptor().id)) {
+                    (!path.region.is_zero() && !local_regions.find(path.region))) {
                     response.status = 404;
                     response.body = "false";
                     return response;
                 }
             }
-            server::AgentUpdateHandler updates(region_runtime.get());
-            server::AgentAccessHandler access(region_runtime.get(), nullptr, &updates);
+            server::AgentUpdateHandler updates(&local_regions);
+            server::AgentAccessHandler access(&local_regions, nullptr, &updates);
             access.set_create_agent_handler([&](const services::GridRegion* source,
                                                 services::GridRegion& destination,
                                                 const std::shared_ptr<framework::AgentCircuitData>& circuit,
@@ -8241,7 +9417,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 if (remote_region_presence) {
                     const auto session = remote_region_presence->agent(circuit->session_id);
                     if (session && session->user_id == circuit->agent_id.str())
-                        return region_runtime->create_agent(source, destination, circuit, flags, context,
+                        return local_regions.create_agent(source, destination, circuit, flags, context,
                                                             reason);
                     reason = "Invalid agent session";
                     return false;
@@ -8250,7 +9426,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 if (session && session->user_id == circuit->agent_id.str()) {
                     const auto secure = session->data.find("SecureSessionID");
                     if (secure != session->data.end() && secure->second == circuit->secure_session_id.str())
-                        return region_runtime->create_agent(source, destination, circuit, flags, context,
+                        return local_regions.create_agent(source, destination, circuit, flags, context,
                                                             reason);
                 }
                 reason = "Invalid agent session";
@@ -8260,14 +9436,15 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
             return response;
         }
         if (gatekeeper_port == options.port)
-            if (auto response = foreign_request(request))
+            if (auto response = foreign_request(request, home_agent_on_main))
                 return *response;
         if (helo_on_main && (request.path == "/helo" || request.path == "/helo/"))
             return helo_handler(request);
         if (remote_on_main && remote_console_routes)
             if (auto response = remote_console_routes->handle(request))
                 return *response;
-        return app.handle(request, gatekeeper_port == options.port);
+        return app.handle(request, gatekeeper_port == options.port, grid_info_port == options.port,
+                          home_agent_on_main);
     };
     std::unique_ptr<network::HttpServer> http;
     std::unique_ptr<network::HttpServer> offline_http;
@@ -8411,7 +9588,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
     }
     std::vector<std::unique_ptr<network::HttpServer>> private_service_listeners;
     const std::set<int> service_ports{mute_list_port, presence_port, grid_port, grid_user_port, asset_port,
-                                      hg_asset_port};
+                                      hg_asset_port, grid_info_port, home_agent_port};
     for (const auto port : service_ports) {
         if (port == options.port ||
             (offline_http && port == *offline_connector_port) ||
@@ -8510,7 +9687,8 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
 #ifdef SIGBREAK
     std::signal(SIGBREAK, shutdown_signal);
 #endif
-    const auto register_local_region = [&](const services::GridRegion& region, bool initial) {
+    const auto register_local_region = [&](const services::GridRegion& region,
+                                          const services::GridRegion* previous) {
         auto error = grid->register_region(region.scope, region);
         if (!error.empty())
             throw std::runtime_error("Local region registration failed: " + error);
@@ -8539,8 +9717,13 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                 if (!registered)
                     throw std::runtime_error(message);
             } catch (const std::exception& failure) {
-                if (initial)
+                if (previous) {
+                    const auto rollback = grid->register_region(previous->scope, *previous);
+                    if (!rollback.empty())
+                        error_log("Could not restore the previous local region registration: " + rollback);
+                } else {
                     grid->deregister_region(region.id);
+                }
                 throw std::runtime_error(std::string("Remote region registration failed: ") +
                                          failure.what());
             }
@@ -8641,6 +9824,18 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                             return {};
                         framework::HttpHost host(*value);
                         return host.valid() ? std::optional<std::string>(host.uri) : std::nullopt;
+                    },
+                    [runtime = std::weak_ptr(region_runtime), asset_log](scene::UuidGatherer& gatherer) {
+                        const auto live = runtime.lock();
+                        if (!live)
+                            throw std::runtime_error("Region stopped during Flotsam asset gathering");
+                        live->gather_region_asset_references(gatherer);
+                        for (const auto& object : live->snapshot_asset_objects()) {
+                            gatherer.add_for_inspection(object, [&](const auto& message) {
+                                asset_log("warn", message);
+                            });
+                            gatherer.gather_all();
+                        }
                     });
             if (region_assets) {
                 region_bakes = std::make_unique<services::RegionBakedTextureRuntime>(
@@ -8756,18 +9951,19 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
             const auto map_images = region_runtime->descriptor();
             region.terrain_image = map_images.terrain_image;
             region.parcel_image = map_images.parcel_image;
-            register_local_region(region, true);
+            register_local_region(region, nullptr);
             retire_map_tile(previous_terrain, region.terrain_image);
             retire_map_tile(previous_parcel, region.parcel_image);
-            publish_map_images = [&, published = region]() mutable {
-                auto current = region_runtime->descriptor();
+            publish_map_images = [&, runtime = region_runtime.get(), published = region]() mutable {
+                auto current = runtime->descriptor();
                 current.http_port = published.http_port;
                 current.set_server_uri(published.server_uri());
-                register_local_region(current, false);
+                register_local_region(current, &published);
                 retire_map_tile(published.terrain_image, current.terrain_image);
                 retire_map_tile(published.parcel_image, current.parcel_image);
                 published = std::move(current);
             };
+            local_regions.add(region_runtime);
             capability_polls.start();
             std::cout << "REGION_UDP " << udp.address << ':' << udp.port << '\n' << std::flush;
         }
@@ -8786,7 +9982,7 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
         auto cache_command = std::make_shared<ConsoleCallback>([&](const auto&, auto& args) {
             try {
                 if (!region_assets ||
-                    !region_assets->cache_console(args, [&](const auto& line) { console_output(line); }))
+                    !region_assets->cache_console(args, console_output))
                     console_output("Flotsam cache command unavailable");
             } catch (const std::exception& e) {
                 log_message(framework::console_log_error,
@@ -8905,6 +10101,27 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
                                   "Schedule a restart with transient notices", "", false}, restart_command);
             console_commands.add({"Regions", "region restart abort", "region restart abort [<message>]",
                                   "Abort a region restart", "", false}, restart_command);
+            if (config.native_section("Wind") && config.boolean("Wind", "enabled", true)) {
+                const auto callback = std::make_shared<ConsoleCallback>([&](const auto&, auto& args) {
+                    const auto output = region_runtime->wind_console_command(args);
+                    if (!output.empty())
+                        console_output(output);
+                });
+                constexpr std::pair<std::string_view, std::string_view> wind_commands[]{
+                    {"wind base wind_update_rate", "Get or set the wind update rate."},
+                    {"wind SimpleRandomWind strength", "wind strength"},
+                    {"wind ConfigurableWind avgStrength", "average wind strength"},
+                    {"wind ConfigurableWind avgDirection", "average wind direction in degrees"},
+                    {"wind ConfigurableWind varStrength", "allowable variance in wind strength"},
+                    {"wind ConfigurableWind varDirection", "allowable variance in wind direction in +/- degrees"},
+                    {"wind ConfigurableWind rateChange", "rate of change"},
+                };
+                for (const auto& [name, description] : wind_commands) {
+                    const auto command = std::string(name);
+                    console_commands.add({"Regions", command, command + " [<value>]",
+                                          std::string(description), "", false}, callback);
+                }
+            }
             auto terrain_command = std::make_shared<ConsoleCallback>([&](const auto&, auto& args) {
                 if (args.at(1) == "bake")
                     region_runtime->bake_terrain();
@@ -9157,6 +10374,19 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
         }
     };
     const auto bound = region_http ? region_http->start(on_bound) : http->start(on_bound);
+    std::unique_ptr<network::HttpServer> remote_data_http;
+    if (remote_data && remote_data_port != options.port && remote_data_port != bound) {
+        network::HttpServerOptions remote_data_options;
+        remote_data_options.port = remote_data_port;
+        remote_data_http = std::make_unique<network::HttpServer>(remote_data_options, [remote_data](const auto& request) {
+            if (auto response = remote_data_rpc(request, *remote_data))
+                return *response;
+            network::HttpResponse response;
+            response.status = 404;
+            return response;
+        });
+        remote_data_http->start();
+    }
     std::cout << "LISTENING " << scheme << "://"
               << (options.host.find(':') != std::string::npos ? "[" + options.host + "]" : options.host)
               << ':' << bound << "/\n"
@@ -9207,17 +10437,20 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
             profiles_storage->database()->collect_readers();
         if (region_runtime)
             region_runtime->poll(host_sleep_ms);
-        if ((save_terrain || save_prim_metadata) && std::chrono::steady_clock::now() >= next_terrain_save) {
-            next_terrain_save = std::chrono::steady_clock::now() + std::chrono::seconds(1);
+        const bool region_save_enabled =
+            region_persistence.save_terrain || region_persistence.save_prim_metadata;
+        if (region_save_enabled &&
+            std::chrono::steady_clock::now() >= region_persistence.next_terrain_save) {
+            region_persistence.next_terrain_save = std::chrono::steady_clock::now() + std::chrono::seconds(1);
             try {
-                if (save_terrain)
-                    save_terrain();
+                if (region_persistence.save_terrain)
+                    region_persistence.save_terrain();
             } catch (const std::exception& error) {
                 error_log(error.what());
             }
             try {
-                if (save_prim_metadata)
-                    save_prim_metadata();
+                if (region_persistence.save_prim_metadata)
+                    region_persistence.save_prim_metadata();
             } catch (const std::exception& error) {
                 error_log(error.what());
             }
@@ -9285,11 +10518,14 @@ int run(const std::vector<std::string>& args, RegionListenerPorts& ports) {
         profile_workers->stop();
     if (estate_workers)
         estate_workers->stop();
+    if (region_assets)
+        region_assets->quiesce_cache_cleanup();
     if (region_runtime) {
-        region_runtime->stop(save_prim_metadata);
-        if (save_terrain)
-            save_terrain();
         const auto id = region_runtime->descriptor().id;
+        local_regions.remove(id);
+        region_runtime->stop(region_persistence.save_prim_metadata);
+        if (region_persistence.save_terrain)
+            region_persistence.save_terrain();
         if (grid->deregister_region(id) && remote_grid_request) {
             try {
                 const auto reply = remote_grid_request({{"REGIONID", id.str()}, {"METHOD", "deregister"}});

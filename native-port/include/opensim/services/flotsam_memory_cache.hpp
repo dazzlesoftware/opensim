@@ -1,6 +1,7 @@
 // Copyright (c) Contributors, http://opensimulator.org/
 // BSD license: native-port/LICENSE.txt.
 #pragma once
+#include "opensim/framework/atomic_shared_ptr.hpp"
 #include "opensim/framework/asset_cache.hpp"
 #include "opensim/services/asset_service.hpp"
 #include "opensim/services/flotsam_expiring_entries.hpp"
@@ -40,8 +41,8 @@ public:
     };
     using Clock = std::function<double()>;
     struct Containers {
-        std::atomic<std::shared_ptr<FlotsamKeyEntries>> negative;
-        std::atomic<std::shared_ptr<FlotsamAssetEntries>> memory;
+        opensim::framework::AtomicSharedPtr<FlotsamKeyEntries> negative;
+        opensim::framework::AtomicSharedPtr<FlotsamAssetEntries> memory;
         std::function<std::shared_ptr<FlotsamKeyEntries>(std::int32_t)> make_key;
         std::function<std::shared_ptr<FlotsamAssetEntries>(std::int32_t)> make_memory;
         std::function<void(std::shared_ptr<FlotsamKeyEntries>)> publish_key;

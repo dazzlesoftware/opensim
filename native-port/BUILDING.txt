@@ -2565,10 +2565,11 @@ The checkout example enables ubODE and assets. Launch it from native-port/:
   build/Release/opensim-native.exe --config native-region.ini --create-user Test User
   build/Release/opensim-native.exe --config native-region.ini --console
 The native Linux/macOS executable path depends on your CMake generator.
-Asset ConnectionString/AssetLoaderArgs remain relative to process cwd, as in
-original services. Use absolute paths for another working directory; installed
-default assets are in share/opensim-native/assets/AssetSets.xml. Native account
-and other database config paths retain their existing config-directory adapter.
+Relative asset database paths and custom AssetLoaderArgs resolve from the
+working directory. For assets/AssetSets.xml, the native host also checks the
+configuration directory and the bundled asset directory. Installed default
+assets are in share/opensim-native/assets/AssetSets.xml. Native account and
+other database paths retain their configuration-directory handling.
 
 Seed negotiation now advertises GetTexture, GetMesh, GetMesh2 and ViewerAsset
 for localhost capsettings. The real connected fixture loads shipped assets into

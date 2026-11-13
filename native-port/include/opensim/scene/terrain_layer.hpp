@@ -15,4 +15,5 @@ struct TerrainLayerPacket {
 // LayerData variable field; the host supplies LLUDP headers/reliability.
 std::vector<TerrainLayerPacket> terrain_layer_packets(const Terrain& terrain,
                                                       std::span<const TerrainPatchCoordinate> patches);
+TerrainLayerPacket wind_layer_packet(std::span<const framework::Vector3, 256> wind);
 }

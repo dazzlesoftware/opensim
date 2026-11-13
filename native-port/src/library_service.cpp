@@ -27,12 +27,16 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "opensim/services/library_service.hpp"
 #include "opensim/framework/filesystem.hpp"
-#include <pugixml.hpp>
+#include "opensim/framework/invariant_number_parse.hpp"
+#include "opensim/framework/sdk_uuid.hpp"
+#include "opensim/framework/text.hpp"
+#include "opensim/framework/nini_config_invariant.hpp"
+#include "opensim/framework/nini_xml_document_save.hpp"
+#include "opensim/framework/nini_xml_reader.hpp"
 #include <bit>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
-#include <limits>
 #include <map>
 #include <stdexcept>
 #include <unordered_set>
@@ -45,20 +49,19 @@ std::string text(const Config& config, const std::string& key, const std::string
     const auto found = config.find(key);
     return found == config.end() ? fallback : found->second;
 }
+Uuid library_uuid(const Config& config, const std::string& key, const Uuid& fallback) {
+    const auto found = config.find(key);
+    return found == config.end() ? fallback
+                                 : framework::construct_sdk_uuid(framework::utf16_replacing(found->second));
+}
 std::int64_t number(const Config& config, const std::string& key, std::int64_t fallback, bool wide = false) {
     const auto found = config.find(key);
     if (found == config.end())
         return fallback;
-    std::size_t end = 0;
-    const auto value = std::stoll(found->second, &end, 10);
-    for (; end < found->second.size(); ++end)
-        if (found->second[end] != ' ' && found->second[end] != '\t' && found->second[end] != '\r' &&
-            found->second[end] != '\n')
-            throw std::invalid_argument("Invalid library integer");
-    if (!wide && (value < std::numeric_limits<std::int32_t>::min() ||
-                  value > std::numeric_limits<std::int32_t>::max()))
-        throw std::out_of_range("Library Int32 overflow");
-    return value;
+    const auto value = framework::utf16_replacing(found->second);
+    if (wide)
+        return framework::invariant_convert_to_int64(value);
+    return framework::invariant_convert_to_int32(value);
 }
 int mask(const Config& config, const std::string& key, int fallback) {
     return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(number(config, key, fallback, true)));
@@ -80,37 +83,57 @@ struct LibraryService::State {
     }
     void load(const std::filesystem::path& path,
               const std::function<void(const Config&, const std::filesystem::path&)>& action) {
+        const auto path_text = [&] {
+            const auto utf8 = path.generic_u8string();
+            return std::string(utf8.begin(), utf8.end());
+        };
+        std::error_code status_error;
+        if (!std::filesystem::is_regular_file(path, status_error)) {
+            report("Library file does not exist: " + path_text());
+            return;
+        }
         std::ifstream file(path, std::ios::binary);
         if (!file) {
-            report("Library file does not exist: " + path.generic_string());
+            report("Library file does not exist: " + path_text());
             return;
         }
         const std::string bytes((std::istreambuf_iterator<char>(file)), {});
-        pugi::xml_document document;
-        const auto parsed = document.load_buffer(bytes.data(), bytes.size());
-        if (!parsed) {
-            report("Library XML error: " + path.generic_string());
+        const auto arena = std::make_shared<framework::NiniConfigArena>(
+            framework::native_nini_invariant_config_backend());
+        // The reader consumes local file bytes directly. Legacy document settings
+        // preserve attribute whitespace and expand internal entity references.
+        const auto uri_reader = std::make_shared<framework::NiniXmlUriReaderBackend>();
+        uri_reader->get_temp_resolver = []() -> std::shared_ptr<framework::NiniXmlUriReaderResolver> {
+            throw std::logic_error("Library XML is loaded from an open local file");
+        };
+        const auto backend = framework::native_nini_xml_config_backend(
+            framework::native_xml_document_io(uri_reader));
+        std::shared_ptr<framework::NiniXmlConfigSource> source;
+        try {
+            const auto data = std::span(reinterpret_cast<const std::uint8_t*>(bytes.data()), bytes.size());
+            auto reader = framework::NativeNiniXmlReader::from_bytes(
+                data, framework::NiniXmlReaderSettings::legacy_document());
+            source = framework::NiniXmlConfigSource::create(arena, backend, std::move(reader));
+        } catch (const framework::NiniXmlProviderError& error) {
+            if (error.source_type != "System.Xml.XmlException")
+                throw;
+            report("Library XML error: " + path_text());
             return;
         }
-        std::unordered_set<std::string> sections;
-        std::vector<Config> configurations;
-        for (const auto section : document.child("Nini").children("Section")) {
-            if (!sections.insert(section.attribute("Name").value()).second)
-                continue;
+        const auto configs = source->configs();
+        for (std::int32_t index = 0; index < configs->count(); ++index) {
+            const auto section = configs->at(index);
             Config config;
-            for (const auto key : section.children("Key"))
-                if (!config.emplace(key.attribute("Name").value(), key.attribute("Value").value()).second)
-                    throw std::invalid_argument("Duplicate library configuration key");
-            configurations.push_back(std::move(config));
-        }
-        for (const auto& config : configurations)
+            for (const auto& key : section->get_keys())
+                config.emplace(framework::utf8(*key), framework::utf8(*section->get(key)));
             action(config, path);
+        }
     }
     void read_folder(const Config& config) {
         auto folder = std::make_shared<InventoryFolderTree>();
-        folder->id = Uuid(text(config, "folderID", Root.str()));
+        folder->id = library_uuid(config, "folderID", Root);
         folder->name = text(config, "name", "unknown");
-        folder->parent = Uuid(text(config, "parentFolderID", Root.str()));
+        folder->parent = library_uuid(config, "parentFolderID", Root);
         folder->owner = Owner;
         folder->type = static_cast<std::int16_t>(number(config, "type", 8));
         folder->version = static_cast<std::uint16_t>(number(config, "version", 1));
@@ -129,9 +152,9 @@ struct LibraryService::State {
         value->owner = Owner;
         value->creator_id = Owner.str();
         value->creation_date = now();
-        value->id = Uuid(text(config, "inventoryID", Root.str()));
-        value->asset_id = Uuid(text(config, "assetID", value->id.str()));
-        value->parent = Uuid(text(config, "folderID", Root.str()));
+        value->id = library_uuid(config, "inventoryID", Root);
+        value->asset_id = library_uuid(config, "assetID", value->id);
+        value->parent = library_uuid(config, "folderID", Root);
         value->name = text(config, "name", "");
         value->description = text(config, "description", value->name);
         value->inventory_type = static_cast<int>(number(config, "inventoryType", 0));

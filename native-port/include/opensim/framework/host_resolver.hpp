@@ -13,6 +13,8 @@ public:
     explicit HostResolver(Lookup lookup={},Clock clock={},bool automatic_purge=true);
     ~HostResolver();
     static std::optional<std::vector<Address>> system_lookup(const std::string& host);
+    static std::optional<std::string> system_canonical_name(const std::string& host);
+    static Address local_host_address();
     Address host_from_dns(const std::optional<std::string>& host);
     Address host_from_url(const std::optional<std::string>& url);
     std::shared_ptr<IpEndpoint> endpoint(const std::optional<std::string>& host,std::int32_t port);

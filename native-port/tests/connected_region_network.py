@@ -10,16 +10,18 @@ import xml.etree.ElementTree as ET
 import base64
 import concurrent.futures
 import re
+import hashlib
 import uuid
 import http.client
 import http.server
 import socket
-import ssl
+import socketserver
+from email import policy as email_policy
+from email.parser import BytesParser
 import ssl
 import struct
 import zlib
 import xmlrpc.server
-import uuid
 import gzip
 import urllib.parse
 import os
@@ -33,6 +35,10 @@ def main():
     p.add_argument('--viewer', required=True)
     p.add_argument('--work', type=Path, required=True)
     p.add_argument('--touch', action='store_true')
+    p.add_argument('--script-email', action='store_true')
+    p.add_argument('--remote-data', action='store_true')
+    p.add_argument('--web-region-config', action='store_true')
+    p.add_argument('--script-smtp-tls', action='store_true')
     p.add_argument('--assets', action='store_true')
     p.add_argument('--inventory', action='store_true')
     p.add_argument('--folders', action='store_true')
@@ -135,8 +141,9 @@ def main():
     with tempfile.TemporaryDirectory(dir=a.work) as folder, contextlib.ExitStack() as cleanup:
         root = Path(folder).resolve()
         config = root / 'region.ini'
+        region_linkset_config = 'LinksetPrims = 256\n' if a.restart_shutdown else ''
         config.write_text(
-            '''[NativeServer]
+            f'''[NativeServer]
 ListenAddress = 127.0.0.1
 EnableLocalRegion = true
 UserAccountDatabase = users.db
@@ -153,7 +160,7 @@ UDPPort = 0
 BindAddress = 127.0.0.1
 ExternalHost = 127.0.0.1
 Name = Connected Native
-[ClientStack.LindenUDP]
+{region_linkset_config}[ClientStack.LindenUDP]
 client_socket_rcvbuf_size = 262144
 scene_throttle_max_bps = 0
 [Terrain]
@@ -166,8 +173,16 @@ DestinationGuide = https://example.invalid/guide/[USERID]
 ''',
             encoding='utf-8',
         )
+        if a.remote_data:
+            with socket.socket() as listener:
+                listener.bind(('127.0.0.1', 0))
+                remote_data_port = listener.getsockname()[1]
+            with config.open('a', encoding='utf-8') as settings:
+                settings.write(f'\n[XMLRPC]\nXmlRpcPort = {remote_data_port}\n')
         if a.touch:
             grid_lifecycle = queue.Queue()
+            reject_map_refresh = threading.Event()
+            web_region_requests = queue.Queue()
             grid_lookups = queue.Queue()
             remote_map_calls = queue.Queue()
             map_peer_alias_lookup = threading.Event()
@@ -201,6 +216,18 @@ DestinationGuide = https://example.invalid/guide/[USERID]
 
             class FeatureGrid(http.server.BaseHTTPRequestHandler):
                 def do_GET(self):
+                    if self.path == '/regions.xml' and a.web_region_config:
+                        first_request = web_region_requests.empty()
+                        web_region_requests.put(self.path)
+                        document = '<Nini/>' if first_request else web_region_xml
+                        self.reply(document.encode('utf-8'), 'text/xml')
+                        return
+                    if self.path == '/empty-regions.xml' and a.web_region_config:
+                        self.reply(b'<Nini/>', 'text/xml')
+                        return
+                    if self.path == '/missing-regions.xml' and a.web_region_config:
+                        self.send_error(404)
+                        return
                     if self.path == f'/MAP/MapItems/{(3072 << 32) | 768}':
                         remote_map_calls.put(self.path)
                         self.send_error(503)
@@ -225,13 +252,22 @@ DestinationGuide = https://example.invalid/guide/[USERID]
                         self.send_error(404)
                         return
                     remote_map_calls.put(self.path)
+                    sales = b''.join(
+                        (
+                            '<map><key>X</key><integer>{x}</integer>'
+                            '<key>Y</key><integer>800</integer>'
+                            '<key>Name</key><string>{name}</string></map>'
+                        ).format(x=1060 + index, name=str(index) * 254).encode()
+                        for index in range(5)
+                    )
                     self.reply(
                         b'<llsd><map><key>6</key><array><map>'
                         b'<key>X</key><integer>1044</integer><key>Y</key><integer>788</integer>'
                         b'<key>Name</key><string>Remote dot</string><key>Extra</key><integer>1</integer>'
                         b'</map></array><key>1</key><array><map>'
                         b'<key>X</key><integer>1050</integer><key>Y</key><integer>800</integer>'
-                        b'<key>Name</key><string>Remote hub</string></map></array></map></llsd>',
+                        b'<key>Name</key><string>Remote hub</string></map></array>'
+                        b'<key>7</key><array>' + sales + b'</array></map></llsd>',
                         'application/xml+llsd',
                     )
 
@@ -386,7 +422,10 @@ DestinationGuide = https://example.invalid/guide/[USERID]
                         )
                     elif fields.get('METHOD') in (['register'], ['deregister']):
                         grid_lifecycle.put(fields)
-                        body = b'<ServerResponse><Result>Success</Result></ServerResponse>'
+                        if fields.get('METHOD') == ['register'] and reject_map_refresh.is_set():
+                            body = b'<ServerResponse><Result>Failure</Result><Message>Fixture rejected map</Message></ServerResponse>'
+                        else:
+                            body = b'<ServerResponse><Result>Success</Result></ServerResponse>'
                     elif fields.get('METHOD') in (['get_regions_by_name'], ['get_region_range']):
                         body = b'<ServerResponse><result>null</result></ServerResponse>'
                         by_name = fields.get('NAME') == ['Remote.Test'] and fields.get('MAX') == ['20']
@@ -394,6 +433,19 @@ DestinationGuide = https://example.invalid/guide/[USERID]
                             fields.get('XMIN') == ['1024'] and fields.get('XMAX') == ['1280']
                             and fields.get('YMIN') == ['768'] and fields.get('YMAX') == ['1024']
                         )
+                        split_range = (
+                            fields.get('XMIN') == ['2048'] and fields.get('XMAX') == ['3072']
+                            and fields.get('YMIN') == ['1536'] and fields.get('YMAX') == ['1536']
+                        )
+                        if split_range:
+                            blocks = [
+                                f'<region{index} type="List"><uuid>{uuid.UUID(int=index + 1)}</uuid>'
+                                f'<locX>{2048 + index * 256}</locX><locY>1536</locY>'
+                                f'<sizeX>{512 if index == 0 else 256}</sizeX><sizeY>256</sizeY>'
+                                f'<regionName>{chr(65 + index) * 254}</regionName><access>21</access></region{index}>'
+                                for index in range(5)
+                            ]
+                            body = ('<ServerResponse>' + ''.join(blocks) + '</ServerResponse>').encode()
                         if by_range and hold_map_range.is_set():
                             map_range_waiting.set()
                             release_map_range.wait(timeout=8)
@@ -618,7 +670,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
         if a.os_landing and not a.assets:
             with config.open('a', encoding='utf-8') as settings:
                 settings.write('\n[ClientStack.LindenCaps]\nCap_EstateChangeInfo=localhost\n')
-        if a.assets:
+        if a.assets or a.raw_fps:
             source = Path(__file__).resolve().parents[2]
             asset_config = (
                 '\n[Modules]\nAssetServices=LocalAssetServicesConnector\n[AssetService]\nLocalServiceModule=OpenSim.Services.AssetService.dll:AssetService\nStorageProvider=OpenSim.Data.SQLite.dll\nConnectionString=URI=file:'
@@ -1287,6 +1339,88 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                 f'ConnectionString = "{grid_user_connection}"\n'
             )
             config.write_text(settings, encoding='utf-8')
+        if a.script_email:
+            smtp_messages = queue.Queue()
+            smtp_tls = None
+            if a.script_smtp_tls:
+                fixtures = Path(__file__).resolve().parent / 'fixtures'
+                smtp_tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+                smtp_tls.load_cert_chain(fixtures / 'localhost-cert.pem', fixtures / 'localhost-key.pem')
+
+            class ScriptSmtpRelay(socketserver.StreamRequestHandler):
+                def handle(self):
+                    self.request.settimeout(10)
+                    self.wfile.write(b'220 fixture SMTP\r\n')
+                    hello = self.rfile.readline()
+                    if not hello.startswith(b'EHLO '):
+                        return
+                    if smtp_tls:
+                        self.wfile.write(b'250-fixture\r\n250 STARTTLS\r\n')
+                        if self.rfile.readline() != b'STARTTLS\r\n':
+                            return
+                        self.wfile.write(b'220 start TLS\r\n')
+                        self.rfile.close()
+                        self.wfile.close()
+                        self.request = smtp_tls.wrap_socket(self.request, server_side=True)
+                        self.setup()
+                        hello = self.rfile.readline()
+                        if not hello.startswith(b'EHLO '):
+                            return
+                        if smtp_messages.empty():
+                            self.wfile.write(b'250-fixture\r\n250 AUTH PLAIN LOGIN\r\n')
+                            credentials = base64.b64encode(b'\0fixture-user\0fixture-password')
+                            if self.rfile.readline() != b'AUTH PLAIN ' + credentials + b'\r\n':
+                                return
+                        else:
+                            self.wfile.write(b'250-fixture\r\n250 AUTH LOGIN\r\n')
+                            if self.rfile.readline() != b'AUTH LOGIN\r\n':
+                                return
+                            self.wfile.write(b'334 VXNlcm5hbWU6\r\n')
+                            if self.rfile.readline() != base64.b64encode(b'fixture-user') + b'\r\n':
+                                return
+                            self.wfile.write(b'334 UGFzc3dvcmQ6\r\n')
+                            if self.rfile.readline() != base64.b64encode(b'fixture-password') + b'\r\n':
+                                return
+                        self.wfile.write(b'235 authenticated\r\n')
+                    else:
+                        self.wfile.write(b'250-fixture\r\n250 SIZE 1000000\r\n')
+                    envelope = [hello.strip()]
+                    for command, response in (
+                        (b'MAIL FROM:', b'250 sender accepted\r\n'),
+                        (b'RCPT TO:', b'250 recipient accepted\r\n'),
+                        (b'DATA\r\n', b'354 send data\r\n'),
+                    ):
+                        line = self.rfile.readline()
+                        if not line.startswith(command):
+                            return
+                        envelope.append(line.strip())
+                        self.wfile.write(response)
+                    data = bytearray()
+                    while line := self.rfile.readline():
+                        if line == b'.\r\n':
+                            smtp_messages.put((envelope, bytes(data)))
+                            self.wfile.write(b'250 queued\r\n')
+                            if self.rfile.readline() == b'QUIT\r\n':
+                                self.wfile.write(b'221 closing\r\n')
+                            return
+                        data.extend(line)
+
+            smtp_relay = cleanup.enter_context(socketserver.ThreadingTCPServer(('127.0.0.1', 0), ScriptSmtpRelay))
+            smtp_worker = threading.Thread(target=smtp_relay.serve_forever, daemon=True)
+            smtp_worker.start()
+            cleanup.callback(smtp_relay.shutdown)
+            with config.open('a', encoding='utf-8') as settings:
+                settings.write('\n[SMTP]\nenabled = true\nemail_pause_time = 0\n'
+                               'enableEmailToSMTP = true\nSMTP_SERVER_HOSTNAME = 127.0.0.1\n'
+                               'SMTP_MailsPerDay = 2\n'
+                               f'SMTP_SERVER_PORT = {smtp_relay.server_address[1]}\n'
+                               'SMTP_SERVER_FROM = simulator@example.invalid\n'
+                               )
+                if smtp_tls:
+                    settings.write('SMTP_SERVER_TLS = true\nSMTP_VerifyCertChain = false\n'
+                                   'SMTP_VerifyCertNames = false\nSMTP_SERVER_LOGIN = fixture-user\n'
+                                   'SMTP_SERVER_PASSWORD = fixture-password\n')
+                settings.write('\n[LL-Functions]\nRestrictEmail = true\n')
         cmd = [str(Path(a.native).resolve()), '--config', str(config)]
         if a.raw_fps or rotating_prim:
             settings = config.read_text(encoding='utf-8').replace(
@@ -1308,6 +1442,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                 if not a.remote_mutes:
                     settings.write(
                         '\n[Modules]\nMuteListService=LocalMuteListServicesConnector\n'
+                        'AssetServices=LocalAssetServicesConnector\n'
                         '\n[MuteListService]\nLocalServiceModule=OpenSim.Services.MuteListService.dll:MuteListService\n'
                         '\n[MuteListStore]\nStorageProvider=OpenSim.Data.SQLite.dll\nConnectionString=mutes.db\n'
                     )
@@ -1355,10 +1490,13 @@ UserProfilesServices=LocalUserProfilesServicesConnector
             cleanup.callback(mute_server.server_close)
             threading.Thread(target=mute_server.serve_forever, daemon=True).start()
             cleanup.callback(mute_server.shutdown)
+            modules = '\n[Modules]\nMuteListService=RemoteMuteListServicesConnector\n'
+            if a.raw_fps:
+                modules += 'AssetServices=LocalAssetServicesConnector\n'
             with config.open('a', encoding='utf-8') as settings:
                 settings.write(
-                    '\n[Modules]\nMuteListService=RemoteMuteListServicesConnector\n'
-                    f'\n[MuteListService]\nMuteListServerURI=http://127.0.0.1:{mute_server.server_port}\n'
+                    modules
+                    + f'\n[MuteListService]\nMuteListServerURI=http://127.0.0.1:{mute_server.server_port}\n'
                     'AuthType=BasicHttpAuthentication\nHttpAuthUsername=mute\nHttpAuthPassword=fixture\n'
                 )
         setup = [
@@ -1575,16 +1713,24 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                     )
                 if a.restart_shutdown:
                     output.write(
-                        '\n[Startup]\nInworldRestartShutsDown=true\n'
-                        f'\n[Map]\nGenerateMaptiles=false\nMaptileStaticUUID={static_map_id}\n'
+                        '\n[Startup]\nInworldRestartShutsDown=true\nLinksetPrims=1\n'
+                        f'GenerateMaptiles=false\nMaptileStaticUUID={static_map_id}\n'
+                        '\n[Map]\nGenerateMaptiles=true\n'
+                        'MaptileStaticUUID=00000000-0000-0000-0000-000000000001\n'
                         f'\n[RestartModule]\nMarkerPath={root.resolve().as_posix()}\n'
                     )
                 elif a.os_landing and (not a.pbr_terrain or a.extended_pbr_terrain):
+                    if a.warp_map:
+                        output.write('\n[Startup]\nLevelUpload=ignored\n')
+                        output.write('\n[Permissions]\nLevelUpload=+0\n')
                     output.write('\n[Map]\n')
                     if a.warp_map:
                         output.write('MapImageModule=Warp3DImageModule\nDrawPrimOnMapTile=true\n')
-                        output.write('TextureOnMapTile=false\nMaptileRefresh=4\n')
-                        output.write(f'MapTilesDirectory={(root / "warp-tiles").resolve().as_posix()}\n')
+                        output.write('RenderMeshes=true\nTexturePrims=false\n')
+                        output.write('TextureOnMapTile=false\nMaptileRefresh=8\n')
+                        blocked_tile_directory = root / 'warp-tiles'
+                        blocked_tile_directory.write_text('Directory path occupied by a file', encoding='utf-8')
+                        output.write(f'MapTilesDirectory={blocked_tile_directory.as_posix()}\n')
                     elif a.map_tile_refresh:
                         output.write('DrawPrimOnMapTile=true\nTextureOnMapTile=true\nMapColorWater=LightGrey\n')
                         output.write(f'MaptileRefresh={8 if a.static_map_file else 4}\n')
@@ -1596,6 +1742,13 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                 elif a.pbr_terrain:
                     output.write('\n[Map]\nGenerateMaptiles=false\n')
                     output.write(f'MaptileStaticUUID={terrain_map_id}\n')
+        if a.map_tile_refresh and not a.warp_map:
+            config.write_text(
+                config.read_text(encoding='utf-8').replace(
+                    'EnableLocalRegion = true', 'EnableLocalRegion = true\nEnableGridEndpoint = true'
+                ),
+                encoding='utf-8',
+            )
         if a.static_map_file:
             static_file = root / 'custom-map.bmp'
             static_width, static_height = 94, 64
@@ -1609,12 +1762,20 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                 + palette
                 + pixels
             )
-            config.write_text(
-                config.read_text(encoding='utf-8').replace(
-                    'Name = Connected Native', f'Name = Connected Native\nMaptileStaticFile = {static_file.as_posix()}',
-                ),
+            regions = root / 'Regions'
+            regions.mkdir()
+            (regions / 'Regions.ini').write_text(
+                '[Connected Native]\n'
+                'RegionUUID = 11111111-1111-4111-8111-111111111111\n'
+                'Location = 1000,1000\n'
+                'InternalAddress = 127.0.0.1\n'
+                'InternalPort = 0\n'
+                'ExternalHostName = 127.0.0.1\n'
+                f'MaptileStaticFile = {static_file.as_posix()}\n',
                 encoding='utf-8',
             )
+            settings = config.read_text(encoding='utf-8')
+            config.write_text(settings.replace('EnableLocalRegion = true\n', '', 1), encoding='utf-8')
         if a.touch:
             with contextlib.closing(sqlite3.connect(root / 'users.db')) as database:
                 principal = database.execute(
@@ -1789,11 +1950,17 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         'SaleType SalePrice Material ClickAction GroupPositionX GroupPositionY GroupPositionZ '
                         'PositionX PositionY PositionZ RotationX RotationY RotationZ RotationW VelocityX Friction Restitution '
                         'Text ColorA ColorR ColorG ColorB TouchName SitName MediaURL LoopedSound LoopedSoundGain '
-                        'CollisionSound CollisionSoundVolume PayPrice PayButton1 PayButton2 PayButton3 PayButton4'
+                        'CollisionSound CollisionSoundVolume PayPrice PayButton1 PayButton2 PayButton3 PayButton4 ScriptAccessPin'
                     ).split()
                     database.execute('CREATE TABLE prims (' + ','.join(prim_columns) + ')')
                     stored_root = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'
                     stored_child = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'
+                    if a.script_email:
+                        with contextlib.closing(sqlite3.connect(root / 'users.db')) as users, users:
+                            users.execute(
+                                'UPDATE UserAccounts SET Email=? WHERE PrincipalID=?',
+                                (stored_child + '@lsl.opensim.local', principal),
+                            )
                     for part in (stored_child, stored_root):
                         database.execute(
                             'INSERT INTO prims VALUES ('
@@ -1850,6 +2017,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 -2,
                                 -2,
                                 -2,
+                                -2147483647,
                             ),
                         )
                     if a.pbr_terrain:
@@ -1949,6 +2117,45 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                             'UPDATE prims SET GroupPositionX=128, GroupPositionZ=60 WHERE UUID=?',
                             (stored_root,),
                         )
+                        sculpt_part = '00000000-0000-4000-9000-000000000020'
+                        sculpt_asset = '00000000-0000-4000-9000-000000000021'
+                        sculpt_prim = list(database.execute(
+                            'SELECT * FROM prims WHERE UUID=?', (stored_root,)
+                        ).fetchone())
+                        sculpt_prim[:2] = (sculpt_part, sculpt_part)
+                        sculpt_prim[prim_columns.index('GroupPositionX')] = 64
+                        database.execute(
+                            'INSERT INTO prims VALUES (' + ','.join('?' for _ in sculpt_prim) + ')',
+                            sculpt_prim,
+                        )
+                        for column, value in (
+                            ('UUID', sculpt_part), ('PathCurve', 32),
+                            ('Texture', texture[:17] + bytes([255, 0, 255]) + texture[20:]),
+                            ('ExtraParams', struct.pack('<BHI', 1, 0x30, 17)
+                             + uuid.UUID(sculpt_asset).bytes + b'\x43'),
+                        ):
+                            box_shape[shape_columns.index(column)] = value
+                        database.execute(
+                            'INSERT INTO primshapes VALUES (' + ','.join('?' for _ in box_shape) + ')',
+                            box_shape,
+                        )
+                        # Lossless 4x4 JPEG 2000 sculpt plane with X spanning half the prim width.
+                        sculpt_codestream = base64.b64decode(
+                            '/0//UQAvAAAAAAAEAAAABAAAAAAAAAAAAAAABAAAAAQAAAAAAAAAAAADBwEBBwEBBwEB'
+                            '/1IADAAAAAEAAgQEAAH/XAAKQEBISFBISFD/ZAAlAAFDcmVhdGVkIGJ5IE9wZW5KUEVH'
+                            'IHZlcnNpb24gMi41LjT/kAAKAAAAAAAxAAH/k8PnAgfH1AIHgMfaAgADp+ACA4DD6gMA'
+                            'DP9jo+0EAAs8Zh+A/9k='
+                        )
+                        with contextlib.closing(sqlite3.connect(root / 'assets.db')) as assets, assets:
+                            assets.execute(
+                                'CREATE TABLE IF NOT EXISTS assets(UUID NOT NULL PRIMARY KEY,Name,Description,'
+                                "Type,Local,Temporary,asset_flags INTEGER NOT NULL DEFAULT 0,CreatorID,Data)"
+                            )
+                            assets.execute(
+                                'INSERT INTO assets(UUID,Name,Description,Type,Local,Temporary,asset_flags,CreatorID,Data) '
+                                'VALUES(?,?,?,?,?,?,?,?,?)',
+                                (sculpt_asset, 'Warp3D sculpt plane', '', 0, 0, 0, 0, '', sculpt_codestream),
+                            )
                     item_columns = (
                         'itemID primID parentFolderID assetID ownerID lastOwnerID groupID creatorID '
                         'name description assetType invType creationDate flags nextPermissions currentPermissions '
@@ -2089,7 +2296,89 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                             "CREATE TABLE IF NOT EXISTS assets(UUID NOT NULL PRIMARY KEY,Name,Description,Type,Local,"
                             "Temporary,asset_flags INTEGER NOT NULL DEFAULT 0,CreatorID varchar(128) default '',Data)"
                         )
-                        startup_script = b'default { state_entry() { llSetObjectName("Restored script executed"); llCollisionSound("", -1); } }'
+                        startup_script = b'''default {
+                            state_entry() {
+                                llSetObjectName("Restored script executed");
+                                llSetRemoteScriptAccessPin(-123);
+                                llCollisionSound("", -1);
+                            }
+                        }'''
+                        if a.remote_data:
+                            startup_script = b'''key outgoing;
+                            default {
+                                state_entry() { llOpenRemoteDataChannel(); }
+                                remote_data(integer kind, key channel, key request, string sender, integer number, string data) {
+                                    if (kind == REMOTE_DATA_CHANNEL) {
+                                        llSetObjectDesc((string)channel);
+                                        outgoing = llSendRemoteData(channel, "http://127.0.0.1:REMOTE_DATA_PORT/", 9, "outbound");
+                                    }
+                                    if (kind == REMOTE_DATA_REQUEST) {
+                                        if (data == "region limits") {
+                                            vector size = llGetScale();
+                                            float largest = size.x;
+                                            if (size.y > largest)
+                                                largest = size.y;
+                                            if (size.z > largest)
+                                                largest = size.z;
+                                            llRemoteDataReply(channel, request, data,
+                                                              llRound(largest * llGetMaxScaleFactor()));
+                                        } else if (data == "region product") {
+                                            llRemoteDataReply(channel, request, llGetEnv("region_product_name"), 0);
+                                        } else {
+                                            llRemoteDataReply(channel, request, "native:" + data, number + 1);
+                                        }
+                                    }
+                                    if (kind == REMOTE_DATA_REPLY) {
+                                        if (request == outgoing && number == 10 && data == "native:outbound")
+                                            llSetObjectName("Remote data outbound reply");
+                                        else
+                                            llSetObjectName((string)(request == outgoing) + ":" + (string)number + ":" + data);
+                                    }
+                                }
+                            }'''.replace(b'REMOTE_DATA_PORT', str(remote_data_port).encode())
+                        if a.script_email:
+                            startup_script = b'''integer mail_stage;
+                            default {
+                                state_entry() {
+                                    llSetTimerEvent(0.1);
+                                    llEmail("requested@example.invalid", "Native fixture", "Local body");
+                                    llEmail("lsl.opensim.local@relay.example.invalid", "Relay fixture", "SMTP body");
+                                    llEmail("lsl.opensim.local@relay.example.invalid", "Second relay fixture", "SMTP body");
+                                    llEmail("lsl.opensim.local@relay.example.invalid", "Over quota", "Blocked body");
+                                }
+                                timer() {
+                                    string wanted = "native fixture";
+                                    if (mail_stage == 1)
+                                        wanted = "targeted fixture";
+                                    if (mail_stage == 2)
+                                        wanted = "creator fixture";
+                                    llGetNextEmail((string)llGetKey() + "@LSL.OPENSIM.LOCAL", wanted);
+                                }
+                                email(string stamp, string sender, string subject, string body, integer remaining) {
+                                    if (stamp == "" || sender != (string)llGetKey() + "@lsl.opensim.local"
+                                        || remaining != 0
+                                        || llSubStringIndex(body, "Object-Name: Stored part\\nRegion: ") != 0
+                                        || llSubStringIndex(body, "\\nLocal-Position: ") < 0
+                                        || llSubStringIndex(body, "\\n\\nLocal body") < 0)
+                                        return;
+                                    if (mail_stage == 0 && subject == "Native fixture") {
+                                        mail_stage = 1;
+                                        llTargetedEmail(TARGETED_EMAIL_OBJECT_OWNER, "Targeted fixture", "Local body");
+                                        return;
+                                    }
+                                    if (mail_stage == 1 && subject == "Targeted fixture") {
+                                        mail_stage = 2;
+                                        llTargetedEmail(TARGETED_EMAIL_ROOT_CREATOR, "Creator fixture", "Local body");
+                                        return;
+                                    }
+                                    if (mail_stage != 2 || subject != "Creator fixture")
+                                        return;
+                                    llSetTimerEvent(0);
+                                    llSetObjectName("Restored script executed");
+                                    llSetRemoteScriptAccessPin(-123);
+                                    llCollisionSound("", -1);
+                                }
+                            }'''
                         if a.pbr_terrain:
                             asset_db.execute(
                                 'INSERT INTO assets(UUID,Name,Description,Type,Local,Temporary,asset_flags,CreatorID,Data) '
@@ -2140,6 +2429,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                osSetRegionSunSettings(FALSE, TRUE, 11.25);
                osSetEstateSunSettings(TRUE, 17.5);
                llSetObjectName("Restored script executed");
+               llSetRemoteScriptAccessPin(-123);
                llCollisionSound("", -1);
            }
        }'''
@@ -2516,8 +2806,129 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                     'Primary TLS rejects the mismatched hostname before serving requests: '
                     + rejected.stderr,
                 )
+        if a.warp_map:
+            with contextlib.closing(sqlite3.connect(root / 'gridusers.db')) as users, users:
+                users.execute(
+                    'UPDATE GridUser SET HomeRegionID=?, HomePosition=?, HomeLookAt=? WHERE UserID=?',
+                    (str(uuid.uuid4()), '<91, 103, 29>', '<1, 0, 0>', principal),
+                )
+            # Legacy SQLite restores gestures only when their entire flags value is 1.
+            gesture_asset = uuid.uuid4()
+            gesture_rows = [
+                (uuid.uuid4(), principal, 21, 1),
+                (uuid.uuid4(), principal, 21, 0),
+                (uuid.uuid4(), principal, 21, 5),
+                (uuid.uuid4(), principal, 0, 1),
+                (uuid.uuid4(), str(uuid.uuid4()), 21, 1),
+            ]
+            with contextlib.closing(sqlite3.connect(root / 'inventory.db')) as inventory, inventory:
+                inventory.executemany(
+                    'INSERT INTO inventoryitems(assetID,assetType,inventoryName,inventoryDescription,'
+                    'inventoryNextPermissions,inventoryCurrentPermissions,invType,creatorID,'
+                    'inventoryBasePermissions,inventoryEveryOnePermissions,salePrice,saleType,creationDate,'
+                    'groupID,groupOwned,flags,inventoryID,parentFolderID,avatarID,inventoryGroupPermissions) '
+                    'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                    (
+                        (str(gesture_asset), asset_type, 'Login gesture fixture', '', 0, 0, asset_type,
+                         owner, 0, 0, 0, 0, 0, str(uuid.UUID(int=0)), 0, flags, str(item),
+                         str(uuid.UUID(int=0)), owner, 0)
+                        for item, owner, asset_type, flags in gesture_rows
+                    ),
+                )
+        simulator_environment = None
+        if a.remote_data:
+            region_file_map_id = '56905727-9fd8-4397-a5d9-ec7b82a1884e'
+            web_region_xml = f'''<Nini>
+    <Section Name="Connected Native">
+        <Key Name="RegionUUID" Value="11111111-1111-4111-8111-111111111111"/>
+        <Key Name="Location" Value="1000, 1000, 0"/>
+        <Key Name="SizeX" Value="4294967295"/>
+        <Key Name="SizeY" Value="300"/>
+        <Key Name="InternalAddress" Value="127.0.0.1"/>
+        <Key Name="InternalPort" Value="0"/>
+        <Key Name="ExternalHostName" Value="127.0.0.1"/>
+        <Key Name="NonPhysicalPrimMax" Value="64"/>
+        <Key Name="RegionType" Value="Region file product"/>
+        <Key Name="MaptileStaticUUID" Value="{region_file_map_id}"/>
+    </Section>
+</Nini>'''
+            settings = config.read_text(encoding='utf-8')
+            settings = settings.replace('EnableLocalRegion = true\n', '', 1)
+            settings = settings.replace('Name = Connected Native\n', 'Name = Inline fallback\n', 1)
+            settings += '\n[Map]\nGenerateMaptiles = false\n'
+            if a.web_region_config:
+                settings += ('\n[Startup]\nregion_info_source = web\n'
+                             f'regionload_webserver_url = http://127.0.0.1:{grid_features.server_port}/regions.xml\n')
+            else:
+                regions = root / 'Regions'
+                regions.mkdir()
+                xml = web_region_xml.replace('</Nini>', '    <Section Name="Ignored XML section"/>\n</Nini>')
+                (regions / 'Regions.xml').write_text(xml, encoding='utf-8')
+            config.write_text(settings, encoding='utf-8')
+            if a.web_region_config:
+                for endpoint in ('empty-regions.xml', 'missing-regions.xml'):
+                    config.write_text(
+                        settings.replace('/regions.xml', '/' + endpoint) + 'allow_regionless = true\n',
+                        encoding='utf-8',
+                    )
+                    regionless = subprocess.run(
+                        cmd + ['--console'], input='"quit"\n', capture_output=True,
+                        text=True, encoding='utf-8', timeout=15,
+                    )
+                    check(
+                        regionless.returncode == 0
+                        and 'LISTENING ' in regionless.stdout
+                        and 'simulator sessions are not available yet' in regionless.stdout
+                        and grid_lifecycle.empty(),
+                        f'{endpoint} allows startup without registering a region: {regionless.stderr}',
+                    )
+                if json.loads(subprocess.check_output([cmd[0], '--features'], text=True, timeout=5))['tls']:
+                    fixture = Path(__file__).parent / 'fixtures'
+                    tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+                    tls.load_cert_chain(fixture / 'localhost-cert.pem', fixture / 'localhost-key.pem')
+
+                    class TlsRegionFixture(FeatureGrid):
+                        def handle(self):
+                            try:
+                                super().handle()
+                            except (ssl.SSLError, BrokenPipeError, ConnectionResetError):
+                                # The client can close the handshake before sending HTTP.
+                                pass
+
+                    tls_server = cleanup.enter_context(
+                        http.server.ThreadingHTTPServer(('127.0.0.1', 0), TlsRegionFixture)
+                    )
+                    tls_server.socket = tls.wrap_socket(tls_server.socket, server_side=True)
+                    thread = threading.Thread(target=tls_server.serve_forever, daemon=True)
+                    thread.start()
+                    cleanup.callback(thread.join)
+                    cleanup.callback(tls_server.shutdown)
+                    http_url = f'http://127.0.0.1:{grid_features.server_port}/regions.xml'
+                    tls_base = f'https://127.0.0.1:{tls_server.server_port}'
+                    config.write_text(
+                        settings.replace(http_url, tls_base + '/empty-regions.xml') + 'allow_regionless = true\n',
+                        encoding='utf-8',
+                    )
+                    rejected = subprocess.run(
+                        cmd + ['--console'], input='"quit"\n', capture_output=True,
+                        text=True, encoding='utf-8', timeout=35,
+                    )
+                    check(
+                        rejected.returncode != 0
+                        and 'LISTENING ' not in rejected.stdout
+                        and 'SSL connection could not be established' in rejected.stderr,
+                        f'Untrusted HTTPS region source fails startup: {rejected.stderr}',
+                    )
+                    if os.name == 'posix' and os.uname().sysname == 'Linux':
+                        simulator_environment = {
+                            **os.environ, 'SSL_CERT_FILE': str(fixture / 'localhost-cert.pem'),
+                        }
+                        settings = settings.replace(http_url, tls_base + '/regions.xml')
+                config.write_text(settings, encoding='utf-8')
         proc = subprocess.Popen(
             cmd + ['--console'],
+            cwd=root if a.warp_map else None,
+            env=simulator_environment,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -2540,9 +2951,10 @@ UserProfilesServices=LocalUserProfilesServicesConnector
         threading.Thread(target=err, daemon=True).start()
         try:
             url = None
-            deadline = time.monotonic() + 20
+            startup_timeout = 40 if a.remote_data or a.static_map_file else 20
+            deadline = time.monotonic() + startup_timeout
             while time.monotonic() < deadline:
-                line = lines.get(timeout=20)
+                line = lines.get(timeout=startup_timeout)
                 if line is None:
                     proc.wait(timeout=5)
                     raise RuntimeError(
@@ -2552,6 +2964,62 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                     url = line.split(' ', 1)[1].strip()
                     break
             check(bool(url), 'Native region starts HTTP and UDP')
+            if a.remote_data:
+                if a.web_region_config:
+                    check(web_region_requests.qsize() == 2, 'The web loader retries an empty region document')
+                registration = grid_lifecycle.get(timeout=5)
+                check(registration.get('METHOD') == ['register']
+                      and registration.get('regionMapTexture') == [region_file_map_id]
+                      and registration.get('locX') == ['256000'] and registration.get('locY') == ['256000']
+                      and registration.get('sizeX') == ['256'] and registration.get('sizeY') == ['256'],
+                      'Grid registration advertises the region file location, normalized size and static map')
+                # The running script publishes its channel in the persisted prim description.
+                channel = None
+                deadline = time.monotonic() + 15
+                while time.monotonic() < deadline and proc.poll() is None:
+                    with contextlib.closing(sqlite3.connect(root / 'terrain.db')) as database:
+                        row = database.execute('SELECT Description FROM prims WHERE UUID=?', (stored_child,)).fetchone()
+                    if row and re.fullmatch(r'[0-9a-f-]{36}', row[0] or ''):
+                        channel = row[0]
+                        break
+                    time.sleep(.1)
+                check(channel is not None, 'Running LSL script opens a remote-data channel')
+                with xmlrpc.client.ServerProxy(f'http://127.0.0.1:{remote_data_port}/', allow_none=True) as rpc:
+                    for channel_value, integer_value, expected in (
+                        (channel, 41, 42),
+                        (' ' + channel + ' trailing text', ' +41 ', 42),
+                        (channel, True, 2),
+                        (channel, 40.5, 41),
+                        (channel, -41.5, -41),
+                        (channel, None, 1),
+                    ):
+                        result = rpc.llRemoteData({
+                            'Channel': channel_value,
+                            'IntValue': integer_value,
+                            'StringValue': 'request',
+                        })
+                        check(result == [{'IntValue': expected, 'StringValue': 'native:request'}],
+                              f'XML-RPC remote data converts {integer_value!r} and returns the script reply')
+                    result = rpc.llRemoteData({'Channel': channel, 'IntValue': 0, 'StringValue': ''})
+                    check(result == [{'IntValue': 1, 'StringValue': 'native:'}],
+                          'XML-RPC remote data delivers an empty string to the script')
+                    result = rpc.llRemoteData({'Channel': channel, 'IntValue': 0, 'StringValue': 'region limits'})
+                    check(result == [{'IntValue': 64, 'StringValue': 'region limits'}],
+                          'The running script sees the prim scale limit from the region file')
+                    result = rpc.llRemoteData({'Channel': channel, 'IntValue': 0, 'StringValue': 'region product'})
+                    check(result == [{'IntValue': 0, 'StringValue': 'Region file product'}],
+                          'The running script sees the product name from the region file')
+                deadline = time.monotonic() + 20
+                with contextlib.closing(sqlite3.connect(root / 'terrain.db')) as database:
+                    while time.monotonic() < deadline and proc.poll() is None:
+                        row = database.execute('SELECT Name FROM prims WHERE UUID=?', (stored_child,)).fetchone()
+                        if row == ('Remote data outbound reply',):
+                            break
+                        time.sleep(.1)
+                    else:
+                        raise AssertionError(f'Outbound XML-RPC reply did not reach the script: {row!r}')
+                print('PASS XML-RPC remote data round trip through a running region script')
+                return
             primary_context = None
             if a.primary_https:
                 primary = urllib.parse.urlsplit(url)
@@ -2749,6 +3217,20 @@ UserProfilesServices=LocalUserProfilesServicesConnector
             )
             login = proxy.login_to_simulator(credentials)
             check(login.get('login') == 'true', 'Actual local scene accepts login: ' + str(login))
+            if a.warp_map:
+                check(
+                    login.get('start_location') == 'safe'
+                    and login.get('home') == (
+                        "{'region_handle':[r256000,r256000], 'position':[r91,r103,r29], 'look_at':[r1,r0,r0]}"
+                    ),
+                    'A missing home region uses safe login and preserves the stored home vectors',
+                )
+                check(
+                    login.get('gestures') == [
+                        {'item_id': str(gesture_rows[0][0]), 'asset_id': str(gesture_asset)}
+                    ],
+                    'Login restores only the active gesture owned by the account',
+                )
             if a.primary_https:
                 seed_uri = urllib.parse.urlsplit(login['seed_capability'])
                 check(
@@ -4285,6 +4767,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         '--verify-default-object-permissions',
                         '--verify-mute-list',
                         '--verify-denied-home',
+                        '--verify-landmark-offset',
                     ]
                 if a.raw_fps and not a.remote_mutes:
                     extra.append('--verify-mute-owner')
@@ -4424,7 +4907,81 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                     data
                                 ).decode('ascii')
                                 ET.SubElement(linked, 'StartStr').text = 'asset-only'
-                                script = b'default { state_entry() { if (llLinksetDataRead("persist") == "value") { llSay(0, "Permission reset " + (string)llGetPermissions()); return; } llSay(0, "Inventory metadata " + (string)llGetInventoryCreator("Inventory wave") + "/" + llGetInventoryAcquireTime("Inventory wave") + "/" + (string)llGetGeometricCenter()); string missing = llGetInventoryDesc("Missing description fixture"); if (llGetRegionFPS() > 0) llSay(0, "Region FPS sampled"); llSay(0, "Linkset data " + (string)llGetStartParameter() + "/" + llGetStartString() + ":" + llLinksetDataRead("public") + "/" + llLinksetDataRead("secret") + "/" + llLinksetDataReadProtected("secret", "wrong") + "/" + llLinksetDataReadProtected("secret", "pass") + "/" + (string)llLinksetDataCountKeys() + "/" + (string)llLinksetDataAvailable()); integer added = llLinksetDataWrite("new", "value"); integer unchanged = llLinksetDataWrite("new", "value"); integer denied = llLinksetDataDelete("secret"); integer deleted = llLinksetDataDeleteProtected("secret", "pass"); if (added == LINKSETDATA_OK && unchanged == LINKSETDATA_NOUPDATE && denied == LINKSETDATA_EPROTECTED) llSay(0, "Linkset mutation " + (string)added + "/" + (string)unchanged + "/" + (string)denied + "/" + (string)deleted + "/" + llLinksetDataRead("new")); integer protected_result = llLinksetDataWriteProtected("hidden", "private", "pass"); llSay(0, "Linkset keys " + llList2CSV(llLinksetDataListKeys(1, 1)) + "/" + llList2CSV(llLinksetDataFindKeys("^h", 0, 0)) + "/" + (string)llLinksetDataCountFound("^h")); llSay(0, "Linkset bulk " + llList2CSV(llLinksetDataDeleteFound("^(new|hidden|public)$", "wrong"))); integer last = llLinksetDataDeleteProtected("hidden", "pass"); llSay(0, "Linkset last " + (string)last + "/" + (string)llLinksetDataAvailable()); integer restored = llLinksetDataWrite("new", "value"); llLinksetDataReset(); llLinksetDataReset(); llSay(0, "Linkset reset " + (string)llLinksetDataCountKeys() + "/" + (string)llLinksetDataAvailable()); integer persisted = llLinksetDataWrite("persist", "value"); integer more = llLinksetDataWrite("extra", "yes"); integer final_key = llLinksetDataWrite("z", "x"); } on_rez(integer parameter) { llSay(0, "On rez " + (string)parameter + "/" + (string)llGetPermissions() + "/" + (string)llGetPermissionsKey()); llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION | PERMISSION_OVERRIDE_ANIMATIONS); } run_time_permissions(integer mask) { llSay(0, "Runtime permissions " + (string)mask + "/" + (string)llGetPermissions() + "/" + (string)llGetPermissionsKey()); llStartAnimation("hello"); llSay(0, "Animation list " + llList2CSV(llGetAnimationList(llGetOwner())) + "/" + llGetAnimation(llGetOwner()) + "/" + llGetAnimationOverride("wAlKiNg") + "/" + llGetAnimationOverride("invalid")); llStopAnimation("hello"); llStartAnimation("Inventory wave"); llStopAnimation("Inventory wave"); llSetAnimationOverride("Standing", "Inventory wave"); llSay(0, "Override " + llGetAnimationOverride("standing") + "/" + llList2CSV(llGetAnimationList(llGetOwner()))); llResetAnimationOverride("ALL"); llStopAnimation("stand"); llResetScript(); } touch_start(integer n) { llSay(0, "Permission after replay " + (string)llGetPermissions() + "/" + (string)llGetListLength(llGetAnimationList(llGetOwner()))); } linkset_data(integer action, string name, string value) { if (action >= LINKSETDATA_RESET && action <= LINKSETDATA_MULTIDELETE) llSay(0, "Linkset event " + (string)action + "/" + name + "/" + value); } }'
+                                script = (
+                                    b'default {'
+                                        b' state_entry() {'
+                                            b' if (llLinksetDataRead("persist") == "value") {'
+                                                b' llSay(0, "Permission reset " + (string)llGetPermissions());'
+                                                b' return;'
+                                            b' }'
+                                            b' llSay(0, "Inventory metadata " + (string)llGetInventoryCreator("Inventory wave") + '
+                                                b'"/" + llGetInventoryAcquireTime("Inventory wave") + "/" + '
+                                                b'(string)llGetGeometricCenter());'
+                                            b' string missing = llGetInventoryDesc("Missing description fixture");'
+                                            b' if (llGetRegionFPS() > 0) llSay(0, "Region FPS sampled");'
+                                            b' llSay(0, "Linkset data " + (string)llGetStartParameter() + "/" + llGetStartString() '
+                                                b'+ ":" + llLinksetDataRead("public") + "/" + llLinksetDataRead("secret") + "/" + '
+                                                b'llLinksetDataReadProtected("secret", "wrong") + "/" + llLinksetDataReadProtected("secret", '
+                                                b'"pass") + "/" + (string)llLinksetDataCountKeys() + "/" + '
+                                                b'(string)llLinksetDataAvailable());'
+                                            b' integer added = llLinksetDataWrite("new", "value");'
+                                            b' integer unchanged = llLinksetDataWrite("new", "value");'
+                                            b' integer denied = llLinksetDataDelete("secret");'
+                                            b' integer deleted = llLinksetDataDeleteProtected("secret", "pass");'
+                                            b' if (added == LINKSETDATA_OK && unchanged == LINKSETDATA_NOUPDATE && denied == '
+                                                b'LINKSETDATA_EPROTECTED) llSay(0, "Linkset mutation " + (string)added + "/" + '
+                                                b'(string)unchanged + "/" + (string)denied + "/" + (string)deleted + "/" + '
+                                                b'llLinksetDataRead("new"));'
+                                            b' integer protected_result = llLinksetDataWriteProtected("hidden", "private", "pass");'
+                                            b' llSay(0, "Linkset keys " + llList2CSV(llLinksetDataListKeys(1, 1)) + "/" + '
+                                                b'llList2CSV(llLinksetDataFindKeys("^h", 0, 0)) + "/" + '
+                                                b'(string)llLinksetDataCountFound("^h"));'
+                                            b' llSay(0, "Linkset bulk " + llList2CSV(llLinksetDataDeleteFound("^(new|hidden|public)$", '
+                                                b'"wrong")));'
+                                            b' integer last = llLinksetDataDeleteProtected("hidden", "pass");'
+                                            b' llSay(0, "Linkset last " + (string)last + "/" + (string)llLinksetDataAvailable());'
+                                            b' integer restored = llLinksetDataWrite("new", "value");'
+                                            b' llLinksetDataReset();'
+                                            b' llLinksetDataReset();'
+                                            b' llSay(0, "Linkset reset " + (string)llLinksetDataCountKeys() + "/" + '
+                                                b'(string)llLinksetDataAvailable());'
+                                            b' integer persisted = llLinksetDataWrite("persist", "value");'
+                                            b' integer more = llLinksetDataWrite("extra", "yes");'
+                                            b' integer final_key = llLinksetDataWrite("z", "x");'
+                                        b' }'
+                                        b' on_rez(integer parameter) {'
+                                            b' llSay(0, "On rez " + (string)parameter + "/" + (string)llGetPermissions() + "/" + '
+                                                b'(string)llGetPermissionsKey());'
+                                            b' llRequestPermissions(llGetOwner(), PERMISSION_TRIGGER_ANIMATION | '
+                                                b'PERMISSION_OVERRIDE_ANIMATIONS);'
+                                        b' }'
+                                        b' run_time_permissions(integer mask) {'
+                                            b' llSay(0, "Runtime permissions " + (string)mask + "/" + (string)llGetPermissions() + '
+                                                b'"/" + (string)llGetPermissionsKey());'
+                                            b' llStartAnimation("hello");'
+                                            b' llSay(0, "Animation list " + llList2CSV(llGetAnimationList(llGetOwner())) + "/" + '
+                                                b'llGetAnimation(llGetOwner()) + "/" + llGetAnimationOverride("wAlKiNg") + "/" + '
+                                                b'llGetAnimationOverride("invalid"));'
+                                            b' llStopAnimation("hello");'
+                                            b' llStartAnimation("Inventory wave");'
+                                            b' llStopAnimation("Inventory wave");'
+                                            b' llSetAnimationOverride("Standing", "Inventory wave");'
+                                            b' llSay(0, "Override " + llGetAnimationOverride("standing") + "/" + '
+                                                b'llList2CSV(llGetAnimationList(llGetOwner())));'
+                                            b' llResetAnimationOverride("ALL");'
+                                            b' llStopAnimation("stand");'
+                                            b' llResetScript();'
+                                        b' }'
+                                        b' touch_start(integer n) {'
+                                            b' llSay(0, "Permission after replay " + (string)llGetPermissions() + "/" + '
+                                                b'(string)llGetListLength(llGetAnimationList(llGetOwner())));'
+                                        b' }'
+                                        b' linkset_data(integer action, string name, string value) {'
+                                            b' if (action >= LINKSETDATA_RESET && action <= LINKSETDATA_MULTIDELETE) llSay(0, '
+                                                b'"Linkset event " + (string)action + "/" + name + "/" + value);'
+                                        b' }'
+                                    b' }'
+                                )
                                 script_row = dict(stored, UUID=script_asset, Type=10, Data=script)
                                 db.execute(
                                     f"INSERT INTO assets ({','.join(script_row)}) VALUES ({','.join('?' for _ in script_row)})",
@@ -4435,19 +4992,33 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 stopped.find('AssetID/UUID').text = stopped_asset
                                 stopped.find('ItemID/UUID').text = stopped_item
                                 ET.SubElement(child, 'TaskInventory').append(stopped)
+                                script_states = linked.find('GroupScriptStates')
+                                if script_states is None:
+                                    script_states = ET.SubElement(linked, 'GroupScriptStates')
                                 saved = ET.SubElement(
-                                    ET.SubElement(linked, 'GroupScriptStates'),
+                                    script_states,
                                     'SavedScriptState',
                                     UUID=stopped_item,
                                 )
-                                ET.SubElement(
-                                    ET.SubElement(saved, 'ScriptState', Engine='YEngine'), 'Running'
-                                ).text = 'False'
+                                stopped_source = (
+                                    b'default { state_entry() { llSay(0, "Stopped script ran"); } '
+                                    b'on_rez(integer param) { llSay(0, "Stopped script ran"); } }'
+                                )
+                                tokens = re.findall(rb'"[^"]*"|[A-Za-z_][A-Za-z_0-9]*|[^\s]', stopped_source)
+                                source_hash = hashlib.md5(b''.join(b'\0' + token for token in tokens)).hexdigest().upper()
+                                wrapper = ET.SubElement(
+                                    saved, 'State', Engine='YEngine', UUID=stopped_item, Asset=stopped_asset
+                                )
+                                state = ET.SubElement(
+                                    wrapper, 'ScriptState', Engine='YEngine', Asset=stopped_asset, SourceHash=source_hash
+                                )
+                                ET.SubElement(state, 'Running').text = 'False'
+                                ET.SubElement(state, 'DoGblInit').text = 'True'
                                 stopped_row = dict(
                                     stored,
                                     UUID=stopped_asset,
                                     Type=10,
-                                    Data=b'default { state_entry() { llSay(0, "Stopped script ran"); } on_rez(integer param) { llSay(0, "Stopped script ran"); } }',
+                                    Data=stopped_source,
                                 )
                                 db.execute(
                                     f"INSERT INTO assets ({','.join(stopped_row)}) VALUES ({','.join('?' for _ in stopped_row)})",
@@ -4536,7 +5107,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                             1.75,
                                             2,
                                             7,
-                                            1,
+                                            0,  # The object asset XML carries camera offsets without ForceMouselook.
                                         )
                                         and stopped
                                     ):
@@ -4735,15 +5306,15 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         if a.disable_scripts and line.strip() == 'Enable scene scripting':
                             proc.stdin.write('debug scene set scripting true\n')
                             proc.stdin.flush()
-                            deadline = time.monotonic() + 5
+                            console_deadline = time.monotonic() + 5
                             while True:
                                 output = server_lines.get(
-                                    timeout=max(0.1, deadline - time.monotonic())
+                                    timeout=max(0.1, console_deadline - time.monotonic())
                                 )
                                 if 'Scene scripting enabled' in output:
                                     break
                                 check(
-                                    time.monotonic() < deadline,
+                                    time.monotonic() < console_deadline,
                                     'Console acknowledges scripting enable',
                                 )
                             process.stdin.write('OK\n')
@@ -4751,15 +5322,15 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         if a.disable_scripts and line.strip() == 'Disable scene scripting':
                             proc.stdin.write('debug scene set scripting false\n')
                             proc.stdin.flush()
-                            deadline = time.monotonic() + 5
+                            console_deadline = time.monotonic() + 5
                             while True:
                                 output = server_lines.get(
-                                    timeout=max(0.1, deadline - time.monotonic())
+                                    timeout=max(0.1, console_deadline - time.monotonic())
                                 )
                                 if 'Scene scripting disabled' in output:
                                     break
                                 check(
-                                    time.monotonic() < deadline,
+                                    time.monotonic() < console_deadline,
                                     'Console acknowledges scripting disable',
                                 )
                             process.stdin.write('OK\n')
@@ -6683,9 +7254,15 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                     process.stdout.close()
                     process.stdin.close()
 
-            if a.touch:
+            if a.touch or a.raw_fps:
                 with contextlib.closing(sqlite3.connect(root / 'assets.db')) as database, database:
-                    landmark = b'Landmark version 2\nregion_id 11111111-1111-4111-8111-111111111111\nlocal_pos 125 126 30\nregion_handle 1099511628032000\n'
+                    landmark_handle = (256004 << 32) | 256000
+                    landmark = (
+                        'Landmark version 2\r\n'
+                        'region_id 11111111-1111-4111-8111-111111111111\r\n'
+                        'local_pos 121 126 30\r\n'
+                        f'region_handle +{landmark_handle}\r\n'
+                    ).encode()
                     database.execute(
                         'INSERT INTO assets(UUID,Name,Description,Type,Local,Temporary,asset_flags,CreatorID,Data) VALUES(?,?,?,?,?,?,?,?,?)',
                         (
@@ -7306,6 +7883,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                             if a.varregion_relocation:
                                 selected_parcel = -1 if a.public_terrain else 2
                                 strength = 250 if a.public_terrain else 2
+                                south, north = (189, 192) if a.group_terrain else (128, 129)
                                 brush = struct.pack(
                                     '<BBffBi4fBf',
                                     1,
@@ -7315,9 +7893,9 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                     1,
                                     selected_parcel,
                                     128,
-                                    128,
+                                    south,
                                     304,
-                                    129,
+                                    north,
                                     1,
                                     2,
                                 )
@@ -7374,7 +7952,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                                     '<f', raw, 8 + 4 * (y * width + x)
                                                 )[0]
 
-                                            if height_at(300, 128) == (
+                                            if height_at(300, south) == (
                                                 96.0 if a.public_terrain else 23.0
                                             ):
                                                 check(
@@ -7382,6 +7960,11 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                                     and height_at(299, 128) == 21.0,
                                                     'Parcel terrain brush skips the neighboring parcel and the gap',
                                                 )
+                                                if a.group_terrain:
+                                                    check(
+                                                        height_at(300, 192) == 23.0,
+                                                        'The last brush row uses the bitmap sample taken at row 189',
+                                                    )
                                                 break
                                         check(
                                             time.monotonic() < deadline,
@@ -7392,8 +7975,12 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                     owner_id, owner_session, owner_send, owner_receive, _ = (
                                         connect_privacy_viewer(mover_socket, 'Owner', 128, login)
                                     )
-                                    admin_brush = struct.pack(
-                                        '<BBffBi4fBf', 1, 1, 250, 0, 1, 2, 300, 128, 304, 129, 1, 2
+                                    untouched_height = height_at(350, 128)
+                                    admin_brush = (
+                                        struct.pack('<BBffB', 1, 1, 250, 0, 2)
+                                        + struct.pack('<i4f', 2, 300, 128, 304, 129)
+                                        + struct.pack('<i4f', -1, 350, 128, 354, 129)
+                                        + struct.pack('<B2f', 2, 2, 2)
                                     )
                                     owner_send(
                                         bytes.fromhex('ffff007c')
@@ -7411,6 +7998,10 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                             ).fetchone()[0]
                                             raw = gzip.decompress(terrain_data)
                                             if height_at(300, 128) == 346.0:
+                                                check(
+                                                    height_at(350, 128) == untouched_height,
+                                                    'Brush cooldown also applies to later blocks in one packet',
+                                                )
                                                 break
                                             check(
                                                 time.monotonic() < deadline,
@@ -8151,51 +8742,177 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                     check(response.read() == jpeg, 'The region serves the cached JPEG again')
                                 if a.map_tile_refresh:
                                     if a.warp_map:
-                                        tile = root / 'warp-tiles' / 'MAP-11111111-1111-4111-8111-111111111111.png'
-                                        png = tile.read_bytes()
-                                        check(
-                                            png.startswith(b'\x89PNG\r\n\x1a\n')
-                                            and struct.unpack_from('>II', png, 16) == (256, 256),
-                                            'Warp3D writes a full-size local map PNG',
-                                        )
-                                        compressed = bytearray()
-                                        offset = 8
-                                        while offset < len(png):
-                                            size, kind = struct.unpack_from('>I4s', png, offset)
-                                            if kind == b'IDAT':
-                                                compressed.extend(png[offset + 8:offset + 8 + size])
-                                            offset += size + 12
-                                        raw = zlib.decompress(compressed)
-                                        stride = 256 * 3
-                                        previous = bytearray(stride)
-                                        for row in range(129):
-                                            offset = row * (stride + 1)
-                                            filter_type = raw[offset]
-                                            pixels = bytearray(raw[offset + 1:offset + 1 + stride])
-                                            for index in range(stride):
-                                                left = pixels[index - 3] if index >= 3 else 0
-                                                above = previous[index]
-                                                upper_left = previous[index - 3] if index >= 3 else 0
-                                                if filter_type == 1:
-                                                    predictor = left
-                                                elif filter_type == 2:
-                                                    predictor = above
-                                                elif filter_type == 3:
-                                                    predictor = (left + above) // 2
-                                                elif filter_type == 4:
-                                                    estimate = left + above - upper_left
-                                                    predictor = min(
-                                                        (left, above, upper_left),
-                                                        key=lambda value: abs(estimate - value),
-                                                    )
-                                                else:
-                                                    predictor = 0
-                                                pixels[index] = (pixels[index] + predictor) & 255
-                                            previous = pixels
+                                        tile = root / 'MAP-11111111-1111-4111-8111-111111111111.png'
+                                        def warp_center_row():
+                                            png = tile.read_bytes()
+                                            check(
+                                                png.startswith(b'\x89PNG\r\n\x1a\n')
+                                                and struct.unpack_from('>II', png, 16) == (256, 256),
+                                                'Warp3D writes a full-size PNG in the working directory after a directory failure',
+                                            )
+                                            compressed = bytearray()
+                                            offset = 8
+                                            while offset < len(png):
+                                                size, kind = struct.unpack_from('>I4s', png, offset)
+                                                if kind == b'IDAT':
+                                                    compressed.extend(png[offset + 8:offset + 8 + size])
+                                                offset += size + 12
+                                            raw = zlib.decompress(compressed)
+                                            stride = 256 * 3
+                                            previous = bytearray(stride)
+                                            for row in range(129):
+                                                offset = row * (stride + 1)
+                                                filter_type = raw[offset]
+                                                pixels = bytearray(raw[offset + 1:offset + 1 + stride])
+                                                for index in range(stride):
+                                                    left = pixels[index - 3] if index >= 3 else 0
+                                                    above = previous[index]
+                                                    upper_left = previous[index - 3] if index >= 3 else 0
+                                                    if filter_type == 1:
+                                                        predictor = left
+                                                    elif filter_type == 2:
+                                                        predictor = above
+                                                    elif filter_type == 3:
+                                                        predictor = (left + above) // 2
+                                                    elif filter_type == 4:
+                                                        estimate = left + above - upper_left
+                                                        predictor = min(
+                                                            (left, above, upper_left),
+                                                            key=lambda value: abs(estimate - value),
+                                                        )
+                                                    else:
+                                                        predictor = 0
+                                                    pixels[index] = (pixels[index] + predictor) & 255
+                                                previous = pixels
+                                            return previous
+
+                                        previous = warp_center_row()
                                         check(
                                             previous[128 * 3 + 1:128 * 3 + 3] == bytes(2)
                                             and previous[32 * 3 + 2] != 0,
                                             'Warp3D draws the red-tinted box over the terrain',
+                                        )
+                                        check(
+                                            previous[64 * 3:64 * 3 + 3] == bytes([0, 255, 0])
+                                            and previous[73 * 3:73 * 3 + 3] != bytes([0, 255, 0]),
+                                            'Warp3D draws the stored sculpt asset with its decoded footprint',
+                                        )
+                                        agent, session, send, receive, _ = connect_privacy_viewer(
+                                            observer_socket, 'Owner', 128, login
+                                        )
+                                        sculpt_uuid = uuid.UUID(sculpt_part).bytes
+
+                                        def sculpt_object(payload):
+                                            if len(payload) >= 33 and payload[0] == 12 and payload[17:33] == sculpt_uuid:
+                                                return struct.unpack_from('<I', payload, 12)[0]
+
+                                        object_id = receive(sculpt_object)
+                                        # Full-width version of the same sculpt plane.
+                                        uploaded_sculpt = base64.b64decode(
+                                            '/0//UQAvAAAAAAAEAAAABAAAAAAAAAAAAAAABAAAAAQAAAAAAAAAAAADBwEBBwEBBwEB'
+                                            '/1IADAAAAAEAAgQEAAH/XAAKQEBISFBISFD/ZAAlAAFDcmVhdGVkIGJ5IE9wZW5KUEVH'
+                                            'IHZlcnNpb24gMi41LjT/kAAKAAAAAAAxAAH/k8fUAgfH1AIHgM/ABAOn4AIDgMfaCAAM'
+                                            '/2Qfo+0EAAs8Zh+A/9k='
+                                        )
+                                        transaction = uuid.uuid4().bytes
+                                        send(
+                                            bytes.fromhex('ffff014d') + transaction
+                                            + struct.pack('<bBBH', 0, 0, 0, 0)
+                                        )
+
+                                        def upload_xfer(payload):
+                                            if payload[:4] == bytes.fromhex('ffff009c'):
+                                                return bytes(payload[4:12])
+
+                                        xfer = receive(upload_xfer)
+
+                                        def send_upload_chunk(number, data):
+                                            packet_number = struct.pack('<I', number)
+                                            send(b'\x12' + xfer + packet_number + struct.pack('<H', len(data)) + data)
+                                            check(
+                                                receive(lambda payload: True if payload[:13] ==
+                                                        b'\x13' + xfer + packet_number else None),
+                                                'The asset transfer confirms the incoming chunk',
+                                            )
+
+                                        send_upload_chunk(0, struct.pack('<I', 99) + uploaded_sculpt[:1])
+                                        send_upload_chunk(4, struct.pack('<I', 77) + uploaded_sculpt[:80])
+                                        send_upload_chunk(0x80000001, uploaded_sculpt[80:])
+
+                                        def uploaded_asset(payload):
+                                            if payload[:4] == bytes.fromhex('ffff014e'):
+                                                check(payload[20:22] == bytes([0, 1]), 'Sculpt texture upload succeeds')
+                                                return bytes(payload[4:20])
+
+                                        uploaded_id = receive(uploaded_asset)
+                                        with contextlib.closing(sqlite3.connect(root / 'inventory.db')) as inventory:
+                                            texture_folder, = inventory.execute(
+                                                'SELECT folderID FROM inventoryfolders WHERE agentID=? AND type=0',
+                                                (str(uuid.UUID(bytes=agent)),),
+                                            ).fetchone()
+                                        def create_texture_item(upload_transaction, name, callback):
+                                            wire_name = name.encode() + b'\0'
+                                            send(
+                                                bytes.fromhex('ffff0131') + agent + session + struct.pack('<I', callback)
+                                                + uuid.UUID(texture_folder).bytes + upload_transaction
+                                                + struct.pack('<IbbBB', 0x82000, 0, 0, 0, len(wire_name))
+                                                + wire_name + b'\0'
+                                            )
+
+                                        create_texture_item(transaction, 'Uploaded sculpt plane', 1)
+                                        check(
+                                            receive(lambda payload: True if payload[:4] == bytes.fromhex('ffff010b')
+                                                    and payload[20] == 1 and uploaded_id in payload else None),
+                                            'The upload transaction creates a texture inventory item',
+                                        )
+                                        with contextlib.closing(sqlite3.connect(root / 'inventory.db')) as inventory, inventory:
+                                            inventory.execute(
+                                                "CREATE TRIGGER ignore_fixture_upload BEFORE INSERT ON inventoryitems "
+                                                "WHEN NEW.inventoryName='Rejected texture item' "
+                                                "BEGIN SELECT RAISE(IGNORE); END"
+                                            )
+                                        rejected_transaction = uuid.uuid4().bytes
+                                        create_texture_item(rejected_transaction, 'Rejected texture item', 2)
+                                        send(
+                                            bytes.fromhex('ffff014d') + rejected_transaction
+                                            + struct.pack('<bBBH', 0, 0, 0, len(uploaded_sculpt)) + uploaded_sculpt
+                                        )
+                                        rejected_upload = {}
+
+                                        def rejected_item_replies(payload):
+                                            if payload[:4] == bytes.fromhex('ffff0086') and (
+                                                b'Unable to create inventory item' in payload
+                                            ):
+                                                rejected_upload['alert'] = True
+                                            if payload[:4] == bytes.fromhex('ffff014e'):
+                                                rejected_upload['asset'] = uploaded_asset(payload)
+                                            if len(rejected_upload) == 2:
+                                                return rejected_upload['asset']
+
+                                        rejected_asset = receive(rejected_item_replies)
+                                        with contextlib.closing(sqlite3.connect(root / 'inventory.db')) as inventory:
+                                            check(
+                                                inventory.execute(
+                                                    "SELECT 1 FROM inventoryitems WHERE inventoryName='Rejected texture item'"
+                                                ).fetchone() is None,
+                                                'The rejected inventory item was never written',
+                                            )
+                                        with contextlib.closing(sqlite3.connect(root / 'assets.db')) as assets:
+                                            check(
+                                                assets.execute('SELECT Data FROM assets WHERE UUID=?',
+                                                               (str(uuid.UUID(bytes=rejected_asset)),)).fetchone()
+                                                == (uploaded_sculpt,),
+                                                'Inventory rejection leaves the uploaded asset in storage',
+                                            )
+                                        send(
+                                            bytes.fromhex('ffff0063') + agent + session + bytes([1])
+                                            + struct.pack('<IHBIB', object_id, 0x30, 1, 17, 17)
+                                            + uploaded_id + b'\x43'
+                                        )
+                                        check(
+                                            receive(lambda payload: True if sculpt_object(payload) == object_id
+                                                    and uploaded_id in payload else None),
+                                            'The sculpt object update advertises the uploaded texture',
                                         )
                                     if a.static_map_file:
                                         # The next refresh should decode JPEG by content, regardless of suffix.
@@ -8222,6 +8939,14 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                             struct.unpack_from('>HH', updated_jpeg, frame + 5) == dimensions,
                                             'Scheduled refresh loads the replacement JPEG file',
                                         )
+                                    elif a.warp_map:
+                                        previous = warp_center_row()
+                                        check(
+                                            previous[73 * 3:73 * 3 + 3] == bytes([0, 255, 0])
+                                            and updated_jpeg != jpeg,
+                                            'The next map includes the wider sculpt uploaded and applied over UDP '
+                                            f'(pixel={tuple(previous[73 * 3:73 * 3 + 3])}, JPEG changed={updated_jpeg != jpeg})',
+                                        )
                                     else:
                                         check(updated_jpeg == jpeg, 'The scheduled tile is served as JPEG')
                                     with contextlib.closing(sqlite3.connect(root / 'assets.db')) as database:
@@ -8242,6 +8967,59 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                             and flags & 1,
                                             'The parcel map asset is a four-component JPEG 2000 tile',
                                         )
+                                    def verify_rejected_map_refresh():
+                                        reject_map_refresh.set()
+                                        try:
+                                            proc.stdin.write('generate map\n')
+                                            proc.stdin.flush()
+                                            rejected = grid_lifecycle.get(timeout=8)
+                                            check(
+                                                rejected.get('regionMapTexture') != [refreshed_id],
+                                                'Remote grid rejects a new map registration',
+                                            )
+                                            deadline = time.monotonic() + 5
+                                            while True:
+                                                with urllib.request.urlopen(
+                                                    urllib.request.Request(
+                                                        url.rstrip('/') + '/grid',
+                                                        urllib.parse.urlencode({
+                                                            'METHOD': 'get_region_by_uuid',
+                                                            'REGIONID': registration['uuid'][0],
+                                                        }).encode(),
+                                                        {'Authorization': 'Basic ' + base64.b64encode(
+                                                            b'grid:fixture'
+                                                        ).decode()},
+                                                    ),
+                                                    timeout=5,
+                                                ) as response:
+                                                    local = ET.fromstring(response.read())
+                                                with contextlib.closing(sqlite3.connect(root / 'terrain.db')) as database:
+                                                    saved_maps = database.execute(
+                                                        'SELECT map_tile_ID, parcel_tile_ID FROM regionsettings'
+                                                    ).fetchone()
+                                                if (local.findtext('.//regionMapTexture') == refreshed_id
+                                                        and saved_maps == (refreshed_id, refreshed_parcel_id)):
+                                                    break
+                                                if time.monotonic() >= deadline:
+                                                    raise AssertionError(
+                                                        f'Map rollback did not finish: {saved_maps}, {ET.tostring(local)}'
+                                                    )
+                                                time.sleep(0.05)
+                                            check(
+                                                local.findtext('.//regionMapTexture') == refreshed_id
+                                                and local.findtext('.//parcelMapTexture') == refreshed_parcel_id,
+                                                'Local grid retains the last accepted map registration',
+                                            )
+                                            with contextlib.closing(sqlite3.connect(root / 'assets.db')) as database:
+                                                retained, = database.execute(
+                                                    'SELECT COUNT(*) FROM assets WHERE UUID IN (?, ?)',
+                                                    (refreshed_id, refreshed_parcel_id),
+                                                ).fetchone()
+                                            check(retained == 2, 'Rejected refresh keeps both advertised assets')
+                                        finally:
+                                            reject_map_refresh.clear()
+                                    if not a.static_map_file and not a.warp_map:
+                                        verify_rejected_map_refresh()
                                     if a.static_map_file:
                                         def png_chunk(kind, payload):
                                             return (
@@ -8259,12 +9037,19 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                             + png_chunk(b'IDAT', zlib.compress(scanline * png_height))
                                             + png_chunk(b'IEND', b'')
                                         )
+                                        verify_rejected_map_refresh()
+                                        with urllib.request.urlopen(image_url, timeout=5) as response:
+                                            check(response.read() == updated_jpeg,
+                                                  'Rejected PNG refresh leaves the previous HTTP map bytes intact')
                                         png_refresh = grid_lifecycle.get(timeout=12)
                                         png_id = png_refresh.get('regionMapTexture', [''])[0]
                                         check(
                                             uuid.UUID(png_id).int != 0 and png_id != refreshed_id,
                                             'Scheduled refresh publishes a new tile from the PNG',
                                         )
+                                        with urllib.request.urlopen(image_url, timeout=5) as response:
+                                            check(response.read() != updated_jpeg,
+                                                  'Accepted PNG refresh serves different HTTP map bytes')
                                         with contextlib.closing(sqlite3.connect(root / 'assets.db')) as database:
                                             (png_asset,) = database.execute(
                                                 'SELECT Data FROM assets WHERE UUID=?', (png_id,)
@@ -8652,6 +9437,17 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                         )
                                         == land_data,
                                         'Land service resolves the world position even when the handle differs',
+                                    )
+                                    wrapped_handle = ((2**32 - 1) << 32) | (handle & (2**32 - 1))
+                                    check(
+                                        land_service.land_data(
+                                            {
+                                                'region_handle': str(wrapped_handle),
+                                                'x': '256133',
+                                                'y': '128',
+                                            }
+                                        ) == land_data,
+                                        'Land service preserves unsigned 32-bit world coordinate arithmetic',
                                     )
                                     check(
                                         land_service.land_data(
@@ -10242,6 +11038,16 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 == ([(7, 8, b'', 255, uuid.UUID(int=0))], []),
                                 'A click on an empty map coordinate returns a non-existent block',
                             )
+                            request_map_range(8, 12, 6, 6, 0)
+                            first_blocks, first_sizes = receive_map_blocks(0)
+                            next_blocks, next_sizes = receive_map_blocks(0)
+                            check(
+                                [block[0] for block in first_blocks] == [8, 9, 10]
+                                and [block[0] for block in next_blocks] == [11, 12]
+                                and first_sizes == [(512, 256), (256, 256), (256, 256)]
+                                and next_sizes == [(256, 256), (256, 256)],
+                                'Map replies split at the original payload boundary and retain size blocks',
+                            )
                             manager_estate_cap = estate_cap(manager_login, 'EstateChangeInfo')
                             observer_estate_cap = estate_cap(observer_login, 'EstateChangeInfo')
                             estate_edit = (
@@ -10770,6 +11576,15 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 'A fresh remote map reply includes all supported marker types',
                             )
                             check(remote_map_calls.get(timeout=5).endswith(f'/{remote_handle}'), 'Peer lookup is issued')
+                            expected_sales = [
+                                (1060 + index, 800, bytes(16), 0, 0, str(index).encode() * 254)
+                                for index in range(5)
+                            ]
+                            check(
+                                receive_map_items(7) == expected_sales[:3]
+                                and receive_map_items(7) == expected_sales[3:],
+                                'Long map markers follow the managed packet split and preserve order',
+                            )
                             request_map_items(1, remote_handle)
                             check(receive_map_items(1, strict=True) == remote_hub, 'Cached map reply sends only the requested type')
                             for x in concurrent_map_x:
@@ -10983,12 +11798,26 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                         'Immediate repeated map refresh observes the cooldown',
                                     )
 
-                                proc.stdin.write('region restart notice "Maintenance in {0}" 2 5\n')
+                                maintenance = 'Maintenance {{in}} [{0,12:ignored}][{0,-11}]' + 'x' * 250
+                                proc.stdin.write(f'region restart notice "{maintenance}" 2 5\n')
                                 proc.stdin.flush()
+
+                                def formatted_restart_alert(payload):
+                                    if payload[:4] != bytes.fromhex('ffff0086'):
+                                        return None
+                                    message = payload[5 : 5 + payload[4]]
+                                    if not message.startswith(b'Maintenance'):
+                                        return None
+                                    expected = b'Maintenance {in} [   5 seconds][5 seconds  ]' + b'x' * 250
+                                    return message == expected[:254] + b'\0'
+
                                 check(
-                                    manager_receive(restart_alert(b'Maintenance in 5 seconds')),
-                                    'Console notice uses the longest countdown first',
+                                    manager_receive(formatted_restart_alert),
+                                    'Console notice formats the longest countdown and fits the viewer packet',
                                 )
+                                if a.restart_shutdown:
+                                    marker = root / '11111111-1111-4111-8111-111111111111'
+                                    marker.write_text('stale marker')
                                 proc.stdin.write('region restart abort "Maintenance cancelled"\n')
                                 proc.stdin.flush()
                                 check(
@@ -10996,6 +11825,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                     'Aborting the console countdown sends a cancellation notice',
                                 )
                                 if a.restart_shutdown:
+                                    check(not marker.exists(), 'Aborting a restart removes the region marker')
                                     manager_send(
                                         texture_edit(manager_id, manager_session, b'restart', b'1')
                                     )
@@ -11010,7 +11840,6 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                         'Console bluebox uses the dismissable notice packet',
                                     )
                                     check(proc.wait(timeout=15) == 0, 'Configured restart shuts down the host')
-                                    marker = root / '11111111-1111-4111-8111-111111111111'
                                     check(marker.read_text() == str(proc.pid), 'Restart marker contains the host PID')
                                     return
                                 manager_send(
@@ -11414,11 +12243,11 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                             )
 
                         for flag, expected in ((16 | 1, [group.bytes]), (32 | 2, [])):
-                            edit_estate_list(flag, group)
+                            edit_estate_list(flag, f'{group} trailing text')
                             method, parameters = mover_receive(estate_details)
                             check(
                                 method == b'setaccess' and parameters[6:] == expected,
-                                'Estate manager can update the allowed-group list',
+                                'Estate manager can update the allowed-group list using an SDK UUID prefix',
                             )
                             with contextlib.closing(
                                 sqlite3.connect(root / 'estate.db')
@@ -11724,7 +12553,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                             mover_receive(estate_details)
                         changed_covenant = uuid.UUID('11223344-5566-4788-899a-aabbccddeeff')
                         method = b'estatechangecovenantid\0'
-                        parameter = str(changed_covenant).encode() + b'\0'
+                        parameter = f'{changed_covenant} trailing text'.encode() + b'\0'
                         mover_send(
                             bytes.fromhex('ffff0104')
                             + mover_id
@@ -11755,7 +12584,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                             time.sleep(0.05)
                         check(
                             covenant == changed_covenant and abs(timestamp - time.time()) < 10,
-                            'Estate manager covenant edit reaches other viewers with a fresh timestamp',
+                            'Covenant edit accepts an SDK UUID prefix and publishes a fresh timestamp',
                         )
                         check(
                             estate_deliveries.get(timeout=5)
@@ -11993,6 +12822,16 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                             'Grid moderation accepts an authorized sender',
                         )
                         observer_receive(lambda p: True if b'Freeze fixture' in p else None)
+                        broadcast_freeze = dict(
+                            grid_freeze,
+                            to_agent_id='44e87126-e794-4ded-05b3-7c42da3d5cdb',
+                            message='Broadcast freeze fixture',
+                        )
+                        check(
+                            proxy.grid_instant_message(broadcast_freeze)['success'] == 'TRUE',
+                            'Grid moderation accepts the broadcast recipient',
+                        )
+                        observer_receive(lambda p: True if b'Broadcast freeze fixture' in p else None)
                         seed_request = urllib.request.Request(
                             mover_seed,
                             b'<llsd><array><string>UntrustedSimulatorMessage</string></array></llsd>',
@@ -12291,6 +13130,26 @@ UserProfilesServices=LocalUserProfilesServicesConnector
             check(
                 proc.returncode == 0, 'Clean region/socket/capability shutdown: ' + ''.join(errors)
             )
+        if a.script_email:
+            check(smtp_messages.qsize() == 2, 'The configured daily SMTP quota admits only two script messages')
+            envelope, data = smtp_messages.get_nowait()
+            message = BytesParser(policy=email_policy.default).parsebytes(data)
+            check(
+                envelope[1:3] == [
+                    b'MAIL FROM:<simulator@example.invalid>',
+                    b'RCPT TO:<lsl.opensim.local@relay.example.invalid>',
+                ] and message['Subject'] == f'(OSObj{stored_child}) Relay fixture'
+                and message['X-Owner-ID'] == principal and message['X-Task-ID'] == stored_child
+                and message.get_content().replace('\r\n', '\n').rstrip('\n').endswith('\n\nSMTP body'),
+                'SMTP envelope, headers, and decoded script body match the source contract',
+            )
+            second_envelope, second_data = smtp_messages.get_nowait()
+            second_message = BytesParser(policy=email_policy.default).parsebytes(second_data)
+            check(
+                second_envelope == envelope
+                and second_message['Subject'] == f'(OSObj{stored_child}) Second relay fixture',
+                'The second SMTP delivery uses the same envelope and the relay accepts its authentication',
+            )
         if a.touch:
             if not a.physics_library:
                 with contextlib.closing(sqlite3.connect(root / 'terrain.db')) as database:
@@ -12301,6 +13160,17 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         stored_name
                         == ('Stored part' if a.disable_scripts else 'Restored script executed'),
                         'Native metadata write-back preserves the restored script rename',
+                    )
+                    pins = dict(
+                        database.execute(
+                            'SELECT UUID, ScriptAccessPin FROM prims WHERE UUID IN (?, ?)',
+                            (stored_root, stored_child),
+                        )
+                    )
+                    check(
+                        int(pins[stored_root]) == -2147483647
+                        and int(pins[stored_child]) == (-2147483647 if a.disable_scripts else -123),
+                        'Native metadata write-back preserves and updates signed remote script PINs',
                     )
                     sound, volume = database.execute(
                         'SELECT CollisionSound,CollisionSoundVolume FROM prims WHERE UUID=?',
@@ -12493,15 +13363,16 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                     grid_lookups.get_nowait()
                     == {
                         'METHOD': ['get_region_by_position'],
-                        'X': ['512'],
+                        'X': ['768'],
                         'Y': ['768'],
                         'SCOPEID': registration['SCOPEID'],
                     },
-                    'Remote viewer teleport looks up the requested grid coordinates',
+                    'Remote viewer teleport looks up the tile containing the requested position',
                 )
+                destination_lookup = grid_lookups.get_nowait()
                 check(
-                    grid_lookups.get_nowait()['X'] == ['1024'],
-                    'Second viewer teleport resolves the remote region',
+                    destination_lookup['X'] == ['1024'] and destination_lookup['Y'] == ['768'],
+                    'Second viewer teleport resolves the tile containing the requested world position',
                 )
                 check(
                     grid_lookups.empty(),
@@ -12521,6 +13392,10 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                     'The source sends the avatar state after remote agent creation',
                 )
                 check(
+                    transfer_updates.get_nowait()['position'] == '<24, 35, 42>',
+                    'The remote avatar state uses destination-relative coordinates',
+                )
+                check(
                     transfer_requests.get_nowait()
                     == (
                         'DELETE',
@@ -12529,6 +13404,12 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                     'Viewer cancellation closes the destination circuit with the current session ID',
                 )
         if a.touch and not a.physics_library:
+            if not a.grid_user_provider:
+                with contextlib.closing(sqlite3.connect(root / 'gridusers.db')) as database:
+                    account = database.execute(
+                        'SELECT Online FROM GridUser WHERE UserID=?', (again['agent_id'],)
+                    ).fetchone()
+                check(account == ('False',), 'Shutdown clears GridUser for an unconnected login')
             restart_linkset = []
             if rotating_prim and not a.disable_scripts:
                 with contextlib.closing(sqlite3.connect(root / 'terrain.db')) as database, database:
@@ -12649,7 +13530,11 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         'Private estate queries the authenticated Groups service for memberships',
                     )
                 session = restart_proxy.login_to_simulator(credentials)
-                check(session.get('login') == 'true', 'Viewer logs in after terrain restart')
+                check(
+                    session.get('login') == 'true',
+                    f"Viewer logs in after terrain restart (reason={session.get('reason')!r}, "
+                    f"message={session.get('message')!r})",
+                )
                 result = subprocess.run(
                     [
                         str(Path(a.viewer).resolve()),
@@ -12816,7 +13701,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         if line.startswith('LISTENING '):
                             break
                     fresh_proxy = xmlrpc.client.ServerProxy(line.split(' ', 1)[1].strip())
-                    if rotating_prim and not a.disable_scripts:
+                    if rotating_prim and not a.disable_scripts and mode not in ('--rez-tree', '--restore-tree'):
                         private_start = 'uri:Connected Native&124&128&25'
                         local_login = fresh_proxy.login_to_simulator(
                             dict(
@@ -12950,7 +13835,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                                 )
                             send(bytes.fromhex('ffff00fc') + agent + session_id)
                             receive(lambda p: True if p[:4] == bytes.fromhex('ffff00fd') else None)
-                    if check_local_groups:
+                    if check_local_groups and mode not in ('--rez-tree', '--restore-tree'):
                         check(
                             fresh_proxy.login_to_simulator(
                                 dict(
@@ -13005,6 +13890,11 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         'Fresh region viewer session shuts down cleanly: ' + server.stderr.read(),
                     )
 
+            tree_id = fresh_viewer('--rez-tree')
+            check(
+                fresh_viewer('--restore-tree', tree_id) == tree_id,
+                'Region restart preserves the viewer-rezzed Cypress UUID, species, scale, and phantom flag',
+            )
             rezzed_id = fresh_viewer('--rez-persistent')
             with contextlib.closing(
                 sqlite3.connect(root / 'fresh-region.db')
@@ -13157,6 +14047,69 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                     gzip.decompress(active) == expected and gzip.decompress(baked) == uploaded,
                     'Console flips mirror both axes while preserving the baked baseline',
                 )
+            wind_config = root / 'wind-console.ini'
+            base_wind_settings = config.read_text(encoding='utf-8') + '\n[Wind]\nenabled = true\n'
+            wind_config.write_text(
+                base_wind_settings + 'wind_plugin = ConfigurableWind\nstrength = 9\n',
+                encoding='utf-8',
+            )
+            wind_console = subprocess.run(
+                [cmd[0], '--config', str(wind_config), '--console'],
+                input=(
+                    'wind ConfigurableWind avgStrength\n'
+                    'wind ConfigurableWind avgStrength 3\n'
+                    'wind ConfigurableWind avgStrength\n'
+                    'wind base wind_update_rate +1\n'
+                    'wind base wind_update_rate 0\n'
+                    '"quit"\n'
+                ),
+                capture_output=True,
+                text=True,
+                timeout=20,
+            )
+            check(wind_console.returncode == 0, 'Wind console exits cleanly: ' + wind_console.stderr)
+            check('Invalid value +1' not in wind_console.stdout, 'Wind console accepts a leading plus sign')
+            for expected in (
+                'avgStrength : 5',
+                'avgStrength set to 3',
+                'avgStrength : 3',
+                'Invalid value 0 specified for wind_update_rate',
+            ):
+                check(expected in wind_console.stdout, 'Wind console reports ' + expected)
+            wind_config.write_text(
+                base_wind_settings + 'wind_plugin = SimpleRandomWind\nstrength = 2\navg_strength = invalid\n',
+                encoding='utf-8',
+            )
+            random_wind_console = subprocess.run(
+                [cmd[0], '--config', str(wind_config), '--console'],
+                input='wind SimpleRandomWind strength\n"quit"\n',
+                capture_output=True,
+                text=True,
+                timeout=20,
+            )
+            check(
+                random_wind_console.returncode == 0 and 'strength : 2' in random_wind_console.stdout,
+                'SimpleRandomWind loads its strength and ignores inactive plugin settings: '
+                + random_wind_console.stderr,
+            )
+            wind_config.write_text(
+                base_wind_settings + 'wind_plugin = MissingWindPlugin\n',
+                encoding='utf-8',
+            )
+            missing_wind_console = subprocess.run(
+                [cmd[0], '--config', str(wind_config), '--console'],
+                input='"quit"\n',
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                timeout=20,
+            )
+            check(
+                missing_wind_console.returncode == 0
+                and '[WIND] Could not find specified wind plug-in: MissingWindPlugin' in missing_wind_console.stdout
+                and '[WIND] Defaulting to no wind.' in missing_wind_console.stdout,
+                'Unknown wind plugin reports the fallback and starts the region',
+            )
             adjusted = subprocess.run(
                 cmd + ['--console'],
                 input='terrain fill " 2e1 "\nterrain elevate +5\nterrain lower 2\nterrain multiply 2\nterrain min 45\nterrain max 47\n"quit"\n',
@@ -13453,13 +14406,13 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                         'ToAgentID': session['agent_id'],
                         'FromAgentID': '93939393-9393-4393-8393-939393939393',
                         'BinaryBucket': '00 01 FF',
-                        'Dialog': '4',
+                        'Dialog': '9',
                         'Offline': '0',
                     }
                 )
                 check(
                     stored.findtext('RESULT') == 'True',
-                    'Mailbox queues a message for the connected viewer',
+                    'Mailbox queues a task inventory offer for the viewer',
                 )
                 result = subprocess.run(
                     [
@@ -13482,7 +14435,7 @@ UserProfilesServices=LocalUserProfilesServicesConnector
                 )
                 check(
                     result.returncode == 0,
-                    'Viewer receives local offline message over UDP: ' + result.stderr,
+                    'Viewer receives the stored task inventory offer over UDP: ' + result.stderr,
                 )
                 check(
                     len(offline_form(METHOD='GET', PrincipalID=session['agent_id']).find('RESULT'))

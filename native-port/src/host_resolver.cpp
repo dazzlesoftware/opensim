@@ -20,6 +20,7 @@
 #else
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 #endif
 namespace opensim::framework {
 namespace {
@@ -38,10 +39,8 @@ bool blank(const std::optional<std::string>& s) {
             return false;
     return true;
 }
-std::optional<std::vector<HostResolver::Address>> lookup(const std::string& host) {
-    if (host.find('\0') != std::string::npos)
-        return {};
 #ifdef _WIN32
+void initialize_winsock() {
     struct Runtime {
         Runtime() {
             WSADATA data;
@@ -53,6 +52,14 @@ std::optional<std::vector<HostResolver::Address>> lookup(const std::string& host
         }
     };
     static Runtime runtime;
+}
+#endif
+
+std::optional<std::vector<HostResolver::Address>> lookup(const std::string& host, std::string* canonical = nullptr) {
+    if (host.find('\0') != std::string::npos)
+        return {};
+#ifdef _WIN32
+    initialize_winsock();
     ADDRINFOW hints{};
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
@@ -63,6 +70,10 @@ std::optional<std::vector<HostResolver::Address>> lookup(const std::string& host
     if (GetAddrInfoW(wide.c_str(), nullptr, &hints, &found))
         return {};
     std::unique_ptr<ADDRINFOW, decltype(&FreeAddrInfoW)> guard(found, FreeAddrInfoW);
+    if (canonical && found && found->ai_canonname) {
+        const std::wstring_view name(found->ai_canonname);
+        *canonical = utf8(std::u16string(name.begin(), name.end()));
+    }
 #else
     addrinfo hints{};
     hints.ai_family = AF_UNSPEC;
@@ -72,6 +83,8 @@ std::optional<std::vector<HostResolver::Address>> lookup(const std::string& host
     if (getaddrinfo(host.c_str(), nullptr, &hints, &found))
         return {};
     std::unique_ptr<addrinfo, decltype(&freeaddrinfo)> guard(found, freeaddrinfo);
+    if (canonical && found && found->ai_canonname)
+        *canonical = found->ai_canonname;
 #endif
     std::vector<HostResolver::Address> result;
     for (auto* row = found; row; row = row->ai_next) {
@@ -173,6 +186,37 @@ HostResolver::HostResolver(Lookup function, Clock clock, bool automatic) {
 HostResolver::~HostResolver() = default;
 std::optional<std::vector<HostResolver::Address>> HostResolver::system_lookup(const std::string& host) {
     return lookup(host);
+}
+
+HostResolver::Address HostResolver::local_host_address() {
+#ifdef _WIN32
+    initialize_winsock();
+#endif
+    char hostname[256]{};
+    if (gethostname(hostname, sizeof(hostname) - 1) == 0) {
+        const auto addresses = system_lookup(hostname);
+        if (addresses && !addresses->empty()) {
+            const auto external_ipv4 = std::ranges::find_if(*addresses, [](const Address& address) {
+                return !address->v6() && address->bytes()[0] != 127;
+            });
+            if (external_ipv4 != addresses->end())
+                return *external_ipv4;
+            const auto ipv4 = std::ranges::find_if(*addresses, [](const Address& address) {
+                return !address->v6();
+            });
+            return ipv4 != addresses->end() ? *ipv4 : addresses->front();
+        }
+    }
+    const auto loopback = system_lookup("localhost");
+    if (loopback && !loopback->empty())
+        return loopback->front();
+    throw std::runtime_error("Unable to resolve SYSTEMIP");
+}
+std::optional<std::string> HostResolver::system_canonical_name(const std::string& host) {
+    std::string canonical;
+    if (!lookup(host, &canonical))
+        return {};
+    return canonical.empty() ? host : canonical;
 }
 HostResolver::Address HostResolver::host_from_dns(const std::optional<std::string>& host) {
     if (blank(host))
